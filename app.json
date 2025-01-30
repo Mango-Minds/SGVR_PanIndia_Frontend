@@ -1,0 +1,66 @@
+{
+  "expo": {
+    "name": "Daivajnya Brahmin",
+    "slug": "DaivajnyaBrahmin",
+    "version": "3.3.8",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "cover",
+      "backgroundColor": "#0000000D"
+    },
+    "notification": {
+      "icon": "./assets/icon.png"
+    },
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.girishsain22.daivajnayabrahmin",
+      "buildNumber": "21",
+      "userInterfaceStyle": "light",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Enable Camera Acess so that you can record Videos and Click photos.",
+        "NSMicrophoneUsageDescription": "Enable Microphone Access so that you can start recording audio ",
+        "NSPhotoLibraryUsageDescription": "Enable Camera Roll Access so that you can select Other Videos and photos from Camera Roll"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0000000D"
+      },
+      "userInterfaceStyle": "light",
+      "googleServicesFile": "./google-services.json",
+      "package": "com.girishsain22.daivajnayabrahmin",
+      "versionCode": 21,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyC2LXX791CHSkF03upj9DR2oC5Vm76RAzM"
+        }
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#ffffff"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "fdb86e2f-62a8-4b4d-95b6-0a054c021c1f"
+      }
+    }
+  }
+}

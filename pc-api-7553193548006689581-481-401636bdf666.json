@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "pc-api-7553193548006689581-481",
+  "private_key_id": "401636bdf666092545b393ec4b1b3374d592ac46",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDphcG6lUSXSsGG\nb/kW7lWEdAgD8FM+0pqZpFHrru09vus7UhXpq+7vb95Zh1mPUqPKESTobkGdN2mL\ntvvJOY2CFdHiGn8+qkKutD72OwVbusFOhRvJ3PIvEho4Mgb0sMrLT+rhbPWRa1qz\n76fNA8DEFRQExbDkJbUwQJjgt0DZKt8KaAAMxCVQPIbbofgwsS9kP+nVAyV1b47L\nYU2yjZE1584JocsNC6FPvTdpZ7sAni7CB5BPULRzimQke3V0uw4atF2KyoyP1Fce\nCT3Yhvz+N70N7YJBgfeq1FSX8pXhljDthyhKILfZdhCH2enKE04VgwN61Qh824KW\nAjKLBRbjAgMBAAECggEANh3IqOgZlqP82B5Pz7gYulK3Xs5NRFRC/pL9ZwxJL1N0\nqPEbYeT1wKggk4fRweyJR3UUpAaVDw192KJllBrRx9Etq+OvFEMZo+niY2aHFdxg\nGsWvDGc2+qCL0fUJ9p+Xx2j0ShxZhkMmKGfD77dMb0RhOL/lf+GbLRzzMLRXA1xC\nJ9JvwC6ExK1M1OcFWGV7q5YsmqdxUvrskz4W2pql3nLm0PyT/cjuWiYTynfWCM81\nEShHUdDaML+I+BdKtyNKi41n1Be9bgP0GfZ0TVIp7+AOnxvwr0ITKplr//wwFOZQ\nP8EEeQ/QBkDY7AkRvt1Giy8nwurfMOg/+ejYMAGabQKBgQD7stq6O5aSAUqhc9Dr\nksM8pRzBCoT/42BttGsxsblcMsmxdcKFf6zswEWdekMP4GICH57BukTSSqsfXKR2\n0eWsMEDVe0TR1eOUVzXKqWRPt/W/5uoo287FtbI2qc7Mjl2kEcUa+kFPln9NnnIB\nvaHAG6T0BwZqnvDafXLgsqWUTwKBgQDtg2JdWJX9lPr0v93BJ3XQi3FVh5ULw+6F\nPJKbY5I3Z3K9sFf6Rpn6HX8rr9r5YJZJ1vO5zj6G7vfVJDTEhrwJVPkxYPxyEqN3\nQUIjfAZHVDKf7XuNdkYA4wuapiuJ/ui8FnRVb/YtoIIdeO9BT3ziI3kYEq5G040b\npBI/LgNrLQJ/EbKBrpaB/8IXfUKnbejj0V/KpcgXkeZq4UvOPbBBWDo59EBTbQ+N\nGRhrzKbMEFG2km+mufhe3mphndLlvXUEsRazeE8yh46Cceuv3JAMfY5xuQyDalwK\nLdyYqz9FSxy3eNHHCh6OeQob6Vk6quSqetd2wbG8wcJrLPGlIidtfQKBgQCvE7sN\nXgBqRUhb45aeC+1fhXpMdr3aR1pqIkVbf6FHb9z3kKa5WROld9rHJEEAtD70PRu5\nqhsTMdHD7oVrHHo9UsLBsGFF4RFYFeWf7ItgRuNuWgtKMpXVj4d9PuI3PYznIJIu\nbHKGHZvsB7otZV+D/mwD37lRgh2w81dz9QIWHQKBgQDTedibLFJdqeUwQ0ncZYbg\nJbTiBwSY44k4XDKFBesU2E+caXbnrwA4s6Kl9LbPOFnm/He0YC3lgoUZ2DWQxBQn\nwy+EU0N/uGtCI+iLUOppewQq6SoULSx/Gl5so8/QLXsRm0E83s7YQZR02y9u1+6H\nKPy1TTbsWyV/yueJFJEe6A==\n-----END PRIVATE KEY-----\n",
+  "client_email": "daivajnaya-app-new@pc-api-7553193548006689581-481.iam.gserviceaccount.com",
+  "client_id": "112987919289902501931",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/daivajnaya-app-new%40pc-api-7553193548006689581-481.iam.gserviceaccount.com"
+}

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "903687122684",
+    "project_id": "daivajnya-brahmin-samaj",
+    "storage_bucket": "daivajnya-brahmin-samaj.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:903687122684:android:f3171d5bde52c6a3ffb179",
+        "android_client_info": {
+          "package_name": "com.girishsain22.daivajnayabrahmin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "903687122684-g27cst32vrom6biac2crsc3nqg53r9kr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDoyh8cvWrB0EwuFcNvv7cHfojPrEaOq9Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "903687122684-g27cst32vrom6biac2crsc3nqg53r9kr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "903687122684-de6mig2stfr351tcm9pj95k8j11cqqnt.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.girishsain22.daivajnayabrahmin"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
