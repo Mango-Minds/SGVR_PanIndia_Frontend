@@ -85,11 +85,12 @@ const exploreData = [
     icon: "heart", // Icon name from Ionicons
   },
   {
-    title: "Jewellery",
-    path: "Jewellery",
+    title: "B2C",
+    path: "B2C",
     status: true,
     icon: "diamond", // Icon name from Ionicons
   },
+  
   {
     title: "Temple",
     path: "Temple",
@@ -554,7 +555,7 @@ export default function DashboardScreen({ navigation }) {
                       letterSpacing: 1,
                     }}
                   >
-                    Daivajnya Brahmin
+                    The Maratha App
                   </Text>
                 </View>
               </View>

@@ -33,6 +33,7 @@ import LikeScreen from "../../components/social/LikeScreen";
 import MatrimonyViewUser from "../../features/matrimony/matrimonyViewUser.screen";
 import ChatHome from "../../features/chat/chat.home";
 import ChatScreenNew from "../../features/chat/chat.screen.new";
+import { B2CStackNavigator } from "./B2C.navigator";
 
 const Stack = createStackNavigator();
 
@@ -65,7 +66,9 @@ export const DashboardNavigator = () => (
     <Stack.Screen name="ChangePassword" component={ChangePassword} />
     <Stack.Screen name="SocialMedia" component={SocialMediaStackNavigator} />
     <Stack.Screen name="Jewellery" component={JewelleryStackNavigator} />
+
     <Stack.Screen name="B2B" component={B2BStackNavigator} />
+    <Stack.Screen name="B2C" component={B2CStackNavigator} />
     <Stack.Screen name="Matrimony" component={MatrimonyStackNavigator} />
     {/* <Stack.Screen name="Community" component={CommunityStackNavigator} /> */}
     <Stack.Screen name="SettingsScreen" component={DashboardSettingsScreen} />
