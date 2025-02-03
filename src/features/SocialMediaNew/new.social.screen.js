@@ -17,7 +17,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
-
+import Theme from "../../styles/theme";
 import { Ionicons } from "react-native-vector-icons";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import {
@@ -166,7 +166,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
                 alignItems: "center",
               }}
               size={"large"}
-              color={"#b98c13"}
+              color={Theme.themeColor}
             />
           ) : (
             <FlatList

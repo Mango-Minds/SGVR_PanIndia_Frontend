@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
 import { IconButton, Provider } from "react-native-paper";
 import {
@@ -291,14 +292,14 @@ export default function AddGod({ navigation, route }) {
 
               {selectedImages.length < 6 && (
                 <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
+                  <Icon name="plus" size={35} color={Theme.themeColor}/>
                 </AddProfileBox>
               )}
             </Row>
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="God Name*"
                 underlineColor="transparent"
@@ -311,9 +312,9 @@ export default function AddGod({ navigation, route }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.godDescription}
@@ -342,8 +343,8 @@ export default function AddGod({ navigation, route }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Symbols*"
                 underlineColor="transparent"
@@ -354,8 +355,8 @@ export default function AddGod({ navigation, route }) {
                 }
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Festivals*"
                 underlineColor="transparent"
@@ -369,8 +370,8 @@ export default function AddGod({ navigation, route }) {
                 }
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Related Deities*"
                 underlineColor="transparent"

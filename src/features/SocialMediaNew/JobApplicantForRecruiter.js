@@ -11,6 +11,7 @@ import {
   Alert,
   Platform,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { Ionicons } from "react-native-vector-icons";
 import { Container, RowBetween } from "../../styles/common.styles";
@@ -195,7 +196,7 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
           <View style={{ alignItems: "center" }}>
             <TopText
               style={{
-                color: "#d4af37",
+                color: Theme.themeColor,
                 fontWeight: "bold",
                 textTransform: "capitalize",
               }}
@@ -257,7 +258,7 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
               }}
             >
               {/* Option 1 */}
-              <RadioButton value="applied" color="#d4af37" />
+              <RadioButton value="applied" color={Theme.themeColor} />
               <Text
                 style={{
                   marginRight: 10,
@@ -269,13 +270,13 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
               </Text>
 
               {/* Option 2 */}
-              <RadioButton value="under review" color="#d4af37" />
+              <RadioButton value="under review" color={Theme.themeColor} />
               <Text style={{ color: "grey", fontWeight: "600" }}>
                 Under Review
               </Text>
 
               {/* Option 3 */}
-              <RadioButton value="rejected" color="#d4af37" />
+              <RadioButton value="rejected" color={Theme.themeColor} />
               <Text
                 style={{
                   marginRight: 10,
@@ -346,7 +347,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   uploadButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -358,7 +359,7 @@ const styles = StyleSheet.create({
   sectionHeader: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#d4af37",
+    color: Theme.themeColor,
     marginBottom: 8,
   },
   list: {

@@ -4,7 +4,7 @@ import { SafeArea } from "../../components/utility/safe-area.component";
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { Ionicons } from "@expo/vector-icons";
-
+import Theme from "../../styles/theme";
 const screenWidth = Dimensions.get("window").width;
 const imageHeight = screenWidth * 0.6;
 
@@ -23,12 +23,12 @@ const ReadMoreComponent = ({ description }) => {
           {isExpanded ? (
             <Text >
               <Text style={styles.readMore}>Read less</Text>
-              <Ionicons name="chevron-up-outline" size={16} color="#D4AF37" />
+              <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
             </Text>
           ) : (
             <Text>
               <Text style={styles.readMore}>Read more</Text>
-              <Ionicons name="chevron-down-outline" size={16} color="#D4AF37" />
+              <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
             </Text>
           )}
         </View>
@@ -112,19 +112,19 @@ export default function MatrimonyProfileNew({ route, navigation }) {
         <View style={styles.infoContainer}>
           <ReadMoreComponent description={vendorData.about} />
           <View style={styles.infoItem}>
-            <Ionicons name="location" size={24} color="#D4AF37" style={styles.infoIcon} />
+            <Ionicons name="location" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.label}>City:</Text> {vendorData.city}
             </Text>
           </View>
           <View style={styles.infoItem}>
-            <Ionicons name="call" size={24} color="#D4AF37" style={styles.infoIcon} />
+            <Ionicons name="call" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.label}>Mobile Number:</Text> {vendorData.phone}
             </Text>
           </View>
           <View style={styles.infoItem}>
-            <Ionicons name="mail" size={24} color="#D4AF37" style={styles.infoIcon} />
+            <Ionicons name="mail" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
               <Text style={styles.label}>Email:</Text> {vendorData.email}
             </Text>
@@ -133,24 +133,24 @@ export default function MatrimonyProfileNew({ route, navigation }) {
 
         <View style={styles.facilitiesContainer}>
           <View style={styles.facilitiesLabelContainer}>
-            <Ionicons name="options" size={24} color="#D4AF37" style={styles.facilitiesIcon} />
+            <Ionicons name="options" size={24} color={Theme.themeColor} style={styles.facilitiesIcon} />
             <Text style={styles.facilitiesLabel}>Facilities</Text>
           </View>
           <View style={styles.facilitiesIcons}>
             <View style={styles.facilityItem}>
-              <Ionicons name="restaurant" size={24} color="#D4AF37" />
+              <Ionicons name="restaurant" size={24} color={Theme.themeColor} />
               <Text style={styles.facilityText}>Catering</Text>
             </View>
             <View style={styles.facilityItem}>
-              <Ionicons name="fast-food-outline" size={24} color="#D4AF37" />
+              <Ionicons name="fast-food-outline" size={24} color={Theme.themeColor} />
               <Text style={styles.facilityText}>Food</Text>
             </View>
             <View style={styles.facilityItem}>
-              <Ionicons name="wine" size={24} color="#D4AF37" />
+              <Ionicons name="wine" size={24} color={Theme.themeColor} />
               <Text style={styles.facilityText}>Bar</Text>
             </View>
             <View style={styles.facilityItem}>
-              <Ionicons name="ice-cream" size={24} color="#D4AF37" />
+              <Ionicons name="ice-cream" size={24} color={Theme.themeColor} />
               <Text style={styles.facilityText}>Dessert</Text>
             </View>
           </View>
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   headerText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
     marginLeft: 10,
@@ -305,7 +305,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   readMore: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 18,
   },
   facilitiesContainer: {
@@ -339,7 +339,7 @@ const styles = StyleSheet.create({
     borderColor: "#e0e0e0",
   },
   priceText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 32, // Increase the font size to make it bigger
     fontWeight: "bold",
   },
@@ -347,7 +347,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   bookNowButton: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 12, // Increase the border radius to make it rounder
     paddingVertical: 18, // Increase the padding vertically to make it taller
     paddingHorizontal: 24, // Increase the padding horizontally to make it wider

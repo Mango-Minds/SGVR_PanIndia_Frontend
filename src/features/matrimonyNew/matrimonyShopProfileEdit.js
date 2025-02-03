@@ -23,6 +23,7 @@ import {
   ScrollView,
   Switch,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
 import {
   FormButton,
@@ -300,7 +301,7 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                 ))}
                 {selectedImages.length + uploadedImages.length < 6 && (
                   <AddProfileBox onPress={_pickDocument}>
-                    <Icon name="plus" size={35} color="#d4af37" />
+                    <Icon name="plus" size={35} color={Theme.themeColor} />
                   </AddProfileBox>
                 )}
               </Row>
@@ -316,9 +317,9 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                   Name
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor} 
                   placeholder="Name*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor} 
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -338,9 +339,9 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                   Business Name
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor} 
                   placeholder="Business Name*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor} 
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -363,10 +364,10 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                   Address
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor} 
                   multiline={true}
                   placeholder="Address*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor} 
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -386,9 +387,9 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                   Description
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor} 
                   placeholder="Description*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor} 
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -412,8 +413,8 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
                 </Text>
                 <LoginInputField
                   keyboardType="numeric" // Ensures the numeric keyboard is shown
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor} 
+                  activeUnderlineColor={Theme.themeColor} 
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   placeholder="Contact Info*"
                   underlineColor="transparent"
@@ -515,7 +516,7 @@ const styles = StyleSheet.create({
   mediaButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor ,
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,

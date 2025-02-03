@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Button, IconButton, Provider } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import {
@@ -144,14 +145,20 @@ const TempleEventsCreate = ({ navigation }) => {
     setShow(true);
   };
 
-  const onChange = (event, selectedDate) => {
+  // const onChange = (event, selectedDate) => {
+  //   setShow(false);
+  //   if (event.type === "set") {
+  //     const currentDate = selectedDate || new Date();
+  //     setSelectedDate(currentDate);
+  //   }
+  // };
+  const onChange = (event, date) => {
     setShow(false);
-    if (event.type === "set") {
-      const currentDate = selectedDate || new Date();
-      setSelectedDate(currentDate);
+    if (event.type === "set" && date) {
+      setSelectedDate(date);
     }
   };
-
+  
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const onDayPress = (day) => {
     setSelectedDate(day.dateString);
@@ -166,7 +173,11 @@ const TempleEventsCreate = ({ navigation }) => {
       }
       dispatch(setLoadingInBtn(true));
 
-      const eventDate = selectedDate.toISOString().split("T")[0];
+      // const eventDate = selectedDate.toISOString().split("T")[0];
+      const eventDate = selectedDate
+  ? `${selectedDate.getDate().toString().padStart(2, "0")}/${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}/${selectedDate.getFullYear()}`
+  : "";
+
       const eventTime = times.map((time) => formatTime(time));
       const formattedAvailability = availability.map((slot) =>
         slot.map((time) => formatTime(time))
@@ -276,8 +287,8 @@ const TempleEventsCreate = ({ navigation }) => {
           >
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Event Name*"
                 underlineColor="transparent"
@@ -288,9 +299,9 @@ const TempleEventsCreate = ({ navigation }) => {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={eventDescription}
@@ -314,8 +325,8 @@ const TempleEventsCreate = ({ navigation }) => {
 
               {/* <TouchableOpacity onPress={openCalendar}>
                         <LoginInputField
-                        selectionColor="#d4af37"
-                        activeUnderlineColor="#d4af37"
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
                         style={styles.input}
                         placeholder="Event Date (YYYY-MM-DD)*"
                         underlineColor="transparent"
@@ -345,8 +356,8 @@ const TempleEventsCreate = ({ navigation }) => {
                     </Modal> */}
 
               {/* <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Event Type*"
                 underlineColor="transparent"
@@ -450,8 +461,8 @@ const TempleEventsCreate = ({ navigation }) => {
                   <TextInput
                     multiline={true}
                     numberOfLines={4}
-                    selectionColor="#d4af37"
-                    activeUnderlineColor="#d4af37"
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
                     placeholder="Pooja Instructions*"
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
@@ -544,11 +555,17 @@ const TempleEventsCreate = ({ navigation }) => {
 
               <TouchableOpacity onPress={openCalendar}>
                 <LoginInputField
-                  value={
-                    selectedDate ? selectedDate.toISOString().split("T")[0] : ""
-                  } // Display the selected date
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                value={
+                  selectedDate
+                    ? `${selectedDate.getDate().toString().padStart(2, "0")}/${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}/${selectedDate.getFullYear()}`
+                    : ""
+                }
+                
+                  // value={
+                  //   selectedDate ? selectedDate.toISOString().split("T")[0] : ""
+                  // } // Display the selected date
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={styles.input}
                   placeholder="Event Date (YYYY-MM-DD)*"
                   underlineColor="transparent"
@@ -586,8 +603,8 @@ const TempleEventsCreate = ({ navigation }) => {
                   <TouchableOpacity onPress={openTimePicker}>
                     <LoginInputField
                       value={time ? formatTime(time) : ""} // Display the selected time or an empty string
-                      selectionColor="#d4af37"
-                      activeUnderlineColor="#d4af37"
+                      selectionColor={Theme.themeColor}
+                      activeUnderlineColor={Theme.themeColor}
                       style={[
                         styles.input,
                         {
@@ -615,8 +632,8 @@ const TempleEventsCreate = ({ navigation }) => {
                 />
               )}
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Event Duration (in minutes)"
                 underlineColor="transparent"

@@ -9,6 +9,7 @@ import {
   StyleSheet,
   TextInput,
 } from "react-native";
+import Theme from "../styles/theme";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import axios from "axios";
 import { BASEAPIURL } from "../infrastructure/constants";
@@ -82,7 +83,7 @@ export default function ViewProfileScreen() {
         <View style={{ alignItems: "center", paddingVertical: 16 }}>
           <IconButton icon="chevron-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             My Profile
           </TopText>
@@ -150,8 +151,8 @@ export default function ViewProfileScreen() {
 
                 /> */}
                 <LoginInputField
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={styles.input}
                   placeholder="password*"
                   underlineColor="transparent"
@@ -234,7 +235,7 @@ export default function ViewProfileScreen() {
             paddingVertical: 8,
           }}
         >
-          <Icon name="user" color="#D4AF37" size={20} />
+          <Icon name="user" color={Theme.themeColor} size={20} />
           <Text
             style={{
               paddingHorizontal: 8,
@@ -253,7 +254,7 @@ export default function ViewProfileScreen() {
             paddingVertical: 8,
           }}
         >
-          <Icons name="email-edit" color="#D4AF37" size={20} />
+          <Icons name="email-edit" color={Theme.themeColor} size={20} />
           <Text
             style={{ paddingHorizontal: 8, fontSize: 14, color: "#898E92" }}
           >
@@ -268,7 +269,7 @@ export default function ViewProfileScreen() {
             paddingVertical: 8,
           }}
         >
-          <Ionicons name="call" color="#D4AF37" size={20} />
+          <Ionicons name="call" color={Theme.themeColor} size={20} />
           <Text
             style={{ paddingHorizontal: 8, fontSize: 14, color: "#898E92" }}
           >
@@ -283,9 +284,9 @@ export default function ViewProfileScreen() {
           }}
         >
           {user.gender === "Male" ? (
-            <Icons name="gender-male" color="#D4AF37" size={22} />
+            <Icons name="gender-male" color={Theme.themeColor} size={22} />
           ) : (
-            <Icons name="gender-female" color="#D4AF37" size={22} />
+            <Icons name="gender-female" color={Theme.themeColor} size={22} />
           )}
           <Text
             style={{
@@ -305,13 +306,14 @@ export default function ViewProfileScreen() {
             paddingVertical: 8,
           }}
         >
-          <Icon name="birthday-cake" color="#D4AF37" size={22} />
+          <Icon name="birthday-cake" color={Theme.themeColor} size={22} />
           <Text
             style={{
               paddingHorizontal: 8,
               fontSize: 14,
               color: "#898E92",
               textTransform: "capitalize",
+              
             }}
           >
             {user.dob !== "undefined-undefined-undefined"
@@ -348,7 +350,7 @@ export default function ViewProfileScreen() {
             paddingVertical: 8,
           }}
         >
-          <Icon name="address-card" color="#D4AF37" size={22} />
+          <Icon name="address-card" color={Theme.themeColor} size={22} />
           <Text
             style={{
               paddingHorizontal: 8,
@@ -382,7 +384,7 @@ export default function ViewProfileScreen() {
             <View
               style={{
                 fontSize: 18,
-                backgroundColor: "#D4AF37",
+                backgroundColor: Theme.themeColor,
                 textTransform: "capitalize",
 
                 paddingHorizontal: 8,

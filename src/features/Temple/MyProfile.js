@@ -12,7 +12,7 @@ import {
 import MyTempleProfile from "../../features/Temple/TempleProfile";
 import ProfileHeader from "../../features/Temple/Header";
 import { useNavigation } from "@react-navigation/native";
-
+import Theme from "../../styles/theme";
 const MyProfile = ({route}) => {
   const navigation = useNavigation();
   const [screen, setScreen] = React.useState("Product");
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   eachJewelleryCardFooter: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     opacity: 0.8,
     justifyContent: "center",
     alignItems: "center",

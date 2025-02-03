@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import {
@@ -106,7 +107,7 @@ const styles = StyleSheet.create({
   addButton: {
     marginTop: 16,
     padding: 10,
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 5,
     alignItems: "center",
   },
@@ -261,9 +262,9 @@ export default function EditUserEducationInfo({ navigation, route }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="About*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={about}
@@ -313,9 +314,9 @@ export default function EditUserEducationInfo({ navigation, route }) {
                   <TextInput
                     multiline={true}
                     numberOfLines={4}
-                    selectionColor="#d4af37"
+                    selectionColor={Theme.themeColor}
                     placeholder="Description*"
-                    activeUnderlineColor="#d4af37"
+                    activeUnderlineColor={Theme.themeColor}
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
                     value={edu.description}
@@ -348,7 +349,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                 </View>
               ))}
               <TouchableOpacity onPress={addEducationField}>
-                <Text style={{ color: "#d4af37" }}>+ Add Education</Text>
+                <Text style={{ color: Theme.themeColor }}>+ Add Education</Text>
               </TouchableOpacity>
 
               {jobExperience.map((job, index) => (
@@ -378,9 +379,9 @@ export default function EditUserEducationInfo({ navigation, route }) {
                   <TextInput
                     multiline={true}
                     numberOfLines={4}
-                    selectionColor="#d4af37"
+                    selectionColor={Theme.themeColor}
                     placeholder="Job Description*"
-                    activeUnderlineColor="#d4af37"
+                    activeUnderlineColor={Theme.themeColor}
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
                     value={job.description}
@@ -413,7 +414,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                 </View>
               ))}
               <TouchableOpacity onPress={addJobExperienceField}>
-                <Text style={{ color: "#d4af37" }}>+ Add Job Experience</Text>
+                <Text style={{ color: Theme.themeColor }}>+ Add Job Experience</Text>
               </TouchableOpacity>
 
               <FormButton onPress={handleSubmit}>

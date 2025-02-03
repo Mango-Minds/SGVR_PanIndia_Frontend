@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import {
@@ -104,7 +105,7 @@ const styles = StyleSheet.create({
   addButton: {
     marginTop: 16,
     padding: 10,
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 5,
     alignItems: "center",
   },
@@ -271,7 +272,7 @@ export default function EditProfileInfo({ navigation, route }) {
                 onPress={_pickDocument}
                 style={{ ...styles.logo, marginTop: "10%" }}
               >
-                <Icon name="plus" size={35} color="#d4af37" />
+                <Icon name="plus" size={35} color={Theme.themeColor} />
               </AddProfileBox>
             )}
             <FormSection style={{ paddingTop: 0 }}>

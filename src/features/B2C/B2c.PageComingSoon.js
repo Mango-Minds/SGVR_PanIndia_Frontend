@@ -11,7 +11,7 @@ import {
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { RowBetween } from "../../styles/common.styles";
-
+import Theme from "../../styles/theme";
 
 const PageComingSoon = ({ navigation }) => {
   return (
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
   text: {
     fontWeight: 'bold',
     fontSize: 20,
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
 });
 

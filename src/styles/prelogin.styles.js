@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { FlatList, Dimensions } from "react-native";
 import { Button, IconButton, TextInput } from "react-native-paper";
-
+import Theme from "./theme";
 const windowWidth = Dimensions.get("window").width;
 const windowHeight = Dimensions.get("window").height;
 
@@ -120,25 +120,25 @@ export const Row = styled.View`
 export const FormSection = styled.View`
   padding-left: 24px;
   padding-right: 24px;
-  padding-top: 24px;
+  padding-top: 0px;
 `;
 
 export const FormSectionTitle = styled.Text`
   font-size: 26px;
   font-weight: bold;
-  color: #d4af37;
+  color: ${(props) => props.themeColor || Theme.themeColor};
   margin-bottom: 12px;
 `;
 
 export const FormSectionSubtitle = styled.Text`
   font-size: 16px;
-  color: #d4af37;
+  color: ${(props) => props.themeColor || Theme.themeColor};
   text-transform: capitalize;
 `;
 
 export const ForgotText = styled.Text`
   font-size: 14px;
-  color: #b98c13;
+ color: ${(props) => props.themeColor || Theme.themeColor};
   ${"" /* text-decoration: underline; */}
   text-align: right;
   padding-bottom: 2px;
@@ -173,7 +173,7 @@ export const CheckboxContainer = styled.View`
 `;
 
 export const FormButton = styled.TouchableOpacity`
-  background-color: #d4af37;
+  background-color: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 4px;
   elevation: 0;
   align-items: center;
@@ -232,7 +232,7 @@ export const VerificationSectionSubtitle = styled.Text`
 
 export const MobileText = styled.Text`
   font-size: 14px;
-  color: #d4af37;
+  color: ${(props) => props.themeColor || Theme.themeColor};
 `;
 
 export const EditMobileText = styled.Text`
@@ -243,12 +243,12 @@ export const EditMobileText = styled.Text`
 
 export const EnterCodeText = styled.Text`
   font-size: 16px;
-  color: #b98c13;
+  color: ${(props) => props.themeColor || Theme.themeColor};
 `;
 
 export const AddProfileBox = styled.TouchableOpacity`
   border-width: 2px;
-  border-color: #d4af37;
+  border-color: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 100px;
   width: 60px;
   height: 60px;

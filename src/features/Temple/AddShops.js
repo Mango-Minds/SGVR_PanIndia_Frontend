@@ -11,6 +11,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
 import { IconButton, Provider } from "react-native-paper";
 import {
@@ -405,14 +406,14 @@ export default function AddShops({ navigation }) {
 
               {selectedImages.length < 6 && (
                 <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
+                  <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
             </Row>
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Shop Name*"
                 underlineColor="transparent"
@@ -425,9 +426,9 @@ export default function AddShops({ navigation }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Shop Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.productDescription}

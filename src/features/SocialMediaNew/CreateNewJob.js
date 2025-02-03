@@ -17,6 +17,7 @@ import {
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
+import Theme from "../../styles/theme";
 const CreateNewJob = ({ navigation }) => {
   const token = useSelector((state) => state.user.token);
   const [jobData, setJobData] = useState({
@@ -185,7 +186,7 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   submitButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     padding: 15,
     borderRadius: 5,
     alignItems: "center",

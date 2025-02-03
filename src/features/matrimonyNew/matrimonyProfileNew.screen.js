@@ -12,7 +12,7 @@ import {
   SafeAreaView,
 } from "react-native";
 import { useSelector } from "react-redux";
-
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
@@ -337,7 +337,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
               {route.params.matrimonyData.name}
             </Text>
             <View style={styles.locationContainer}>
-              <MaterialIcon name="location-on" size={18} color="#D4AF37" />
+              <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
               <Text style={styles.homeTown}>
                 {route.params.matrimonyData.homeTown}
               </Text>
@@ -479,7 +479,7 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: "row",
     alignItems: "center",
-    borderColor: "#D4AF37",
+    borderColor: Theme.themeColor,
     borderWidth: 1,
     borderRadius: 20,
     backgroundColor: "white",
@@ -495,7 +495,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     bottom: 10,
     left: 0,
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 26,
     fontWeight: "bold",
   },
@@ -509,7 +509,7 @@ const styles = StyleSheet.create({
   homeTown: {
     fontSize: 13,
     fontWeight: "400",
-    color: "#D4AF37",
+    color: Theme.themeColor,
     marginLeft: 5,
     lineHeight: 20,
   },
@@ -603,7 +603,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   bookNowButton: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     paddingVertical: 10,
     paddingHorizontal: 30,
     borderRadius: 30,
@@ -647,7 +647,7 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   tag: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 20,
     paddingVertical: 5,
     paddingHorizontal: 10,

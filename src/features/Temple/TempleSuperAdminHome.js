@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Container, RowBetween } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
 import { Ionicons } from "react-native-vector-icons";
@@ -80,7 +81,7 @@ const TempleSuperAdminHome = ({ navigation }) => {
             />
             <TopText
               style={{
-                color: "#D4AF37",
+                color: Theme.themeColor,
                 fontSize: 20,
                 fontWeight: "bold",
               }}
@@ -331,7 +332,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",

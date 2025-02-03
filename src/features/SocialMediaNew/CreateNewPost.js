@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Video, ResizeMode } from "expo-av";
-
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
@@ -192,7 +192,7 @@ const CreateNewPost = ({ navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Create a Post
           </TopText>
@@ -331,7 +331,7 @@ const styles = StyleSheet.create({
   mediaButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addTagButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     marginLeft: 10,
     borderRadius: 5,
@@ -415,7 +415,7 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   submitButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     padding: 15,
     borderRadius: 5,
     alignItems: "center",

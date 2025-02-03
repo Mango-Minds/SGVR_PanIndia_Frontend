@@ -15,7 +15,7 @@ import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { Ionicons } from "@expo/vector-icons";
 import { BASEIMGURL } from "../../infrastructure/constants";
-
+import Theme from "../../styles/theme";
 const screenWidth = Dimensions.get("window").width;
 const imageHeight = screenWidth * 0.6;
 
@@ -36,12 +36,12 @@ const ReadMoreComponent = ({ description }) => {
           {isExpanded ? (
             <Text>
               <Text style={styles.readMore}>Read less</Text>
-              <Ionicons name="chevron-up-outline" size={16} color="#D4AF37" />
+              <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
             </Text>
           ) : (
             <Text>
               <Text style={styles.readMore}>Read more</Text>
-              <Ionicons name="chevron-down-outline" size={16} color="#D4AF37" />
+              <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
             </Text>
           )}
         </View>
@@ -141,7 +141,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
             <Ionicons
               name="home"
               size={24}
-              color="#D4AF37"
+              color={Theme.themeColor}
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
@@ -152,7 +152,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
             <Ionicons
               name="location"
               size={24}
-              color="#D4AF37"
+              color={Theme.themeColor}
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
@@ -163,7 +163,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
             <Ionicons
               name="call"
               size={24}
-              color="#D4AF37"
+              color={Theme.themeColor}
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   headerText: {
-    color: "#D4AF37",
+    color:Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
     marginLeft: 10,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   readMore: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 18,
   },
   facilitiesContainer: {
@@ -364,7 +364,7 @@ const styles = StyleSheet.create({
     borderColor: "#fff",
   },
   priceText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 32, // Increase the font size to make it bigger
     fontWeight: "bold",
   },
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
   },
   bookNowButton: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 12, // Increase the border radius to make it rounder
     paddingVertical: 18, // Increase the padding vertically to make it taller
     paddingHorizontal: 24, // Increase the padding horizontally to make it wider

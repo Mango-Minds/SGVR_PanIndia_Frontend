@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-
+import Theme from "../../styles/theme";
 const FilterMenu = ({
   menuVisible,
   toggleMenu,
@@ -96,7 +96,7 @@ const FilterMenu = ({
               }}
             >
               <View style={{ position: "absolute", top: -30, left: 17 }}>
-                <Ionicons name="square" size={32} color="#D4AF37" />
+                <Ionicons name="square" size={32} color={Theme.themeColor} />
                 <View style={{ position: "absolute", top: -1, left: -2 }}>
                   <Ionicons name="funnel" size={22} color="lightgrey" />
                 </View>
@@ -107,7 +107,7 @@ const FilterMenu = ({
               <Text
                 style={{
                   // color: "black",
-                  color: "#D4AF37",
+                  color: Theme.themeColor,
                   fontSize: 22,
                   marginBottom: 50,
                   marginLeft: 30,
@@ -158,7 +158,7 @@ const FilterMenu = ({
                   >
                     <Text
                       style={{
-                        color: activeFilter === filter.name ? "#D4AF37" : "grey",
+                        color: activeFilter === filter.name ? Theme.themeColor : "grey",
                         fontSize: 20,
                         marginRight: 20,
                       }}
@@ -173,7 +173,7 @@ const FilterMenu = ({
                         style={{
                           width: 20,
                           height: 20,
-                          backgroundColor: "#D4AF37",
+                          backgroundColor: Theme.themeColor,
                           borderRadius: 10,
                           justifyContent: "center",
                           alignItems: "center",
@@ -221,7 +221,7 @@ const FilterMenu = ({
                               size={25}
                               color={
                                 selectedOptions.includes(option)
-                                  ? "#D4AF37"
+                                  ? Theme.themeColor
                                   : "grey"
                               }
                             />
@@ -230,7 +230,7 @@ const FilterMenu = ({
                                 marginLeft: 10,
                                 fontSize: 16,
                                 color: selectedOptions.includes(option)
-                                  ? "#D4AF37"
+                                  ? Theme.themeColor
                                   : "grey",
                               }}
                             >
@@ -266,12 +266,12 @@ const FilterMenu = ({
         >
           <TouchableOpacity
             style={{
-              backgroundColor: activeFilter ? "#D4AF37" : "transparent",
+              backgroundColor: activeFilter ? Theme.themeColor : "transparent",
               borderRadius: 4,
               paddingVertical: 10,
               paddingHorizontal: 20,
               borderWidth: 1,
-              borderColor: "#D4AF37",
+              borderColor: Theme.themeColor,
               marginLeft: 15,
             }}
             onPress={() => {
@@ -280,7 +280,7 @@ const FilterMenu = ({
               console.log("Clear Filters");
             }}
           >
-            <Text style={{ color: activeFilter ? "white" : "#D4AF37" }}>
+            <Text style={{ color: activeFilter ? "white" : Theme.themeColor }}>
               Clear Filters
             </Text>
           </TouchableOpacity>
@@ -289,17 +289,17 @@ const FilterMenu = ({
 
           <TouchableOpacity
             style={{
-              backgroundColor: activeFilter ? "transparent" : "#D4AF37",
+              backgroundColor: activeFilter ? "transparent" : Theme.themeColor,
               borderRadius: 4,
               paddingVertical: 10,
               paddingHorizontal: 20,
               borderWidth: 1,
-              borderColor: "#D4AF37",
+              borderColor: Theme.themeColor,
               marginRight: 60,
             }}
             onPress={handleApply}
           >
-            <Text style={{ color: activeFilter ? "#D4AF37" : "white" }}>
+            <Text style={{ color: activeFilter ? Theme.themeColor : "white" }}>
               Apply
             </Text>
           </TouchableOpacity>

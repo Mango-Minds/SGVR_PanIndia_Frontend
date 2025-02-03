@@ -10,6 +10,7 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { Ionicons } from "react-native-vector-icons";
 import { Container, RowBetween } from "../../styles/common.styles";
@@ -229,7 +230,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   uploadButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,

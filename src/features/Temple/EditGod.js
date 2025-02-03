@@ -10,6 +10,7 @@ import {
   TextInput,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
+import Theme from "../../styles/theme";
 import {
   FormButton,
   FormSection,
@@ -238,7 +239,7 @@ export default function EditGod({ route, navigation }) {
                 onPress={_pickDocument}
                 style={{ ...styles.logo, marginTop: "10%" }}
               >
-                <Icon name="plus" size={35} color="#d4af37" />
+                <Icon name="plus" size={35} color={Theme.themeColor} />
               </AddProfileBox>
             )}
             <FormSection style={{ paddingTop: 0 }}>
@@ -254,8 +255,8 @@ export default function EditGod({ route, navigation }) {
                 God Name
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Name"
                 underlineColor="transparent"
@@ -280,9 +281,9 @@ export default function EditGod({ route, navigation }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="god Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.description}
@@ -319,8 +320,8 @@ export default function EditGod({ route, navigation }) {
                 Symbol
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Symbol"
                 underlineColor="transparent"
@@ -343,8 +344,8 @@ export default function EditGod({ route, navigation }) {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Festivals"
                 underlineColor="transparent"
@@ -368,8 +369,8 @@ export default function EditGod({ route, navigation }) {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Related Deities"
                 underlineColor="transparent"

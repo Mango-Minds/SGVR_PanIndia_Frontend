@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { ActivityIndicator, IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
-
+import Theme from "../../styles/theme";
 import Iconicons from "react-native-vector-icons/Ionicons";
 import { RowBetween, SearchField } from "../../styles/common.styles";
 import { useRoute } from "@react-navigation/native";
@@ -614,7 +614,7 @@ const TempleEvents = ({ navigation }) => {
                             </TouchableOpacity>
                           </>
                         )}
-                        <Iconicons name="timer" size={22} color="#D4AF37" />
+                        <Iconicons name="timer" size={22} color={Theme.themeColor} />
                         <Text style={{ color: "black", marginLeft: 4 }}>
                           {item.eventDuration} Minutes
                         </Text>
@@ -855,7 +855,7 @@ const TempleEvents = ({ navigation }) => {
                   {item.templeEvent.eventName}
                 </Text>
                 <View style={styles.iconAndDurationContainer}>
-                  <Iconicons name="timer" size={22} color="#D4AF37" />
+                  <Iconicons name="timer" size={22} color={Theme.themeColor} />
                   <Text style={{ color: "black", marginLeft: 4 }}>
                     {item.templeEvent.eventDuration} Minutes
                   </Text>
@@ -1043,7 +1043,7 @@ const styles = StyleSheet.create({
   dateSelected: {
     padding: 10,
     borderRadius: 5,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   dateText: {
     fontSize: 12,
@@ -1114,7 +1114,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   ifDateSelected: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   ifDateNotSelected: {
     backgroundColor: "lightgray",
@@ -1221,14 +1221,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   selectedSlotItem: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   slotText: {
     fontSize: 16,
   },
   sendRequestButton: {
     marginTop: 20,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     borderRadius: 5,
   },
@@ -1241,12 +1241,12 @@ const styles = StyleSheet.create({
     padding: 10,
   },
   closeButtonText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontWeight: "bold",
   },
   bookButton: {
     marginTop: 10,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     borderRadius: 5,
     alignItems: "center",
@@ -1269,7 +1269,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -1295,3 +1295,4 @@ const styles = StyleSheet.create({
     color: "red",
   },
 });
+

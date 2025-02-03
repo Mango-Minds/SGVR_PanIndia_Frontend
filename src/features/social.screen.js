@@ -10,6 +10,7 @@ import {
   Modal,
   st,
 } from "react-native";
+import Theme from "../styles/theme";
 import { IconButton, Text } from "react-native-paper";
 import { useQuery, useQueryClient } from "react-query";
 import OptionsModal from "../components/modals/OptionsModal";
@@ -232,7 +233,7 @@ export default function SocialScreen({ navigation }) {
       ) : isLoading ? (
         <ActivityIndicator
           size="large"
-          color="#D4AF37"
+          color={Theme.themeColor}
           style={{
             display: "flex",
             justifyContent: "center",
@@ -301,7 +302,7 @@ export default function SocialScreen({ navigation }) {
               style={{
                 borderRadius: 10,
                 overflow: "hidden",
-                backgroundColor: "#D4AF37",
+                backgroundColor: Theme.themeColor,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",

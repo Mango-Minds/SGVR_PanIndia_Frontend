@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Theme from "../styles/theme";
 import { Checkbox } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
 import {
@@ -106,8 +107,8 @@ export default function ResetPasswordScreen({ route, navigation }) {
               placeholderTextColor="#9B9B9B"
               underlineColor="transparent"
               placeholder="New Password"
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               secureTextEntry={hidePass ? true : false}
               onChangeText={(text) => setPassword(text)}
               value={password}
@@ -135,8 +136,8 @@ export default function ResetPasswordScreen({ route, navigation }) {
               placeholderTextColor="#9B9B9B"
               underlineColor="transparent"
               placeholder="Confirm Password"
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               secureTextEntry={hideConfirmPass ? true : false}
               onChangeText={(text) => setConfirmPassword(text)}
               value={confirmPassword}

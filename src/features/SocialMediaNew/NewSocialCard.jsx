@@ -15,6 +15,7 @@ import {
   ScrollView,
   Dimensions,
 } from "react-native";
+import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { useSelector } from "react-redux";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
@@ -553,7 +554,7 @@ const NewSocialCard = ({
           <>
             <TouchableOpacity
               style={styles.menuButton}
-              onPress={() => toggleMenu(item._id)}
+              onPress={() => toggleMenu(item?._id)}
             >
               <Text style={styles.menuText}>⋮</Text>
             </TouchableOpacity>
@@ -1502,12 +1503,12 @@ const styles = StyleSheet.create({
   },
   plusIcon: {
     fontSize: 20,
-    color: "#d4af37",
+    color: Theme.themeColor,
     marginRight: 4,
     fontWeight: "bold",
   },
   followText: {
-    color: "#d4af37",
+    color: Theme.themeColor,
     fontSize: 18,
     fontWeight: "bold",
   },

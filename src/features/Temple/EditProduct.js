@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton, Provider,ActivityIndicator } from "react-native-paper";
 import {
   FormButton,
@@ -281,14 +282,14 @@ export default function EditShopProduct({ route, navigation }) {
               ))}
               {selectedImages.length + uploadedImages.length < 6 && (
                 <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
+                  <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
             </Row>
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Product Name*"
                 underlineColor="transparent"
@@ -301,9 +302,9 @@ export default function EditShopProduct({ route, navigation }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Product Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.description}
@@ -328,8 +329,8 @@ export default function EditShopProduct({ route, navigation }) {
                 ]}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Price*"
                 underlineColor="transparent"
@@ -343,8 +344,8 @@ export default function EditShopProduct({ route, navigation }) {
 
               <LoginInputField
                 color
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Product Quantity*"
                 underlineColor="transparent"

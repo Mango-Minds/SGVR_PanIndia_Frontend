@@ -18,6 +18,7 @@ import messageIcon from "../../assets/images/social/message.png";
 import NewSocialCard from "./NewSocialCard";
 import { Ionicons } from "react-native-vector-icons";
 import BottomNavigation from "../../components/social/BottomNavigation";
+import Theme from "../../styles/theme";
 import {
   BASEIMGURL,
   BASEAPIURL,
@@ -511,7 +512,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   activeTab: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     color: "white",
   },
   tabText: {

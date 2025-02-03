@@ -10,7 +10,7 @@ import {
 import { Ionicons } from "react-native-vector-icons";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
-
+import Theme from "../../styles/theme";
 import { ScrollView } from "react-native-gesture-handler";
 import { decode } from "base-64";
 import React, { useEffect, useState } from "react";
@@ -150,7 +150,7 @@ const EachShopProfile = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Shop Details
           </TopText>
@@ -210,7 +210,7 @@ const EachShopProfile = ({ route }) => {
                 style={{
                   fontSize: 16,
                   fontWeight: "bold",
-                  color: "#D4AF37",
+                  color: Theme.themeColor,
                 }}
               >
                 About Us :
@@ -219,17 +219,17 @@ const EachShopProfile = ({ route }) => {
             </View>
             <View>
               <View style={style.contactDetails}>
-                <MaterialIcon name="email" size={18} color="#D4AF37" />
-                <Text style={style.contact}>{shop.owner.id.email}</Text>
+                <MaterialIcon name="email" size={18} color={Theme.themeColor}/>
+                <Text style={style.contact}>{shop.owner.id?.email}</Text>
               </View>
               <View style={style.contactDetails}>
-                <MaterialIcon name="phone" size={18} color="#D4AF37" />
-                <Text style={style.contact}>{shop.owner.id.phone}</Text>
+                <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
+                <Text style={style.contact}>{shop.owner.id?.phone}</Text>
               </View>
               <View style={[style.contactDetails, { marginBottom: 20 }]}>
-                <MaterialIcon name="location-on" size={18} color="#D4AF37" />
+                <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>
-                  {shop.address}, {shop.city}
+                  {shop?.address}, {shop?.city}
                 </Text>
               </View>
               <Divider />
@@ -247,7 +247,7 @@ const EachShopProfile = ({ route }) => {
         >
           <TouchableOpacity
             style={{
-              borderBottomColor: "#D4AF37",
+              borderBottomColor:Theme.themeColor,
               borderBottomWidth: 2,
               paddingVertical: 5,
             }}
@@ -259,7 +259,7 @@ const EachShopProfile = ({ route }) => {
                 fontSize: 16,
                 fontWeight: "600",
                 letterSpacing: 0.5,
-                color: "#D4AF37",
+                color: Theme.themeColor,
               }}
             >
               Our Catalog
@@ -354,7 +354,7 @@ const EachShopProfile = ({ route }) => {
                     textAlign: "center",
                     fontSize: 16,
                     fontWeight: "600",
-                    color: "#D4AF37",
+                    color: Theme.themeColor,
                   }}
                 >
                   No products added
@@ -427,7 +427,7 @@ const EachShopProfile = ({ route }) => {
                   fontSize: 16,
                   fontWeight: "600",
                   letterSpacing: 0.5,
-                  color: "#D4AF37",
+                  color: Theme.themeColor,
                   textAlign: "center",
                   textDecorationLine: "underline",
                 }}
@@ -531,7 +531,7 @@ export const styles = StyleSheet.create({
     borderRadius: 4,
   },
   eachJewelleryCardFooter: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     opacity: 0.8,
     justifyContent: "center",
     alignItems: "center",

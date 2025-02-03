@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
@@ -357,7 +358,7 @@ function TempleNotifications({ navigation, route }) {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
             >
               Temple
             </TopText>
@@ -798,7 +799,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -863,7 +864,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
     borderRadius: 22,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     justifyContent: "center",
     alignItems: "center",
   },

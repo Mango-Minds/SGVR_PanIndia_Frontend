@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { Dimensions } from "react-native";
-
+import Theme from "./theme";
 const windowWidth = Dimensions.get("window").width;
 
 
@@ -18,7 +18,7 @@ export const TopHeader = styled.View`
 export const HeaderText = styled.Text`
   font-size: 18px;
   font-weight: bold;
-  color: #b98c13;
+ color: ${(props) => props.themeColor || Theme.themeColor};
 `;
 
 
@@ -52,7 +52,7 @@ export const BannerButton = styled.Text`
   align-items: center;
   justify-content: center;
   padding: 8px;
-  color: #d4af37;
+  color: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 6px;
   margin-top: 8px;
 `;
@@ -147,7 +147,7 @@ export const NewsPreview = styled.Text`
 export const Rating = styled.Text`
   font-size: 10px;
   color: #fff;
-  background: #d4af37;
+  background: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 4px;
   padding: 4px 10px;
 `;
@@ -200,7 +200,7 @@ export const HallDetailsContainer = styled.View`
 `;
 
 export const Heading = styled.Text`
-  color: goldenrod;
+  color: ${(props) => props.themeColor || Theme.themeColor};
   font-size: 16px;
   font-weight: 700;
   text-transform: capitalize;
@@ -219,7 +219,7 @@ export const Timings = styled.Text`
 `;
 
 export const ViewDetails = styled.Text`
-  color: #d4af37;
+  color: ${(props) => props.themeColor || Theme.themeColor};
   font-size: 12px;
   font-weight: 600;
   /* text-decoration: underline; */

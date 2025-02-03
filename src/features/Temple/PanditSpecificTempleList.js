@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { TopText } from "../../styles/social.styles";
-
+import Theme from "../../styles/theme";
 import { Card, IconButton } from "react-native-paper";
 import { TouchableOpacity, ScrollView } from "react-native";
 // import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -87,7 +87,7 @@ const PanditSpecificTempleList = ({ navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Your Temples
           </TopText>

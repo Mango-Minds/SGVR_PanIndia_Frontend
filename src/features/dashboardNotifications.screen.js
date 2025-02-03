@@ -13,7 +13,7 @@ import { TopText } from "../styles/social.styles";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
 import { QueryClient, useQueryClient } from "react-query";
-
+import Theme from "../styles/theme";
 import update from "react-addons-update";
 import { UpdateNotification } from "../store/Handlers/Reducer.Handler";
 import { readNotification } from "../services/notification.services";
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
     borderWidth: 1,
-    borderColor: "#d4af37",
+    borderColor: Theme.themeColor,
     display: "flex",
     flexDirection: "column",
   },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 12,
-    color: "#d4af37",
+    color: Theme.themeColor,
     textAlign: "right",
   },
   noNotificationsContainer: {

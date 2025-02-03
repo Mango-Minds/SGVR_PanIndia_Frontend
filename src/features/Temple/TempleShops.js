@@ -21,8 +21,7 @@ import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
-
-
+import Theme from "../../styles/theme";
 
 const statusOptions = [
   {
@@ -422,7 +421,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -487,7 +486,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
     borderRadius: 22,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     justifyContent: "center",
     alignItems: "center",
   },

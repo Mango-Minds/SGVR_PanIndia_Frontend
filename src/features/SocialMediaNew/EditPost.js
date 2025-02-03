@@ -9,7 +9,7 @@ import {
   TextInput,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
-
+import Theme from "../../styles/theme";
 import {
   FormButton,
   FormSection,
@@ -161,9 +161,9 @@ const handleUpdate = async () => {
               <TextInput
                 multiline={true}
                 numberOfLines={14}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Post Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.description}

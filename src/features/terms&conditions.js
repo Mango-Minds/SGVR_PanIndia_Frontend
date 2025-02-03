@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, SafeAreaView, StyleSheet, ScrollView } from "react-native";
 import { IconButton } from "react-native-paper";
-
+import Theme from "../styles/theme";
 const TermsAndConditions = ({ navigation }) => {
   return (
     <SafeAreaView style={{ marginTop: 55 }}>
@@ -322,13 +322,13 @@ const styles = StyleSheet.create({
   Heading: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#D4AF37",
+    color: Theme.themeColor,
     marginLeft: 10,
   },
   privacytextheading: {
     fontSize: 20,
     fontWeight: "600",
-    color: "#D4AF37",
+    color: Theme.themeColor,
     marginTop: 20,
     marginBottom: 10,
     textTransform: "capitalize",

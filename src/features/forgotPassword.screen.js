@@ -15,7 +15,7 @@ import {
   BottomText,
   ForgotText,
 } from "../styles/prelogin.styles";
-
+import Theme from "../styles/theme";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -103,8 +103,8 @@ export default function ForgotPasswordScreen({ navigation }) {
             borderBottomWidth={0}
             autoCapitalize="none"
             placeholder="Email/ Phone/ username"
-            selectionColor="#d4af37"
-            activeUnderlineColor="#d4af37"
+            selectionColor={Theme.themeColor}
+            activeUnderlineColor={Theme.themeColor}
             value={phone}
             keyboardType="default"
             onChangeText={(e) => setPhone(e)}

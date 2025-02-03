@@ -11,12 +11,13 @@ import {
   ScrollView,
   Pressable,
 } from "react-native";
-import Logo from "../assets/images/pre-login/logo-medium.png";
+import Theme from "../styles/theme";
+import Logo from "../assets/images/pre-login/newLogo-med.png";
 import { IconButton } from "react-native-paper";
 import { useDispatch } from "react-redux";
 import { ErrorToggle } from "../store/user";
 import { reportIssue } from "../services/auth.service";
-
+import { Platform } from "react-native";
 const UselessTextInput = (props) => {
   return <TextInput {...props} editable maxLength={1000} />;
 };
@@ -62,11 +63,11 @@ const Reportscreen = ({ navigation }) => {
               flex: 1,
               justifyContent: "center",
               alignItems: "center",
-              marginTop: 10,
+              marginTop: 0,
               padding: 10,
             }}
           >
-            <Image source={Logo} alt="Daivajnya Samaj" />
+            <Image source={Logo} alt="Mi Maratha" />
           </View>
 
           <View
@@ -78,7 +79,7 @@ const Reportscreen = ({ navigation }) => {
               style={{
                 fontSize: 15,
                 fontWeight: "800",
-                color: "#D4AF37",
+                color: Theme.themeColor,
               }}
             >
               Any Issue / Feedback For Us???
@@ -109,7 +110,7 @@ const Reportscreen = ({ navigation }) => {
               value={value.report}
               style={{
                 padding: 10,
-                borderColor: "#D4AF37",
+                borderColor: Theme.themeColor,
                 borderWidth: 1,
                 borderRadius: 5,
                 height: 100,
@@ -128,7 +129,7 @@ const Reportscreen = ({ navigation }) => {
                 <Pressable
                   style={{
                     padding: "3.5%",
-                    backgroundColor: "#D4AF37",
+                    backgroundColor: Theme.themeColor,
                   }}
                   onPress={onHandleSubmit}
                 >

@@ -7,6 +7,7 @@ import {
   View,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../styles/theme";
 import { editMyProfile } from "../store/user";
 import { Provider, RadioButton, IconButton } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
@@ -141,14 +142,14 @@ export default function EditProfileDetails({ navigation }) {
                 onPress={() => navigation.goBack()}
               />
               <TopText
-                style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+                style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
               >
                 My Profile Update
               </TopText>
             </View>
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Username*"
               underlineColor="transparent"
@@ -160,8 +161,8 @@ export default function EditProfileDetails({ navigation }) {
             />
 
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="First Name*"
               underlineColor="transparent"
@@ -173,8 +174,8 @@ export default function EditProfileDetails({ navigation }) {
             />
 
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Middle Name"
               underlineColor="transparent"
@@ -186,8 +187,8 @@ export default function EditProfileDetails({ navigation }) {
             />
 
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={[styles.input , {opacity : 0.5 , textTransform : "capitalize"}]}
               placeholder="Last Name*"
               underlineColor="transparent"
@@ -199,8 +200,8 @@ export default function EditProfileDetails({ navigation }) {
               }
             />
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Phone Number*"
               underlineColor="transparent"
@@ -214,8 +215,8 @@ export default function EditProfileDetails({ navigation }) {
             />
 
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Email*"
               underlineColor="transparent"
@@ -240,14 +241,14 @@ export default function EditProfileDetails({ navigation }) {
               >
                 <Row>
                   <RadioButton.Android
-                    uncheckedColor="#d4af37"
-                    color="#d4af37"
+                    uncheckedColor={Theme.themeColor}
+                    color={Theme.themeColor}
                     value="male"
                   />
                   <Text style={{ color: "#9b9b9b", marginRight: 8 }}>Male</Text>
                   <RadioButton.Android
-                    uncheckedColor="#d4af37"
-                    color="#d4af37"
+                    uncheckedColor={Theme.themeColor}
+                    color={Theme.themeColor}
                     value="female"
                   />
                   <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
@@ -275,8 +276,8 @@ export default function EditProfileDetails({ navigation }) {
                 maxLength={2}
                 keyboardType="numeric"
                 returnKeyType="done"
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { width: "28%", marginRight: "2%" }]}
                 placeholder="DD*"
                 underlineColor="transparent"
@@ -301,8 +302,8 @@ export default function EditProfileDetails({ navigation }) {
                 keyboardType="numeric"
                 returnKeyType="done"
                 maxLength={2}
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { width: "28%", marginRight: "2%" }]}
                 placeholder="MM*"
                 underlineColor="transparent"
@@ -327,8 +328,8 @@ export default function EditProfileDetails({ navigation }) {
                 keyboardType="numeric"
                 returnKeyType="done"
                 maxLength={4}
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { width: "38%", marginRight: "2%" }]}
                 placeholder="YYYY*"
                 underlineColor="transparent"
@@ -340,8 +341,8 @@ export default function EditProfileDetails({ navigation }) {
               />
             </View>
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Address*"
               underlineColor="transparent"
@@ -390,8 +391,8 @@ export default function EditProfileDetails({ navigation }) {
             />
 
             <LoginInputField
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               style={styles.input}
               placeholder="Pincode*"
               underlineColor="transparent"

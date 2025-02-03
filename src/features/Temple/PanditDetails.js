@@ -15,7 +15,7 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
 } from "react-native";
-
+import Theme from "../../styles/theme";
 import ParallaxScrollView from "react-native-parallax-scroll-view";
 import Temp1 from "../../assets/images/Temple/temp1.jpg";
 import { SafeArea } from "../../components/utility/safe-area.component";
@@ -142,6 +142,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
       },
     });
   };
+  
   const [eventsByMonth, setEventsByMonth] = useState([]);
 
   // const fetchPanditEventDates = async (month, year) => {
@@ -166,7 +167,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //       dates.forEach((date) => {
   //         updatedMarkedDates[date] = {
   //           marked: true,
-  //           dotColor: "#D4AF37",
+  //           dotColor: Theme.themeColor,
   //         };
   //       });
 
@@ -212,10 +213,10 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //       if (!dates.includes(today)) {
   //         updatedMarkedDates[today] = {
   //           marked: true,
-  //           dotColor: "#D4AF37",
+  //           dotColor: Theme.themeColor,
   //           dots: [
-  //             { key: "dot1", color: "#D4AF37" },
-  //             { key: "dot2", color: "#D4AF37" },
+  //             { key: "dot1", color: Theme.themeColor },
+  //             { key: "dot2", color: Theme.themeColor },
   //           ], // Two dots for today
   //         };
   //       }
@@ -226,7 +227,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //         if (date !== today) { // Skip today since it's already added
   //           updatedMarkedDates[date] = {
   //             marked: true,
-  //             dotColor: "#D4AF37", // Single dot for other event dates
+  //             dotColor: Theme.themeColor, // Single dot for other event dates
   //           };
   //         }
   //       });
@@ -273,10 +274,10 @@ const TemplePanditDetails = ({ route, navigation }) => {
         if (!dates.includes(today)) {
           updatedMarkedDates[today] = {
             marked: true,
-            dotColor: "#D4AF37",
+            dotColor: Theme.themeColor,
             dots: [
-              { key: "dot1", color: "#D4AF37" },
-              { key: "dot2", color: "#D4AF37" },
+              { key: "dot1", color: Theme.themeColor },
+              { key: "dot2", color: Theme.themeColor },
             ], // Two dots for today
           };
         }
@@ -289,8 +290,8 @@ const TemplePanditDetails = ({ route, navigation }) => {
             // Skip today since it's already added
             updatedMarkedDates[date] = {
               marked: true,
-              dotColor: "#D4AF37", // Dot color for event dates
-              dots: [{ key: "dot1", color: "#D4AF37" }], // Ensure at least one dot
+              dotColor: Theme.themeColor, // Dot color for event dates
+              dots: [{ key: "dot1", color: Theme.themeColor }], // Ensure at least one dot
             };
           }
         });
@@ -429,7 +430,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
               justifyContent: "center",
             }}
           >
-            <Icon name="map-marker" size={20} color="#D4AF37" />
+            <Icon name="map-marker" size={20} color={Theme.themeColor} />
           </View>
           <Text
             style={{
@@ -457,7 +458,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                 justifyContent: "center",
               }}
             >
-              <Icon name="email" size={20} color="#D4AF37" />
+              <Icon name="email" size={20} color={Theme.themeColor} />
             </View>
             <TouchableOpacity>
               <Text
@@ -485,7 +486,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                 justifyContent: "center",
               }}
             >
-              <Icon name="phone" size={20} color="#D4AF37" />
+              <Icon name="phone" size={20} color={Theme.themeColor}/>
             </View>
 
             <TouchableOpacity>
@@ -725,7 +726,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Pandit Details
           </TopText>
@@ -761,7 +762,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -795,7 +796,7 @@ const styles = StyleSheet.create({
     paddingTop: "1%",
   },
   famD: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 25,
   },
   container: {
@@ -810,7 +811,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     textTransform: "capitalize",
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
   content: { color: "#898E92", textTransform: "capitalize" },
   contentContainer: {
@@ -894,7 +895,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -963,7 +964,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
     borderRadius: 22,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     justifyContent: "center",
     alignItems: "center",
   },

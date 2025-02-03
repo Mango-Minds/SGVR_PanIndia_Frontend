@@ -19,7 +19,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "../../components/Jewellery/BottomNavigation";
-
+import Theme from "../../styles/theme";
 import SelectDropdown from "react-native-select-dropdown";
 
 function MatrimonyNotifications({ navigation, route }) {
@@ -201,7 +201,7 @@ const fetchRequest = async () => {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
             >
               Matrimony
             </TopText>
@@ -502,7 +502,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -567,7 +567,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
     borderRadius: 22,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     justifyContent: "center",
     alignItems: "center",
   },

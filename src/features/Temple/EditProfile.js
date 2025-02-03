@@ -10,6 +10,7 @@ import {
   ActivityIndicator
 
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import {
@@ -251,13 +252,13 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                 onPress={_pickDocument}
                 style={{ ...styles.logo, marginTop: "10%" }}
               >
-                <Icon name="plus" size={35} color="#d4af37" />
+                <Icon name="plus" size={35} color={Theme.themeColor} />
               </AddProfileBox>
             )}
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="First Name *"
                 underlineColor="transparent"
@@ -267,8 +268,8 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Last Name *"
                 underlineColor="transparent"
@@ -280,8 +281,8 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
              
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Email Id *"
                 underlineColor="transparent"
@@ -292,8 +293,8 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                 onChangeText={setEmail}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Address *"
                 underlineColor="transparent"

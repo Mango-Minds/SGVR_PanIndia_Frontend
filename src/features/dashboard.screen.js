@@ -23,6 +23,7 @@ import b2bImg from "../assets/images/homepage/b2b.png";
 import jobImg from "../assets/images/homepage/job.png";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Temple from "../assets/images/homepage/temple.png";
+import Theme from "../styles/theme";
 const windowWidth = Dimensions.get("window").width;
 import {
   BannerContainer,
@@ -88,7 +89,7 @@ const exploreData = [
     title: "B2C",
     path: "B2C",
     status: true,
-    icon: "diamond", // Icon name from Ionicons
+    icon: "business", // Icon name from Ionicons
   },
   
   {
@@ -298,7 +299,7 @@ export default function DashboardScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <TopHeader style={{ marginBottom: 24 }}>
-            <HeaderText>Daivajnya Brahmin</HeaderText>
+            <HeaderText>Mi Maratha</HeaderText>
             <View
               style={{
                 flexDirection: "row",
@@ -422,7 +423,7 @@ export default function DashboardScreen({ navigation }) {
                       disabled={item.status}
                     >
                       <IconWrapper>
-                        <Ionicons name={item.icon} size={40} color="#d4af37" />
+                        <Ionicons name={item.icon} size={40} color={Theme.themeColor} />
                       </IconWrapper>
                       <ExploreIconName>{item.title}</ExploreIconName>
                     </ExploreIconContainer>
@@ -443,7 +444,7 @@ export default function DashboardScreen({ navigation }) {
                         <MaterialIcons
                           name={item.icon}
                           size={40}
-                          color="#d4af37"
+                          color={Theme.themeColor}
                         />
                       </IconWrapper>
                       <ExploreIconName>{item.title}</ExploreIconName>
@@ -538,7 +539,7 @@ export default function DashboardScreen({ navigation }) {
                     style={{
                       fontSize: 25,
                       fontWeight: "bold",
-                      color: "#B88B13",
+                      color: Theme.themeColor,
                       marginTop: 10,
                       letterSpacing: 1,
                       textAlign: "center",
@@ -550,12 +551,12 @@ export default function DashboardScreen({ navigation }) {
                     style={{
                       fontSize: 30,
                       fontWeight: "bold",
-                      color: "#B88B13",
+                      color: Theme.themeColor,
                       marginTop: 10,
                       letterSpacing: 1,
                     }}
                   >
-                    The Maratha App
+                    Mi Maratha
                   </Text>
                 </View>
               </View>

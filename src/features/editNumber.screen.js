@@ -10,7 +10,7 @@ import {
   MainContainer,
   LoginInputField,
 } from "../styles/prelogin.styles";
-
+import Theme from "../styles/theme";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -38,8 +38,8 @@ export default function EditNumberScreen({ navigation }) {
             borderBottomWidth={0}
             autoCapitalize="none"
             placeholder="Phone No."
-            selectionColor="#d4af37"
-            activeUnderlineColor="#d4af37"
+            selectionColor={Theme.themeColor}
+            activeUnderlineColor={Theme.themeColor}
           />
 
           <FormButton>

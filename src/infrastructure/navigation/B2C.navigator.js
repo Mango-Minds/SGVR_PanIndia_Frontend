@@ -1,7 +1,7 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import B2CHome from "../../features/B2C/B2C.Home";
-import PageComingSoon from "../../features/B2b/B2b.PageComingSoon";
+import PageComingSoon from "../../features/B2C/B2c.PageComingSoon";
 
 const Stack = createStackNavigator();
 

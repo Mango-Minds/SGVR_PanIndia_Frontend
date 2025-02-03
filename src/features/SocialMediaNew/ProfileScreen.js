@@ -16,6 +16,7 @@ import {
   ActivityIndicator,
   Platform,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { useIsFocused } from "@react-navigation/native";
 import * as FileSystem from "expo-file-system";
 import { shareAsync } from "expo-sharing";
@@ -871,7 +872,7 @@ const styles = StyleSheet.create({
   linkText: {
     fontSize: 15,
 
-    color: "#d4af37",
+    color: Theme.themeColor,
   },
   divider: {
     marginHorizontal: 5,
@@ -918,20 +919,20 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     paddingHorizontal: 10,
     borderWidth: 1.5,
-    borderColor: "#d4af37",
+    borderColor: Theme.themeColor,
     borderRadius: 30,
     backgroundColor: "#fff",
   },
   activeTab: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     elevation: 2,
     borderBottomWidth: 4,
 
-    borderBottomColor: "#d4af37",
+    borderBottomColor: Theme.themeColor,
   },
   tabText: {
     fontSize: 16,
-    color: "#d4af37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   activeTabText: {
@@ -953,7 +954,7 @@ const styles = StyleSheet.create({
   },
   seeAllText: {
     marginTop: 10,
-    color: "#d4af37",
+    color: Theme.themeColor,
     fontWeight: "600",
     textAlign: "center",
     fontSize: 18,
@@ -1066,7 +1067,7 @@ const styles = StyleSheet.create({
   },
 
   uploadButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -1186,11 +1187,11 @@ const styles = StyleSheet.create({
   },
   resumeCloseButtonText: {
     fontSize: 16,
-    color: "#d4af37",
+    color: Theme.themeColor,
   },
 
   submitResumeButton: {
-    backgroundColor: "#d4af37",
+    backgroundColor:Theme.themeColor,
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,

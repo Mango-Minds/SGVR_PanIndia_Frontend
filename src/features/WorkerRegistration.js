@@ -41,7 +41,7 @@ import { useMutation, useQueryClient } from "react-query";
 import { RowBetween } from "../styles/common.styles";
 import FormData from "form-data";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";
-
+import Theme from "../styles/theme";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -298,7 +298,7 @@ export default function WorkerRegisterScreen({ navigation }) {
                 onPress={_pickDocument}
                 style={{ ...styles.logo, marginTop: "10%" }}
               >
-                <Icon name="plus" size={35} color="#d4af37" />
+                <Icon name="plus" size={35} color={Theme.themeColor} />
               </AddProfileBox>
             )}
 
@@ -353,14 +353,14 @@ export default function WorkerRegisterScreen({ navigation }) {
 
               {selectedImages.length < 6 && (
                 <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
+                  <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
             </Row>
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="First Name *"
                 underlineColor="transparent"
@@ -373,8 +373,8 @@ export default function WorkerRegisterScreen({ navigation }) {
 
               <LoginInputField
                 color
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Middle Name"
                 underlineColor="transparent"
@@ -386,8 +386,8 @@ export default function WorkerRegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Last Name *"
                 underlineColor="transparent"
@@ -421,16 +421,16 @@ export default function WorkerRegisterScreen({ navigation }) {
                     alignItems : "center",
                   }}>
                   <RadioButton.Android
-                      uncheckedColor="#d4af37"
-                      color="#d4af37"
+                      uncheckedColor={Theme.themeColor}
+                      color={Theme.themeColor}
                       value="male"
                     />
                     <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
                       Male
                     </Text>
                     <RadioButton.Android
-                      uncheckedColor="#d4af37"
-                      color="#d4af37"
+                      uncheckedColor={Theme.themeColor}
+                      color={Theme.themeColor}
                       value="female"
                     />
                     <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
@@ -445,8 +445,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                           
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Age *"
                 underlineColor="transparent"
@@ -460,8 +460,8 @@ export default function WorkerRegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Phone no.*"
                 underlineColor="transparent"
@@ -478,8 +478,8 @@ export default function WorkerRegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Email Id *"
                 underlineColor="transparent"
@@ -493,8 +493,8 @@ export default function WorkerRegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="About Your Experience *"
                 underlineColor="transparent"
@@ -510,8 +510,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                 Address
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Street/House No./FLat No./Landmark"
                 underlineColor="transparent"
@@ -525,8 +525,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                 value={registerDetails.currentAddress}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="City"
                 underlineColor="transparent"
@@ -540,8 +540,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                 value={registerDetails.currentcity}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="State"
                 underlineColor="transparent"
@@ -555,8 +555,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                 value={registerDetails.currentstate}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Country"
                 underlineColor="transparent"
@@ -570,8 +570,8 @@ export default function WorkerRegisterScreen({ navigation }) {
                 value={registerDetails.currentcountry}
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Pincode"
                 underlineColor="transparent"

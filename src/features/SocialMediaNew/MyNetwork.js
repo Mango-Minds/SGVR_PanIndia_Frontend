@@ -21,7 +21,7 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { SearchField } from "../../styles/common.styles";
 import SearchResults from "./SearchResults";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
-
+import Theme from "../../styles/theme";
 const MyNetwork = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Sent");
   const [selectedFilter, setSelectedFilter] = useState("People");
@@ -210,7 +210,7 @@ const MyNetwork = ({ navigation }) => {
 
                 handleWithdrawRequest(toUserId);
               }}
-              color="#d4af37"
+              color={Theme.themeColor}
             />
           ) : (
             <View style={styles.confirmDeleteContainer}>
@@ -221,7 +221,7 @@ const MyNetwork = ({ navigation }) => {
 
                   handleAcceptRequest(requestId);
                 }}
-                color="#d4af37"
+                color={Theme.themeColor}
               />
               <View style={{ width: 10 }} />
               <Button
@@ -357,7 +357,7 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     color: "#fff",
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 20,
     paddingHorizontal: 20,
   },
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
   },
   activeFilter: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     color: "#fff",
   },
   itemContainer: {

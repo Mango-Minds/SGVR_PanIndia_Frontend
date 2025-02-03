@@ -8,6 +8,7 @@ import {
   Image,
   Alert,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
@@ -121,7 +122,7 @@ const DetailsScreen = ({ route, navigation }) => {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
             >
               God Details
             </TopText>
@@ -197,7 +198,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginVertical: 10,
-    color: "#D4AF37",
+    color:Theme.themeColor,
   },
   sectionTitle: {
     fontSize: 18,

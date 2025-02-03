@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import {
   FormButton,
@@ -300,8 +301,8 @@ export default function EditShop({ route, navigation }) {
                 Shop Name
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="shop Name*"
                 underlineColor="transparent"
@@ -325,9 +326,9 @@ export default function EditShop({ route, navigation }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.description}
@@ -412,8 +413,8 @@ export default function EditShop({ route, navigation }) {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="shop Address"
                 underlineColor="transparent"
@@ -495,8 +496,8 @@ export default function EditShop({ route, navigation }) {
 
               <LoginInputField
                 color
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Pincode*"
                 underlineColor="transparent"

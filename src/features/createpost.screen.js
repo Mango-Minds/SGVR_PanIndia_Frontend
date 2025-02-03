@@ -7,6 +7,7 @@ import {
   CreatePostTextBox,
   TopText,
 } from "../styles/social.styles";
+import Theme from "../styles/theme";
 import {
   Image,
   ScrollView,
@@ -236,7 +237,7 @@ const CreatePostScreen = ({ navigation }) => {
           justifyContent: "center",
           alignItems: "center",
           flex: 1,
-          color: "#D4AF37",
+          color:Theme.themeColor,
         }}
       />
     );

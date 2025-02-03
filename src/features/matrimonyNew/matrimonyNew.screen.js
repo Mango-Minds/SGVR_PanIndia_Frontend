@@ -35,7 +35,7 @@ import {
 } from "../../styles/dashboard.styles";
 import UserImg from "../../assets/images/general/user.png";
 import FilterMenu from "./FilterMenu";
-
+import Theme from "../../styles/theme";
 const NewMatrimony = ({ navigation }) => {
   //user data
   const { user } = useSelector((state) => state.user);
@@ -441,7 +441,7 @@ const NewMatrimony = ({ navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Matrimony
           </TopText>
@@ -534,7 +534,7 @@ const NewMatrimony = ({ navigation }) => {
                 alignItems: "center",
               }}
               size={"large"}
-              color={"#b98c13"}
+              color={Theme.themeColor}
             />
           ) : (
             <View
@@ -640,7 +640,7 @@ const NewMatrimony = ({ navigation }) => {
                 alignItems: "center",
               }}
               size={"large"}
-              color={"#b98c13"}
+              color={Theme.themeColor}
             />
           ) : (
             <View
@@ -741,7 +741,7 @@ const NewMatrimony = ({ navigation }) => {
               alignItems: "center",
             }}
             size={"large"}
-            color={"#b98c13"}
+            color={Theme.themeColor}
           />
         ) : (
         <View
@@ -854,7 +854,7 @@ const NewMatrimony = ({ navigation }) => {
              alignItems: "center",
            }}
            size={"large"}
-           color={"#b98c13"}
+           color={Theme.themeColor}
          />
        ) : (
         <View
@@ -964,7 +964,7 @@ const NewMatrimony = ({ navigation }) => {
              alignItems: "center",
            }}
            size={"large"}
-           color={"#b98c13"}
+           color={Theme.themeColor}
          />
        ) : (
         <View
@@ -1074,7 +1074,7 @@ const NewMatrimony = ({ navigation }) => {
              alignItems: "center",
            }}
            size={"large"}
-           color={"#b98c13"}
+           color={Theme.themeColor}
          />
        ) : (
         <View
@@ -1181,7 +1181,7 @@ const NewMatrimony = ({ navigation }) => {
              alignItems: "center",
            }}
            size={"large"}
-           color={"#b98c13"}
+           color={Theme.themeColor}
          />
        ) : (
         <View
@@ -1354,7 +1354,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   headerText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
   },
@@ -1415,7 +1415,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -1450,7 +1450,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   viewDetails: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontWeight: "bold",
   },
   bottomBar: {

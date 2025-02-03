@@ -10,6 +10,7 @@ import {
   TextInput,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
+import Theme from "../../styles/theme";
 import {
   FormButton,
   FormSection,
@@ -284,7 +285,7 @@ export default function EditTemple({ route, navigation }) {
               ))}
               {selectedImages.length + uploadedImages.length < 6 && (
                 <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
+                  <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
             </Row>
@@ -301,8 +302,8 @@ export default function EditTemple({ route, navigation }) {
                 Temple Name
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Temple Name*"
                 underlineColor="transparent"
@@ -326,9 +327,9 @@ export default function EditTemple({ route, navigation }) {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.description}
@@ -364,8 +365,8 @@ export default function EditTemple({ route, navigation }) {
                 Email
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Email"
                 underlineColor="transparent"
@@ -387,8 +388,8 @@ export default function EditTemple({ route, navigation }) {
                 Temple Location Link
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Temple Location Link*"
                 underlineColor="transparent"
@@ -411,8 +412,8 @@ export default function EditTemple({ route, navigation }) {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Phone Number"
                 underlineColor="transparent"
@@ -436,8 +437,8 @@ export default function EditTemple({ route, navigation }) {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Temple Address"
                 underlineColor="transparent"
@@ -519,8 +520,8 @@ export default function EditTemple({ route, navigation }) {
 
               <LoginInputField
                 color
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Pincode*"
                 underlineColor="transparent"

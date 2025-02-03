@@ -33,7 +33,7 @@ import MatrimonyShopProfileEdit from "../../features/matrimonyNew/matrimonyShopP
 import MatrimonyProfileWithConnection from "../../features/matrimonyNew/matrimonyShopProfileWithConnection";
 import ChatScreenNew from "../../features/chat/chat.screen.new";
 import MatrimonyShopProfile from "../../features/matrimonyNew/matrimonyShopProfile";
-
+import ProfileHeader from "../../features/matrimonyNew/ProfileHeader";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -60,6 +60,7 @@ export const MatrimonyStackNavigator = () => {
       <Stack.Screen name="ReqSentScreen" component={RequestSent} />
       <Stack.Screen name="MatrimonyMatch" component={MatrimonyMatch} />
       <Stack.Screen name="Vendor" component={MatrimonyEachVendor} />
+      <Stack.Screen name="ProfileHeader" component={ProfileHeader} />
       <Stack.Screen name="MatrimonyShopProfile" component={MatrimonyShopProfile} />
 
 

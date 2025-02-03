@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { Image, Text, StyleSheet } from "react-native";
 import { SafeArea } from "../components/utility/safe-area.component";
 import PhoneInput from "react-native-phone-number-input";
-
+import Theme from "../styles/theme";
 const styleNew = StyleSheet.create({
   root: { flex: 1, padding: 16 },
   title: { fontSize: 30 },
@@ -79,8 +79,8 @@ export default function ReverifyScreen() {
           </VerificationSectionSubtitle>
 
           {/* <LoginInputField
-            selectionColor="#d4af37"
-            activeUnderlineColor="#d4af37"
+            selectionColor={Theme.themeColor}
+            activeUnderlineColor={Theme.themeColor}
             style={styles.input}
             placeholder="Phone no."
             underlineColor="transparent"
@@ -103,7 +103,7 @@ export default function ReverifyScreen() {
             // withDarkTheme
             withShadow
             autoFocus
-            codeTextStyle={{ color: "#d4af37" }}
+            codeTextStyle={{ color: Theme.themeColor }}
             containerStyle={{ borderRadius: 8, width: "100%", marginTop: 24 }}
             style={{ width: "100%" }}
           />

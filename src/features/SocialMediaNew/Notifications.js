@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, FlatList, StyleSheet, TouchableOpacity, ScrollView,} from 'react-native';
 import Icon from "react-native-vector-icons/Ionicons";
-
+import Theme from '../../styles/theme';
 import { SearchField } from "../../styles/common.styles";
 import { useSelector } from 'react-redux';
 import { BASEAPIURL } from '../../infrastructure/constants';
@@ -127,7 +127,7 @@ const getTimeAgo = (createdAt) => {
   const renderNotificationItem = ({ item }) => (
     <View style={styles.notificationItem}>
       {/* Replace the Image with the Ionicons icon */}
-<Icon name="notifications-circle" size={styles.profileImage.width} color="#d4af37" style={styles.profileImage} />
+<Icon name="notifications-circle" size={styles.profileImage.width} color={Theme.themeColor} style={styles.profileImage} />
 
       <View style={styles.notificationTextContainer}>
         <View style={styles.notificationHeader}>
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
     // backgroundColor: '#2a8cd3',
-    backgroundColor: '#d4af37',
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     fontSize: 14,

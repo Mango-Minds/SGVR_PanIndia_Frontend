@@ -11,6 +11,7 @@ import {
   Keyboard,
   Alert,
 } from "react-native";
+import Theme from "../../styles/theme";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Button, TextInput } from "react-native-paper";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -385,7 +386,7 @@ export default function EachProfile() {
               <FontAwesomeIcon
                 name="paper-plane-o"
                 size={22}
-                color="#d4af37"
+                color={Theme.themeColor}
                 style={{ marginRight: 10 }}
               />
               <Text style={styles.messageButtonText}>Message</Text>
@@ -540,7 +541,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 15,
-    color: "#d4af37",
+    color:Theme.themeColor,
   },
   divider: {
     marginHorizontal: 5,
@@ -581,19 +582,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     paddingHorizontal: 10,
     borderWidth: 1.5,
-    borderColor: "#d4af37",
+    borderColor: Theme.themeColor,
     borderRadius: 30,
     backgroundColor: "#fff",
   },
   activeTab: {
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     elevation: 2,
     borderBottomWidth: 4,
-    borderBottomColor: "#d4af37",
+    borderBottomColor: Theme.themeColor,
   },
   tabText: {
     fontSize: 16,
-    color: "#d4af37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   activeTabText: {
@@ -616,7 +617,7 @@ const styles = StyleSheet.create({
   seeAllText: {
     marginTop: 10,
 
-    color: "#d4af37",
+    color: Theme.themeColor,
     fontWeight: "600",
     textAlign: "center",
     fontSize: 18,
@@ -731,7 +732,7 @@ const styles = StyleSheet.create({
   followButton: {
     flex: 1,
     paddingVertical: 10,
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     borderRadius: 20,
     alignItems: "center",
     marginRight: 8,
@@ -745,7 +746,7 @@ const styles = StyleSheet.create({
   messageButton: {
     flex: 1,
     paddingVertical: 10,
-    borderColor: "#d4af37",
+    borderColor:Theme.themeColor,
     borderWidth: 1,
     borderRadius: 20,
     alignItems: "center",
@@ -753,7 +754,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   messageButtonText: {
-    color: "#d4af37",
+    color: Theme.themeColor,
     fontWeight: "bold",
   },
   buttonContent: {

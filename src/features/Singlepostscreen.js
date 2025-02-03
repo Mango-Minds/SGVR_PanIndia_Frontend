@@ -11,6 +11,7 @@ import {
   Modal,
   st,
 } from "react-native";
+import Theme from "../styles/theme";
 import { ChatTextInput } from "../styles/social.styles";
 import { IconButton, Text } from "react-native-paper";
 import { useQuery, useQueryClient } from "react-query";
@@ -124,7 +125,7 @@ export default function SinglePostScreen({ navigation, route }) {
       ) : isLoading ? (
         <ActivityIndicator
           size="large"
-          color="#D4AF37"
+          color={Theme.themeColor}
           style={{
             display: "flex",
             justifyContent: "center",

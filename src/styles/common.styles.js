@@ -1,7 +1,7 @@
 import styled from 'styled-components';
 import { Dimensions } from 'react-native';
 const windowWidth = Dimensions.get('window').width;
-
+import Theme from './theme';
 export const RowBetween = styled.View`
   flex-direction: row;
   justify-content: space-between;
@@ -15,7 +15,7 @@ export const BoldText = styled.Text`
 
 export const PrimaryText = styled.Text`
   font-size: 16px;
-  color: #b98c13;
+  color: ${(props) => props.themeColor || Theme.themeColor};
 `;
 
 export const Container = styled.View`

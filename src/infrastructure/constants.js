@@ -17,7 +17,7 @@ export const RENDERMEDIAURL = "http://192.168.1.33:5000";
 // export const BASEAPIURL = "https://api.daivajnyabrahmin.in/api";
 // export const BASEIMGURL = "https://api.daivajnyabrahmin.in/";
 // export const RENDERMEDIAURL = "https://api.daivajnyabrahmin.in";
-export const SOCKETURL = "https://server.one.daivajnyabrahmin.com";
+// export const SOCKETURL = "https://server.one.daivajnyabrahmin.com";
 
 
 // export const BASEAPIURL = "http://192.168.0.159:2311/api";

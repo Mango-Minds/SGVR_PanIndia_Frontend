@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
+import Theme from "../../styles/theme";
 import {
   FormButton,
   FormSection,
@@ -121,9 +122,9 @@ const EditJobPost = ({ route, navigation }) => {
                   Job Title
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   placeholder="Job Title*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -143,9 +144,9 @@ const EditJobPost = ({ route, navigation }) => {
                   Company
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   placeholder="Company*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -165,9 +166,9 @@ const EditJobPost = ({ route, navigation }) => {
                   Location
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   placeholder="Location*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -187,10 +188,10 @@ const EditJobPost = ({ route, navigation }) => {
                   Job Description
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   multiline={true}
                   placeholder="Job Description*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -213,10 +214,10 @@ const EditJobPost = ({ route, navigation }) => {
                   Company Description
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   multiline={true}
                   placeholder="Company Description*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -239,10 +240,10 @@ const EditJobPost = ({ route, navigation }) => {
                   Responsibilities
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   multiline={true}
                   placeholder="Responsibilities*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -265,9 +266,9 @@ const EditJobPost = ({ route, navigation }) => {
                   CTC
                 </Text>
                 <LoginInputField
-                  selectionColor="#d4af37"
+                  selectionColor={Theme.themeColor}
                   placeholder="CTC*"
-                  activeUnderlineColor="#d4af37"
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
                   underlineColor="transparent"
                   placeholderTextColor="#9B9B9B"
@@ -365,7 +366,7 @@ const styles = StyleSheet.create({
   mediaButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#d4af37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,

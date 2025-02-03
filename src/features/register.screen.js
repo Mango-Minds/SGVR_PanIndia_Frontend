@@ -15,6 +15,7 @@ import { Divider, Menu, Provider, RadioButton } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
 import { useSelector, useDispatch } from "react-redux";
 import SelectDropdown from "react-native-select-dropdown";
+import Theme from "../styles/theme";
 
 import {
   BottomText,
@@ -35,7 +36,7 @@ import { parseInt } from "lodash";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
-    marginTop: "20%",
+    marginTop: "10%",
   },
   input: {
     marginTop: 24,
@@ -192,7 +193,7 @@ export default function RegisterScreen({ navigation }) {
           <MainContainer style={{ paddingBottom: 10 }}>
             <Image
               style={styles.logo}
-              source={require("../assets/images/pre-login/logo-small.png")}
+              source={require("../assets/images/pre-login/logoo-small.png")}
             />
 
             <FormSection>
@@ -203,8 +204,8 @@ export default function RegisterScreen({ navigation }) {
 
       > */}
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Username*"
                 underlineColor="transparent"
@@ -216,8 +217,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="First Name*"
                 underlineColor="transparent"
@@ -229,8 +230,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Middle Name"
                 underlineColor="transparent"
@@ -242,8 +243,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Last Name*"
                 underlineColor="transparent"
@@ -254,8 +255,8 @@ export default function RegisterScreen({ navigation }) {
                 }
               />
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Phone Number*"
                 underlineColor="transparent"
@@ -269,8 +270,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Email*"
                 underlineColor="transparent"
@@ -338,7 +339,7 @@ export default function RegisterScreen({ navigation }) {
 
               <Row>
                 <Text
-                  style={{ color: "#B98C13", fontSize: 14, marginRight: 8 }}
+                  style={{ color: Theme.themeColor, fontSize: 14, marginRight: 8 }}
                 >
                   I am*
                 </Text>
@@ -354,16 +355,16 @@ export default function RegisterScreen({ navigation }) {
                 >
                   <Row>
                     <RadioButton.Android
-                      uncheckedColor="#d4af37"
-                      color="#d4af37"
+                      uncheckedColor={Theme.themeColor}
+                      color={Theme.themeColor}
                       value="Male"
                     />
                     <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
                       Male
                     </Text>
                     <RadioButton.Android
-                      uncheckedColor="#d4af37"
-                      color="#d4af37"
+                      uncheckedColor={Theme.themeColor}
+                      color={Theme.themeColor}
                       value="Female"
                     />
                     <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
@@ -392,8 +393,8 @@ export default function RegisterScreen({ navigation }) {
                   maxLength={2}
                   keyboardType="numeric"
                   returnKeyType="done"
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { width: "28%", marginRight: "2%" }]}
                   placeholder="DD"
                   underlineColor="transparent"
@@ -422,8 +423,8 @@ export default function RegisterScreen({ navigation }) {
                   keyboardType="numeric"
                   returnKeyType="done"
                   maxLength={2}
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { width: "28%", marginRight: "2%" }]}
                   placeholder="MM"
                   underlineColor="transparent"
@@ -452,8 +453,8 @@ export default function RegisterScreen({ navigation }) {
                   keyboardType="numeric"
                   returnKeyType="done"
                   maxLength={4}
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { width: "38%", marginRight: "2%" }]}
                   placeholder="YYYY"
                   underlineColor="transparent"
@@ -505,8 +506,8 @@ export default function RegisterScreen({ navigation }) {
                 }}
               /> */}
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Address"
                 underlineColor="transparent"
@@ -553,8 +554,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Pincode"
                 underlineColor="transparent"
@@ -572,8 +573,8 @@ export default function RegisterScreen({ navigation }) {
                   placeholderTextColor="#9B9B9B"
                   underlineColor="transparent"
                   placeholder="Password*"
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   value={registerDetails.password}
                   secureTextEntry={hidePass ? true : false}
                   onChangeText={(text) =>
@@ -599,8 +600,8 @@ export default function RegisterScreen({ navigation }) {
               </View>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Suggested By*"
                 underlineColor="transparent"
@@ -612,8 +613,8 @@ export default function RegisterScreen({ navigation }) {
               />
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Reference Code"
                 underlineColor="transparent"

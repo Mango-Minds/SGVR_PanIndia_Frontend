@@ -14,7 +14,8 @@ import { View } from "../styles/common.styles";
 import { IconButton, Subheading } from "react-native-paper";
 import { TopText } from "../styles/social.styles";
 import { useSelector } from "react-redux";
-
+import MaterialIcon from "react-native-vector-icons/MaterialIcons";
+import Theme from "../styles/theme";
 export default function Contactus({ navigation }) {
   const { width } = Dimensions.get("window");
 
@@ -24,7 +25,7 @@ export default function Contactus({ navigation }) {
         <View style={{ alignItems: "center", paddingVertical: 16 }}>
           <IconButton icon="chevron-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Contact Us
           </TopText>
@@ -45,7 +46,7 @@ export default function Contactus({ navigation }) {
             }}
           >
             <Image
-              source={require("../assets/images/pre-login/logo-small.png")}
+              source={require("../assets/images/pre-login/logoo-small.png")}
               resizeMode="contain"
               style={{
                 width: width * 0.9,
@@ -60,7 +61,7 @@ export default function Contactus({ navigation }) {
             padding: 16,
             paddingVertical: 0,
             flexDirection: "column",
-            marginTop: 30,
+            marginTop: 10,
             marginBottom: 20,
           }}
         ></View>
@@ -71,10 +72,11 @@ export default function Contactus({ navigation }) {
             paddingVertical: 8,
           }}
         >
-          <Image
+          {/* <Image
             source={require("../assets/images/community/email.png")}
             style={{ width: 20, height: 20 }}
-          />
+          /> */}
+           <MaterialIcon name="email" size={18} color={Theme.themeColor} />
           <View
             style={{ backgroundColor: "white", padding: "1%", borderRadius: 4 }}
           >
@@ -101,10 +103,11 @@ export default function Contactus({ navigation }) {
             paddingVertical: 8,
           }}
         >
-          <Image
+          {/* <Image
             source={require("../assets/images/community/location.png")}
             style={{ width: 20, height: 20 }}
-          />
+          /> */}
+          <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
 
           <Text
             style={{
@@ -126,10 +129,11 @@ export default function Contactus({ navigation }) {
             paddingVertical: 8,
           }}
         >
-          <Image
+          {/* <Image
             source={require("../assets/images/community/phone.png")}
             style={{ width: 20, height: 20 }}
-          />
+          /> */}
+          <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
           <TouchableOpacity
             onPress={() => Linking.openURL(`tel:${+919449179443}`)}
           >

@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
-
+import Theme from "../../styles/theme";
 export default function BottomNavigation({ navigation }) {
   return (
     <View style={styles.bottomBarContainer}>
@@ -10,8 +10,8 @@ export default function BottomNavigation({ navigation }) {
           style={styles.iconContainer}
           onPress={() => navigation.navigate("Main")}
         >
-          <Ionicons name="home-outline" size={24} color="#b98c13" />
-          <Text style={[styles.iconText, { color: "#b98c13" }]}>Home</Text>
+          <Ionicons name="home-outline" size={24} color={Theme.themeColor} />
+          <Text style={[styles.iconText, { color: Theme.themeColor }]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconContainer}>
           <Ionicons name="list-outline" size={24} color="gray" />

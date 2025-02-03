@@ -8,6 +8,7 @@ import {
   Dimensions,
   Alert,
 } from "react-native";
+import Theme from "../../styles/theme";
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { Row } from "../../styles/dashboard.styles";
@@ -128,7 +129,7 @@ const EachProduct = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Product Details
           </TopText>
@@ -270,7 +271,7 @@ const styles = StyleSheet.create({
     width: WINDOW_WIDTH,
   },
   button: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     padding: 10,
     borderRadius: 5,
     flex: 1,
@@ -287,7 +288,7 @@ const styles = StyleSheet.create({
     textDecorationStyle: "solid",
     opacity: 0.9,
     fontSize: 13,
-    color: "#D4AF37",
+    color: Theme.themeColor,
     margin: "1%",
   },
   qq: {
@@ -298,10 +299,10 @@ const styles = StyleSheet.create({
   },
   qqtxt: {
     fontSize: 12,
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
   eachJewelleryCardFooter: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     opacity: 0.8,
     justifyContent: "center",
     alignItems: "center",

@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
   Modal,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
 import { Button, IconButton, Provider } from "react-native-paper";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -334,8 +335,8 @@ const TempleEventEdit = ({ navigation }) => {
                 Event Name
               </Text>
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Event Name*"
                 underlineColor="transparent"
@@ -357,9 +358,9 @@ const TempleEventEdit = ({ navigation }) => {
               <TextInput
                 multiline={true}
                 numberOfLines={4}
-                selectionColor="#d4af37"
+                selectionColor={Theme.themeColor}
                 placeholder="Description*"
-                activeUnderlineColor="#d4af37"
+                activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={eventDescription}
@@ -383,8 +384,8 @@ const TempleEventEdit = ({ navigation }) => {
 
               {/* <TouchableOpacity onPress={openCalendar}>
                         <LoginInputField
-                        selectionColor="#d4af37"
-                        activeUnderlineColor="#d4af37"
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
                         style={styles.input}
                         placeholder="Event Date (YYYY-MM-DD)*"
                         underlineColor="transparent"
@@ -527,8 +528,8 @@ const TempleEventEdit = ({ navigation }) => {
                   <TextInput
                     multiline={true}
                     numberOfLines={4}
-                    selectionColor="#d4af37"
-                    activeUnderlineColor="#d4af37"
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
                     placeholder="Pooja Instructions*"
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
@@ -649,8 +650,8 @@ const TempleEventEdit = ({ navigation }) => {
               <TouchableOpacity onPress={openCalendar}>
                 <LoginInputField
                   value={selectedDate ? formatDate(selectedDate) : ""}
-                  selectionColor="#d4af37"
-                  activeUnderlineColor="#d4af37"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 5 }]}
                   placeholder="Event Date (YYYY-MM-DD)*"
                   underlineColor="transparent"
@@ -700,8 +701,8 @@ const TempleEventEdit = ({ navigation }) => {
                   <TouchableOpacity onPress={openTimePicker}>
                     <LoginInputField
                       value={time ? formatTime(time) : ""}
-                      selectionColor="#d4af37"
-                      activeUnderlineColor="#d4af37"
+                      selectionColor={Theme.themeColor}
+                      activeUnderlineColor={Theme.themeColor}
                       style={[
                         styles.input,
                         {
@@ -743,8 +744,8 @@ const TempleEventEdit = ({ navigation }) => {
               </Text>
 
               <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
                 placeholder="Event Duration*"
                 underlineColor="transparent"

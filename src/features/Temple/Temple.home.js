@@ -13,7 +13,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { TopText } from "../../styles/social.styles";
-
+import Theme from "../../styles/theme";
 import { Card, IconButton } from "react-native-paper";
 import { TouchableOpacity, ScrollView } from "react-native";
 // import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -309,7 +309,7 @@ const TempleHome = ({ navigation }) => {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
             >
               Temple
             </TopText>
@@ -397,7 +397,7 @@ const TempleHome = ({ navigation }) => {
                 alignItems: "center",
               }}
               size={"large"}
-              color={"#b98c13"}
+              color={Theme.themeColor}
             />
           ) : (
             <View style={{ flex: 1 }}>
@@ -496,7 +496,7 @@ const TempleHome = ({ navigation }) => {
                                   >
                                     <Ionicons
                                       name="location"
-                                      color="#F9C620"
+                                      color={Theme.themeColor}
                                       size={20}
                                     />
                                     <Text
@@ -895,7 +895,7 @@ const TempleHome = ({ navigation }) => {
                 alignItems: "center",
               }}
               size={"large"}
-              color={"#b98c13"}
+              color={Theme.themeColor}
             />
           ) : (
             <View
@@ -989,7 +989,7 @@ const TempleHome = ({ navigation }) => {
                               marginTop: "2%",
                               opacity: 1,
                               maxWidth: 170,
-                              color: "#D4AF37",
+                              color: Theme.themeColor,
                             }}
                             numberOfLines={1}
                             ellipsizeMode="tail"
@@ -1089,7 +1089,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   selectedTab: {
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
   },
   tabText: {
     color: "black",
@@ -1154,7 +1154,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 30,
     borderRadius: 22,
-    backgroundColor: "#D4AF37",
+    backgroundColor: Theme.themeColor,
     justifyContent: "center",
     alignItems: "center",
   },

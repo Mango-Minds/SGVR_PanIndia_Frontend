@@ -13,14 +13,14 @@ import {
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
-
+import Theme from "../../styles/theme";
 const ProfileHeader = ({ title }) => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
       <View style={{ alignItems: "center", flexDirection: "row" }}>
         <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-        <TopText style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}>
+        <TopText style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}>
           {title}
         </TopText>
       </View>

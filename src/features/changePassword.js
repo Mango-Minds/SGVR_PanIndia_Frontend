@@ -7,11 +7,11 @@ import { Text, View, TouchableOpacity, Image } from "react-native";
 import { LoginInputField } from "../styles/prelogin.styles";
 import axios from "axios";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import Logo from "../assets/images/pre-login/logo-small.png";
+import Logo from "../assets/images/pre-login/logoo-small.png";
 import { TopText } from "../styles/social.styles";
 import { Divider, IconButton } from "react-native-paper";
 import { changePassword } from "../services/auth.service";
-
+import Theme from "../styles/theme";
 export default function ChangePassword({ navigation }) {
   const dispatch = useDispatch();
   const [hidePass, setHidePass] = React.useState(true);
@@ -65,7 +65,7 @@ export default function ChangePassword({ navigation }) {
         }}
       >
         <IconButton icon="chevron-left" onPress={() => navigation.goBack()} />
-        <TopText style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}>
+        <TopText style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}>
           Change Password
         </TopText>
       </View>
@@ -98,8 +98,8 @@ export default function ChangePassword({ navigation }) {
           placeholderTextColor="#9B9B9B"
           underlineColor="transparent"
           placeholder="Old Password*"
-          selectionColor="#d4af37"
-          activeUnderlineColor="#d4af37"
+          selectionColor={Theme.themeColor}
+          activeUnderlineColor={Theme.themeColor}
           value={changepassword.oldpassword}
           secureTextEntry={hidePass ? true : false}
           onChangeText={(text) =>
@@ -128,8 +128,8 @@ export default function ChangePassword({ navigation }) {
           placeholderTextColor="#9B9B9B"
           underlineColor="transparent"
           placeholder="New Password*"
-          selectionColor="#d4af37"
-          activeUnderlineColor="#d4af37"
+          selectionColor={Theme.themeColor}
+          activeUnderlineColor={Theme.themeColor}
           value={changepassword.password}
           secureTextEntry={hidePass ? true : false}
           onChangeText={(text) =>
@@ -158,8 +158,8 @@ export default function ChangePassword({ navigation }) {
           placeholderTextColor="#9B9B9B"
           underlineColor="transparent"
           placeholder="Confirm Password*"
-          selectionColor="#d4af37"
-          activeUnderlineColor="#d4af37"
+          selectionColor={Theme.themeColor}
+          activeUnderlineColor={Theme.themeColor}
           value={changepassword.cpassword}
           secureTextEntry={hidePass ? true : false}
           onChangeText={(text) =>
@@ -187,7 +187,7 @@ export default function ChangePassword({ navigation }) {
         style={{
           marginTop: 30,
           marginBottom: 30,
-          backgroundColor: "#D4AF37",
+          backgroundColor: Theme.themeColor,
           borderRadius: 10,
           padding: 10,
           alignItems: "center",

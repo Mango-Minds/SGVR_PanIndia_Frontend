@@ -23,7 +23,7 @@ import {
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ErrorToggle, IsBttnloading, login } from "../store/user";
 import { useDispatch, useSelector } from "react-redux";
-
+import Theme from "../styles/theme";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -159,7 +159,8 @@ export default function LoginScreen({ navigation }) {
       <MainContainer>
         <Image
           style={styles.logo}
-          source={require("../assets/images/pre-login/logo-small.png")}
+          //source={require("../assets/images/pre-login/logo2-small.png")}
+         source={require("../assets/images/pre-login/logoo-small.png")}
         />
 
         <FormSection>
@@ -173,8 +174,8 @@ export default function LoginScreen({ navigation }) {
             borderBottomWidth={0}
             autoCapitalize="none"
             placeholder="Email or Phone No."
-            selectionColor="#d4af37"
-            activeUnderlineColor="#d4af37"
+            selectionColor={Theme.themeColor}
+            activeUnderlineColor={Theme.themeColor}
             onChangeText={(e) => setEmail(e)}
             value={email}
           />
@@ -184,8 +185,8 @@ export default function LoginScreen({ navigation }) {
               placeholderTextColor="#9B9B9B"
               underlineColor="transparent"
               placeholder="Password"
-              selectionColor="#d4af37"
-              activeUnderlineColor="#d4af37"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
               secureTextEntry={hidePass ? true : false}
               onChangeText={(e) => setPassword(e)}
               value={password}
@@ -217,8 +218,8 @@ export default function LoginScreen({ navigation }) {
 
           <CheckboxContainer>
             <Checkbox
-              uncheckedColor="#d4af37"
-              color="#d4af37"
+              uncheckedColor={Theme.themeColor}
+              color={Theme.themeColor}
               status={tcCheck ? "checked" : "unchecked"}
               onPress={() => setTcCheck(!tcCheck)}
             />
@@ -228,7 +229,7 @@ export default function LoginScreen({ navigation }) {
               }}
             >
               I agree to the{" "}
-              <ForgotText style={{ color: "#4191DF", fontSize: 16 }}>
+              <ForgotText style={{ color: Theme.themeColor, fontSize: 16 }}>
                 terms & Conditions
               </ForgotText>
             </FormSectionSubtitle>
@@ -279,7 +280,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => {
               navigation.navigate("Register");
             }}
-            style={{ color: "#4191DF", fontSize: 14 , fontWeight : "600"}}
+            style={{ color: Theme.themeColor, fontSize: 14 , fontWeight : "600"}}
           >
             Signup
           </ForgotText>
@@ -290,7 +291,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => {
               navigation.navigate("Contactus");
             }}
-            style={{ color: "#4191DF", fontSize: 14 , fontWeight : "600"}}
+            style={{ color: Theme.themeColor, fontSize: 14 , fontWeight : "600"}}
           >
             Contact Us
           </ForgotText>

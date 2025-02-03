@@ -25,8 +25,9 @@ import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
-import ProfileHeader from "../../components/Jewellery/Header";
-
+//import ProfileHeader from "../../components/Jewellery/Header";
+import ProfileHeader from "./ProfileHeader";
+import Theme from "../../styles/theme";
 const MyMatrimonyProfile = ({ route }) => {
   const [userDetails, setUserDetails] = useState({});
   const [userRoleData, setUserRoleData] = useState({});
@@ -178,7 +179,7 @@ const MyMatrimonyProfile = ({ route }) => {
                   style={{
                     fontSize: 16,
                     fontWeight: "bold",
-                    color: "#D4AF37",
+                    color: Theme.themeColor,
                     bottom: -30,
                   }}
                 >
@@ -187,24 +188,24 @@ const MyMatrimonyProfile = ({ route }) => {
               </View>
 
               <View style={style.nameDetails}>
-                <MaterialIcon name="people" size={18} color="#D4AF37" />
+                <MaterialIcon name="people" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>
                   {userData.user.firstName} {userData.user.lastName}
                 </Text>
               </View>
 
               <View style={style.contactDetails}>
-                <MaterialIcon name="email" size={18} color="#D4AF37" />
+                <MaterialIcon name="email" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>{userData.user.email}</Text>
               </View>
 
               <View style={style.phoneDetails}>
-                <MaterialIcon name="phone" size={18} color="#D4AF37" />
+                <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>{userData.user.phone}</Text>
               </View>
 
               <View style={style.phoneDetails}>
-                <MaterialIcon name="location-on" size={18} color="#D4AF37" />
+                <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>{userData.user.address}</Text>
               </View>
 
@@ -340,13 +341,13 @@ const style = StyleSheet.create({
     fontWeight: "500",
     marginTop: 20,
     marginBottom: 5,
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
   ownerName: {
     fontSize: 20,
     fontWeight: "500",
     marginTop: 20,
-    color: "#D4AF37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   whiteContainer: {
@@ -390,14 +391,14 @@ const style = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#D4AF3733",
+    backgroundColor: Theme.themeBackgroundColor,
     borderRadius: 10,
     width: "100%",
     padding: "3%",
     marginVertical: 10,
   },
   EditButtonText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 16,
     fontWeight: "500",
     letterSpacing: 0.5,
@@ -440,7 +441,7 @@ const style = StyleSheet.create({
     fontSize: 20,
     fontWeight: "500",
 
-    color: "#D4AF37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   loginButton: {

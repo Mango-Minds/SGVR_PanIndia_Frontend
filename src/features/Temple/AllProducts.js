@@ -25,7 +25,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { useIsFocused } from "@react-navigation/native";
 import FilterMenu from "./FilterMenu";
-
+import Theme from "../../styles/theme";
 const AllProductsScreen = ({ route }) => {
   const { userType, ownerId, userId, shopId, loggedInShop } = route.params;
 
@@ -171,7 +171,7 @@ const AllProductsScreen = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             All Products
           </TopText>

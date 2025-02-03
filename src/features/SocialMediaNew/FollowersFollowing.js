@@ -11,6 +11,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
@@ -335,7 +336,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     flex: 2,
     textAlign: "center",
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
   },

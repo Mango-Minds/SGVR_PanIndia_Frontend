@@ -5,7 +5,7 @@ import { Container, RowBetween, View } from "../styles/common.styles";
 import SettingCard from "../components/social/SettingCard";
 import { logout } from "../store/user";
 import { useDispatch } from "react-redux";
-
+import Theme from "../styles/theme";
 export default function DashboardSettingsScreen({ navigation }) {
   const dispatch = useDispatch();
   const searchData = [
@@ -65,7 +65,7 @@ export default function DashboardSettingsScreen({ navigation }) {
               navigation.goBack();
             }}
           />
-          <Text style={{ color: "#B98C13", fontSize: 18 }}>Profile</Text>
+          <Text style={{ color: Theme.themeColor, fontSize: 18 }}>Profile</Text>
         </View>
       </RowBetween>
       <ScrollView

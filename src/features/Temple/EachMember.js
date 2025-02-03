@@ -9,6 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { useSelector } from "react-redux";
 import { Row } from "../../styles/dashboard.styles";
 import { decode } from "base-64";
@@ -82,7 +83,7 @@ const EachMember = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             Member Details
           </TopText>
@@ -124,7 +125,7 @@ const EachMember = ({ route }) => {
               fontWeight: "700",
               fontSize: 22,
               opacity: 0.8,
-              color: "#D4AF37",
+              color:Theme.themeColor,
               padding: 10,
             }}
           >
@@ -216,7 +217,7 @@ const styles = StyleSheet.create({
     textDecorationStyle: "solid",
     opacity: 0.9,
     fontSize: 13,
-    color: "#D4AF37",
+    color:Theme.themeColor,
     margin: "1%",
   },
   qq: {
@@ -227,10 +228,10 @@ const styles = StyleSheet.create({
   },
   qqtxt: {
     fontSize: 12,
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
   eachJewelleryCardFooter: {
-    backgroundColor: "#D4AF37",
+    backgroundColor:Theme.themeColor,
     opacity: 0.8,
     justifyContent: "center",
     alignItems: "center",

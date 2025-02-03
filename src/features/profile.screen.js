@@ -206,7 +206,7 @@ export default function ProfileScreen({ navigation }) {
               <TouchableOpacity onPress={_pickDocument} style={{}}>
                 <MaterialCommunityIcons
                   name="circle-edit-outline"
-                  color="#b98c13"
+                  color={Theme.themeColor}
                   size={25}
                   style={{
                     position: "absolute",
@@ -257,7 +257,7 @@ export default function ProfileScreen({ navigation }) {
             fontSize: 16,
             fontWeight: "bold",
             marginTop: 0,
-            color: "#b98c13",
+            color: Theme.themeColor,
           }}
         >
           @{user.username}
@@ -269,7 +269,7 @@ export default function ProfileScreen({ navigation }) {
               section === "photos" ||
               section === "posts" ||
               section === "timeline"
-                ? { borderColor: "#b98c13" }
+                ? { borderColor: Theme.themeColor }
                 : { borderColor: "transparent" }
             }
           >
@@ -283,7 +283,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => setSection("friends")}
             style={
               section === "friends"
-                ? { borderColor: "#b98c13", marginLeft: 8 }
+                ? { borderColor: Theme.themeColor, marginLeft: 8 }
                 : { marginLeft: 8, borderColor: "transparent" }
             }
           >
@@ -297,7 +297,7 @@ export default function ProfileScreen({ navigation }) {
             onPress={() => setSection("requests")}
             style={
               section === "requests"
-                ? { borderColor: "#b98c13", marginLeft: 8 }
+                ? { borderColor: Theme.themeColor, marginLeft: 8 }
                 : { marginLeft: 8, borderColor: "transparent" }
             }
           >

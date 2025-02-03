@@ -125,7 +125,7 @@ const ViewUserScreen = ({ navigation, route }) => {
   //         flex: 1,
   //       }}
   //       size={"large"}
-  //       color={"#b98c13"}
+  //       color={Theme.themeColor}
   //     />
   //   );
   // else
@@ -185,7 +185,7 @@ const ViewUserScreen = ({ navigation, route }) => {
               flexDirection: "column",
               position: "relative",
               borderBottomWidth: 3,
-              borderColor: "#B98C13",
+              borderColor: Theme.themeColor,
               height: 150,
             }}
           >
@@ -194,7 +194,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                 position: "absolute",
                 zIndex: 10,
                 borderWidth: 2,
-                borderColor: "goldenrod",
+                borderColor: Theme.themeColor,
                 borderRadius: 10,
                 left: 20,
                 top: 50,
@@ -264,7 +264,7 @@ const ViewUserScreen = ({ navigation, route }) => {
             flex: 1,
           }}
           size={"large"}
-          color={"#b98c13"}
+          color={Theme.themeColor}
         />
       ) : (
         <>
@@ -281,7 +281,7 @@ const ViewUserScreen = ({ navigation, route }) => {
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#b98c13",
+                color: Theme.themeColor,
                 position: "absolute",
                 left: 20,
                 top: 32,
@@ -293,7 +293,7 @@ const ViewUserScreen = ({ navigation, route }) => {
               onPress={() => setSection("posts")}
               style={
                 section === "posts"
-                  ? { borderColor: "#b98c13" }
+                  ? { borderColor: Theme.themeColor }
                   : { borderColor: "transparent" }
               }
             >
@@ -308,7 +308,7 @@ const ViewUserScreen = ({ navigation, route }) => {
               onPress={() => setSection("friends")}
               style={
                 section === "friends"
-                  ? { borderColor: "#b98c13", marginLeft: 8 }
+                  ? { borderColor: Theme.themeColor, marginLeft: 8 }
                   : { marginLeft: 8, borderColor: "transparent" }
               }
             >
@@ -382,7 +382,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                       <Ionicons
                         name="ios-person-add"
                         size={90}
-                        color="#B98C13"
+                        color={Theme.themeColor}
                         style={{
                           paddingLeft: "6%",
                           opacity: 0.3,
@@ -403,7 +403,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                       ) : (
                         <TouchableOpacity
                           style={{
-                            backgroundColor: "#B98C13",
+                            backgroundColor: Theme.themeColor,
                             width: "25%",
                             margin: "2%",
                             padding: "2%",
@@ -452,7 +452,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                   <Ionicons
                     name="ios-person-add"
                     size={90}
-                    color="#B98C13"
+                    color={Theme.themeColor}
                     style={{
                       paddingLeft: "6%",
                       opacity: 0.3,
@@ -473,7 +473,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                   ) : (
                     <TouchableOpacity
                       style={{
-                        backgroundColor: "#B98C13",
+                        backgroundColor: Theme.themeColor,
                         width: "25%",
                         margin: "2%",
                         padding: "2%",

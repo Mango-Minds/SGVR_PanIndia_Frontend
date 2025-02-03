@@ -1,6 +1,6 @@
 import { Button, Card, Paragraph, Title } from 'react-native-paper';
 import styled from 'styled-components/native';
-
+import Theme from './theme';
 export const MatrimonyHomeCard = styled(Card)`
   width: 100%;
   align-self: center;
@@ -37,7 +37,8 @@ export const MatrimonyHomeSwitch = styled(Button)`
 `;
 
 export const MatrimonyMessageSwitch = styled(Button)`
-  border-color: #b88b13;
+
+  border-color: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 0px;
   margin: 10px 0px;
   padding: 0 10px;
@@ -55,7 +56,7 @@ export const InterestPill = styled(Paragraph)`
   `;
 
 export const LikeButton = styled.TouchableOpacity`
-  background-color: #d4af37;
+  background-color: ${(props) => props.themeColor || Theme.themeColor};
   border-radius: 8px;
   color: #fff;
   font-size: 12px;

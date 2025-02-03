@@ -8,6 +8,7 @@ import {
   Pressable,
   ImageBackground,
 } from "react-native";
+import Theme from "../../styles/theme";
 import { TopText } from "../../styles/social.styles";
 import { RowBetween } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
@@ -236,7 +237,7 @@ const MyTempleProfile = ({ route }) => {
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
-                color: "#D4AF37",
+                color: Theme.themeColor,
                 bottom: -30,
               }}
             >
@@ -245,24 +246,24 @@ const MyTempleProfile = ({ route }) => {
           </View>
 
           <View style={style.nameDetails}>
-            <MaterialIcon name="people" size={18} color="#D4AF37" />
+            <MaterialIcon name="people" size={18} color={Theme.themeColor} />
             <Text style={style.contact}>
               {userData.user.firstName} {userData.user.lastName}
             </Text>
           </View>
 
           <View style={style.contactDetails}>
-            <MaterialIcon name="email" size={18} color="#D4AF37" />
+            <MaterialIcon name="email" size={18} color={Theme.themeColor} />
             <Text style={style.contact}>{userData.user.email}</Text>
           </View>
 
           <View style={style.phoneDetails}>
-            <MaterialIcon name="phone" size={18} color="#D4AF37" />
+            <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
             <Text style={style.contact}>{userData.user.phone}</Text>
           </View>
 
           <View style={style.phoneDetails}>
-            <MaterialIcon name="location-on" size={18} color="#D4AF37" />
+            <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
             <Text style={style.contact}>{userData.user.address}</Text>
           </View>
 
@@ -343,7 +344,7 @@ const MyTempleProfile = ({ route }) => {
           >
             <TouchableOpacity
               style={{
-                borderBottomColor: "#D4AF37",
+                borderBottomColor: Theme.themeColor,
                 borderBottomWidth: 2,
                 paddingVertical: 5,
               }}
@@ -355,7 +356,7 @@ const MyTempleProfile = ({ route }) => {
                   fontSize: 16,
                   fontWeight: "600",
                   letterSpacing: 0.5,
-                  color: "#D4AF37",
+                  color: Theme.themeColor,
                 }}
               >
                 Our Catalog
@@ -426,7 +427,7 @@ const MyTempleProfile = ({ route }) => {
                   fontSize: 16,
                   fontWeight: "600",
                   letterSpacing: 0.5,
-                  color: "#D4AF37",
+                  color: Theme.themeColor,
                   textAlign: "center",
                   textDecorationLine: "underline",
                 }}
@@ -486,13 +487,13 @@ const style = StyleSheet.create({
     fontWeight: "500",
     marginTop: 20,
     marginBottom: 5,
-    color: "#D4AF37",
+    color: Theme.themeColor,
   },
   ownerName: {
     fontSize: 20,
     fontWeight: "500",
     marginTop: 20,
-    color: "#D4AF37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   whiteContainer: {
@@ -543,7 +544,7 @@ const style = StyleSheet.create({
     marginVertical: 10,
   },
   EditButtonText: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 16,
     fontWeight: "500",
     letterSpacing: 0.5,
@@ -586,7 +587,7 @@ const style = StyleSheet.create({
     fontSize: 20,
     fontWeight: "500",
 
-    color: "#D4AF37",
+    color: Theme.themeColor,
     textAlign: "center",
   },
   loginButton: {
@@ -644,13 +645,13 @@ const style = StyleSheet.create({
 //     fontWeight: "500",
 //     marginTop: 20,
 //     marginBottom: 5,
-//     color: "#D4AF37",
+//     color: Theme.themeColor,
 //   },
 //   ownerName: {
 //     fontSize: 20,
 //     fontWeight: "500",
 //     marginTop: 20,
-//     color: "#D4AF37",
+//     color: Theme.themeColor,
 //     textAlign: "center",
 //   },
 //   whiteContainer: {
@@ -702,7 +703,7 @@ const style = StyleSheet.create({
 //     marginVertical: 10,
 //   },
 //   EditButtonText: {
-//     color: "#D4AF37",
+//     color: Theme.themeColor,
 //     fontSize: 16,
 //     fontWeight: "500",
 //     letterSpacing: 0.5,
@@ -745,7 +746,7 @@ const style = StyleSheet.create({
 //     fontSize: 20,
 //     fontWeight: "500",
 
-//     color: "#D4AF37",
+//     color: Theme.themeColor,
 //     textAlign: "center",
 //   },
 //   loginButton: {
