@@ -7,13 +7,15 @@ import {
   TouchableOpacity,
 } from "react-native";
 import PageComingSoon from "./B2c.PageComingSoon";
-
+import BuySellScreen from "./B2C.homeScreen";
 
 const B2CHome = (navigation) => {
  
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      <PageComingSoon/>
+      {/* <PageComingSoon/> */}
+      <BuySellScreen/>
+     
     </SafeAreaView>
   );
 };
