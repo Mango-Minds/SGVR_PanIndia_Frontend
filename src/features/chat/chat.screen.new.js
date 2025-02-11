@@ -70,6 +70,12 @@ const ChatScreenNew = ({ route }) => {
   const [isPlayingVideo, setIsPlayingVideo] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [modalContent, setModalContent] = useState(null);
+  useEffect(() => {
+    // Set initial message if available
+    if (route.params?.initialMessage) {
+      setChat(route.params.initialMessage);
+    }
+  }, [route.params?.initialMessage]);
 
   //navigation variables
   const isFocused = useIsFocused();
@@ -195,7 +201,7 @@ const ChatScreenNew = ({ route }) => {
           userId: userId,
         });
       }
-
+      setChats([...chats, { id: Date.now().toString(), text: chat, sender: "You" }]);
       // Clear the input fields after sending the message
       setChat("");
       setUploadedImage(null);

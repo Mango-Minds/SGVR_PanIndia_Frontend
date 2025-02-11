@@ -13,8 +13,8 @@ const B2CHome = (navigation) => {
  
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: "white" }}>
-      {/* <PageComingSoon/> */}
-      <BuySellScreen/>
+      <PageComingSoon/>
+      {/* <BuySellScreen/> */}
      
     </SafeAreaView>
   );

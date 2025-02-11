@@ -1,42 +1,25 @@
 {
   "cli": {
-    "version": ">= 0.47.0"
+    "version": ">= 7.8.1",
+     "appVersionSource": "local"
   },
   "build": {
     "development": {
-      "distribution": "internal",
       "developmentClient": true,
-      "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk"
-      },
-      "ios": {
-        "buildConfiguration": "Debug",
-        "simulator": true,
-        "resourceClass": "m1-medium"
-      }
-    },
-    "preview": {
       "distribution": "internal"
     },
-    "production": {
-      "node": "16.15.0",
+    "preview": {
       "ios": {
-        "resourceClass": "m1-medium"
-      }
-    }
-  },
-  "submit": {
-    "production": {
-      "ios": {
-        "appleId": "sgvrtechios@gmail.com",
-        "ascAppId": "1640670041",
-        "appleTeamId": "3W2M23K7G4"
+        "simulator":false,
+        "distribution": "store"
       },
       "android": {
-        "serviceAccountKeyPath": "pc-api-7553193548006689581-481-401636bdf666.json",
-        "track": "internal"
+        "buildType": "app-bundle"
       }
-    }
+    },
+    "production": {}
+  },
+  "submit": {
+    "production": {}
   }
 }

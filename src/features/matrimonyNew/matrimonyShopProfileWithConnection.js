@@ -118,6 +118,8 @@ export default function MatrimonyProfileNewWithConnection({
   };
 
   const connectToChat = async (owner_id, business_id) => {
+    console.log("OI:",owner_id);
+    console.log("BI:",business_id);
     if (owner_id === business_id) {
       alert("Chat room Cannot be created: same id");
     } else {

@@ -29,6 +29,7 @@ import { decode } from "base-64";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import SortMenu from "./SortMenu";
 const { width } = Dimensions.get("window");
 const AllListingScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
@@ -42,6 +43,11 @@ const AllListingScreen = ({ route, navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSortOption, setSelectedSortOption] = useState(null);
+
+
+
+
   const filteredItems = items.filter((item) => item.category === category);
   console.log("User: ", user);
   const renderItem = ({ item }) => (
@@ -147,23 +153,99 @@ const AllListingScreen = ({ route, navigation }) => {
       });
     }
   };
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
+  const [sortOption, setSortOption] = useState(null);
+
+  const toggleSortMenu = () => {
+    setSortMenuVisible((prevState) => !prevState);
+  };
+
+  const sortOptions = [
+    { label: "Price: High to Low", value: "high" },
+    { label: "Price: Low to High", value: "low" },
+  ];
+  
+  const handleSortSelect = (option) => {
+    setSortOption(option);
+    setSortMenuVisible(false); // Close the sorting menu
+    fetchProducts(searchTerm, selectedFiltersArray, option);
+  };
+  
 
 
 
 
-  const fetchProducts = async (searchTerm, selectedFiltersArray) => {
-    //Construct the query parameters from selectedFiltersArray
+  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
+  //   //Construct the query parameters from selectedFiltersArray
+  //   const queryParams = new URLSearchParams();
+
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Category") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("category", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Condition") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("condition", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Price") {
+  //       filter.Options.forEach((option) => {
+  //         if (option.includes("Below")) {
+  //           const maxPrice = option.split(" ")[1];
+  //           queryParams.append("maxPrice", maxPrice);
+  //         } else if (option.includes("Above")) {
+  //           const minPrice = option.split(" ")[1];
+  //           queryParams.append("minPrice", minPrice);
+  //         } else {
+  //           const [minPrice, maxPrice] = option.split("-");
+  //           queryParams.append("minPrice", minPrice);
+  //           queryParams.append("maxPrice", maxPrice);
+  //         }
+  //       });
+  //     }
+  //   });
+
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
+
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/listings?${queryString}`;
+
+  //   console.log("Fetching products with URL:", url);
+
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log(" Data:", data);
+
+  //       setProducts(data.listings);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setLoadingAnimation(false); // End loading
+  //   }
+  // };
+  
+  const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
     const queryParams = new URLSearchParams();
-
+  
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Category") {
-        filter.Options.forEach((option) =>
-          queryParams.append("category", option)
-        );
+        filter.Options.forEach((option) => queryParams.append("category", option));
       } else if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) =>
-          queryParams.append("condition", option)
-        );
+        filter.Options.forEach((option) => queryParams.append("condition", option));
       } else if (filter["Filter name"] === "Price") {
         filter.Options.forEach((option) => {
           if (option.includes("Below")) {
@@ -180,16 +262,21 @@ const AllListingScreen = ({ route, navigation }) => {
         });
       }
     });
-
+  
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
-
+  
+    // Append sort option
+    if (sortOption) {
+      queryParams.append("priceSort", sortOption);
+    }
+  
     const queryString = queryParams.toString();
     const url = `${BASEAPIURL}/listings?${queryString}`;
-
+  
     console.log("Fetching products with URL:", url);
-
+  
     try {
       setLoadingAnimation(true);
       const response = await fetch(url, {
@@ -202,7 +289,6 @@ const AllListingScreen = ({ route, navigation }) => {
       if (response.ok) {
         const data = await response.json();
         console.log(" Data:", data);
-
         setProducts(data.listings);
       } else {
         throw new Error("Failed to fetch products");
@@ -210,9 +296,10 @@ const AllListingScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setLoadingAnimation(false); // End loading
+      setLoadingAnimation(false);
     }
   };
+  
   useEffect(() => {
     fetchProducts();
   }, []);
@@ -220,8 +307,8 @@ const AllListingScreen = ({ route, navigation }) => {
   useEffect(() => {
     console.log("inside useeffect");
     setMenuVisible(false);
-    debouncedFetchProducts(searchTerm, selectedFiltersArray);
-  }, [searchTerm, selectedFiltersArray, isFocused]);
+    debouncedFetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+  }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
 
  
 
@@ -252,7 +339,7 @@ const AllListingScreen = ({ route, navigation }) => {
           <IconButton
             icon="sort"
             style={{ color: "grey", marginLeft: "auto" }}
-            // onPress={toggleSortMenu}
+            onPress={toggleSortMenu}
           />
           <IconButton
             icon="plus"
@@ -374,9 +461,24 @@ const AllListingScreen = ({ route, navigation }) => {
         selectedFiltersArray={selectedFiltersArray}
         setSelectedFiltersArray={setSelectedFiltersArray}
       />
+      <SortMenu
+        menuVisible={sortMenuVisible}
+        toggleMenu={toggleSortMenu}
+        sortOptions={sortOptions}
+        activeFilter={activeFilter}
+        selectedOptions={selectedOptions}
+        handleFilterClick={handleFilterClick}
+        handleOptionClick={handleSortSelect}
+        handleButtonPress={handleButtonPress}
+        selectedFiltersArray={selectedFiltersArray}
+        setSelectedFiltersArray={setSelectedFiltersArray}
+        selectedSortOption={selectedSortOption}
+        setSelectedSortOption={setSelectedSortOption}
+        fetchProducts={fetchProducts}
+      />
      
 
-      {!menuVisible && <BottomNavigation navigation={navigation} />}
+      {!menuVisible && !sortMenuVisible &&  <BottomNavigation navigation={navigation} />}
     </Container>
   );
 };

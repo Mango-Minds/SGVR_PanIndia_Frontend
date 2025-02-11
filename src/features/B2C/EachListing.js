@@ -37,16 +37,19 @@ import * as Location from "expo-location";
 const windowWidth = Dimensions.get("window").width;
 export default function EachListing({ route, navigation }) {
   const { user } = useSelector((state) => state.user);
+
   const isFocused = useIsFocused();
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const loggedInUserId = decodedPayload.id;
-  console.log("from vendor id", loggedInUserId);
+  console.log("loggedInUserId: ", loggedInUserId);
   const userType = decodedPayload.userType;
   const { itemId, item, fetchProducts } = route.params;
   console.log("itemId: ", itemId);
   console.log("item:", item);
+  const businessId = item?.createdBy?._id;
+  console.log("BI: ", businessId);
   const [loadingAnimation, setLoadingAnimation] = useState(true);
 
   const deleteProduct = async () => {
@@ -100,6 +103,7 @@ export default function EachListing({ route, navigation }) {
     }
   }, [isFocused]);
   console.log("Locaion link: ", item.locationLink);
+  console.log("Product: ", item);
 
   const [isRepostModalVisible, setRepostModalVisible] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
@@ -382,6 +386,107 @@ export default function EachListing({ route, navigation }) {
     );
   };
 
+  const connectToChat = async (owner_id, business_id, item) => {
+    console.log("Owner id: ", owner_id);
+    console.log("Business id: ", business_id);
+    console.log("Item: ", item);
+    if (owner_id === business_id) {
+      console.log("Chat room Cannot be created: same id");
+    } else {
+      try {
+        const response = await fetch(`${BASEAPIURL}/chat/room/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ userIds: [owner_id, business_id] }),
+        });
+        console.log("Response: ", response);
+        console.log("Authorization: ", `Bearer ${token}`);
+        if (response.ok) {
+          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          if (roomResponse.ok) {
+            const roomData = await roomResponse.json();
+            console.log("Room Details: ", roomData);
+            if (roomData && roomData.rooms && roomData.rooms.length > 0) {
+              const room = roomData.rooms[0];
+              console.log("Room: ", room);
+
+              const room_with_user = roomData?.rooms.filter((room) => {
+                console.log(
+                  "room?.participants[0].id:",
+                  room?.participants[0]?.id
+                );
+                console.log("business_id:", business_id);
+                return room?.participants[0]?.id === business_id;
+              })[0];
+
+              console.log("Room with user: ", room_with_user);
+              const initialMessage = `Hi, I have a query about this product:${item?.name}\n Price: Rs. ${item.price} \n\nCan you provide more details?`;
+              console.log("IM: ", initialMessage);
+              // Alert.alert("OK", "Chat Room Created", [
+              //   {
+              //     text: "OK",
+              //     onPress: () => {
+              //       navigation.navigate("ChatScreenNew", {
+
+              //         user_auth_token: token,
+              //         room: room_with_user,
+              //         participant_name:
+              //           room_with_user.participants[0].firstName +
+              //           " " +
+              //           room_with_user.participants[0].lastName,
+              //           initialMessage: initialMessage,
+              //       });
+              //     },
+              //   },
+              // ]);
+              Alert.alert("OK", "Chat Room Created", [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    console.log(
+                      "Navigating with Initial msg: ",
+                      initialMessage
+                    );
+                    navigation.navigate("ChatScreenNew", {
+                      user_auth_token: token,
+                      room: room_with_user,
+                      participant_name:
+                        room_with_user.participants[0].firstName +
+                        " " +
+                        room_with_user.participants[0].lastName,
+                      initialMessage, // Pass the message correctly
+                    });
+                  },
+                },
+              ]);
+            } else {
+              Alert.alert("No rooms found");
+            }
+          } else {
+            const errorData = await roomResponse.json();
+            console.error("Error Fetching Room Details:", errorData);
+            Alert.alert("Error Fetching Room Details");
+          }
+        } else {
+          const errorData = await response.json();
+          console.error("Error Creating Chat Room:", errorData);
+          Alert.alert("Error Creating Chat Room");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
+    }
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -389,8 +494,7 @@ export default function EachListing({ route, navigation }) {
         backgroundColor: "white",
       }}
     >
-      
-         <ScrollView style={styles.container}>
+      <ScrollView style={styles.container}>
         {/* Main Image */}
         <View style={styles.headerImageContainer}>
           <Image
@@ -416,7 +520,8 @@ export default function EachListing({ route, navigation }) {
                 onPress={() => setCurrentIndex(index)}
                 style={{
                   borderWidth: currentIndex === index ? 2 : 0,
-                  borderColor: currentIndex === index ? "transparent" : "transparent",
+                  borderColor:
+                    currentIndex === index ? "transparent" : "transparent",
                   borderRadius: 8,
                 }}
               >
@@ -433,10 +538,7 @@ export default function EachListing({ route, navigation }) {
               </TouchableOpacity>
             ))}
           </ScrollView>
-        
         </View>
-       
-       
 
         <View style={styles.eventInfoContainer}>
           <View style={styles.nameAndLocationContainer}>
@@ -516,13 +618,21 @@ export default function EachListing({ route, navigation }) {
         </View>
       </ScrollView>
 
-      {item.createdBy !== user._id ? (
+      {console.log("CB: ", item.createdBy?._id)}
+      {console.log("UI: ", user._id)}
+      {item.createdBy?._id !== user._id ? (
+       
         <View style={styles.bottomBarContainer}>
           <View style={styles.bottomBar}>
             <View style={styles.ticketInfoContainer}>
               <Text style={styles.priceText}>Interested</Text>
 
-              <TouchableOpacity style={styles.bookNowButton}>
+              <TouchableOpacity
+                style={styles.bookNowButton}
+                onPress={() => {
+                  connectToChat(loggedInUserId, businessId, item);
+                }}
+              >
                 <Text style={styles.bookNowButtonText}>Message Owner</Text>
               </TouchableOpacity>
             </View>

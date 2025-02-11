@@ -159,7 +159,7 @@ export default function LoginScreen({ navigation }) {
       <MainContainer>
         <Image
           style={styles.logo}
-          //source={require("../assets/images/pre-login/logo2-small.png")}
+         
          source={require("../assets/images/pre-login/logoo-small.png")}
         />
 

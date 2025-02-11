@@ -22,6 +22,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { debounce } from "lodash";
 import ListingCard from "./ListingsCard";
+import PageComingSoon from "./B2c.PageComingSoon";
 
 const products = [
   // Furniture
@@ -319,8 +320,9 @@ const BuySellScreen = ({ navigation }) => {
         flex: 1,
       }}
     >
+      
       <View style={styles.container}>
-        {/* {/ Header /} */}
+       
         <View
           style={{
             paddingHorizontal: 10,
@@ -369,18 +371,18 @@ const BuySellScreen = ({ navigation }) => {
           </RowBetween>
         </View>
 
-        {/* {/ Search Bar /} */}
+       
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
             placeholder="What are you looking for?"
             onChangeText={handleSearch}
-            // value={searchQuery}
+          
           />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-          {/* {/ Homes Section /} */}
+         
           <TouchableOpacity
             style={styles.homesSection}
             onPress={() => {
@@ -603,6 +605,23 @@ const styles = StyleSheet.create({
   productPrice: { color: "green", fontWeight: "bold" },
   productCondition: { fontSize: 12, color: "gray" },
   noItemsText: { textAlign: "center", marginTop: 20 },
+
+
+
+  page: {
+    flex: 1, // Make the page take up the full screen
+    marginTop:20,
+  },
+  coming: {
+    flex: 1, // Make the coming view take up the remaining space
+    justifyContent: 'center', // Center vertically
+    alignItems: 'center', // Center horizontally
+  },
+  text: {
+    fontWeight: 'bold',
+    fontSize: 20,
+    color: Theme.themeColor,
+  },
 });
 
 export default BuySellScreen;

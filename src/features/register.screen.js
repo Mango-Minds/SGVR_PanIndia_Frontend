@@ -162,17 +162,17 @@ export default function RegisterScreen({ navigation }) {
   const [selectedModule, setSelectedModule] = useState(null);
 
   const userTypes = {
-    Jewellery: ["Shop", "Vendor", "Worker", "Gemologist", "Jewelry Designer"],
+    //Jewellery: ["Shop", "Vendor", "Worker", "Gemologist", "Jewelry Designer"],
     Temple: ["Temple Admin", "Temple Shop", "Devotees", "Pandit"],
     Matrimony:["Matrimony Man","Matrimony Woman","Matrimony Vendor","Planner","Decorator","Caterer","Venue"],
   };
   
   const userTypeMappings = {
-    Shop: "shop",
-    Vendor: "vendor",
-    Worker: "worker",
-    Gemologist: "gemologist",
-    "Jewelry Designer": "jewelryDesigner",
+    // Shop: "shop",
+    // Vendor: "vendor",
+    // Worker: "worker",
+    // Gemologist: "gemologist",
+    // "Jewelry Designer": "jewelryDesigner",
     "Temple Admin": "templeAdmin",
     "Temple Shop": "templeShopOwner",
     Devotees: "basicUser",

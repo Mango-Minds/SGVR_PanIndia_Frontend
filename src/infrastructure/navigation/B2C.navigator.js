@@ -16,6 +16,7 @@ const Stack = createStackNavigator();
 
 export const B2CStackNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
+     <Stack.Screen name="PageComingSoon" component={PageComingSoon} />
     <Stack.Screen name="B2CHome" component={BuySellScreen} />
     <Stack.Screen name="BuySellScreen" component={BuySellScreen} />
     <Stack.Screen name="FurnitureScreen" component={FurnitureScreen} />
