@@ -62,7 +62,7 @@ const TempleDetails = ({ route, navigation }) => {
   const [templeDetails, setTempleDetails] = useState(templeinfo);
   const [isRequestSent, setIsRequestSent] = useState(false);
 
-  const tokenPayload = token.split(".")[1];
+  const tokenPayload = token?.split(".")[1];
 
   const decodedPayload = JSON.parse(decode(tokenPayload));
   console.log(decodedPayload);
@@ -524,7 +524,7 @@ const TempleDetails = ({ route, navigation }) => {
       );
     } else {
       const truncatedDescription = templeDetails.description
-        .split(" ")
+        ?.split(" ")
         .slice(0, 20)
         .join(" ");
       return (

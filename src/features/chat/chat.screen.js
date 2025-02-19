@@ -18,7 +18,7 @@ import {
   SendChatBlock,
   TopText,
 } from "../../styles/social.styles";
-
+import Theme from "../../styles/theme";
 import io from "socket.io-client";
 import {
   getAllChats,
@@ -492,7 +492,7 @@ const ChatScreen = ({ navigation, route }) => {
               });
               animated.current = true;
             }}
-            backgroundColor="#D4AF371A"
+            backgroundColor={Theme.themeColor}
             style={{
               paddingHorizontal: 10,
             }}

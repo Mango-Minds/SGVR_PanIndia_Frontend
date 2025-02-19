@@ -8,6 +8,10 @@ import {
   Pressable,
   ImageBackground,
 } from "react-native";
+import Theme from "../../styles/theme";
+import { TopText } from "../../styles/social.styles";
+import { RowBetween } from "../../styles/common.styles";
+import { IconButton } from "react-native-paper";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Divider } from "react-native-paper";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
@@ -20,11 +24,7 @@ import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
-import BannerImg from "../../assets/images/general/golden_banner.png";
-import { IconButton } from "react-native-paper";
-import { TopText } from "../../styles/social.styles";
-import ProfileHeader from "../Temple/Header";
-import Theme from "../../styles/theme";
+import BottomNavigation from "./BottomNavigation";
 
 const MyB2CProfile = ({ route }) => {
   const navigation = useNavigation();
@@ -32,60 +32,60 @@ const MyB2CProfile = ({ route }) => {
   const isFocused = useIsFocused();
 
   const token = useSelector((state) => state.user.token);
-
   const tokenPayload = token.split(".")[1];
 
   const decodedPayload = JSON.parse(decode(tokenPayload));
-  console.log("decoded payload", decodedPayload);
-
   const user = useState(useSelector((state) => state.user.user));
-  console.log("userrr", user);
-  const userId = useSelector(
-    (state) =>
-      state.user.user &&
-      state.user.user.roleData &&
-      state.user.user.roleData.owner
-  );
-  console.log("userId: ",userId);
+  console.log("User: ", user);
 
-  console.log("userid: ", user[0]._id);
- const user2 = useSelector((state) => state.user.user);
-  console.log("User 2: ", user2);
-  console.log("user?.roleData?.owner:", user2?.roleData?.owner);
-   const [userData, setUserData] = useState({});
-    const fetchUser = async () => {
-  
-      try {
-        setLoadingAnimation(true);
-        const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        });
-  
-        if (response.ok) {
-          const data = await response.json();
-  
-          setUserData(data);
-          console.log("userdata", data);
-        } else {
-          throw new Error("Failed to fetch user");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-      } finally {
-        setLoadingAnimation(false); // End loading
+  const userId = decodedPayload.id;
+
+  const [userData, setUserData] = useState({});
+
+  const fetchUser = async () => {
+    try {
+      setLoadingAnimation(true);
+      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        setUserData(data);
+        console.log("data.user", data.user);
+      } else {
+        throw new Error("Failed to fetch user");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching user:", error);
+    } finally {
+      setLoadingAnimation(false);
+    }
+  };
 
-    console.log("User data: ", userData);
+  useEffect(() => {
+    if (isFocused) {
+      fetchUser();
+    }
+  }, [isFocused]);
+
+  const [loadingAnimation, setLoadingAnimation] = useState(true);
 
   return (
     <>
       <View style={styles.container}>
-        <View style={{ alignItems: "center", flexDirection: "row", paddingVertical: 25}}>
+        <View
+          style={{
+            alignItems: "center",
+            flexDirection: "row",
+            paddingVertical: 25,
+          }}
+        >
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
             style={{
@@ -105,66 +105,70 @@ const MyB2CProfile = ({ route }) => {
           }}
         ></View>
       </View>
-      
-      {user && (
+      {userData && userData.user && (
         <View
           style={{
             paddingHorizontal: 20,
             flex: 1,
-            
           }}
         >
           <ImageBackground
             source={
-              user.image
+              userData.user.image
                 ? {
-                    uri: `${BASEIMGURL}${user[0].image}`,
+                    uri: `${BASEIMGURL}${userData.user.image}`,
                   }
                 : UserImg
             }
+           
             style={style.backgroundImage}
+            resizeMode="contain"
           ></ImageBackground>
-          <View style={style.whiteContainer}>
-            <Text style={style.loginText}></Text>
-          </View>
 
-          <Divider />
           <View style={style.contactDetails}>
             <Text
               style={{
                 fontSize: 16,
                 fontWeight: "bold",
                 color: Theme.themeColor,
+                bottom: 30,
               }}
             >
-              Owner Details :
-            </Text>
-            <Text style={style.contact}>
-              {user[0].firstName} {user[0].lastName}
+              Owner Details
             </Text>
           </View>
+
+          <View style={style.nameDetails}>
+            <MaterialIcon name="people" size={18} color={Theme.themeColor} />
+            <Text style={style.contact}>
+              {userData.user.firstName} {userData.user.lastName}
+            </Text>
+          </View>
+
           <View style={style.contactDetails}>
             <MaterialIcon name="email" size={18} color={Theme.themeColor} />
-            <Text style={style.contact}>{user[0].email}</Text>
+            <Text style={style.contact}>{userData.user.email}</Text>
           </View>
-          <View style={style.contactDetails}>
+
+          <View style={style.phoneDetails}>
             <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
-            <Text style={style.contact}>{user[0].phone}</Text>
+            <Text style={style.contact}>{userData.user.phone}</Text>
           </View>
-          <View style={style.contactDetails}>
+
+          <View style={style.phoneDetails}>
             <MaterialIcon
               name="location-on"
               size={18}
               color={Theme.themeColor}
             />
-            <Text style={style.contact}>{user[0].address}</Text>
+            <Text style={style.contact}>{userData.user.address}</Text>
           </View>
 
-          <View style={style.contactDetails}>
+          <View style={style.contactButtonDetails}>
             <TouchableOpacity
               style={style.EditButton}
               onPress={() =>
-                navigation.navigate("EditJewelleryUserRegisterScreen", {
+                navigation.navigate("EditProfile", {
                   userData,
                   fetchUser,
                   userId,
@@ -175,10 +179,10 @@ const MyB2CProfile = ({ route }) => {
               <Text style={style.EditButtonText}>Edit My Profile</Text>
             </TouchableOpacity>
           </View>
-
-          <Divider />
         </View>
       )}
+
+      <Divider />
     </>
   );
 };
@@ -186,13 +190,6 @@ const MyB2CProfile = ({ route }) => {
 export default MyB2CProfile;
 
 const style = StyleSheet.create({
-  container: {
-    paddingHorizontal: 10,
-    paddingVertical: 15,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
   ProfileHeading: {
     fontSize: 20,
     fontWeight: "600",
@@ -253,6 +250,18 @@ const style = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "flex-start",
     alignItems: "center",
+    marginTop: 35,
+  },
+  phoneDetails: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginTop: 5,
+  },
+  contactButtonDetails: {
+    flexDirection: "column",
+    justifyContent: "flex-start",
+    alignItems: "center",
     marginTop: 15,
   },
   contact: {
@@ -262,11 +271,18 @@ const style = StyleSheet.create({
     marginLeft: 10,
     lineHeight: 20,
   },
+  nameDetails: {
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    alignItems: "center",
+    marginTop: 0,
+    marginBottom: -30,
+  },
   EditButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Theme.themeBackgroundColor,
+    backgroundColor: "#D4AF3733",
     borderRadius: 10,
     width: "100%",
     padding: "3%",
@@ -283,7 +299,7 @@ const style = StyleSheet.create({
   },
   backgroundImage: {
     width: "100%",
-    height: 250,
+    height: 350,
     justifyContent: "flex-end",
     alignItems: "center",
   },
@@ -307,12 +323,17 @@ const style = StyleSheet.create({
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    bottom: -50,
   },
   loginText: {
-    fontSize: 16,
     color: "black",
     bottom: -50,
     position: "relative",
+    fontSize: 20,
+    fontWeight: "500",
+
+    color: Theme.themeColor,
+    textAlign: "center",
   },
   loginButton: {
     backgroundColor: "lightgrey",

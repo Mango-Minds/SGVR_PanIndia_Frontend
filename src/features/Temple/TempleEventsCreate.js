@@ -179,9 +179,15 @@ const TempleEventsCreate = ({ navigation }) => {
   : "";
 
       const eventTime = times.map((time) => formatTime(time));
-      const formattedAvailability = availability.map((slot) =>
-        slot.map((time) => formatTime(time))
-      );
+      // const formattedAvailability = availability.map((slot) =>
+      //   slot.map((time) => formatTime(time))
+      // );
+      const formattedAvailability = availability.map((slot) => ({
+        startTime: formatTime(slot[0]),
+        endTime: formatTime(slot[1]),
+        
+      }));
+      
       // Construct the base event data object
       let eventData = {
         eventName,
@@ -256,6 +262,8 @@ const TempleEventsCreate = ({ navigation }) => {
       );
     }
   };
+
+
 
   return (
     <SafeArea>

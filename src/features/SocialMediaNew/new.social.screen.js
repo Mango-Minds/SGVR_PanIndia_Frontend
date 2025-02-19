@@ -88,13 +88,14 @@ const SocialHomeScreen = ({ navigation, route }) => {
   }, []);
 
   const user = useSelector((state) => state.user.user);
+  console.log("User: ", user);
 
   const profileImageUrl = user?.image ? `${BASEIMGURL}${user.image}` : null;
 
   const filterUserId = user?._id;
 
   const filteredPosts = posts.filter(
-    (post) => post.createdBy._id !== filterUserId
+    (post) => post.createdBy?._id !== filterUserId
   );
 
   const [refreshing, setRefreshing] = useState(false); // State to manage refreshing
@@ -182,7 +183,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
                 return (
                   <NewSocialCard
                     post={item}
-                    userId={item.createdBy._id}
+                    userId={item.createdBy?._id}
                     posts={posts}
                     firstName={item.createdBy.firstName}
                     lastName={item.createdBy.lastName}
@@ -197,7 +198,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
                   />
                 );
               }}
-              keyExtractor={(item) => item._id.toString()}
+              keyExtractor={(item) => item?._id.toString()}
               onEndReached={fetchPosts}
               onEndReachedThreshold={0.5}
               refreshControl={

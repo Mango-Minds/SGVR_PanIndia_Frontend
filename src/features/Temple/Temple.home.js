@@ -956,10 +956,13 @@ const TempleHome = ({ navigation }) => {
                             borderRadius: 8,
                             opacity: 1,
                           }}
+                        
                           source={
                             pandit.image && pandit.image.length > 0
-                              ? { uri: `${BASEIMGURL}${pandit?.owner.image}` }
-                              : UserImg
+                              ? { uri: `${BASEIMGURL}${pandit?.owner?.image}` }
+                              : pandit?.owner?.image
+                              ? { uri: `${BASEIMGURL}${pandit?.owner?.image}` }
+                              : UserImg // Default image if both are unavailable
                           }
                         />
                         <View

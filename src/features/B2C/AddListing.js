@@ -82,68 +82,9 @@ export default function AddProduct({ navigation, route }) {
   const { loadingInBtn } = useSelector((state) => state.user);
   const { fetchProducts } = route.params;
   const isFocused = useIsFocused();
+   
   const [selectedImages, setSelectedImages] = React.useState([]);
 
-    //     try {
-    //       // Determine allowed media type based on the first item in the list
-    
-    //       let allowedType = "*/*"; // Default to any file type
-    
-    //       if (list.length > 0) {
-    //         const firstMediaType = list[0].mimeType;
-    //         // Adjust allowed type based on the first selected media's type
-    //         if (firstMediaType.startsWith("image")) {
-    //           allowedType = "image/*";
-    //         } else if (firstMediaType.startsWith("video")) {
-    //           allowedType = "video/*";
-    //         }
-    //       }
-    
-    //       // Check if the user has already uploaded 5 media items
-    //       if (allowedType === "image/*" && list.length >= 5) {
-    //         Alert.alert("Limit Reached", "You can only upload up to 5 images.", [
-    //           { text: "OK" },
-    //         ]);
-    //         return;
-    //       } else if (allowedType === "video/*" && list.length >= 1) {
-    //         Alert.alert("Limit Reached", "You can only upload 1 video.", [
-    //           { text: "OK" },
-    //         ]);
-    //         return;
-    //       }
-    
-    //       // Open the DocumentPicker with the specified type
-    //       let result = await DocumentPicker.getDocumentAsync({
-    //         type: allowedType,
-    //       });
-    
-    //       console.log(result);
-    
-    //       // Check if the user has selected a file and not canceled
-    //       if (!result.canceled) {
-    //         const selectedMedia = result.assets[0];
-    //         if (selectedMedia.mimeType.startsWith("video")) {
-    //           generateThumbnail(selectedMedia.uri);
-    //         }
-    
-    //         // Update the list with the newly selected media
-    //         setList((prevList) => [...prevList, selectedMedia]);
-    
-    //         // Set the media state to the latest selected file
-    //         setMedia(selectedMedia);
-    //       }
-    //     } catch (err) {
-    //       console.error(err);
-    //     }
-    //   };
-    
-    //   console.log(list);
-    
-    //   // Function to remove selected media
-    //   const removeMedia = (index) => {
-    //     setList((prevList) => prevList.filter((_, i) => i !== index));
-    //     console.log(list);
-    //   };
   const [registerDetails, setRegisterDetails] = React.useState({
     productName: "",
     productPrice: "",
@@ -154,27 +95,33 @@ export default function AddProduct({ navigation, route }) {
     productCondition: "",
     productAge: "",
     address: "",
-    locationLink: "",
+    address_link: "",
   });
 
   console.log(registerDetails, "registerDetails");
 
+  
+
+  
   const _pickDocument = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All, // Allows images, videos, and documents
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
+
     if (result.canceled === true) return;
+
+    // Add the selected media to the selectedImages state
     setSelectedImages((prev) => [...prev, result.assets[0]]);
   };
-
   const removeProfileImage = (index) => {
     let newArray = [...selectedImages];
     newArray.splice(index, 1);
     setSelectedImages(newArray);
   };
+
   const query = new useQueryClient();
 
   const token = useSelector((state) => state.user.token);
@@ -207,19 +154,45 @@ export default function AddProduct({ navigation, route }) {
       formData.append("subcategory", registerDetails.productSubCategory);
       formData.append("description", registerDetails.productDescription);
       formData.append("condition", registerDetails.productCondition);
-    
+
       formData.append("productAge", registerDetails.productAge);
       formData.append("address", registerDetails.address);
-      formData.append("locationLink", registerDetails.locationLink);
+      formData.append("address_link", registerDetails.address_link);
 
-      // Check the selected images
-      selectedImages.forEach((image, index) => {
-        console.log(`Image ${index}:`, image.uri); 
-        formData.append("images", {
-          uri: image.uri,
-          name: `image_${index}.jpg`,
-          type: "image/jpeg",
-        });
+      
+      selectedImages.forEach((media, index) => {
+        console.log(`Media ${index}:`, media.uri);
+
+        let mimeType = "";
+        let fileName = "";
+        let fieldName = "";
+
+        // Determine the MIME type and file name based on the media type
+        if (media.uri) {
+          if (media.type === "image") {
+            mimeType = "image/jpeg";
+            fileName = `image_${index}.jpg`;
+            fieldName = "images";
+          } else if (media.type === "video") {
+            mimeType = "video/mp4";
+            fileName = `video_${index}.mp4`;
+            fieldName = "videos"; 
+          } else if (media.type === "application") {
+            mimeType = "application/pdf"; 
+            fileName = `document_${index}.pdf`;
+            fieldName = "documents"; 
+          } else {
+            console.log(`Unsupported media type: ${media.type}`);
+            return;
+          }
+
+          // Append to the correct field in formData (images, videos, or documents)
+          formData.append(fieldName, {
+            uri: media.uri,
+            name: fileName,
+            type: mimeType,
+          });
+        }
       });
 
       console.log("FormData:", formData);
@@ -257,7 +230,7 @@ export default function AddProduct({ navigation, route }) {
         productAge: "",
         productOriginalPrice: "",
         address: "",
-        locationLink: "",
+        address_link: "",
       });
 
       // Show success alert
@@ -286,7 +259,6 @@ export default function AddProduct({ navigation, route }) {
     }
   };
 
- 
   const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
   const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
   const SubCategoryData = [
@@ -303,6 +275,8 @@ export default function AddProduct({ navigation, route }) {
     "Air Conditioner (A.C.) / Cooler",
     "Other",
   ];
+
+
 
   return (
     <SafeArea>
@@ -546,16 +520,16 @@ export default function AddProduct({ navigation, route }) {
                   },
                 ]}
               />
-               <LoginInputField
+              <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
                 placeholder="Enter google maps link"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
-                value={registerDetails.locationLink}
+                value={registerDetails.address_link}
                 onChangeText={(text) =>
-                  setRegisterDetails({ ...registerDetails, locationLink: text })
+                  setRegisterDetails({ ...registerDetails, address_link: text })
                 }
               />
 
@@ -570,7 +544,7 @@ export default function AddProduct({ navigation, route }) {
                 onChangeText={(text) =>
                   setRegisterDetails({
                     ...registerDetails,
-                    productAge: text, // Store as string, e.g., "1 year, 6 months"
+                    productAge: text, 
                   })
                 }
                 value={registerDetails.productAge}

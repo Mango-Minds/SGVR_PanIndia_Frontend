@@ -566,7 +566,7 @@ const TempleEvents = ({ navigation }) => {
               alignItems: "center",
             }}
             size={"large"}
-            color={"#b98c13"}
+            color={Theme.themeColor}
           />
         ) : (
           <>

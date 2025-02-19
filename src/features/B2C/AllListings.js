@@ -45,31 +45,8 @@ const AllListingScreen = ({ route, navigation }) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSortOption, setSelectedSortOption] = useState(null);
 
-
-
-
   const filteredItems = items.filter((item) => item.category === category);
   console.log("User: ", user);
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={style.card}
-      onPress={() =>
-        navigation.navigate("EachListing", {
-          itemId: item.id,
-          item: item,
-          fetchProducts: fetchProducts,
-        })
-      }
-    >
-      <Image
-        source={{ uri: `${BASEIMGURL}${item.images[0]}` }}
-        style={styles.eachJewelleryCardImg}
-      />
-     
-      <Text style={style.price}>{item.price}</Text>
-      <Text style={style.title}>{item.name}</Text>
-    </TouchableOpacity>
-  );
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -81,7 +58,6 @@ const AllListingScreen = ({ route, navigation }) => {
     }, 1200),
     []
   );
-
 
   const handleSearch = (e) => {
     setSearchTerm(e);
@@ -164,88 +140,24 @@ const AllListingScreen = ({ route, navigation }) => {
     { label: "Price: High to Low", value: "high" },
     { label: "Price: Low to High", value: "low" },
   ];
-  
-  const handleSortSelect = (option) => {
-    setSortOption(option);
-    setSortMenuVisible(false); // Close the sorting menu
-    fetchProducts(searchTerm, selectedFiltersArray, option);
-  };
-  
 
-
-
-
-  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
-  //   //Construct the query parameters from selectedFiltersArray
-  //   const queryParams = new URLSearchParams();
-
-  //   selectedFiltersArray.forEach((filter) => {
-  //     if (filter["Filter name"] === "Category") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("category", option)
-  //       );
-  //     } else if (filter["Filter name"] === "Condition") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("condition", option)
-  //       );
-  //     } else if (filter["Filter name"] === "Price") {
-  //       filter.Options.forEach((option) => {
-  //         if (option.includes("Below")) {
-  //           const maxPrice = option.split(" ")[1];
-  //           queryParams.append("maxPrice", maxPrice);
-  //         } else if (option.includes("Above")) {
-  //           const minPrice = option.split(" ")[1];
-  //           queryParams.append("minPrice", minPrice);
-  //         } else {
-  //           const [minPrice, maxPrice] = option.split("-");
-  //           queryParams.append("minPrice", minPrice);
-  //           queryParams.append("maxPrice", maxPrice);
-  //         }
-  //       });
-  //     }
-  //   });
-
-  //   if (searchTerm.trim() !== "") {
-  //     queryParams.append("search", searchTerm);
-  //   }
-
-  //   const queryString = queryParams.toString();
-  //   const url = `${BASEAPIURL}/listings?${queryString}`;
-
-  //   console.log("Fetching products with URL:", url);
-
-  //   try {
-  //     setLoadingAnimation(true);
-  //     const response = await fetch(url, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log(" Data:", data);
-
-  //       setProducts(data.listings);
-  //     } else {
-  //       throw new Error("Failed to fetch products");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   } finally {
-  //     setLoadingAnimation(false); // End loading
-  //   }
-  // };
-  
-  const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
+ 
+  const fetchProducts = async (
+    searchTerm,
+    selectedFiltersArray,
+    sortOption
+  ) => {
     const queryParams = new URLSearchParams();
-  
+
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Category") {
-        filter.Options.forEach((option) => queryParams.append("category", option));
+        filter.Options.forEach((option) =>
+          queryParams.append("category", option)
+        );
       } else if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) => queryParams.append("condition", option));
+        filter.Options.forEach((option) =>
+          queryParams.append("condition", option)
+        );
       } else if (filter["Filter name"] === "Price") {
         filter.Options.forEach((option) => {
           if (option.includes("Below")) {
@@ -262,21 +174,22 @@ const AllListingScreen = ({ route, navigation }) => {
         });
       }
     });
-  
+
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
-  
-    // Append sort option
+
+    // Append sort option to query params
     if (sortOption) {
       queryParams.append("priceSort", sortOption);
     }
-  
+
+    console.log("Sort option: ", sortOption);
     const queryString = queryParams.toString();
     const url = `${BASEAPIURL}/listings?${queryString}`;
-  
+
     console.log("Fetching products with URL:", url);
-  
+
     try {
       setLoadingAnimation(true);
       const response = await fetch(url, {
@@ -288,7 +201,8 @@ const AllListingScreen = ({ route, navigation }) => {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log(" Data:", data);
+        console.log("Data:", data);
+
         setProducts(data.listings);
       } else {
         throw new Error("Failed to fetch products");
@@ -299,18 +213,21 @@ const AllListingScreen = ({ route, navigation }) => {
       setLoadingAnimation(false);
     }
   };
-  
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   useEffect(() => {
-    console.log("inside useeffect");
+    console.log("inside useEffect");
     setMenuVisible(false);
-    debouncedFetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+    fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
   }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
 
- 
+  const handleSortSelect = (option) => {
+    setSelectedSortOption(option);
+    setSortMenuVisible(false);
+  };
+
+  useEffect(() => {
+    console.log("Updated sortOption:", sortOption);
+  }, [sortOption]);
 
   console.log("Products: ", products);
   return (
@@ -336,8 +253,10 @@ const AllListingScreen = ({ route, navigation }) => {
           </TopText>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <IconButton
-            icon="sort"
+          
+          <Ionicons
+            name="options-outline"
+            size={26}
             style={{ color: "grey", marginLeft: "auto" }}
             onPress={toggleSortMenu}
           />
@@ -347,8 +266,6 @@ const AllListingScreen = ({ route, navigation }) => {
             onPress={() => navigation.navigate("AddProduct", { fetchProducts })}
           />
         </View>
-
-      
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         <SearchField placeholder="Search" onChangeText={handleSearch} />
@@ -380,7 +297,7 @@ const AllListingScreen = ({ route, navigation }) => {
                   <Pressable
                     onPress={() =>
                       navigation.navigate("EachListing", {
-                        itemId: product.id,
+                        itemId: product._id,
                         item: product,
                         fetchProducts: fetchProducts,
                       })
@@ -475,10 +392,12 @@ const AllListingScreen = ({ route, navigation }) => {
         selectedSortOption={selectedSortOption}
         setSelectedSortOption={setSelectedSortOption}
         fetchProducts={fetchProducts}
+        handleSortSelect={handleSortSelect}
       />
-     
 
-      {!menuVisible && !sortMenuVisible &&  <BottomNavigation navigation={navigation} />}
+      {!menuVisible && !sortMenuVisible && (
+        <BottomNavigation navigation={navigation} />
+      )}
     </Container>
   );
 };
@@ -493,7 +412,7 @@ const style = StyleSheet.create({
   },
 
   card: {
-    width: width / 2 - 24, 
+    width: width / 2 - 24,
     margin: 10,
     backgroundColor: "#f8f8f8",
     borderRadius: 8,

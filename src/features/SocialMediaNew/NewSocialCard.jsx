@@ -526,9 +526,11 @@ const NewSocialCard = ({
     );
   };
 
+
+
   const renderItem = ({ item }) => {
     const imageUri = item?.userId?.image
-      ? `${BASEIMGURL}${item.userId.image}`
+      ? `${BASEIMGURL}${item.userId?.image}`
       : UserImg;
 
     const isCommentOwner = item?.userId?._id === fromUserId;

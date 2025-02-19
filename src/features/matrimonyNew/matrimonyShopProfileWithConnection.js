@@ -157,7 +157,7 @@ export default function MatrimonyProfileNewWithConnection({
                   onPress: () => {
                     navigation.navigate("ChatScreenNew", {
                       user_auth_token: token,
-                      room: room,
+                      room: room_with_user,
                       participant_name:
                         room_with_user.participants[0].firstName +
                         " " +

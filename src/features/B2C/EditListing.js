@@ -38,7 +38,7 @@ import {
   editJewelleryData,
 } from "../../services/jewellery.services";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import { Video } from "expo-av";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -89,40 +89,71 @@ export default function EditListing({ route, navigation }) {
       : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
-  const [uploadedImages, setUploadedImages] = useState([]);
+  // const [uploadedImages, setUploadedImages] = useState([]);
+  const [uploadedImages, setUploadedImages] = useState(
+    product.images.map((imageUri) => ({ uri: imageUri }))
+  ); // Pre-load existing images
+  const [selectedVideos, setSelectedVideos] = useState([]);
   const { loadingInBtn } = useSelector((state) => state.user);
   
 
+  // const _pickDocument = async () => {
+  //   let result = await ImagePicker.launchImageLibraryAsync({
+  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
+  //     allowsEditing: true,
+  //     aspect: [4, 3],
+  //     quality: 1,
+  //   });
+
+  //   if (result.canceled) return;
+
+  //   setUploadedImages((prev) => [...prev, result.assets[0]]);
+  // };
   const _pickDocument = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
     });
-
+  
     if (result.canceled) return;
-
-    setUploadedImages((prev) => [...prev, result.assets[0]]);
-  };
-
-  const removeProfileImage = (index, isUploadedImage) => {
-    if (isUploadedImage) {
-      setUploadedImages(uploadedImages.filter((_, i) => i !== index));
-    } else {
-      setSelectedImages(selectedImages.filter((_, i) => i !== index));
+  
+    const media = result.assets[0];
+    if (media.type === "image") {
+      setSelectedImages((prev) => [...prev, media]);
+    } else if (media.type === "video") {
+      setSelectedVideos((prev) => [...prev, media]);
     }
   };
+  
+
+  // const removeProfileImage = (index, isUploadedImage) => {
+  //   if (isUploadedImage) {
+  //     setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+  //   } else {
+  //     setSelectedImages(selectedImages.filter((_, i) => i !== index));
+  //   }
+  // };
+  
+  const removeProfileImage = (index, isUploadedImage, mediaType) => {
+    if (mediaType === 'image') {
+      if (isUploadedImage) {
+        setUploadedImages(uploadedImages.filter((_, i) => i !== index));
+      } else {
+        setSelectedImages(selectedImages.filter((_, i) => i !== index));
+      }
+    } else if (mediaType === 'video') {
+      setSelectedVideos(selectedVideos.filter((_, i) => i !== index));
+    }
+  };
+  
   const [modifiedDetails, setModifiedDetails] = useState({
     name: product.name,
     price: product.price.toString(),
     originalPrice: product.originalPrice.toString(),
     address: product.address ,
     description: product.description,
-    // quantity: product.quantity.toString(),
-    // quality: product.quality,
-    // weightPerProduct: product.weightPerProduct.toString(),
-    // goldAvailable: product.goldAvailable.toString(),
     category: product.category,
     subcategory: product.subcategory,
     condition: product.condition,
@@ -144,18 +175,37 @@ export default function EditListing({ route, navigation }) {
       });
 
       // Append existing images without base URL
-      selectedImages.forEach((image, index) => {
-        if (image.startsWith(BASEIMGURL)) {
-          formData.append("images", image.replace(BASEIMGURL, ""));
-        }
-      });
+      // selectedImages.forEach((image, index) => {
+      //   if (image.startsWith(BASEIMGURL)) {
+      //     formData.append("images", image.replace(BASEIMGURL, ""));
+      //   }
+      // });
 
-      // Append newly uploaded images
-      uploadedImages.forEach((image, index) => {
+      // // Append newly uploaded images
+      // uploadedImages.forEach((image, index) => {
+      //   formData.append("images", {
+      //     uri: image.uri,
+      //     name: `image_${index}.jpg`,
+      //     type: "image/jpeg",
+      //   });
+      // });
+      uploadedImages.forEach((image) => {
+        formData.append("images", image.uri.replace(BASEIMGURL, ""));
+      });
+  
+      selectedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
           name: `image_${index}.jpg`,
           type: "image/jpeg",
+        });
+      });
+  
+      selectedVideos.forEach((video, index) => {
+        formData.append("videos", {
+          uri: video.uri,
+          name: `video_${index}.mp4`,
+          type: "video/mp4",
         });
       });
       console.log("formdata--", formData)
@@ -230,7 +280,7 @@ export default function EditListing({ route, navigation }) {
             >
               Add More Product Image
             </Text>
-            <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
+            {/* <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
               {selectedImages.map((image, index) => (
                 <View
                   key={`selected-${index}`}
@@ -304,7 +354,62 @@ export default function EditListing({ route, navigation }) {
                   <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
-            </Row>
+            </Row> */}
+            <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
+  {selectedImages.map((image, index) => (
+    <View
+      key={`selected-image-${index}`}
+      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
+    >
+      <Image style={styles.profileImg} source={{ uri: image.uri }} />
+      <TouchableOpacity onPress={() => removeProfileImage(index, false, 'image')}>
+        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
+          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  ))}
+
+  {uploadedImages.map((image, index) => (
+    <View
+      key={`uploaded-image-${index}`}
+      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
+    >
+      <Image style={styles.profileImg} source={{ uri: image.uri }} />
+      <TouchableOpacity onPress={() => removeProfileImage(index, true, 'image')}>
+        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
+          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  ))}
+
+  {selectedVideos.map((video, index) => (
+    <View
+      key={`selected-video-${index}`}
+      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
+    >
+      <Video
+        source={{ uri: video.uri }}
+        style={styles.profileImg}
+        resizeMode="cover"
+        shouldPlay={false}
+      />
+      <TouchableOpacity onPress={() => removeProfileImage(index, false, 'video')}>
+        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
+          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
+        </View>
+      </TouchableOpacity>
+    </View>
+  ))}
+
+  {selectedImages.length + uploadedImages.length + selectedVideos.length < 6 && (
+    <AddProfileBox onPress={_pickDocument}>
+      <Icon name="plus" size={35} color={Theme.themeColor} />
+    </AddProfileBox>
+  )}
+</Row>
+
             <FormSection style={{ paddingTop: 0 }}>
               <Text
                 style={{

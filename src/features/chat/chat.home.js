@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { decode } from "base-64";
 import { TopText } from "../../styles/social.styles";
-
+import Theme from "../../styles/theme";
 import { Card, IconButton } from "react-native-paper";
 import { TouchableOpacity, ScrollView } from "react-native";
 // import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   headerTitle: {
-    color: "#D4AF37",
+    color: Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
     marginLeft: 8,

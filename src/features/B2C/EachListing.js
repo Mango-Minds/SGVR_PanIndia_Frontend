@@ -34,23 +34,23 @@ import { RowBetween } from "../../styles/common.styles";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
 import * as Location from "expo-location";
+import { Video } from "expo-av";
+import * as VideoThumbnails from "expo-video-thumbnails";
 const windowWidth = Dimensions.get("window").width;
 export default function EachListing({ route, navigation }) {
   const { user } = useSelector((state) => state.user);
-
   const isFocused = useIsFocused();
+  const { itemId, item, fetchProducts } = route.params;
+  console.log("Item: ", item);
+
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const loggedInUserId = decodedPayload.id;
   console.log("loggedInUserId: ", loggedInUserId);
   const userType = decodedPayload.userType;
-  const { itemId, item, fetchProducts } = route.params;
-  console.log("itemId: ", itemId);
-  console.log("item:", item);
   const businessId = item?.createdBy?._id;
   console.log("BI: ", businessId);
-  const [loadingAnimation, setLoadingAnimation] = useState(true);
 
   const deleteProduct = async () => {
     try {
@@ -79,8 +79,8 @@ export default function EachListing({ route, navigation }) {
           {
             text: "OK",
             onPress: () => {
-              fetchProducts(); // Refetch the product list
-              navigation.goBack(); // Go back to the previous screen
+              fetchProducts();
+              navigation.goBack();
             },
           },
         ],
@@ -102,8 +102,7 @@ export default function EachListing({ route, navigation }) {
       fetchProducts();
     }
   }, [isFocused]);
-  console.log("Locaion link: ", item.locationLink);
-  console.log("Product: ", item);
+  console.log("Item: ", item);
 
   const [isRepostModalVisible, setRepostModalVisible] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
@@ -143,21 +142,9 @@ export default function EachListing({ route, navigation }) {
     outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
     extrapolate: "clamp",
   });
-  const renderBackground = () => {
-    return (
-      <TouchableOpacity activeOpacity={1} onPress={() => setShowViewer(true)}>
-        <Animated.View style={{ height: headerHeight }}>
-          <Image
-            source={{ uri: `${BASEIMGURL}${item.images[0]}` }}
-            resizeMode="cover"
-            style={{ width: "100%", height: "100%" }}
-          />
-        </Animated.View>
-      </TouchableOpacity>
-    );
-  };
+
   const renderContentBackground = (user) => {
-    const url = item?.locationLink;
+    const url = item?.address_link;
     const [mapReady, setMapReady] = useState(false);
     const [layout, setLayout] = useState({
       width: Dimensions.get("window").width,
@@ -239,34 +226,6 @@ export default function EachListing({ route, navigation }) {
     return (
       <View style={styles.scrollContainer}>
         <RowBetween>
-          {/* <View>
-            <Text style={styles.title}>{item.name}</Text>
-          </View> */}
-          {/* <View>
-            <Text style={styles.title}>{templeDetails.templeName}</Text>
-          </View>
-          <TouchableOpacity onPress={openRepostModal}>
-            <View style={styles.infoContainer}>
-              <Ionicons name="location" size={16} color="gray" />
-              <Text style={styles.infoText}>LOCATION INFO</Text>
-            </View>
-          </TouchableOpacity> */}
-          {/* <TouchableOpacity onPress={openRepostModal}>
-            <View style={styles.infoContainer}>
-              <Ionicons name="location" size={16} color="gray" />
-              <Text style={styles.infoText}>LOCATION INFO</Text>
-            </View>
-          </TouchableOpacity> */}
-          {/* <TouchableOpacity onPress={openRepostModal}>
-          <View style={styles.locationContainer} >
-            <MaterialIcon
-              name="location-on"
-              size={18}
-              color={Theme.themeColor}
-            />
-            <Text style={styles.homeTown}>{item.address}</Text>
-          </View>
-          </TouchableOpacity> */}
           <Modal
             transparent={true}
             visible={isRepostModalVisible}
@@ -282,7 +241,6 @@ export default function EachListing({ route, navigation }) {
                   ]}
                   {...panResponder.panHandlers}
                 >
-                  {/* Temple Name */}
                   <TouchableOpacity style={styles.modalOption}>
                     <View style={styles.iconTextContainer}>
                       <Text style={styles.modalText}>Product: {item.name}</Text>
@@ -321,8 +279,6 @@ export default function EachListing({ route, navigation }) {
                               latitude: coordinates.latitude,
                               longitude: coordinates.longitude,
                             }}
-                            // title={templeDetails.templeName}
-                            // description={templeDetails.address}
                           />
                         </MapView>
                       ) : (
@@ -351,14 +307,9 @@ export default function EachListing({ route, navigation }) {
                   {/* Address Section */}
                   <View style={styles.locationText}>
                     <View style={styles.iconTextContainer}>
-                      {/* <Ionicons name="location" size={24} style={styles.icon} />
-                      <Text style={styles.modalSubText}>
-                        {templeDetails.address || "Address not available"}
-                      </Text> */}
                       <Text style={styles.modalSubText}>
                         {item.address || "Address not available"}
                       </Text>
-                      {/* <Text style={styles.homeTown}>{item.address}</Text> */}
 
                       {url && (
                         <Ionicons
@@ -431,23 +382,7 @@ export default function EachListing({ route, navigation }) {
               console.log("Room with user: ", room_with_user);
               const initialMessage = `Hi, I have a query about this product:${item?.name}\n Price: Rs. ${item.price} \n\nCan you provide more details?`;
               console.log("IM: ", initialMessage);
-              // Alert.alert("OK", "Chat Room Created", [
-              //   {
-              //     text: "OK",
-              //     onPress: () => {
-              //       navigation.navigate("ChatScreenNew", {
 
-              //         user_auth_token: token,
-              //         room: room_with_user,
-              //         participant_name:
-              //           room_with_user.participants[0].firstName +
-              //           " " +
-              //           room_with_user.participants[0].lastName,
-              //           initialMessage: initialMessage,
-              //       });
-              //     },
-              //   },
-              // ]);
               Alert.alert("OK", "Chat Room Created", [
                 {
                   text: "OK",
@@ -487,6 +422,36 @@ export default function EachListing({ route, navigation }) {
     }
   };
 
+  const [thumbnails, setThumbnails] = useState([]);
+
+  const generateThumbnail = async (videoUri) => {
+    try {
+      const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
+        time: 10000,
+      });
+      setThumbnails((prevThumbnails) => [...prevThumbnails, uri]);
+    } catch (e) {
+      console.warn("Could not generate thumbnail", e);
+    }
+  };
+
+  useEffect(() => {
+    if (item?.videos && item?.videos.length > 0) {
+      item.videos.forEach((videoUri) => {
+        generateThumbnail(`${BASEIMGURL}${videoUri}`);
+      });
+    }
+  }, [item?.videos]);
+
+  const handleThumbnailClick = (index) => {
+    if (index < item?.images.length) {
+      setCurrentIndex(index);
+    } else {
+      const videoIndex = index - item?.images?.length;
+      setCurrentIndex(item?.images.length + videoIndex);
+    }
+  };
+
   return (
     <SafeAreaView
       style={{
@@ -497,11 +462,25 @@ export default function EachListing({ route, navigation }) {
       <ScrollView style={styles.container}>
         {/* Main Image */}
         <View style={styles.headerImageContainer}>
-          <Image
-            source={{ uri: `${BASEIMGURL}${item.images[currentIndex]}` }}
-            style={styles.headerImage}
-            resizeMode="cover"
-          />
+          {currentIndex < item?.images?.length ? (
+            <Image
+              source={{ uri: `${BASEIMGURL}${item?.images[currentIndex]}` }}
+              style={styles.headerImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <Video
+              source={{
+                uri: `${BASEIMGURL}${
+                  item?.videos[currentIndex - item?.images.length]
+                }`,
+              }} // Use correct video URI
+              style={styles.headerImage}
+              useNativeControls
+              isLooping
+              shouldPlay
+            />
+          )}
           <LinearGradient
             colors={["transparent", "rgba(0,0,0,0.8)"]}
             style={styles.gradientOverlay}
@@ -511,13 +490,12 @@ export default function EachListing({ route, navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Thumbnail Scroll */}
         <View style={{ paddingTop: 16, paddingBottom: 16, marginLeft: 10 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {item.images.map((image, index) => (
+            {item?.images.map((image, index) => (
               <TouchableOpacity
                 key={index}
-                onPress={() => setCurrentIndex(index)}
+                onPress={() => handleThumbnailClick(index)}
                 style={{
                   borderWidth: currentIndex === index ? 2 : 0,
                   borderColor:
@@ -527,6 +505,35 @@ export default function EachListing({ route, navigation }) {
               >
                 <Image
                   source={{ uri: `${BASEIMGURL}${image}` }}
+                  resizeMode="cover"
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 8,
+                    marginRight: 10,
+                  }}
+                />
+              </TouchableOpacity>
+            ))}
+
+            {item?.videos.map((video, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() =>
+                  handleThumbnailClick(item?.images.length + index)
+                } // Click on video thumbnail
+                style={{
+                  borderWidth:
+                    currentIndex === item?.images.length + index ? 2 : 0,
+                  borderColor:
+                    currentIndex === item?.images.length + index
+                      ? "transparent"
+                      : "transparent",
+                  borderRadius: 8,
+                }}
+              >
+                <Image
+                  source={{ uri: thumbnails[index] }} // Display thumbnail for video
                   resizeMode="cover"
                   style={{
                     width: 60,
@@ -620,8 +627,7 @@ export default function EachListing({ route, navigation }) {
 
       {console.log("CB: ", item.createdBy?._id)}
       {console.log("UI: ", user._id)}
-      {item.createdBy?._id !== user._id ? (
-       
+      {item.createdBy !== user._id ? (
         <View style={styles.bottomBarContainer}>
           <View style={styles.bottomBar}>
             <View style={styles.ticketInfoContainer}>

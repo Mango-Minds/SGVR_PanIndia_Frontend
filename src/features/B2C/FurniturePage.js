@@ -29,6 +29,7 @@ import { decode } from "base-64";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import SortMenu from "./SortMenu";
 const { width } = Dimensions.get("window");
 const FurnitureScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
@@ -42,7 +43,11 @@ const FurnitureScreen = ({ route, navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  // const filteredItems = items.filter((item) => item.category === category);
+  const [selectedSortOption, setSelectedSortOption] = useState(null);
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
+  const [sortOption, setSortOption] = useState(null);
+
+ 
   console.log("User: ", user);
   const renderItem = ({ item }) => (
     <TouchableOpacity
@@ -59,11 +64,19 @@ const FurnitureScreen = ({ route, navigation }) => {
         source={{ uri: `${BASEIMGURL}${item.images[0]}` }}
         style={styles.eachJewelleryCardImg}
       />
-      {/* source={{ uri: `${BASEIMGURL}${item.image[0]}` }} */}
+      
       <Text style={style.price}>{item.price}</Text>
       <Text style={style.title}>{item.name}</Text>
     </TouchableOpacity>
   );
+  const toggleSortMenu = () => {
+    setSortMenuVisible((prevState) => !prevState);
+  };
+
+  const sortOptions = [
+    { label: "Price: High to Low", value: "high" },
+    { label: "Price: Low to High", value: "low" },
+  ];
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -147,16 +160,18 @@ const FurnitureScreen = ({ route, navigation }) => {
     }
   };
 
-  
- 
-  const fetchProducts = async (searchTerm, selectedFiltersArray) => {
+  const fetchProducts = async (
+    searchTerm,
+    selectedFiltersArray,
+    sortOption
+  ) => {
     const queryParams = new URLSearchParams();
-  
+
     // Include the category in the API request
     if (category) {
       queryParams.append("category", category);
     }
-  
+
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Condition") {
         filter.Options.forEach((option) =>
@@ -178,16 +193,18 @@ const FurnitureScreen = ({ route, navigation }) => {
         });
       }
     });
-  
+
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
-  
+    if (sortOption) {
+      queryParams.append("priceSort", sortOption);
+    }
     const queryString = queryParams.toString();
     const url = `${BASEAPIURL}/listings?${queryString}`;
-  
+
     console.log("Fetching products with URL:", url);
-  
+
     try {
       setLoadingAnimation(true);
       const response = await fetch(url, {
@@ -200,7 +217,7 @@ const FurnitureScreen = ({ route, navigation }) => {
       if (response.ok) {
         const data = await response.json();
         console.log("Data:", data);
-  
+
         setProducts(data.listings);
       } else {
         throw new Error("Failed to fetch products");
@@ -211,23 +228,29 @@ const FurnitureScreen = ({ route, navigation }) => {
       setLoadingAnimation(false);
     }
   };
-  
   useEffect(() => {
-    console.log("inside useeffect");
+    console.log("inside useEffect");
     setMenuVisible(false);
-    debouncedFetchProducts(searchTerm, selectedFiltersArray);
-  }, [searchTerm, selectedFiltersArray, isFocused]);
+    fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+  }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
+
+  const handleSortSelect = (option) => {
+    setSelectedSortOption(option);
+    setSortMenuVisible(false);
+  };
+
+  useEffect(() => {
+    console.log("Updated sortOption:", sortOption);
+  }, [sortOption]);
 
   const filteredItems = products.filter((product) =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  
 
   console.log("Products: ", products);
   console.log("FilteredItems: ", filteredItems);
 
   return (
-   
     <Container
       style={{
         paddingRight: 0,
@@ -250,15 +273,20 @@ const FurnitureScreen = ({ route, navigation }) => {
           </TopText>
         </View>
 
-        <IconButton
-          icon="plus"
-          style={{ marginRight: 15, color: "grey" }}
-          onPress={() =>
-            navigation.navigate("AddProduct", {
-              fetchProducts: fetchProducts,
-            })
-          }
-        ></IconButton>
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+          
+          <Ionicons
+            name="options-outline"
+            size={26}
+            style={{ color: "grey", marginLeft: "auto" }}
+            onPress={toggleSortMenu}
+          />
+          <IconButton
+            icon="plus"
+            style={{ marginRight: 15, color: "grey" }}
+            onPress={() => navigation.navigate("AddProduct", { fetchProducts })}
+          />
+        </View>
       </RowBetween>
 
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
@@ -373,8 +401,26 @@ const FurnitureScreen = ({ route, navigation }) => {
         selectedFiltersArray={selectedFiltersArray}
         setSelectedFiltersArray={setSelectedFiltersArray}
       />
+      <SortMenu
+        menuVisible={sortMenuVisible}
+        toggleMenu={toggleSortMenu}
+        sortOptions={sortOptions}
+        activeFilter={activeFilter}
+        selectedOptions={selectedOptions}
+        handleFilterClick={handleFilterClick}
+        handleOptionClick={handleSortSelect}
+        handleButtonPress={handleButtonPress}
+        selectedFiltersArray={selectedFiltersArray}
+        setSelectedFiltersArray={setSelectedFiltersArray}
+        selectedSortOption={selectedSortOption}
+        setSelectedSortOption={setSelectedSortOption}
+        fetchProducts={fetchProducts}
+        handleSortSelect={handleSortSelect}
+      />
 
-      {!menuVisible && <BottomNavigation navigation={navigation} />}
+      {!menuVisible && !sortMenuVisible && (
+        <BottomNavigation navigation={navigation} />
+      )}
     </Container>
   );
 };

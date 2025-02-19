@@ -29,7 +29,7 @@ import { decode } from "base-64";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-
+import SortMenu from "./SortMenu";
 const { width } = Dimensions.get("window");
 const MyListingScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
@@ -41,10 +41,11 @@ const MyListingScreen = ({ route, navigation }) => {
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [products, setProducts] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
- 
+
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [noProductsFound, setNoProductsFound] = useState(false);
+  const [selectedSortOption, setSelectedSortOption] = useState(null);
   const filteredItems = items.filter((item) => item.category === category);
   console.log("User: ", user);
   const renderItem = ({ item }) => (
@@ -149,8 +150,24 @@ const MyListingScreen = ({ route, navigation }) => {
       });
     }
   };
- 
-  const fetchProducts = async (searchTerm, selectedFiltersArray) => {
+
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
+  const [sortOption, setSortOption] = useState(null);
+
+  const toggleSortMenu = () => {
+    setSortMenuVisible((prevState) => !prevState);
+  };
+
+  const sortOptions = [
+    { label: "Price: High to Low", value: "high" },
+    { label: "Price: Low to High", value: "low" },
+  ];
+
+  const fetchProducts = async (
+    searchTerm,
+    selectedFiltersArray,
+    sortOption
+  ) => {
     //Construct the query parameters from selectedFiltersArray
     const queryParams = new URLSearchParams();
 
@@ -183,6 +200,9 @@ const MyListingScreen = ({ route, navigation }) => {
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
+    if (sortOption) {
+      queryParams.append("priceSort", sortOption);
+    }
 
     const queryString = queryParams.toString();
     const url = `${BASEAPIURL}/listings/all/${user._id}?${queryString}`;
@@ -209,28 +229,29 @@ const MyListingScreen = ({ route, navigation }) => {
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setLoadingAnimation(false); // End loading
+      setLoadingAnimation(false); 
     }
   };
-
- 
 
   useEffect(() => {
     fetchProducts();
   }, []);
 
   useEffect(() => {
-    console.log("inside useeffect");
+    console.log("inside useEffect");
     setMenuVisible(false);
-   
-    debouncedFetchProducts(searchTerm, selectedFiltersArray);
-  }, [searchTerm, selectedFiltersArray, isFocused]);
+    fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+  }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
+
+  const handleSortSelect = (option) => {
+    setSelectedSortOption(option);
+    setSortMenuVisible(false);
+  };
 
   console.log("Products in my listings: ", products);
   console.log("Items: ", items);
   const filteredUserItems = items.filter((item) => item.createdBy === user._id);
   console.log("Filtered user items: ", filteredUserItems);
- 
 
   return (
     <Container
@@ -255,21 +276,12 @@ const MyListingScreen = ({ route, navigation }) => {
           </TopText>
         </View>
 
-        {/* <IconButton
-          icon="plus"
-         style={{ marginRight: 15, color: "grey" }}
-        
-          onPress={() =>
-            navigation.navigate("AddProduct", {
-              fetchProducts: fetchProducts,
-            })
-          }
-        ></IconButton> */}
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          <IconButton
-            icon="sort"
+          <Ionicons
+            name="options-outline"
+            size={26}
             style={{ color: "grey", marginLeft: "auto" }}
-           // onPress={toggleSortMenu}
+            onPress={toggleSortMenu}
           />
           <IconButton
             icon="plus"
@@ -389,9 +401,25 @@ const MyListingScreen = ({ route, navigation }) => {
         selectedFiltersArray={selectedFiltersArray}
         setSelectedFiltersArray={setSelectedFiltersArray}
       />
-     
 
-      { !menuVisible && (
+      <SortMenu
+        menuVisible={sortMenuVisible}
+        toggleMenu={toggleSortMenu}
+        sortOptions={sortOptions}
+        activeFilter={activeFilter}
+        selectedOptions={selectedOptions}
+        handleFilterClick={handleFilterClick}
+        handleOptionClick={handleSortSelect}
+        handleButtonPress={handleButtonPress}
+        selectedFiltersArray={selectedFiltersArray}
+        setSelectedFiltersArray={setSelectedFiltersArray}
+        selectedSortOption={selectedSortOption}
+        setSelectedSortOption={setSelectedSortOption}
+        fetchProducts={fetchProducts}
+        handleSortSelect={handleSortSelect}
+      />
+
+      {!menuVisible && !sortMenuVisible && (
         <BottomNavigation navigation={navigation} />
       )}
     </Container>

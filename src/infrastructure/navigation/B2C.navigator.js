@@ -12,11 +12,12 @@ import MyB2CProfile from "../../features/B2C/MyProfile";
 import MyListingScreen from "../../features/B2C/MyListings";
 import JewelleryEditUserRegisterScreen from "../../features/jewellery/EditUserRegistration";
 import AllListingScreen from "../../features/B2C/AllListings";
+import EditUserProfile from "../../features/B2C/EditProfile";
 const Stack = createStackNavigator();
 
 export const B2CStackNavigator = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
-     <Stack.Screen name="PageComingSoon" component={PageComingSoon} />
+     {/* <Stack.Screen name="PageComingSoon" component={PageComingSoon} /> */}
     <Stack.Screen name="B2CHome" component={BuySellScreen} />
     <Stack.Screen name="BuySellScreen" component={BuySellScreen} />
     <Stack.Screen name="FurnitureScreen" component={FurnitureScreen} />
@@ -31,5 +32,6 @@ export const B2CStackNavigator = () => (
       component={JewelleryEditUserRegisterScreen}
     />
     <Stack.Screen name="AllListingScreen" component={AllListingScreen} />
+    <Stack.Screen name="EditProfile" component={EditUserProfile}/>
   </Stack.Navigator>
 );

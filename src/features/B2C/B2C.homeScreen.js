@@ -265,9 +265,7 @@ const BuySellScreen = ({ navigation }) => {
     }
   }, [isFocused]);
 
-  // const filteredItems = selectedCategory
-  // ? items.filter((item) => item.category === selectedCategory)
-  // : items;
+ 
   const filteredItems = selectedCategory
     ? items.filter((item) => item.category === selectedCategory)
     : items;
@@ -352,12 +350,7 @@ const BuySellScreen = ({ navigation }) => {
                 justifyContent: "center",
               }}
             >
-              <Icon
-                name="chat"
-                size={24}
-                style={{ marginRight: 15, color: "grey" }}
-              />
-
+             
               <TouchableOpacity
                 onPress={() => navigation.navigate("MyB2CProfile")}
               >

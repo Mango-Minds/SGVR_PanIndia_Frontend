@@ -4,6 +4,7 @@ import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Video, ResizeMode } from "expo-av";
 import { decode } from "base-64";
+import Theme from "../../styles/theme";
 import {
   View,
   ImageBackground,
@@ -504,7 +505,7 @@ const ChatScreenNew = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={goBackAndDisconnect} />
           <TopText
-            style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
+            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
             {participant_name}
           </TopText>
@@ -741,7 +742,7 @@ const styles = StyleSheet.create({
   },
   userMessage: {
     alignSelf: "flex-end",
-    backgroundColor: "#DCF8C6",
+    backgroundColor:"#DCF8C6",
   },
   otherMessage: {
     alignSelf: "flex-start",
