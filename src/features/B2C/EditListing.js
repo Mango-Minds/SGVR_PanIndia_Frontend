@@ -21,7 +21,7 @@ import {
 import { SafeArea } from "../../components/utility/safe-area.component";
 import SelectDropdown from "react-native-select-dropdown";
 import { useDispatch } from "react-redux";
-import { ErrorToggle , setLoadingInBtn} from "../../store/user";
+import { ErrorToggle, setLoadingInBtn } from "../../store/user";
 
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 // import DatePicker from "react-native-datepicker";
@@ -81,7 +81,8 @@ export default function EditListing({ route, navigation }) {
   const { productId, product } = route.params;
   console.log("Product._id", product._id);
   console.log(productId);
-  const{fetchProducts} = route.params;
+  console.log("Product in edit: ", product);
+  const { fetchProducts } = route.params;
   const token = useSelector((state) => state.user.token);
   const initialImages =
     product && product.images
@@ -95,7 +96,6 @@ export default function EditListing({ route, navigation }) {
   ); // Pre-load existing images
   const [selectedVideos, setSelectedVideos] = useState([]);
   const { loadingInBtn } = useSelector((state) => state.user);
-  
 
   // const _pickDocument = async () => {
   //   let result = await ImagePicker.launchImageLibraryAsync({
@@ -116,9 +116,9 @@ export default function EditListing({ route, navigation }) {
       aspect: [4, 3],
       quality: 1,
     });
-  
+
     if (result.canceled) return;
-  
+
     const media = result.assets[0];
     if (media.type === "image") {
       setSelectedImages((prev) => [...prev, media]);
@@ -126,7 +126,6 @@ export default function EditListing({ route, navigation }) {
       setSelectedVideos((prev) => [...prev, media]);
     }
   };
-  
 
   // const removeProfileImage = (index, isUploadedImage) => {
   //   if (isUploadedImage) {
@@ -135,34 +134,36 @@ export default function EditListing({ route, navigation }) {
   //     setSelectedImages(selectedImages.filter((_, i) => i !== index));
   //   }
   // };
-  
+
   const removeProfileImage = (index, isUploadedImage, mediaType) => {
-    if (mediaType === 'image') {
+    if (mediaType === "image") {
       if (isUploadedImage) {
         setUploadedImages(uploadedImages.filter((_, i) => i !== index));
       } else {
         setSelectedImages(selectedImages.filter((_, i) => i !== index));
       }
-    } else if (mediaType === 'video') {
+    } else if (mediaType === "video") {
       setSelectedVideos(selectedVideos.filter((_, i) => i !== index));
     }
   };
-  
+
   const [modifiedDetails, setModifiedDetails] = useState({
     name: product.name,
     price: product.price.toString(),
     originalPrice: product.originalPrice.toString(),
-    address: product.address ,
+    address: product.address,
     description: product.description,
     category: product.category,
     subcategory: product.subcategory,
     condition: product.condition,
     productAge: product.productAge,
   });
-  console.log('modified details', modifiedDetails)
+  console.log("modified details", modifiedDetails);
 
   const handleUpdate = async () => {
     await dispatch(setLoadingInBtn(true));
+    console.log("Product id: ", product._id);
+    console.log(productId);
 
     try {
       const formData = new FormData();
@@ -192,7 +193,7 @@ export default function EditListing({ route, navigation }) {
       uploadedImages.forEach((image) => {
         formData.append("images", image.uri.replace(BASEIMGURL, ""));
       });
-  
+
       selectedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
@@ -200,7 +201,7 @@ export default function EditListing({ route, navigation }) {
           type: "image/jpeg",
         });
       });
-  
+
       selectedVideos.forEach((video, index) => {
         formData.append("videos", {
           uri: video.uri,
@@ -208,7 +209,7 @@ export default function EditListing({ route, navigation }) {
           type: "video/mp4",
         });
       });
-      console.log("formdata--", formData)
+      console.log("formdata--", formData);
 
       const response = await fetch(
         `${BASEAPIURL}/listings/edit/${product._id}`,
@@ -222,8 +223,11 @@ export default function EditListing({ route, navigation }) {
       );
       await dispatch(setLoadingInBtn(false));
 
-      console.log('response--', response)
-
+      console.log("response--", response);
+      console.log(
+        "Url for edit: ",
+        `${BASEAPIURL}/listings/edit/${product._id}`
+      );
       if (!response.ok) {
         throw new Error("Failed to update product");
       }
@@ -236,10 +240,22 @@ export default function EditListing({ route, navigation }) {
     }
   };
 
-  const CategoryData = ["Furniture","Electronics","Vehicles","Other"];
+  const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
   const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
-   const SubCategoryData = ["Sofa", "Table", "Beds", "Dining", "Wardrobes", "Laptop", "Mobile", "Television","Washing Machine","Kitchen Appliances","Air Conditioner (A.C.) / Cooler","Other"];
-
+  const SubCategoryData = [
+    "Sofa",
+    "Table",
+    "Beds",
+    "Dining",
+    "Wardrobes",
+    "Laptop",
+    "Mobile",
+    "Television",
+    "Washing Machine",
+    "Kitchen Appliances",
+    "Air Conditioner (A.C.) / Cooler",
+    "Other",
+  ];
 
   return (
     <SafeArea>
@@ -356,59 +372,110 @@ export default function EditListing({ route, navigation }) {
               )}
             </Row> */}
             <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
-  {selectedImages.map((image, index) => (
-    <View
-      key={`selected-image-${index}`}
-      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
-    >
-      <Image style={styles.profileImg} source={{ uri: image.uri }} />
-      <TouchableOpacity onPress={() => removeProfileImage(index, false, 'image')}>
-        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
-          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
-        </View>
-      </TouchableOpacity>
-    </View>
-  ))}
+              {selectedImages.map((image, index) => (
+                <View
+                  key={`selected-image-${index}`}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: "red",
+                    marginRight: 12,
+                    alignSelf: "center",
+                  }}
+                >
+                  <Image
+                    style={styles.profileImg}
+                    source={{ uri: image.uri }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => removeProfileImage(index, false, "image")}
+                  >
+                    <View
+                      style={{ position: "absolute", right: 3, bottom: 22 }}
+                    >
+                      <Image
+                        source={require("../../assets/images/general/cross.png")}
+                        style={{ width: 17, height: 17 }}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))}
 
-  {uploadedImages.map((image, index) => (
-    <View
-      key={`uploaded-image-${index}`}
-      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
-    >
-      <Image style={styles.profileImg} source={{ uri: image.uri }} />
-      <TouchableOpacity onPress={() => removeProfileImage(index, true, 'image')}>
-        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
-          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
-        </View>
-      </TouchableOpacity>
-    </View>
-  ))}
+              {uploadedImages.map((image, index) => (
+                <View
+                  key={`uploaded-image-${index}`}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: "red",
+                    marginRight: 12,
+                    alignSelf: "center",
+                  }}
+                >
+                  <Image
+                    style={styles.profileImg}
+                    source={{ uri: image.uri }}
+                  />
+                  <TouchableOpacity
+                    onPress={() => removeProfileImage(index, true, "image")}
+                  >
+                    <View
+                      style={{ position: "absolute", right: 3, bottom: 22 }}
+                    >
+                      <Image
+                        source={require("../../assets/images/general/cross.png")}
+                        style={{ width: 17, height: 17 }}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))}
 
-  {selectedVideos.map((video, index) => (
-    <View
-      key={`selected-video-${index}`}
-      style={{ width: 60, height: 60, borderRadius: 30, backgroundColor: "red", marginRight: 12, alignSelf: "center" }}
-    >
-      <Video
-        source={{ uri: video.uri }}
-        style={styles.profileImg}
-        resizeMode="cover"
-        shouldPlay={false}
-      />
-      <TouchableOpacity onPress={() => removeProfileImage(index, false, 'video')}>
-        <View style={{ position: "absolute", right: 3, bottom: 22 }}>
-          <Image source={require("../../assets/images/general/cross.png")} style={{ width: 17, height: 17 }} />
-        </View>
-      </TouchableOpacity>
-    </View>
-  ))}
+              {selectedVideos.map((video, index) => (
+                <View
+                  key={`selected-video-${index}`}
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: 30,
+                    backgroundColor: "red",
+                    marginRight: 12,
+                    alignSelf: "center",
+                  }}
+                >
+                  <Video
+                    source={{ uri: video.uri }}
+                    style={styles.profileImg}
+                    resizeMode="cover"
+                    shouldPlay={false}
+                  />
+                  <TouchableOpacity
+                    onPress={() => removeProfileImage(index, false, "video")}
+                  >
+                    <View
+                      style={{ position: "absolute", right: 3, bottom: 22 }}
+                    >
+                      <Image
+                        source={require("../../assets/images/general/cross.png")}
+                        style={{ width: 17, height: 17 }}
+                      />
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              ))}
 
-  {selectedImages.length + uploadedImages.length + selectedVideos.length < 6 && (
-    <AddProfileBox onPress={_pickDocument}>
-      <Icon name="plus" size={35} color={Theme.themeColor} />
-    </AddProfileBox>
-  )}
-</Row>
+              {selectedImages.length +
+                uploadedImages.length +
+                selectedVideos.length <
+                6 && (
+                <AddProfileBox onPress={_pickDocument}>
+                  <Icon name="plus" size={35} color={Theme.themeColor} />
+                </AddProfileBox>
+              )}
+            </Row>
 
             <FormSection style={{ paddingTop: 0 }}>
               <Text
@@ -474,7 +541,7 @@ export default function EditListing({ route, navigation }) {
                   },
                 ]}
               />
-               <Text
+              <Text
                 style={{
                   fontSize: 16,
                   marginLeft: 4,
@@ -538,7 +605,7 @@ export default function EditListing({ route, navigation }) {
                   setModifiedDetails({ ...modifiedDetails, price: text })
                 }
               />
-               <Text
+              <Text
                 style={{
                   fontSize: 16,
                   marginLeft: 4,
@@ -559,7 +626,10 @@ export default function EditListing({ route, navigation }) {
                 keyboardType="numeric"
                 value={modifiedDetails.originalPrice}
                 onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, originalPrice: text })
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    originalPrice: text,
+                  })
                 }
               />
               <Text
@@ -675,27 +745,26 @@ export default function EditListing({ route, navigation }) {
                   setModifiedDetails({ ...modifiedDetails, productAge: text })
                 }
               />
-             
 
-              <FormButton  onPress={() => handleUpdate(product._id)} >
+              <FormButton onPress={() => handleUpdate(product._id)}>
                 <Text
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
                 >
-                     {loadingInBtn === true ? (
-                  <ActivityIndicator
-                    style={{
-                      display: "flex",
-                      alignSelf: "center",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      flex: 1,
-                    }}
-                    // size={"large"}
-                    color={"white"}
-                  />
-                ) : (
-                  "Submit"
-                )}
+                  {loadingInBtn === true ? (
+                    <ActivityIndicator
+                      style={{
+                        display: "flex",
+                        alignSelf: "center",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flex: 1,
+                      }}
+                      // size={"large"}
+                      color={"white"}
+                    />
+                  ) : (
+                    "Submit"
+                  )}
                 </Text>
               </FormButton>
             </FormSection>

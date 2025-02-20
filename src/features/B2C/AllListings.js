@@ -141,7 +141,6 @@ const AllListingScreen = ({ route, navigation }) => {
     { label: "Price: Low to High", value: "low" },
   ];
 
- 
   const fetchProducts = async (
     searchTerm,
     selectedFiltersArray,
@@ -253,7 +252,6 @@ const AllListingScreen = ({ route, navigation }) => {
           </TopText>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-          
           <Ionicons
             name="options-outline"
             size={26}
@@ -294,7 +292,7 @@ const AllListingScreen = ({ route, navigation }) => {
                   key={index}
                   style={[styles.shadowProp, styles.eachJewelleryCard]}
                 >
-                  <Pressable
+                  {/* <Pressable
                     onPress={() =>
                       navigation.navigate("EachListing", {
                         itemId: product._id,
@@ -302,6 +300,20 @@ const AllListingScreen = ({ route, navigation }) => {
                         fetchProducts: fetchProducts,
                       })
                     }
+                  > */}
+                  <Pressable
+                    onPress={() => {
+                      console.log("Navigating with the following data:");
+                      console.log("itemId:", product._id);
+                      console.log("item:", product);
+                      console.log("fetchProducts:", fetchProducts);
+
+                      navigation.navigate("EachListing", {
+                        itemId: product._id,
+                        item: product,
+                        fetchProducts: fetchProducts,
+                      });
+                    }}
                   >
                     <Image
                       style={styles.eachJewelleryCardImg}

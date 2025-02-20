@@ -54,7 +54,7 @@ const FurnitureScreen = ({ route, navigation }) => {
       style={style.card}
       onPress={() =>
         navigation.navigate("EachListing", {
-          itemId: item.id,
+          itemId: item._id,
           item: item,
           fetchProducts: fetchProducts,
         })
@@ -319,7 +319,7 @@ const FurnitureScreen = ({ route, navigation }) => {
                   <Pressable
                     onPress={() =>
                       navigation.navigate("EachListing", {
-                        itemId: product.id,
+                        itemId: product._id,
                         item: product,
                         fetchProducts: fetchProducts,
                       })

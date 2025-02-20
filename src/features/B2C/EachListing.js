@@ -42,7 +42,7 @@ export default function EachListing({ route, navigation }) {
   const isFocused = useIsFocused();
   const { itemId, item, fetchProducts } = route.params;
   console.log("Item: ", item);
-
+  console.log("Item id in each listing: ", itemId);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
@@ -51,7 +51,37 @@ export default function EachListing({ route, navigation }) {
   const userType = decodedPayload.userType;
   const businessId = item?.createdBy?._id;
   console.log("BI: ", businessId);
+  // const [productData, setProductData] = useState({});
 
+  // const fetchProduct = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorMessage = await response.text();
+  //       throw new Error(`Failed to fetch product: ${errorMessage}`);
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("Fetched Product:", data);
+  //     setProductData(data.listing);
+  //   } catch (error) {
+  //     console.error("Error fetching product:", error);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   if (isFocused) {
+  //     fetchProduct();
+  //   }
+  // }, [isFocused]);
+  // console.log("ProductData: ", productData);
   const deleteProduct = async () => {
     try {
       // Make the DELETE request
@@ -577,13 +607,15 @@ export default function EachListing({ route, navigation }) {
           <View style={styles.eventDetails}>
             <Text style={styles.priceText}>Price Details</Text>
 
-            {item.createdBy === user._id && (
+            {(typeof item.createdBy === "string"
+              ? item.createdBy
+              : item.createdBy._id) === user._id && (
               <TouchableOpacity
                 style={styles.editIconContainer}
                 onPress={() => {
                   navigation.navigate("EditListing", {
-                    productId: item.id,
-                    product: item,
+                    productId: productData._id,
+                    product: productData,
                     fetchProducts: fetchProducts,
                   });
                 }}
@@ -627,7 +659,7 @@ export default function EachListing({ route, navigation }) {
 
       {console.log("CB: ", item.createdBy?._id)}
       {console.log("UI: ", user._id)}
-      {item.createdBy !== user._id ? (
+      {/* {item.createdBy?._id !== user._id ? (
         <View style={styles.bottomBarContainer}>
           <View style={styles.bottomBar}>
             <View style={styles.ticketInfoContainer}>
@@ -652,6 +684,42 @@ export default function EachListing({ route, navigation }) {
               <TouchableOpacity
                 style={styles.bookNowButton}
                 onPress={() => deleteProduct(item.id)}
+              >
+                <Text s style={styles.bookNowButtonText}>
+                  Delete
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )} */}
+      {(typeof item.createdBy === "string"
+        ? item.createdBy
+        : item.createdBy._id) !== user._id ? (
+        <View style={styles.bottomBarContainer}>
+          <View style={styles.bottomBar}>
+            <View style={styles.ticketInfoContainer}>
+              <Text style={styles.priceText}>Interested</Text>
+
+              <TouchableOpacity
+                style={styles.bookNowButton}
+                onPress={() => {
+                  connectToChat(loggedInUserId, businessId, item);
+                }}
+              >
+                <Text style={styles.bookNowButtonText}>Message Owner</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      ) : (
+        <View style={styles.bottomBarContainer}>
+          <View style={styles.bottomBar}>
+            <View style={styles.ticketInfoContainer}>
+              <Text style={styles.priceText}>Delete Product</Text>
+              <TouchableOpacity
+                style={styles.bookNowButton}
+                onPress={() => deleteProduct(item._id)}
               >
                 <Text s style={styles.bookNowButtonText}>
                   Delete

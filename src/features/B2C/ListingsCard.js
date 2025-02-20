@@ -36,7 +36,7 @@ const ListingCard = ({ items, fetchProducts, loadingAnimation }) => {
               style={styles.cardWrapper}
               onPress={() =>
                 navigation.navigate("EachListing", {
-                  itemId: product.id,
+                  itemId: product._id,
                   item: product,
                   fetchProducts: fetchProducts,
                 })
