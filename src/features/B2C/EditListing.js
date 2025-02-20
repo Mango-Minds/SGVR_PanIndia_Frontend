@@ -88,13 +88,18 @@ export default function EditListing({ route, navigation }) {
     product && product.images
       ? product.images.map((image) => `${BASEIMGURL}${image}`)
       : [];
+      
+      const initialVideos =
+      product && product.videos
+      ? product.videos.map((image) => `${BASEIMGURL}${image}`)
+      : [];
+      console.log("initial videos :", initialVideos)
+
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
-  // const [uploadedImages, setUploadedImages] = useState([]);
-  const [uploadedImages, setUploadedImages] = useState(
-    product.images.map((imageUri) => ({ uri: imageUri }))
-  ); // Pre-load existing images
-  const [selectedVideos, setSelectedVideos] = useState([]);
+
+  const [uploadedImages, setUploadedImages] = useState([]); // Pre-load existing images
+  const [selectedVideos, setSelectedVideos] = useState(initialVideos);
   const { loadingInBtn } = useSelector((state) => state.user);
 
   // const _pickDocument = async () => {
@@ -371,7 +376,7 @@ export default function EditListing({ route, navigation }) {
                 </AddProfileBox>
               )}
             </Row> */}
-            <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
+           <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
               {selectedImages.map((image, index) => (
                 <View
                   key={`selected-image-${index}`}
@@ -386,7 +391,7 @@ export default function EditListing({ route, navigation }) {
                 >
                   <Image
                     style={styles.profileImg}
-                    source={{ uri: image.uri }}
+                    source={{ uri: image }}
                   />
                   <TouchableOpacity
                     onPress={() => removeProfileImage(index, false, "image")}
@@ -447,7 +452,7 @@ export default function EditListing({ route, navigation }) {
                   }}
                 >
                   <Video
-                    source={{ uri: video.uri }}
+                    source={{ uri: video }}
                     style={styles.profileImg}
                     resizeMode="cover"
                     shouldPlay={false}
@@ -475,7 +480,7 @@ export default function EditListing({ route, navigation }) {
                   <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
-            </Row>
+            </Row> 
 
             <FormSection style={{ paddingTop: 0 }}>
               <Text

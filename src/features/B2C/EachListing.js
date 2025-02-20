@@ -614,8 +614,8 @@ export default function EachListing({ route, navigation }) {
                 style={styles.editIconContainer}
                 onPress={() => {
                   navigation.navigate("EditListing", {
-                    productId: productData._id,
-                    product: productData,
+                    productId: item._id,
+                    product: item,
                     fetchProducts: fetchProducts,
                   });
                 }}
