@@ -193,7 +193,7 @@ export default function RegisterScreen({ navigation }) {
           <MainContainer style={{ paddingBottom: 10 }}>
             <Image
               style={styles.logo}
-              source={require("../assets/images/pre-login/logoo-small.png")}
+              source={require("../assets/images/pre-login/miLogo-small.png")}
             />
 
             <FormSection>

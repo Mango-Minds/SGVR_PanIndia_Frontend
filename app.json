@@ -4,10 +4,10 @@
     "slug": "mimaratha",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/iconn.jpg",
+    "icon": "./assets/icon.jpg",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/iconn.jpg",
+      "image": "./assets/icon.jpg",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -21,7 +21,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/iconn.jpg",
+        "foregroundImage": "./assets/icon.jpg",
         "backgroundColor": "#ffffff"
       },
       "package": "com.mimaratha.app",
@@ -33,7 +33,7 @@
       }
     },
     "web": {
-      "favicon": "./assets/faviconn.jpg"
+      "favicon": "./assets/favicon.jpg"
     },
     "extra": {
       "eas": {

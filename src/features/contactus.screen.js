@@ -46,7 +46,7 @@ export default function Contactus({ navigation }) {
             }}
           >
             <Image
-              source={require("../assets/images/pre-login/logoo-small.png")}
+              source={require("../assets/images/pre-login/miLogo-small.png")}
               resizeMode="contain"
               style={{
                 width: width * 0.9,

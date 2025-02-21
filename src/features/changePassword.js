@@ -7,7 +7,7 @@ import { Text, View, TouchableOpacity, Image } from "react-native";
 import { LoginInputField } from "../styles/prelogin.styles";
 import axios from "axios";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import Logo from "../assets/images/pre-login/logoo-small.png";
+import Logo from "../assets/images/pre-login/miLogo-small.png";
 import { TopText } from "../styles/social.styles";
 import { Divider, IconButton } from "react-native-paper";
 import { changePassword } from "../services/auth.service";

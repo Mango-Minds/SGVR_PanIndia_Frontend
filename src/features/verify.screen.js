@@ -194,7 +194,7 @@ export default function VerifyScreen({ route, navigation }) {
       <MainContainer>
         <Image
           style={styles.logo}
-          source={require("../assets/images/pre-login/logoo-small.png")}
+          source={require("../assets/images/pre-login/miLogo-small.png")}
         />
 
         <FormSection>
