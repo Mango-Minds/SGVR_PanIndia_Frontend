@@ -78,42 +78,31 @@ export default function EditListing({ route, navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
 
-  const { productId, product } = route.params;
+  const { productId, product, listing, fetchProduct } = route.params;
+  console.log("Listing in edit page: ", listing);
   console.log("Product._id", product._id);
   console.log(productId);
   console.log("Product in edit: ", product);
   const { fetchProducts } = route.params;
   const token = useSelector((state) => state.user.token);
   const initialImages =
-    product && product.images
-      ? product.images.map((image) => `${BASEIMGURL}${image}`)
+    listing && listing.images
+      ? listing.images.map((image) => `${BASEIMGURL}${image}`)
       : [];
-      
-      const initialVideos =
-      product && product.videos
-      ? product.videos.map((image) => `${BASEIMGURL}${image}`)
-      : [];
-      console.log("initial videos :", initialVideos)
 
+  const initialVideos =
+    listing && listing.videos
+      ? listing.videos.map((video) => `${BASEIMGURL}${video}`)
+      : [];
+  console.log("initial videos :", initialVideos);
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
 
-  const [uploadedImages, setUploadedImages] = useState([]); // Pre-load existing images
+  const [uploadedImages, setUploadedImages] = useState([]);
   const [selectedVideos, setSelectedVideos] = useState(initialVideos);
   const { loadingInBtn } = useSelector((state) => state.user);
+  const [uploadedVideos, setUploadedVideos] = useState([]);
 
-  // const _pickDocument = async () => {
-  //   let result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
-  //     allowsEditing: true,
-  //     aspect: [4, 3],
-  //     quality: 1,
-  //   });
-
-  //   if (result.canceled) return;
-
-  //   setUploadedImages((prev) => [...prev, result.assets[0]]);
-  // };
   const _pickDocument = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -132,14 +121,6 @@ export default function EditListing({ route, navigation }) {
     }
   };
 
-  // const removeProfileImage = (index, isUploadedImage) => {
-  //   if (isUploadedImage) {
-  //     setUploadedImages(uploadedImages.filter((_, i) => i !== index));
-  //   } else {
-  //     setSelectedImages(selectedImages.filter((_, i) => i !== index));
-  //   }
-  // };
-
   const removeProfileImage = (index, isUploadedImage, mediaType) => {
     if (mediaType === "image") {
       if (isUploadedImage) {
@@ -148,20 +129,24 @@ export default function EditListing({ route, navigation }) {
         setSelectedImages(selectedImages.filter((_, i) => i !== index));
       }
     } else if (mediaType === "video") {
-      setSelectedVideos(selectedVideos.filter((_, i) => i !== index));
+      if (isUploadedImage) {
+        setUploadedVideos(uploadedVideos.filter((_, i) => i !== index));
+      } else {
+        setSelectedVideos(selectedVideos.filter((_, i) => i !== index));
+      }
     }
   };
 
   const [modifiedDetails, setModifiedDetails] = useState({
-    name: product.name,
-    price: product.price.toString(),
-    originalPrice: product.originalPrice.toString(),
-    address: product.address,
-    description: product.description,
-    category: product.category,
-    subcategory: product.subcategory,
-    condition: product.condition,
-    productAge: product.productAge,
+    name: listing.name,
+    price: listing.price.toString(),
+    originalPrice: listing.originalPrice.toString(),
+    address: listing.address,
+    description: listing.description,
+    category: listing.category,
+    subcategory: listing.subcategory,
+    condition: listing.condition,
+    productAge: listing.productAge,
   });
   console.log("modified details", modifiedDetails);
 
@@ -175,31 +160,18 @@ export default function EditListing({ route, navigation }) {
 
       // Append modified details
       Object.keys(modifiedDetails).forEach((key) => {
-        if (modifiedDetails[key] !== product[key]) {
+        if (modifiedDetails[key] !== listing[key]) {
           formData.append(key, modifiedDetails[key]);
         }
       });
 
-      // Append existing images without base URL
-      // selectedImages.forEach((image, index) => {
-      //   if (image.startsWith(BASEIMGURL)) {
-      //     formData.append("images", image.replace(BASEIMGURL, ""));
-      //   }
-      // });
-
-      // // Append newly uploaded images
-      // uploadedImages.forEach((image, index) => {
-      //   formData.append("images", {
-      //     uri: image.uri,
-      //     name: `image_${index}.jpg`,
-      //     type: "image/jpeg",
-      //   });
-      // });
-      uploadedImages.forEach((image) => {
-        formData.append("images", image.uri.replace(BASEIMGURL, ""));
+      selectedImages.forEach((image, index) => {
+        if (image.startsWith(BASEIMGURL)) {
+          formData.append("images", image.replace(BASEIMGURL, ""));
+        }
       });
 
-      selectedImages.forEach((image, index) => {
+      uploadedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
           name: `image_${index}.jpg`,
@@ -207,7 +179,13 @@ export default function EditListing({ route, navigation }) {
         });
       });
 
-      selectedVideos.forEach((video, index) => {
+      selectedVideos.forEach((image, index) => {
+        if (image.startsWith(BASEIMGURL)) {
+          formData.append("videos", image.replace(BASEIMGURL, ""));
+        }
+      });
+
+      uploadedVideos.forEach((video, index) => {
         formData.append("videos", {
           uri: video.uri,
           name: `video_${index}.mp4`,
@@ -217,7 +195,7 @@ export default function EditListing({ route, navigation }) {
       console.log("formdata--", formData);
 
       const response = await fetch(
-        `${BASEAPIURL}/listings/edit/${product._id}`,
+        `${BASEAPIURL}/listings/edit/${listing._id}`,
         {
           method: "PUT",
           headers: {
@@ -229,16 +207,13 @@ export default function EditListing({ route, navigation }) {
       await dispatch(setLoadingInBtn(false));
 
       console.log("response--", response);
-      console.log(
-        "Url for edit: ",
-        `${BASEAPIURL}/listings/edit/${product._id}`
-      );
+
       if (!response.ok) {
-        throw new Error("Failed to update product");
+        throw new Error("Failed to update listing");
       }
 
-      alert("Product updated successfully");
-      fetchProducts();
+      alert("listing updated successfully");
+      fetchProduct();
       navigation.goBack();
     } catch (error) {
       console.error("Error updating product:", error);
@@ -301,112 +276,36 @@ export default function EditListing({ route, navigation }) {
             >
               Add More Product Image
             </Text>
-            {/* <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
-              {selectedImages.map((image, index) => (
-                <View
-                  key={`selected-${index}`}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "red",
-                    // marginTop: "10%",
-                    marginRight: 12,
-                    alignSelf: "center",
-                  }}
-                >
-                  <Image style={styles.profileImg} source={{ uri: image }} />
-                  <TouchableOpacity
-                    onPress={() => removeProfileImage(index, false)}
-                  >
-                    <View
-                      style={{
-                        position: "absolute",
-                        right: 3,
-                        bottom: 22,
-                      }}
-                    >
-                      <Image
-                        source={require("../../assets/images/general/cross.png")}
-                        style={{ width: 17, height: 17 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
-              {uploadedImages.map((image, index) => (
-                <View
-                  key={`uploaded-${index}`}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "red",
-                    // marginTop: "10%",
-                    marginRight: 12,
-                    alignSelf: "center",
-                  }}
-                >
-                  <Image
-                  style={styles.profileImg}
-                    source={{ uri: image.uri }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => removeProfileImage(index, true)}
-                  >
-                    <View
-                      style={{
-                        position: "absolute",
-                        right: 3,
-                        bottom: 22,
-                      }}
-                    >
-                      <Image
-                        source={require("../../assets/images/general/cross.png")}
-                        style={{ width: 17, height: 17 }}
 
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
-              {selectedImages.length + uploadedImages.length < 6 && (
-                <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color={Theme.themeColor} />
-                </AddProfileBox>
-              )}
-            </Row> */}
-           <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
-              {selectedImages.map((image, index) => (
-                <View
-                  key={`selected-image-${index}`}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "red",
-                    marginRight: 12,
-                    alignSelf: "center",
-                  }}
-                >
-                  <Image
-                    style={styles.profileImg}
-                    source={{ uri: image }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => removeProfileImage(index, false, "image")}
+            <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
+              {selectedImages &&
+                selectedImages.map((image, index) => (
+                  <View
+                    key={`selected-image-${index}`}
+                    style={{
+                      width: 60,
+                      height: 60,
+                      borderRadius: 30,
+                      backgroundColor: "red",
+                      marginRight: 12,
+                      alignSelf: "center",
+                    }}
                   >
-                    <View
-                      style={{ position: "absolute", right: 3, bottom: 22 }}
+                    <Image style={styles.profileImg} source={{ uri: image }} />
+                    <TouchableOpacity
+                      onPress={() => removeProfileImage(index, false, "image")}
                     >
-                      <Image
-                        source={require("../../assets/images/general/cross.png")}
-                        style={{ width: 17, height: 17 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
+                      <View
+                        style={{ position: "absolute", right: 3, bottom: 22 }}
+                      >
+                        <Image
+                          source={require("../../assets/images/general/cross.png")}
+                          style={{ width: 17, height: 17 }}
+                        />
+                      </View>
+                    </TouchableOpacity>
+                  </View>
+                ))}
 
               {uploadedImages.map((image, index) => (
                 <View
@@ -480,7 +379,7 @@ export default function EditListing({ route, navigation }) {
                   <Icon name="plus" size={35} color={Theme.themeColor} />
                 </AddProfileBox>
               )}
-            </Row> 
+            </Row>
 
             <FormSection style={{ paddingTop: 0 }}>
               <Text
@@ -779,3 +678,4 @@ export default function EditListing({ route, navigation }) {
     </SafeArea>
   );
 }
+

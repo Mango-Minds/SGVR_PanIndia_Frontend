@@ -38,50 +38,55 @@ import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
 const windowWidth = Dimensions.get("window").width;
 export default function EachListing({ route, navigation }) {
+  const { itemId, item, fetchProducts } = route.params;
+  console.log("Item id in each listing: ", itemId);
   const { user } = useSelector((state) => state.user);
   const isFocused = useIsFocused();
-  const { itemId, item, fetchProducts } = route.params;
+  
   console.log("Item: ", item);
-  console.log("Item id in each listing: ", itemId);
+  
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const loggedInUserId = decodedPayload.id;
   console.log("loggedInUserId: ", loggedInUserId);
   const userType = decodedPayload.userType;
-  const businessId = item?.createdBy?._id;
-  console.log("BI: ", businessId);
-  // const [productData, setProductData] = useState({});
+  // const businessId = item?.createdBy?._id;
+  // console.log("BI: ", businessId);
+  const [productData, setProductData] = useState({});
 
-  // const fetchProduct = async () => {
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
+  const fetchProduct = async () => {
+    console.log("Item id in fetchProduct: ", itemId);
+    try {
+      const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
-  //     if (!response.ok) {
-  //       const errorMessage = await response.text();
-  //       throw new Error(`Failed to fetch product: ${errorMessage}`);
-  //     }
+      if (!response.ok) {
+        const errorMessage = await response.text();
+        throw new Error(`Failed to fetch product: ${errorMessage}`);
+      }
 
-  //     const data = await response.json();
-  //     console.log("Fetched Product:", data);
-  //     setProductData(data.listing);
-  //   } catch (error) {
-  //     console.error("Error fetching product:", error);
-  //   }
-  // };
+      const data = await response.json();
+      console.log("Fetched Product:", data);
+      setProductData(data.listing);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+    }
+  };
 
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     fetchProduct();
-  //   }
-  // }, [isFocused]);
-  // console.log("ProductData: ", productData);
+  useEffect(() => {
+    if (isFocused) {
+      fetchProduct();
+    }
+  }, [isFocused]);
+  
+  console.log("ProductData: ", productData);
+  
   const deleteProduct = async () => {
     try {
       // Make the DELETE request
@@ -174,7 +179,8 @@ export default function EachListing({ route, navigation }) {
   });
 
   const renderContentBackground = (user) => {
-    const url = item?.address_link;
+    console.log("Pd in content background: ", productData);
+    const url = productData?.address_link;
     const [mapReady, setMapReady] = useState(false);
     const [layout, setLayout] = useState({
       width: Dimensions.get("window").width,
@@ -273,7 +279,7 @@ export default function EachListing({ route, navigation }) {
                 >
                   <TouchableOpacity style={styles.modalOption}>
                     <View style={styles.iconTextContainer}>
-                      <Text style={styles.modalText}>Product: {item.name}</Text>
+                      <Text style={styles.modalText}>Product: {productData.name}</Text>
                     </View>
                   </TouchableOpacity>
 
@@ -367,10 +373,14 @@ export default function EachListing({ route, navigation }) {
     );
   };
 
+  const businessId = productData?.createdBy;
+  console.log("BI: ", businessId);
+
   const connectToChat = async (owner_id, business_id, item) => {
     console.log("Owner id: ", owner_id);
     console.log("Business id: ", business_id);
     console.log("Item: ", item);
+    console.log("PD in connectToChat: ", productData);
     if (owner_id === business_id) {
       console.log("Chat room Cannot be created: same id");
     } else {
@@ -466,19 +476,19 @@ export default function EachListing({ route, navigation }) {
   };
 
   useEffect(() => {
-    if (item?.videos && item?.videos.length > 0) {
-      item.videos.forEach((videoUri) => {
+    if (item?.videos && item?.videos?.length > 0) {
+      item?.videos.forEach((videoUri) => {
         generateThumbnail(`${BASEIMGURL}${videoUri}`);
       });
     }
   }, [item?.videos]);
 
   const handleThumbnailClick = (index) => {
-    if (index < item?.images.length) {
+    if (index < item?.images?.length) {
       setCurrentIndex(index);
     } else {
       const videoIndex = index - item?.images?.length;
-      setCurrentIndex(item?.images.length + videoIndex);
+      setCurrentIndex(item?.images?.length + videoIndex);
     }
   };
 
@@ -502,7 +512,7 @@ export default function EachListing({ route, navigation }) {
             <Video
               source={{
                 uri: `${BASEIMGURL}${
-                  item?.videos[currentIndex - item?.images.length]
+                  item?.videos[currentIndex - item?.images?.length]
                 }`,
               }} // Use correct video URI
               style={styles.headerImage}
@@ -550,13 +560,13 @@ export default function EachListing({ route, navigation }) {
               <TouchableOpacity
                 key={index}
                 onPress={() =>
-                  handleThumbnailClick(item?.images.length + index)
+                  handleThumbnailClick(item?.images?.length + index)
                 } // Click on video thumbnail
                 style={{
                   borderWidth:
-                    currentIndex === item?.images.length + index ? 2 : 0,
+                    currentIndex === item?.images?.length + index ? 2 : 0,
                   borderColor:
-                    currentIndex === item?.images.length + index
+                    currentIndex === item?.images?.length + index
                       ? "transparent"
                       : "transparent",
                   borderRadius: 8,
@@ -579,7 +589,7 @@ export default function EachListing({ route, navigation }) {
 
         <View style={styles.eventInfoContainer}>
           <View style={styles.nameAndLocationContainer}>
-            <Text style={styles.headerTitle}>{item.name}</Text>
+            <Text style={styles.headerTitle}>{productData.name}</Text>
             <TouchableOpacity onPress={openRepostModal}>
               <View style={styles.locationContainer}>
                 <MaterialIcon
@@ -587,7 +597,7 @@ export default function EachListing({ route, navigation }) {
                   size={18}
                   color={Theme.themeColor}
                 />
-                <Text style={styles.homeTown}>{item.address}</Text>
+                <Text style={styles.homeTown}>{productData.address}</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -598,7 +608,7 @@ export default function EachListing({ route, navigation }) {
 
           <View style={styles.eventDetails}>
             <Text style={styles.detailItem}>
-              {item.productAge} | {item.phone}
+              {productData.productAge} | {productData.phone}
             </Text>
           </View>
         </View>
@@ -617,6 +627,8 @@ export default function EachListing({ route, navigation }) {
                     productId: item._id,
                     product: item,
                     fetchProducts: fetchProducts,
+                    listing: productData,
+                    fetchProduct: fetchProduct,
                   });
                 }}
               >
@@ -626,11 +638,11 @@ export default function EachListing({ route, navigation }) {
 
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Price</Text>
-              <Text style={styles.infoValue}>Rs. {item.price}</Text>
+              <Text style={styles.infoValue}>Rs. {productData.price}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Original Price</Text>
-              <Text style={styles.infoValue}>Rs. {item.originalPrice}</Text>
+              <Text style={styles.infoValue}>Rs. {productData.originalPrice}</Text>
             </View>
           </View>
         </View>
@@ -640,11 +652,11 @@ export default function EachListing({ route, navigation }) {
             <Text style={styles.priceText}>Product Information</Text>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Condition</Text>
-              <Text style={styles.infoValue}>{item.condition}</Text>
+              <Text style={styles.infoValue}>{productData.condition}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Product age</Text>
-              <Text style={styles.infoValue}>{item.productAge}</Text>
+              <Text style={styles.infoValue}>{productData.productAge}</Text>
             </View>
           </View>
         </View>
@@ -652,14 +664,14 @@ export default function EachListing({ route, navigation }) {
         <View style={styles.eventInfoContainer}>
           <View style={styles.eventDetails}>
             <Text style={styles.priceText}>Product Description</Text>
-            <Text style={styles.bioText}>{item.description}</Text>
+            <Text style={styles.bioText}>{productData.description}</Text>
           </View>
         </View>
       </ScrollView>
 
-      {console.log("CB: ", item.createdBy?._id)}
+      {console.log("CB: ", productData.createdBy)}
       {console.log("UI: ", user._id)}
-      {/* {item.createdBy?._id !== user._id ? (
+      {productData?.createdBy !== user._id ? (
         <View style={styles.bottomBarContainer}>
           <View style={styles.bottomBar}>
             <View style={styles.ticketInfoContainer}>
@@ -668,7 +680,7 @@ export default function EachListing({ route, navigation }) {
               <TouchableOpacity
                 style={styles.bookNowButton}
                 onPress={() => {
-                  connectToChat(loggedInUserId, businessId, item);
+                  connectToChat(loggedInUserId, businessId, productData);
                 }}
               >
                 <Text style={styles.bookNowButtonText}>Message Owner</Text>
@@ -683,7 +695,7 @@ export default function EachListing({ route, navigation }) {
               <Text style={styles.priceText}>Delete Product</Text>
               <TouchableOpacity
                 style={styles.bookNowButton}
-                onPress={() => deleteProduct(item.id)}
+                onPress={() => deleteProduct(productData.id)}
               >
                 <Text s style={styles.bookNowButtonText}>
                   Delete
@@ -692,8 +704,8 @@ export default function EachListing({ route, navigation }) {
             </View>
           </View>
         </View>
-      )} */}
-      {(typeof item.createdBy === "string"
+      )}
+      {/* {(typeof item.createdBy === "string"
         ? item.createdBy
         : item.createdBy._id) !== user._id ? (
         <View style={styles.bottomBarContainer}>
@@ -728,7 +740,7 @@ export default function EachListing({ route, navigation }) {
             </View>
           </View>
         </View>
-      )}
+      )} */}
     </SafeAreaView>
   );
 }
