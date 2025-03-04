@@ -11,9 +11,9 @@
 
 // export const BASEIMGURL = "https://api.eygds.in/";
 // export const BASEAPIURL = "https://api.eygds.in/api";
-export const BASEAPIURL = "http://172.26.32.1:5000/api";
-export const BASEIMGURL = "http://172.26.32.1:5000/";
-export const RENDERMEDIAURL = "http://172.26.32.1:5000";
+export const BASEAPIURL = "http://192.168.1.38:5000/api";
+export const BASEIMGURL = "http://192.168.1.38:5000/";
+export const RENDERMEDIAURL = "http://192.168.1.38:5000";
 // export const BASEAPIURL = "https://api.daivajnyabrahmin.in/api";
 // export const BASEIMGURL = "https://api.daivajnyabrahmin.in/";
 // export const RENDERMEDIAURL = "https://api.daivajnyabrahmin.in";

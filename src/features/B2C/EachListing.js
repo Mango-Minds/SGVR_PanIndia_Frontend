@@ -13,8 +13,8 @@ import {
   PanResponder,
   TouchableWithoutFeedback,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
-
 import { useSelector } from "react-redux";
 import { Row } from "../../styles/dashboard.styles";
 import Theme from "../../styles/theme";
@@ -36,70 +36,43 @@ import { Linking } from "react-native";
 import * as Location from "expo-location";
 import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
-const windowWidth = Dimensions.get("window").width;
-export default function EachListing({ route, navigation }) {
-  const { itemId, item, fetchProducts } = route.params;
-  console.log("Item id in each listing: ", itemId);
-  const { user } = useSelector((state) => state.user);
+import { TopText } from "../../styles/social.styles";
+import { useNavigation } from "@react-navigation/native";
+
+import { Container } from "../../styles/common.styles";
+
+const WINDOW_WIDTH = Dimensions.get("window").width;
+const WINDOW_HEIGHT = Dimensions.get("window").height;
+
+const EachListing = ({ route }) => {
+  const navigation = useNavigation();
   const isFocused = useIsFocused();
-  
-  console.log("Item: ", item);
-  
+  const videoRef = useRef(null);
+
+  const [loadingAnimation, setLoadingAnimation] = useState(true);
+  const { itemId, fetchProducts } = route.params;
+  const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
+
   const loggedInUserId = decodedPayload.id;
-  console.log("loggedInUserId: ", loggedInUserId);
-  const userType = decodedPayload.userType;
-  // const businessId = item?.createdBy?._id;
-  // console.log("BI: ", businessId);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isRepostModalVisible, setRepostModalVisible] = useState(false);
+  const pan = useRef(new Animated.ValueXY()).current;
+
   const [productData, setProductData] = useState({});
 
-  const fetchProduct = async () => {
-    console.log("Item id in fetchProduct: ", itemId);
+  const deleteProduct = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
-        method: "GET",
+      // Make the DELETE request
+      const response = await fetch(`${BASEAPIURL}/listings/delete/${itemId}`, {
+        method: "DELETE",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(`Failed to fetch product: ${errorMessage}`);
-      }
-
-      const data = await response.json();
-      console.log("Fetched Product:", data);
-      setProductData(data.listing);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-    }
-  };
-
-  useEffect(() => {
-    if (isFocused) {
-      fetchProduct();
-    }
-  }, [isFocused]);
-  
-  console.log("ProductData: ", productData);
-  
-  const deleteProduct = async () => {
-    try {
-      // Make the DELETE request
-      const response = await fetch(
-        `${BASEAPIURL}/listings/delete/${item._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -132,15 +105,53 @@ export default function EachListing({ route, navigation }) {
     }
   };
 
+  const fetchProduct = async () => {
+    try {
+      setLoadingAnimation(true);
+
+      const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch product: ${await response.text()}`);
+      }
+
+      const data = await response.json();
+      setProductData(data.listing);
+    } catch (error) {
+      console.error("Error fetching product:", error);
+    } finally {
+      setLoadingAnimation(false);
+    }
+  };
+
   useEffect(() => {
     if (isFocused) {
-      fetchProducts();
+      fetchProduct();
     }
   }, [isFocused]);
-  console.log("Item: ", item);
 
-  const [isRepostModalVisible, setRepostModalVisible] = useState(false);
-  const pan = useRef(new Animated.ValueXY()).current;
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState(0);
+  const [mediaType, setMediaType] = useState("image"); // Default to "image"
+
+  useEffect(() => {
+    if (productData?.videos?.length > 0) {
+      setMediaType("video");
+    } else if (productData?.images?.length > 0) {
+      setMediaType("image");
+    }
+  }, [productData]);
+  console.log("Mediatype: ", mediaType);
+
+  const changeSelectedMedia = (index, type) => {
+    setSelectedMediaIndex(index);
+    setMediaType(type);
+  };
   const closeRepostModal = () => {
     setRepostModalVisible(false);
     pan.setValue({ x: 0, y: 0 });
@@ -166,98 +177,280 @@ export default function EachListing({ route, navigation }) {
       },
     })
   ).current;
-  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const HEADER_EXPANDED_HEIGHT = 400;
-  const HEADER_COLLAPSED_HEIGHT = 60;
-  const [showViewer, setShowViewer] = React.useState(false);
-  let scrollY = new Animated.Value(0);
-  const headerHeight = scrollY.interpolate({
-    inputRange: [0, HEADER_EXPANDED_HEIGHT - HEADER_COLLAPSED_HEIGHT],
-    outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
-    extrapolate: "clamp",
+  // const renderContentBackground = (user) => {
+  //   console.log("Pd in content background: ", productData);
+  //   const url = productData?.address_link;
+  //   const [mapReady, setMapReady] = useState(false);
+  //   const [layout, setLayout] = useState({
+  //     width: Dimensions.get("window").width,
+  //     height: 200,
+  //   });
+  //   const [locationPermissionGranted, setLocationPermissionGranted] =
+  //     useState(false);
+  //   const requestLocationPermission = async () => {
+  //     const { status } = await Location.requestForegroundPermissionsAsync();
+  //     if (status !== "granted") {
+  //       Alert.alert(
+  //         "Permission Denied",
+  //         "Permission to access location was denied. The map feature may not work as expected."
+  //       );
+  //       setLocationPermissionGranted(false);
+  //       return false;
+  //     }
+  //     setLocationPermissionGranted(true);
+  //     return true;
+  //   };
+
+  //   const extractCoordinates = (url) => {
+  //     if (!url) return null;
+
+  //     const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
+  //     const match = url.match(regex);
+
+  //     if (match) {
+  //       const latitude = parseFloat(match[1]);
+  //       const longitude = parseFloat(match[2]);
+  //       const zoom = parseInt(match[3]);
+
+  //       let latitudeDelta, longitudeDelta;
+  //       switch (zoom) {
+  //         case 19:
+  //           latitudeDelta = 0.0001;
+  //           longitudeDelta = 0.0001;
+  //           break;
+  //         case 15:
+  //           latitudeDelta = 0.01;
+  //           longitudeDelta = 0.01;
+  //           break;
+  //         case 10:
+  //           latitudeDelta = 0.1;
+  //           longitudeDelta = 0.1;
+  //           break;
+  //         default:
+  //           latitudeDelta = 0.1;
+  //           longitudeDelta = 0.1;
+  //       }
+
+  //       return {
+  //         latitude,
+  //         longitude,
+  //         latitudeDelta,
+  //         longitudeDelta,
+  //       };
+  //     } else {
+  //       return null;
+  //     }
+  //   };
+
+  //   const coordinates = extractCoordinates(url);
+
+  //   useEffect(() => {
+  //     requestLocationPermission(); // Request location permissions on component mount
+  //   }, []);
+  //   console.log("coordinates: ", coordinates);
+  //   console.log("Layout: ", layout);
+  //   console.log("Map Ready: ", mapReady);
+  //   console.log("Location Granted: ", locationPermissionGranted);
+
+  //   useEffect(() => {
+  //     if (layout.width > 0 && layout.height > 0 && coordinates) {
+  //       setMapReady(true);
+  //     }
+  //   }, [layout, coordinates]);
+
+  //   return (
+  //     <View style={styles.scrollContainer}>
+  //       <RowBetween>
+  //         <Modal
+  //           transparent={true}
+  //           visible={isRepostModalVisible}
+  //           animationType="slide"
+  //           onRequestClose={closeRepostModal}
+  //         >
+  //           <TouchableWithoutFeedback onPress={closeRepostModal}>
+  //             <View style={styles.modalOverlay}>
+  //               <Animated.View
+  //                 style={[
+  //                   styles.modalContainer,
+  //                   { transform: [{ translateY: pan.y }] },
+  //                 ]}
+  //                 {...panResponder.panHandlers}
+  //               >
+  //                 <TouchableOpacity style={styles.modalOption}>
+  //                   <View style={styles.iconTextContainer}>
+  //                     <Text style={styles.modalText}>
+  //                       Product: {productData.name}
+  //                     </Text>
+  //                   </View>
+  //                 </TouchableOpacity>
+
+  //                 {/* Map Section */}
+  //                 <TouchableOpacity style={styles.mapModalOption}>
+  //                   <View
+  //                     style={styles.mapContainer}
+  //                     onLayout={(event) => {
+  //                       const { width, height } = event.nativeEvent.layout;
+  //                       if (width > 0 && height > 0) {
+  //                         setLayout({ width, height });
+  //                       }
+  //                     }}
+  //                   >
+  //                     {coordinates && mapReady && locationPermissionGranted ? (
+  //                       <MapView
+  //                         style={{ width: layout.width, height: layout.height }}
+  //                         provider={PROVIDER_GOOGLE}
+  //                         initialRegion={{
+  //                           latitude: coordinates.latitude,
+  //                           longitude: coordinates.longitude,
+  //                           latitudeDelta: coordinates.latitudeDelta,
+  //                           longitudeDelta: coordinates.longitudeDelta,
+  //                         }}
+  //                         showsUserLocation
+  //                         showsMyLocationButton
+  //                         scrollEnabled={true}
+  //                         zoomEnabled={true}
+  //                         rotateEnabled={true}
+  //                       >
+  //                         <Marker
+  //                           coordinate={{
+  //                             latitude: coordinates.latitude,
+  //                             longitude: coordinates.longitude,
+  //                           }}
+  //                         />
+  //                       </MapView>
+  //                     ) : (
+  //                       <View style={styles.noMapContainer}>
+  //                         <Text style={{ textAlign: "center", padding: 10 }}>
+  //                           {coordinates === null
+  //                             ? "Map preview not available."
+  //                             : "Location not available"}
+  //                         </Text>
+  //                         {url && (
+  //                           <TouchableOpacity
+  //                             onPress={() => Linking.openURL(url)}
+  //                           >
+  //                             <Text
+  //                               style={{ textAlign: "center", color: "blue" }}
+  //                             >
+  //                               Open in Google Maps
+  //                             </Text>
+  //                           </TouchableOpacity>
+  //                         )}
+  //                       </View>
+  //                     )}
+  //                   </View>
+  //                 </TouchableOpacity>
+
+  //                 {/* Address Section */}
+  //                 <View style={styles.locationText}>
+  //                   <View style={styles.iconTextContainer}>
+  //                     <Text style={styles.modalSubText}>
+  //                       {productData.address || "Address not available"}
+  //                     </Text>
+
+  //                     {url && (
+  //                       <Ionicons
+  //                         name="navigate"
+  //                         size={24}
+  //                         style={styles.navigateIcon}
+  //                         onPress={() => {
+  //                           Linking.openURL(url).catch((err) =>
+  //                             console.error(
+  //                               "Error opening location link: ",
+  //                               err
+  //                             )
+  //                           );
+  //                         }}
+  //                       />
+  //                     )}
+  //                   </View>
+  //                 </View>
+  //               </Animated.View>
+  //             </View>
+  //           </TouchableWithoutFeedback>
+  //         </Modal>
+  //       </RowBetween>
+  //     </View>
+  //   );
+  // };
+
+  const extractCoordinates = (url) => {
+    if (!url) return null;
+
+    const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
+    const match = url.match(regex);
+
+    if (match) {
+      const latitude = parseFloat(match[1]);
+      const longitude = parseFloat(match[2]);
+      const zoom = parseInt(match[3]);
+
+      let latitudeDelta, longitudeDelta;
+      switch (zoom) {
+        case 19:
+          latitudeDelta = 0.0001;
+          longitudeDelta = 0.0001;
+          break;
+        case 15:
+          latitudeDelta = 0.01;
+          longitudeDelta = 0.01;
+          break;
+        case 10:
+          latitudeDelta = 0.1;
+          longitudeDelta = 0.1;
+          break;
+        default:
+          latitudeDelta = 0.1;
+          longitudeDelta = 0.1;
+      }
+
+      return {
+        latitude,
+        longitude,
+        latitudeDelta,
+        longitudeDelta,
+      };
+    } else {
+      return null;
+    }
+  };
+  const url = productData?.address_link;
+  const coordinates = extractCoordinates(url);
+
+  const [mapReady, setMapReady] = useState(false);
+  const [layout, setLayout] = useState({
+    width: Dimensions.get("window").width,
+    height: 200,
   });
+  const [locationPermissionGranted, setLocationPermissionGranted] =
+    useState(false);
 
+  useEffect(() => {
+    if (layout.width > 0 && layout.height > 0 && coordinates) {
+      setMapReady(true);
+    }
+  }, [layout, coordinates]);
+
+  const requestLocationPermission = async () => {
+    const { status } = await Location.requestForegroundPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permission Denied",
+        "Permission to access location was denied. The map feature may not work as expected."
+      );
+      setLocationPermissionGranted(false);
+      return false;
+    }
+    setLocationPermissionGranted(true);
+    return true;
+  };
+
+  useEffect(() => {
+    requestLocationPermission(); // Request location permissions on component mount
+  }, []);
   const renderContentBackground = (user) => {
     console.log("Pd in content background: ", productData);
-    const url = productData?.address_link;
-    const [mapReady, setMapReady] = useState(false);
-    const [layout, setLayout] = useState({
-      width: Dimensions.get("window").width,
-      height: 200,
-    });
-    const [locationPermissionGranted, setLocationPermissionGranted] =
-      useState(false);
-    const requestLocationPermission = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Permission to access location was denied. The map feature may not work as expected."
-        );
-        setLocationPermissionGranted(false);
-        return false;
-      }
-      setLocationPermissionGranted(true);
-      return true;
-    };
-
-    const extractCoordinates = (url) => {
-      if (!url) return null;
-
-      const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
-      const match = url.match(regex);
-
-      if (match) {
-        const latitude = parseFloat(match[1]);
-        const longitude = parseFloat(match[2]);
-        const zoom = parseInt(match[3]);
-
-        let latitudeDelta, longitudeDelta;
-        switch (zoom) {
-          case 19:
-            latitudeDelta = 0.0001;
-            longitudeDelta = 0.0001;
-            break;
-          case 15:
-            latitudeDelta = 0.01;
-            longitudeDelta = 0.01;
-            break;
-          case 10:
-            latitudeDelta = 0.1;
-            longitudeDelta = 0.1;
-            break;
-          default:
-            latitudeDelta = 0.1;
-            longitudeDelta = 0.1;
-        }
-
-        return {
-          latitude,
-          longitude,
-          latitudeDelta,
-          longitudeDelta,
-        };
-      } else {
-        return null;
-      }
-    };
-
-    const coordinates = extractCoordinates(url);
-
-    useEffect(() => {
-      requestLocationPermission(); // Request location permissions on component mount
-    }, []);
-    console.log("coordinates: ", coordinates);
-    console.log("Layout: ", layout);
-    console.log("Map Ready: ", mapReady);
-    console.log("Location Granted: ", locationPermissionGranted);
-
-    useEffect(() => {
-      if (layout.width > 0 && layout.height > 0 && coordinates) {
-        setMapReady(true);
-      }
-    }, [layout, coordinates]);
 
     return (
       <View style={styles.scrollContainer}>
@@ -279,7 +472,9 @@ export default function EachListing({ route, navigation }) {
                 >
                   <TouchableOpacity style={styles.modalOption}>
                     <View style={styles.iconTextContainer}>
-                      <Text style={styles.modalText}>Product: {productData.name}</Text>
+                      <Text style={styles.modalText}>
+                        Product: {productData.name}
+                      </Text>
                     </View>
                   </TouchableOpacity>
 
@@ -344,7 +539,7 @@ export default function EachListing({ route, navigation }) {
                   <View style={styles.locationText}>
                     <View style={styles.iconTextContainer}>
                       <Text style={styles.modalSubText}>
-                        {item.address || "Address not available"}
+                        {productData.address || "Address not available"}
                       </Text>
 
                       {url && (
@@ -374,7 +569,6 @@ export default function EachListing({ route, navigation }) {
   };
 
   const businessId = productData?.createdBy;
-  console.log("BI: ", businessId);
 
   const connectToChat = async (owner_id, business_id, item) => {
     console.log("Owner id: ", owner_id);
@@ -462,36 +656,6 @@ export default function EachListing({ route, navigation }) {
     }
   };
 
-  const [thumbnails, setThumbnails] = useState([]);
-
-  const generateThumbnail = async (videoUri) => {
-    try {
-      const { uri } = await VideoThumbnails.getThumbnailAsync(videoUri, {
-        time: 10000,
-      });
-      setThumbnails((prevThumbnails) => [...prevThumbnails, uri]);
-    } catch (e) {
-      console.warn("Could not generate thumbnail", e);
-    }
-  };
-
-  useEffect(() => {
-    if (item?.videos && item?.videos?.length > 0) {
-      item?.videos.forEach((videoUri) => {
-        generateThumbnail(`${BASEIMGURL}${videoUri}`);
-      });
-    }
-  }, [item?.videos]);
-
-  const handleThumbnailClick = (index) => {
-    if (index < item?.images?.length) {
-      setCurrentIndex(index);
-    } else {
-      const videoIndex = index - item?.images?.length;
-      setCurrentIndex(item?.images?.length + videoIndex);
-    }
-  };
-
   return (
     <SafeAreaView
       style={{
@@ -499,251 +663,224 @@ export default function EachListing({ route, navigation }) {
         backgroundColor: "white",
       }}
     >
-      <ScrollView style={styles.container}>
-        {/* Main Image */}
-        <View style={styles.headerImageContainer}>
-          {currentIndex < item?.images?.length ? (
-            <Image
-              source={{ uri: `${BASEIMGURL}${item?.images[currentIndex]}` }}
-              style={styles.headerImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <Video
-              source={{
-                uri: `${BASEIMGURL}${
-                  item?.videos[currentIndex - item?.images?.length]
-                }`,
-              }} // Use correct video URI
-              style={styles.headerImage}
-              useNativeControls
-              isLooping
-              shouldPlay
-            />
-          )}
-          <LinearGradient
-            colors={["transparent", "rgba(0,0,0,0.8)"]}
-            style={styles.gradientOverlay}
-          />
-          <TouchableOpacity style={styles.backButton}>
-            <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          </TouchableOpacity>
+      {loadingAnimation ? (
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
+          <ActivityIndicator size="large" color={Theme.themeColor} />
         </View>
-
-        <View style={{ paddingTop: 16, paddingBottom: 16, marginLeft: 10 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {item?.images.map((image, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleThumbnailClick(index)}
-                style={{
-                  borderWidth: currentIndex === index ? 2 : 0,
-                  borderColor:
-                    currentIndex === index ? "transparent" : "transparent",
-                  borderRadius: 8,
-                }}
-              >
-                <Image
-                  source={{ uri: `${BASEIMGURL}${image}` }}
-                  resizeMode="cover"
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 8,
-                    marginRight: 10,
-                  }}
+      ) : (
+        <>
+          <ScrollView style={styles.container}>
+            {Object.keys(productData).length > 0 && (
+              <View style={styles.headerImageContainer}>
+                {mediaType === "image" ? (
+                  <Image
+                    style={styles.headerImage}
+                    source={{
+                      uri: `${BASEIMGURL}${productData.images[selectedMediaIndex]}`,
+                    }}
+                  />
+                ) : (
+                  <Video
+                    ref={videoRef}
+                    style={styles.headerImage}
+                    source={{
+                      uri: `${BASEIMGURL}${productData.videos[selectedMediaIndex]}`,
+                    }}
+                    controls
+                    resizeMode="contain"
+                    useNativeControls
+                    isLooping
+                    shouldPlay={false}
+                  />
+                )}
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.8)"]}
+                  style={styles.gradientOverlay}
                 />
-              </TouchableOpacity>
-            ))}
+                <TouchableOpacity style={styles.backButton}>
+                  <IconButton
+                    icon="arrow-left"
+                    onPress={() => navigation.goBack()}
+                  />
+                </TouchableOpacity>
 
-            {item?.videos.map((video, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() =>
-                  handleThumbnailClick(item?.images?.length + index)
-                } // Click on video thumbnail
-                style={{
-                  borderWidth:
-                    currentIndex === item?.images?.length + index ? 2 : 0,
-                  borderColor:
-                    currentIndex === item?.images?.length + index
-                      ? "transparent"
-                      : "transparent",
-                  borderRadius: 8,
-                }}
-              >
-                <Image
-                  source={{ uri: thumbnails[index] }} // Display thumbnail for video
-                  resizeMode="cover"
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 8,
-                    marginRight: 10,
-                  }}
-                />
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        <View style={styles.eventInfoContainer}>
-          <View style={styles.nameAndLocationContainer}>
-            <Text style={styles.headerTitle}>{productData.name}</Text>
-            <TouchableOpacity onPress={openRepostModal}>
-              <View style={styles.locationContainer}>
-                <MaterialIcon
-                  name="location-on"
-                  size={18}
-                  color={Theme.themeColor}
-                />
-                <Text style={styles.homeTown}>{productData.address}</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {[
+                    ...(productData.images || []).map((image, index) => ({
+                      type: "image",
+                      src: image,
+                      index,
+                    })),
+                    ...(productData.videos || []).map((video, index) => ({
+                      type: "video",
+                      src: video,
+                      index,
+                    })),
+                  ].map((media, idx) => (
+                    <View
+                      key={idx}
+                      style={{
+                        margin: "3%",
+                        marginHorizontal: 6,
+                        borderWidth: 3,
+                        borderColor:
+                          selectedMediaIndex === media.index &&
+                          mediaType === media.type
+                            ? Theme.themeColor
+                            : "transparent",
+                        borderRadius: 7,
+                        elevation:
+                          selectedMediaIndex === media.index &&
+                          mediaType === media.type
+                            ? 5
+                            : 0,
+                      }}
+                    >
+                      <TouchableOpacity
+                        onPress={() =>
+                          changeSelectedMedia(media.index, media.type)
+                        }
+                      >
+                        {media.type === "image" ? (
+                          <Image
+                            style={{ width: 60, height: 60, borderRadius: 5 }}
+                            source={{ uri: `${BASEIMGURL}${media.src}` }}
+                          />
+                        ) : (
+                          <Video
+                            style={{ width: 60, height: 60, borderRadius: 5 }}
+                            source={{ uri: `${BASEIMGURL}${media.src}` }}
+                            controls
+                            resizeMode="contain"
+                          />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
               </View>
-            </TouchableOpacity>
-          </View>
-          <ScrollView style={{ flex: 1 }}>
-            {/* {renderBackground()} */}
-            {renderContentBackground()}
-          </ScrollView>
-
-          <View style={styles.eventDetails}>
-            <Text style={styles.detailItem}>
-              {productData.productAge} | {productData.phone}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.eventInfoContainer}>
-          <View style={styles.eventDetails}>
-            <Text style={styles.priceText}>Price Details</Text>
-
-            {(typeof item.createdBy === "string"
-              ? item.createdBy
-              : item.createdBy._id) === user._id && (
-              <TouchableOpacity
-                style={styles.editIconContainer}
-                onPress={() => {
-                  navigation.navigate("EditListing", {
-                    productId: item._id,
-                    product: item,
-                    fetchProducts: fetchProducts,
-                    listing: productData,
-                    fetchProduct: fetchProduct,
-                  });
-                }}
-              >
-                <Icon name="pencil" size={24} color={Theme.themeColor} />
-              </TouchableOpacity>
             )}
+            <View style={styles.eventInfoContainer}>
+              <View style={styles.nameAndLocationContainer}>
+                <Text style={styles.headerTitle}>{productData.name}</Text>
+                <TouchableOpacity onPress={openRepostModal}>
+                  <View style={styles.locationContainer}>
+                    <MaterialIcon
+                      name="location-on"
+                      size={18}
+                      color={Theme.themeColor}
+                    />
+                    <Text style={styles.homeTown}>{productData.address}</Text>
+                  </View>
+                </TouchableOpacity>
+              </View>
+              <ScrollView style={{ flex: 1 }}>
+                {renderContentBackground()}
+              </ScrollView>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Price</Text>
-              <Text style={styles.infoValue}>Rs. {productData.price}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Original Price</Text>
-              <Text style={styles.infoValue}>Rs. {productData.originalPrice}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.eventInfoContainer}>
-          <View style={styles.eventDetails}>
-            <Text style={styles.priceText}>Product Information</Text>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Condition</Text>
-              <Text style={styles.infoValue}>{productData.condition}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Product age</Text>
-              <Text style={styles.infoValue}>{productData.productAge}</Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.eventInfoContainer}>
-          <View style={styles.eventDetails}>
-            <Text style={styles.priceText}>Product Description</Text>
-            <Text style={styles.bioText}>{productData.description}</Text>
-          </View>
-        </View>
-      </ScrollView>
-
-      {console.log("CB: ", productData.createdBy)}
-      {console.log("UI: ", user._id)}
-      {productData?.createdBy !== user._id ? (
-        <View style={styles.bottomBarContainer}>
-          <View style={styles.bottomBar}>
-            <View style={styles.ticketInfoContainer}>
-              <Text style={styles.priceText}>Interested</Text>
-
-              <TouchableOpacity
-                style={styles.bookNowButton}
-                onPress={() => {
-                  connectToChat(loggedInUserId, businessId, productData);
-                }}
-              >
-                <Text style={styles.bookNowButtonText}>Message Owner</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.bottomBarContainer}>
-          <View style={styles.bottomBar}>
-            <View style={styles.ticketInfoContainer}>
-              <Text style={styles.priceText}>Delete Product</Text>
-              <TouchableOpacity
-                style={styles.bookNowButton}
-                onPress={() => deleteProduct(productData.id)}
-              >
-                <Text s style={styles.bookNowButtonText}>
-                  Delete
+              <View style={styles.eventDetails}>
+                <Text style={styles.detailItem}>
+                  {productData.productAge} | {productData.phone}
                 </Text>
-              </TouchableOpacity>
+              </View>
+            </View>
+
+            <View style={styles.eventInfoContainer}>
+              <View style={styles.eventDetails}>
+                <Text style={styles.priceText}>Price Details</Text>
+
+                {productData?.createdBy &&
+                productData?.createdBy === user._id ? (
+                  <TouchableOpacity
+                    style={styles.editIconContainer}
+                    onPress={() => {
+                      navigation.navigate("EditListing", {
+                        productId: productData._id,
+                        listing: productData,
+                        fetchProducts: fetchProducts,
+                        fetchProduct: fetchProduct,
+                      });
+                    }}
+                  >
+                    <Icon name="pencil" size={24} color={Theme.themeColor} />
+                  </TouchableOpacity>
+                ) : null}
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Price</Text>
+                  <Text style={styles.infoValue}>Rs. {productData.price}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Original Price</Text>
+                  <Text style={styles.infoValue}>
+                    Rs. {productData.originalPrice}
+                  </Text>
+                </View>
+              </View>
+            </View>
+            <View style={styles.eventInfoContainer}>
+              <View style={styles.eventDetails}>
+                <Text style={styles.priceText}>Product Information</Text>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Condition</Text>
+                  <Text style={styles.infoValue}>{productData.condition}</Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Product age</Text>
+                  <Text style={styles.infoValue}>{productData.productAge}</Text>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.eventInfoContainer}>
+              <View style={styles.eventDetails}>
+                <Text style={styles.priceText}>Product Description</Text>
+                <Text style={styles.bioText}>{productData.description}</Text>
+              </View>
+            </View>
+          </ScrollView>
+          <View style={styles.bottomBarContainer}>
+            <View style={styles.bottomBar}>
+              <View style={styles.ticketInfoContainer}>
+                {productData?.createdBy !== user._id ? (
+                  <>
+                    <Text style={styles.priceText}>Interested</Text>
+                    <TouchableOpacity
+                      style={styles.bookNowButton}
+                      onPress={() => {
+                        connectToChat(loggedInUserId, businessId, productData);
+                      }}
+                    >
+                      <Text style={styles.bookNowButtonText}>
+                        Message Owner
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <Text style={styles.priceText}>Delete Product</Text>
+                    <TouchableOpacity
+                      style={styles.bookNowButton}
+                      onPress={() => deleteProduct(productData._id)}
+                    >
+                      <Text s style={styles.bookNowButtonText}>
+                        Delete
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
             </View>
           </View>
-        </View>
+        </>
       )}
-      {/* {(typeof item.createdBy === "string"
-        ? item.createdBy
-        : item.createdBy._id) !== user._id ? (
-        <View style={styles.bottomBarContainer}>
-          <View style={styles.bottomBar}>
-            <View style={styles.ticketInfoContainer}>
-              <Text style={styles.priceText}>Interested</Text>
-
-              <TouchableOpacity
-                style={styles.bookNowButton}
-                onPress={() => {
-                  connectToChat(loggedInUserId, businessId, item);
-                }}
-              >
-                <Text style={styles.bookNowButtonText}>Message Owner</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.bottomBarContainer}>
-          <View style={styles.bottomBar}>
-            <View style={styles.ticketInfoContainer}>
-              <Text style={styles.priceText}>Delete Product</Text>
-              <TouchableOpacity
-                style={styles.bookNowButton}
-                onPress={() => deleteProduct(item._id)}
-              >
-                <Text s style={styles.bookNowButtonText}>
-                  Delete
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      )} */}
     </SafeAreaView>
   );
-}
+};
+
+export default EachListing;
 
 const styles = StyleSheet.create({
   container: {
@@ -822,7 +959,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     color: "#666",
-    fontFamily: "Courier New",
     padding: 8,
     borderRadius: 4,
     overflow: "hidden",

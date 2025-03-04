@@ -315,7 +315,7 @@ export default function AddProduct({ navigation, route }) {
                 marginTop: 50,
               }}
             >
-              Add Product Image
+              Add Product Media
             </Text>
             <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
               {selectedImages &&

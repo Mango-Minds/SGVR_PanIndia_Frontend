@@ -29,6 +29,8 @@ import { decode } from "base-64";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import { Video } from "expo-av";
+import * as VideoThumbnails from "expo-video-thumbnails";
 import SortMenu from "./SortMenu";
 const { width } = Dimensions.get("window");
 const AllListingScreen = ({ route, navigation }) => {
@@ -83,10 +85,7 @@ const AllListingScreen = ({ route, navigation }) => {
       options: ["New", "Like New", "Used", "Needs Repair"],
     },
 
-    {
-      name: "Price",
-      options: ["Below 2000", "3000-5000", "5000-7000", "Above 7000"],
-    },
+   
   ];
 
   const handleFilterClick = (filterName) => {
@@ -229,6 +228,36 @@ const AllListingScreen = ({ route, navigation }) => {
   }, [sortOption]);
 
   console.log("Products: ", products);
+  const [thumbnails, setThumbnails] = useState({}); 
+
+ 
+  useEffect(() => {
+    const generateThumbnails = async () => {
+      const newThumbnails = {};
+      
+      await Promise.all(products.map(async (item) => {
+        if (item.videos?.length > 0) {
+          try {
+            const { uri } = await VideoThumbnails.getThumbnailAsync(
+              `${BASEIMGURL}${item.videos[0]}`,
+              { time: 15000 }
+            );
+            newThumbnails[item._id] = uri;
+          } catch (e) {
+            console.warn("Could not generate thumbnail", e);
+          }
+        }
+      }));
+  
+      setThumbnails(newThumbnails);
+    };
+  
+    if (products?.length > 0) {
+      generateThumbnails();
+    }
+  }, [products]);
+  
+  
   return (
     <Container
       style={{
@@ -292,15 +321,6 @@ const AllListingScreen = ({ route, navigation }) => {
                   key={index}
                   style={[styles.shadowProp, styles.eachJewelleryCard]}
                 >
-                  {/* <Pressable
-                    onPress={() =>
-                      navigation.navigate("EachListing", {
-                        itemId: product._id,
-                        item: product,
-                        fetchProducts: fetchProducts,
-                      })
-                    }
-                  > */}
                   <Pressable
                     onPress={() => {
                       console.log("Navigating with the following data:");
@@ -315,10 +335,36 @@ const AllListingScreen = ({ route, navigation }) => {
                       });
                     }}
                   >
-                    <Image
+                    {/* <Image
                       style={styles.eachJewelleryCardImg}
                       source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
-                    />
+                    /> */}
+                    <View
+                      key={product._id}
+                     
+                    >
+                      {product.images?.length > 0 ? (
+                        <Image
+                          style={styles.eachJewelleryCardImg}
+                          source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                        />
+                      ) : product.videos?.length > 0 ? (
+                        <Pressable onPress={() => console.log("Play Video")}>
+                          <Image
+                            style={styles.eachJewelleryCardImg}
+                            source={{
+                              uri:
+                                thumbnails[product._id] 
+                            }}
+                          />
+                        </Pressable>
+                      ) : (
+                        <Image
+                          style={styles.eachJewelleryCardImg}
+                          source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                        />
+                      )}
+                    </View>
                     <View style={{ marginLeft: "2%" }}>
                       <Text
                         style={{
