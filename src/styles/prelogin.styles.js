@@ -212,7 +212,7 @@ export const MenuLead = ({ onPress, title, textcolor }) => {
       <ButtonText textcolor={textcolor} title={title}>
         {title}
       </ButtonText>
-      <IconButton icon="chevron-down" color="#B98C13"></IconButton>
+      <IconButton icon="chevron-down" color={Theme.themeColor}></IconButton>
     </ButtonContainer>
   );
 };

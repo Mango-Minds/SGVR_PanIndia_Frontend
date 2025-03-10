@@ -24,6 +24,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ErrorToggle, IsBttnloading, login } from "../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import Theme from "../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -40,10 +41,64 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [loadingAnimation, setLoadingAnimation] = useState(false);
 
-
   const handleShowPassword = () => {
     setHidePass((prevState) => !prevState);
   };
+
+  // const handleLogin = async () => {
+  //   try {
+  //     if (!email) {
+  //       dispatch(
+  //         ErrorToggle({
+  //           toggle: true,
+  //           msg: "Enter your correct email",
+  //           type: "error",
+  //         })
+  //       );
+  //       return;
+  //     }
+  //     if (!password) {
+  //       dispatch(
+  //         ErrorToggle({
+  //           toggle: true,
+  //           msg: "Enter your password",
+  //           type: "error",
+  //         })
+  //       );
+  //       return;
+  //     }
+  //     if (!tcCheck) {
+  //       dispatch(
+  //         ErrorToggle({
+  //           toggle: true,
+  //           msg: "You must agree to the terms and conditions",
+  //           type: "error",
+  //         })
+  //       );
+  //       return;
+  //     }
+  //     await dispatch(IsBttnloading(true));
+  //     const data = await dispatch(login({ email, password, isAdmin: "false" }));
+  //     await dispatch(IsBttnloading(false));
+  //     if (data !== true)
+  //       if (data.msgCode === 1) {
+  //         navigation.navigate("Register");
+  //       } else if (data.msgCode === 4) {
+  //       } else if (data.msgCode === 5) {
+  //         navigation.navigate("Verify", {
+  //           phone: data.phone,
+  //           id: data.data.id,
+  //           password: password,
+  //           type: "login",
+  //         });
+  //       }
+  //   } catch (err) {
+  //     console.log("Error");
+  //     console.log(err);
+  //     dispatch(IsBttnloading(false));
+  //     dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
+  //   }
+  // };
 
   const handleLogin = async () => {
     try {
@@ -77,13 +132,18 @@ export default function LoginScreen({ navigation }) {
         );
         return;
       }
+  
       await dispatch(IsBttnloading(true));
-      const data = await dispatch(login({ email, password, isAdmin:"false" }));
+      
+      const data = await dispatch(login({ email, password, isAdmin: "false" }));
+      
       await dispatch(IsBttnloading(false));
-      if (data !== true)
+  
+      if (data !== true) {
         if (data.msgCode === 1) {
           navigation.navigate("Register");
         } else if (data.msgCode === 4) {
+          // Handle case where msgCode is 4
         } else if (data.msgCode === 5) {
           navigation.navigate("Verify", {
             phone: data.phone,
@@ -92,13 +152,39 @@ export default function LoginScreen({ navigation }) {
             type: "login",
           });
         }
+        return;
+      }
+  
+      
+      const userData = {
+        email,
+        token: data.token,
+        user: data.user,  // Storing the user object
+      };
+      
+  
     } catch (err) {
-      console.log("Error");
-      console.log(err);
+      console.log("Login Error:", err);
       dispatch(IsBttnloading(false));
       dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
     }
   };
+  const logAsyncStorageData = async () => {
+    try {
+     
+
+      const allKeys = await AsyncStorage.getAllKeys();
+      console.log("All Keys in AsyncStorage: ", allKeys);
+      for (const key of allKeys) {
+        const value = await AsyncStorage.getItem(key);
+        console.log(`Key: ${key}, Value: ${value}`);
+      }
+    } catch (error) {
+      console.error("Error reading AsyncStorage: ", error);
+    }
+  };
+  logAsyncStorageData();
+
   const handleAdminLogin = async () => {
     try {
       if (!email) {
@@ -132,7 +218,7 @@ export default function LoginScreen({ navigation }) {
         return;
       }
       setLoadingAnimation(true);
-      const data = await dispatch(login({ email, password, isAdmin:"true" }));
+      const data = await dispatch(login({ email, password, isAdmin: "true" }));
       setLoadingAnimation(false);
       if (data !== true)
         if (data.msgCode === 1) {
@@ -159,8 +245,7 @@ export default function LoginScreen({ navigation }) {
       <MainContainer>
         <Image
           style={styles.logo}
-         
-         source={require("../assets/images/pre-login/miLogo-small.png")}
+          source={require("../assets/images/pre-login/miLogo-small.png")}
         />
 
         <FormSection>
@@ -280,7 +365,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => {
               navigation.navigate("Register");
             }}
-            style={{ color: Theme.themeColor, fontSize: 14 , fontWeight : "600"}}
+            style={{ color: Theme.themeColor, fontSize: 14, fontWeight: "600" }}
           >
             Signup
           </ForgotText>
@@ -291,7 +376,7 @@ export default function LoginScreen({ navigation }) {
             onPress={() => {
               navigation.navigate("Contactus");
             }}
-            style={{ color: Theme.themeColor, fontSize: 14 , fontWeight : "600"}}
+            style={{ color: Theme.themeColor, fontSize: 14, fontWeight: "600" }}
           >
             Contact Us
           </ForgotText>

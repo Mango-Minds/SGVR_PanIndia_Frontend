@@ -10,6 +10,7 @@ import {
   Isloading,
   ErrorToggle,
   generateToken,
+  updateTokens,
 } from "../../store/user";
 import { Snackbar } from "react-native-paper";
 import {
@@ -23,6 +24,8 @@ import {
   GetNotification,
   GetSocialData,
 } from "../../store/Handlers/Reducer.Handler";
+import Theme from "../../styles/theme";
+import store from "../../store";
 
 export const Navigation = () => {
   const { token, loading, error, user } = useSelector((state) => state.user);
@@ -34,20 +37,61 @@ export const Navigation = () => {
   const errorMarginBottom = Platform.OS === "ios" ? 0 : 40;
   const errorPaddingTop = Platform.OS === "ios" ? 10 : 0;
 
-  const IsLoggedIn = async () => {
-    // await AsyncStorage.removeItem("firsttime");
-    // await dispatch(Isloading(true));
+  // const IsLoggedIn = async () => {
+  //   // await AsyncStorage.removeItem("firsttime");
+  //   // await dispatch(Isloading(true));
 
-    const refreshtoken = await AsyncStorage.getItem("refresh_token");
-    if (refreshtoken) {
-      await dispatch(
-        generateToken(await AsyncStorage.getItem("refresh_token"))
-      );
-      dispatch(Isloading(false));
-    } else {
-      dispatch(Isloading(false));
+  //   const refreshtoken = await AsyncStorage.getItem("refresh_token");
+  //   if (refreshtoken) {
+  //     await dispatch(
+  //       generateToken(await AsyncStorage.getItem("refresh_token"))
+  //     );
+  //     dispatch(Isloading(false));
+  //   } else {
+  //     dispatch(Isloading(false));
+  //   }
+  // };
+
+  // const IsLoggedIn = async () => {
+  //   try {
+  //     const refreshtoken = await AsyncStorage.getItem("refresh_token");
+  
+  //     if (refreshtoken) {
+  //       await dispatch(generateToken(await AsyncStorage.getItem("refresh_token"))); 
+  //       await AsyncStorage.setItem("loggedIn", "true"); // Persist login state
+  //     } else {
+  //       await AsyncStorage.setItem("loggedIn", "false");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error checking login status:", error);
+  //   } finally {
+  //     dispatch(Isloading(false));
+  //   }
+  // };
+  const IsLoggedIn = async () => {
+    try {
+        const storedToken = await AsyncStorage.getItem("auth_token");
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+        if (storedToken) {
+            dispatch(updateTokens({ accessToken: storedToken, refreshToken })); 
+            await AsyncStorage.setItem("loggedIn", "true");
+        } else if (refreshToken) {
+            await dispatch(generateToken(refreshToken)); 
+            await AsyncStorage.setItem("loggedIn", "true");
+        } else {
+            await AsyncStorage.setItem("loggedIn", "false");
+        }
+    } catch (error) {
+        console.error("Error checking login status:", error);
+    } finally {
+        dispatch(setLoading(false));
     }
-  };
+};
+
+  
+ 
+
 
   useEffect(() => {
     try {
@@ -71,7 +115,7 @@ export const Navigation = () => {
           flex: 1,
         }}
         size={"large"}
-        color={"#D4AF37"}
+        color={Theme.themeColor}
       />
     );
   else

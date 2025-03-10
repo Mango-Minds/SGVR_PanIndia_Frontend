@@ -7,8 +7,6 @@ import authHeader from "../services/auth.header";
 import { BASEAPIURL } from "../infrastructure/constants";
 import { useSelector } from "react-redux";
 
-
-
 const slice = createSlice({
   name: "user",
   initialState: {
@@ -182,8 +180,6 @@ export const {
 //   dispatch(loadmatrimonyprofileImages(images));
 // };
 
-
-
 export const updateSocket = (socket) => async (dispatch) => {
   dispatch(updatesocket(socket));
 };
@@ -273,102 +269,107 @@ export const ErrorToggle = (data) => (dispatch) => {
 //     }
 //   };
 
-export const login = ({ email, password, isAdmin }) => async (dispatch) => {
-  try {
-    // Validate email and password before making the request
-    if (!email || !password) {
-      await dispatch(
-        setError({
-          msg: 'Email and password are required.',
-          toggle: true,
-          type: 'error',
-        })
-      );
-      return false;
-    }
-
-    // Attempt to login
-    let res;
-    if(isAdmin === "false"){
-       res = await axios.post(`${BASEAPIURL}/user/login`, {
-        email,
-        password,
-      });
-    }else{
-       res = await axios.post(`${BASEAPIURL}/super-admin-auth/login`, {
-        email,
-        password,
-      });
-    }
-    console.log(res);
-
-    // Check for successful response
-    if (res.status === 200 && res.data) {
-      const { accessToken, refreshToken, user } = res.data;
-
-      // Store tokens in AsyncStorage
-      await AsyncStorage.setItem('token', accessToken);
-      // await AsyncStorage.setItem('refresh_token', refreshToken);
-
-      // Set user data in the state
-      await dispatch(
-        setInitialUser({
-          user,
-          token: accessToken,
-          refreshToken,
-        })
-      );
-
-      return true; // Indicate successful login
-    } else {
-      // If the response does not indicate success, handle different error scenarios
-       const errorMsg = res.data?.message || 'Login failed. Please try again.';
-
-      await dispatch(
-        setError({
-          msg: errorMsg,
-          toggle: true,
-          type: 'error',
-        })
-      );
-
-      return false;
-    }
-  } catch (error) {
-    // Handle network or server errors
-    console.error('Login error:', error);
-
-    if (error.response) {
-      const status = error.response.status;
-
-      let errorMsg = 'An unexpected error occurred. Please try again.';
-
-      if (status === 401) {
-        errorMsg = 'Invalid credentials. Please check your email and password.';
-      } else if (status === 500) {
-        errorMsg = 'Internal server error. Please try again later.';
+export const login =
+  ({ email, password, isAdmin }) =>
+  async (dispatch) => {
+    try {
+      // Validate email and password before making the request
+      if (!email || !password) {
+        await dispatch(
+          setError({
+            msg: "Email and password are required.",
+            toggle: true,
+            type: "error",
+          })
+        );
+        return false;
       }
 
-      await dispatch(
-        setError({
-          msg: errorMsg,
-          toggle: true,
-          type: 'error',
-        })
-      );
-    } else {
-      // Handle connection issues
-      await dispatch(
-        setError({
-          msg: 'Network error. Please check your internet connection and try again.',
-          toggle: true,
-          type: 'error',
-        })
-      );
+      // Attempt to login
+      let res;
+      if (isAdmin === "false") {
+        res = await axios.post(`${BASEAPIURL}/user/login`, {
+          email,
+          password,
+        });
+      } else {
+        res = await axios.post(`${BASEAPIURL}/super-admin-auth/login`, {
+          email,
+          password,
+        });
+      }
+      console.log(res);
+
+      // Check for successful response
+      if (res.status === 200 && res.data) {
+        const { accessToken, refreshToken, user } = res.data;
+        console.log("User in login: ", user);
+        // Store tokens in AsyncStorage
+        await AsyncStorage.setItem("token", accessToken);
+        await AsyncStorage.setItem("refresh_token", refreshToken);
+      await AsyncStorage.setItem("user", JSON.stringify(user));
+        // await AsyncStorage.setItem('refresh_token', refreshToken);
+
+        // Set user data in the state
+        await dispatch(
+          setInitialUser({
+            user,
+            token: accessToken,
+            refreshToken,
+          })
+        );
+
+        return true; // Indicate successful login
+      } else {
+        // If the response does not indicate success, handle different error scenarios
+        const errorMsg = res.data?.message || "Login failed. Please try again.";
+
+        await dispatch(
+          setError({
+            msg: errorMsg,
+            toggle: true,
+            type: "error",
+          })
+        );
+
+        return false;
+      }
+    } catch (error) {
+      // Handle network or server errors
+      console.error("Login error:", error);
+
+      if (error.response) {
+        const status = error.response.status;
+
+        let errorMsg = "An unexpected error occurred. Please try again.";
+
+        if (status === 401) {
+          errorMsg =
+            "Invalid credentials. Please check your email and password.";
+        } else if (status === 500) {
+          errorMsg = "Internal server error. Please try again later.";
+        }
+
+        await dispatch(
+          setError({
+            msg: errorMsg,
+            toggle: true,
+            type: "error",
+          })
+        );
+      } else {
+        // Handle connection issues
+        await dispatch(
+          setError({
+            msg: "Network error. Please check your internet connection and try again.",
+            toggle: true,
+            type: "error",
+          })
+        );
+      }
+      return false;
     }
-    return false;
-  }
-};
+  };
 
 // export const signup = (data) => async (dispatch) => {
 //   try {
@@ -419,7 +420,7 @@ export const signup = (userData) => async (dispatch) => {
       email: userData.email.trim(),
       password: userData.password.trim(),
       phone: userData.phone.trim(),
-     // data.username = data.username.trim();
+      // data.username = data.username.trim();
       // Additional fields can be trimmed as needed
     };
 
@@ -428,9 +429,9 @@ export const signup = (userData) => async (dispatch) => {
       // Handle successful response
       await dispatch(
         setError({
-          msg: 'An OTP has been sent to your phone number.',
+          msg: "An OTP has been sent to your phone number.",
           toggle: true,
-          type: 'success',
+          type: "success",
         })
       );
       return res.data;
@@ -439,31 +440,32 @@ export const signup = (userData) => async (dispatch) => {
     // Handle non-successful status codes (e.g., status !== 201)
     await dispatch(
       setError({
-        msg: res.data?.msg || 'Unexpected error occurred during signup.',
+        msg: res.data?.msg || "Unexpected error occurred during signup.",
         toggle: true,
-        type: 'error',
+        type: "error",
       })
     );
   } catch (error) {
     // Handle specific error cases with detailed messages
     if (error.response) {
       const status = error.response.status;
-      const errorMsg = error.response.data?.msg || 'An error occurred during signup.';
+      const errorMsg =
+        error.response.data?.msg || "An error occurred during signup.";
 
       if (status === 400) {
         await dispatch(
           setError({
-            msg: 'Invalid input. Please check your data and try again.',
+            msg: "Invalid input. Please check your data and try again.",
             toggle: true,
-            type: 'error',
+            type: "error",
           })
         );
       } else if (status === 401) {
         await dispatch(
           setError({
-            msg: 'Unauthorized. Please check your credentials.',
+            msg: "Unauthorized. Please check your credentials.",
             toggle: true,
-            type: 'error',
+            type: "error",
           })
         );
       } else {
@@ -471,7 +473,7 @@ export const signup = (userData) => async (dispatch) => {
           setError({
             msg: errorMsg,
             toggle: true,
-            type: 'error',
+            type: "error",
           })
         );
       }
@@ -479,9 +481,9 @@ export const signup = (userData) => async (dispatch) => {
       // Handle cases where error doesn't have a response
       await dispatch(
         setError({
-          msg: 'Network error. Please check your internet connection and try again.',
+          msg: "Network error. Please check your internet connection and try again.",
           toggle: true,
-          type: 'error',
+          type: "error",
         })
       );
     }
@@ -547,20 +549,54 @@ export const editMyProfile = (formData) => async (dispatch) => {
   return res.data;
 };
 
-export const initialUser = (token, refreshtoken) => async (dispatch) => {
+// export const initialUser = (token, refreshtoken) => async (dispatch) => {
+//   try {
+//     const user = await getUserData();
+//     if (user && user.status === 0) {
+//       return dispatch(
+//         setInitialUser({ user: user.data, token, refreshToken: refreshtoken })
+//       );
+//     } else {
+//       return dispatch(
+//         generateToken(await AsyncStorage.getItem("refresh_token"))
+//       );
+//     }
+//   } catch (e) {
+//     return;
+//   }
+// };
+
+
+export const initialUser = () => async (dispatch) => {
   try {
-    const user = await getUserData();
-    if (user && user.status === 0) {
-      return dispatch(
-        setInitialUser({ user: user.data, token, refreshToken: refreshtoken })
-      );
-    } else {
-      return dispatch(
-        generateToken(await AsyncStorage.getItem("refresh_token"))
-      );
+    const token = await AsyncStorage.getItem("token");
+    const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+    if (!token || !refreshToken) {
+      return; // No stored tokens, so user stays logged out
     }
-  } catch (e) {
-    return;
+    const authData = await AsyncStorage.getItem("auth_data");
+console.log("authData: ", authData);
+    if (authData) {
+      const { user, token } = JSON.parse(authData);
+
+      if (user && token) {
+        dispatch(
+          setInitialUser({
+            user,
+            token,
+            refreshToken: null, 
+          })
+        );
+        return;
+      }
+    }
+
+    // If no user data is found, trigger logout
+    dispatch(logoutSuccess());
+  } catch (error) {
+    console.error("Error loading user session:", error);
+    dispatch(logoutSuccess());
   }
 };
 
@@ -588,12 +624,56 @@ export const generateToken = (refreshToken) => async (dispatch) => {
 };
 
 // export const imgHandler
+// export const logout = () => async (dispatch) => {
+//   try {
+//     const headers = await authHeader();
+//     const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
+
+//     if (res.status === 200) {
+//       await dispatch(
+//         setError({
+//           msg: "Logged out Successfully",
+//           toggle: true,
+//           type: "Success",
+//         })
+//       );
+//       await AsyncStorage.clear();
+//       return dispatch(logoutSuccess());
+//     } else if (res.status === 401) {
+//       await dispatch(
+//         setError({
+//           msg: "Logged out Successfully",
+//           toggle: true,
+//           type: "Success",
+//         })
+//       );
+//       await AsyncStorage.clear();
+//       return dispatch(logoutSuccess());
+//     } else {
+//       await dispatch(
+//         setError({
+//           msg: "There was some error. Please try again after some time",
+//           toggle: true,
+//           type: "error",
+//         })
+//       );
+//     }
+//   } catch (error) {
+//     await dispatch(
+//       setError({
+//         msg: "There was some error. Please try again after some time",
+//         toggle: true,
+//         type: "error",
+//       })
+//     );
+//   }
+// };
 export const logout = () => async (dispatch) => {
   try {
     const headers = await authHeader();
     const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
 
-    if (res.status === 200) {
+    if (res.status === 200 || res.status === 401) {
       await dispatch(
         setError({
           msg: "Logged out Successfully",
@@ -601,21 +681,11 @@ export const logout = () => async (dispatch) => {
           type: "Success",
         })
       );
-      await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
-    }  else if (res.status === 401) {
-      await dispatch(
-        setError({
-          msg: "Logged out Successfully",
-          toggle: true,
-          type: "Success",
-        })
-      );
-      await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
-    }
-    else {
-      await dispatch(
+
+      dispatch(logoutSuccess()); 
+      await AsyncStorage.clear(); 
+    } else {
+      dispatch(
         setError({
           msg: "There was some error. Please try again after some time",
           toggle: true,
@@ -624,7 +694,7 @@ export const logout = () => async (dispatch) => {
       );
     }
   } catch (error) {
-    await dispatch(
+    dispatch(
       setError({
         msg: "There was some error. Please try again after some time",
         toggle: true,
@@ -633,6 +703,7 @@ export const logout = () => async (dispatch) => {
     );
   }
 };
+
 
 export const deleteAccountHandler = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");
