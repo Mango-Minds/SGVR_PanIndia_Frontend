@@ -337,7 +337,7 @@ export default function EditListing({ route, navigation }) {
                       }}
                     />
                     <TouchableOpacity
-                      onPress={() => removeProfileImage(index, false)}
+                      onPress={() => removeProfileImage(index, false, "image")}
                     >
                       <View
                         style={{
@@ -373,7 +373,7 @@ export default function EditListing({ route, navigation }) {
                     source={{ uri: image.uri }}
                   />
                   <TouchableOpacity
-                    onPress={() => removeProfileImage(index, true)}
+                    onPress={() => removeProfileImage(index, true, "image")}
                   >
                     <View
                       style={{
@@ -404,12 +404,16 @@ export default function EditListing({ route, navigation }) {
                       alignSelf: "center",
                     }}
                   >
-                    <Video
+                    {/* <Video
                       source={{ uri: video.uri }}
                       style={styles.profileImg}
                       resizeMode="cover"
                       shouldPlay={false}
-                    />
+                    /> */}
+                     <Image
+                    style={styles.profileImg}
+                    source={{ uri: video.uri }}
+                  />
                     <TouchableOpacity
                       onPress={() => removeProfileImage(index, false, "video")}
                     >
@@ -443,7 +447,7 @@ export default function EditListing({ route, navigation }) {
                     source={{ uri: video.uri }}
                   />
                   <TouchableOpacity
-                    onPress={() => removeProfileImage(index, true)}
+                    onPress={() => removeProfileImage(index, true, "video")}
                   >
                     <View
                       style={{

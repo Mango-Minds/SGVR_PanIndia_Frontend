@@ -14,6 +14,7 @@ import Contactus from "../../features/contactus.screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Reportscreen from "../../features/reportissue.screen";
 import { useDispatch } from "react-redux";
+import { DashboardNavigator } from "./dashboard.navigator";
 
 const Stack = createStackNavigator();
 
@@ -61,6 +62,7 @@ export const PreLoginNavigator = () => {
       <Stack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       {/* <Stack.Screen name="EditNumber" component={EditNumberScreen} /> */}
       <Stack.Screen name="Register" component={RegisterScreen} />
+      <Stack.Screen name="Dashboard" component={DashboardNavigator} />
       {/* <Stack.Screen name="Reverify" component={ReverifyScreen} /> */}
     </Stack.Navigator>
   );
