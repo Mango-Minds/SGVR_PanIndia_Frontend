@@ -52,42 +52,42 @@ export const Navigation = () => {
   //   }
   // };
 
-  // const IsLoggedIn = async () => {
-  //   try {
-  //     const refreshtoken = await AsyncStorage.getItem("refresh_token");
-  
-  //     if (refreshtoken) {
-  //       await dispatch(generateToken(await AsyncStorage.getItem("refresh_token"))); 
-  //       await AsyncStorage.setItem("loggedIn", "true"); // Persist login state
-  //     } else {
-  //       await AsyncStorage.setItem("loggedIn", "false");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error checking login status:", error);
-  //   } finally {
-  //     dispatch(Isloading(false));
-  //   }
-  // };
   const IsLoggedIn = async () => {
     try {
-        const storedToken = await AsyncStorage.getItem("auth_token");
-        const refreshToken = await AsyncStorage.getItem("refresh_token");
-
-        if (storedToken) {
-            dispatch(updateTokens({ accessToken: storedToken, refreshToken })); 
-            await AsyncStorage.setItem("loggedIn", "true");
-        } else if (refreshToken) {
-            await dispatch(generateToken(refreshToken)); 
-            await AsyncStorage.setItem("loggedIn", "true");
-        } else {
-            await AsyncStorage.setItem("loggedIn", "false");
-        }
+      const refreshtoken = await AsyncStorage.getItem("refresh_token");
+  
+      if (refreshtoken) {
+        await dispatch(generateToken(await AsyncStorage.getItem("refresh_token"))); 
+        await AsyncStorage.setItem("loggedIn", "true"); // Persist login state
+      } else {
+        await AsyncStorage.setItem("loggedIn", "false");
+      }
     } catch (error) {
-        console.error("Error checking login status:", error);
+      console.error("Error checking login status:", error);
     } finally {
-        dispatch(setLoading(false));
+      dispatch(Isloading(false));
     }
-};
+  };
+//   const IsLoggedIn = async () => {
+//     try {
+//         const storedToken = await AsyncStorage.getItem("auth_token");
+//         const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+//         if (storedToken) {
+//             dispatch(updateTokens({ accessToken: storedToken, refreshToken })); 
+//             await AsyncStorage.setItem("loggedIn", "true");
+//         } else if (refreshToken) {
+//             await dispatch(generateToken(refreshToken)); 
+//             await AsyncStorage.setItem("loggedIn", "true");
+//         } else {
+//             await AsyncStorage.setItem("loggedIn", "false");
+//         }
+//     } catch (error) {
+//         console.error("Error checking login status:", error);
+//     } finally {
+//         dispatch(setLoading(false));
+//     }
+// };
 
   
  
