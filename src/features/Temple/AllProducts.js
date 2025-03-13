@@ -223,7 +223,7 @@ const AllProductsScreen = ({ route }) => {
                   >
                     <Image
                       style={styles.eachJewelleryCardImg}
-                      source={{ uri: `${BASEIMGURL}${product.pictures[0]}` }}
+                      source={{ uri: `${product.pictures[0]}` }}
                     />
                     <View style={{ marginLeft: "2%" }}>
                       <Text

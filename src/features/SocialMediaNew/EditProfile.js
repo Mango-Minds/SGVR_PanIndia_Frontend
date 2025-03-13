@@ -75,7 +75,7 @@ export default function EditUserProfile({ navigation, route }) {
   const [lastName, setLastName] = useState(userData.user?.lastName);
   const [address, setAddress] = useState(userData.user?.address);
   const [selectedImage, setSelectedImage] = useState({
-    uri: userData.user.image ? `${BASEIMGURL}${userData.user.image}` : null,
+    uri: userData.user.image ? `${userData.user.image}` : null,
   });
 
   const { loadingInBtn } = useSelector((state) => state.user);

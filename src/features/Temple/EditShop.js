@@ -78,7 +78,7 @@ export default function EditShop({ route, navigation }) {
   const token = useSelector((state) => state.user.token);
   const initialImages =
     shop && shop.images
-      ? shop.images.map((image) => `${BASEIMGURL}${image}`)
+      ? shop.images.map((image) => `${image}`)
       : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
@@ -131,10 +131,13 @@ export default function EditShop({ route, navigation }) {
       });
 
       // Append existing images without base URL
-      selectedImages.forEach((image, index) => {
-        if (image.startsWith(BASEIMGURL)) {
-          formData.append("images", image.replace(BASEIMGURL, ""));
-        }
+      // selectedImages.forEach((image, index) => {
+      //   if (image.startsWith(BASEIMGURL)) {
+      //     formData.append("images", image.replace(BASEIMGURL, ""));
+      //   }
+      // });
+      selectedImages.forEach((image) => {
+        formData.append("images", image);
       });
 
       // Append newly uploaded images

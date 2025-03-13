@@ -348,7 +348,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
         <Animated.View style={{ height: headerHeight }}>
           <Image
             source={{
-              uri: `${BASEIMGURL}${
+              uri: `${
                 Array.isArray(panditDetails?.owner.image)
                   ? panditDetails?.owner.image[0]
                   : panditDetails?.owner.image
@@ -394,7 +394,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                   key={index}
                 >
                   <Image
-                    source={{ uri: `${BASEIMGURL}${item}` }}
+                    source={{ uri: `${item}` }}
                     resizeMode="cover"
                     style={{
                       width: 60,
@@ -550,7 +550,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                     source={
                       temple.images[0]
                         ? {
-                            uri: `${BASEIMGURL}${temple.images[0]}`,
+                            uri: `${temple.images[0]}`,
                           }
                         : UserImg
                     }
@@ -588,7 +588,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
             onRequestClose={() => setShowViewer(false)}
           >
             <ImageViewerScreen
-              images={images.map((item) => `${BASEIMGURL}${item}`)}
+              images={images.map((item) => `${item}`)}
               setShowViewer={setShowViewer}
               index={currentIndex}
             />

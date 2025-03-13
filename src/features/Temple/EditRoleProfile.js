@@ -97,7 +97,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
 
   const [selectedImage, setSelectedImage] = useState(() => {
     if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
-      return { uri: `${BASEIMGURL}${loggedInShop.image}` };
+      return { uri: `${loggedInShop.image}` };
     } else {
       return null;
     }
@@ -105,7 +105,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
 
   useEffect(() => {
     if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
-      setSelectedImage({ uri: `${BASEIMGURL}${loggedInShop.image}` });
+      setSelectedImage({ uri: `${loggedInShop.image}` });
     } else {
       setSelectedImage(null);
     }

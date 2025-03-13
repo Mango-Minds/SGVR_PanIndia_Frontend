@@ -181,7 +181,7 @@ const FollowersFollowing = ({ navigation, route }) => {
         source={
           item.image === ""
             ?  UserImg 
-            : { uri: `${BASEIMGURL}${item.image}` }
+            : { uri: `${item.image}` }
         }
         style={styles.image}
       />

@@ -216,11 +216,11 @@ export default function EachProfile() {
 
   const [activeTab, setActiveTab] = useState("Posts");
   const bannerImageUri = profile?.followData?.bannerImage
-    ? `${BASEIMGURL}${profile.followData.bannerImage}`
+    ? `${profile.followData.bannerImage}`
     : null;
 
   const profileImageUri = profile?.user?.image
-    ? `${BASEIMGURL}${profile.user.image}`
+    ? `${profile.user.image}`
     : null;
 
   const postsContent = [
@@ -251,7 +251,7 @@ export default function EachProfile() {
             <NewSocialCard
               key={post._id}
               post={post}
-              profileImageUri={`${BASEIMGURL}${post.createdBy.image}`}
+              profileImageUri={`${post.createdBy.image}`}
               description={post.content}
               video={post.video}
               source="EachProfile"
@@ -271,7 +271,7 @@ export default function EachProfile() {
             <NewSocialCard
               key={firstPost._id}
               post={firstPost}
-              profileImageUri={`${BASEIMGURL}${firstPost.createdBy.image}`}
+              profileImageUri={`${firstPost.createdBy.image}`}
               description={firstPost.content}
               video={firstPost.video}
               source="EachProfile"

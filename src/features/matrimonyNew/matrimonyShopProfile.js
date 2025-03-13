@@ -116,7 +116,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
           <FlatList
             ref={mainFlatListRef}
             data={vendorData.images.map(
-              (imagePath) => `${BASEIMGURL}${imagePath}`
+              (imagePath) => `${imagePath}`
             )}
             renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()}
@@ -182,7 +182,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
           <FlatList
             ref={modalFlatListRef}
             data={vendorData.images.map(
-              (imagePath) => `${BASEIMGURL}${imagePath}`
+              (imagePath) => `${imagePath}`
             )}
             renderItem={({ item }) => (
               <Image source={{ uri: item }} style={styles.modalImage} />

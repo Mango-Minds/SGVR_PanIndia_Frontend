@@ -678,7 +678,7 @@ const EachListing = ({ route }) => {
                   <Image
                     style={styles.headerImage}
                     source={{
-                      uri: `${BASEIMGURL}${productData.images[selectedMediaIndex]}`,
+                      uri: `${productData.images[selectedMediaIndex]}`,
                     }}
                   />
                 ) : (
@@ -686,7 +686,7 @@ const EachListing = ({ route }) => {
                     ref={videoRef}
                     style={styles.headerImage}
                     source={{
-                      uri: `${BASEIMGURL}${productData.videos[selectedMediaIndex]}`,
+                      uri: `${productData.videos[selectedMediaIndex]}`,
                     }}
                     controls
                     resizeMode="contain"
@@ -746,12 +746,12 @@ const EachListing = ({ route }) => {
                         {media.type === "image" ? (
                           <Image
                             style={{ width: 60, height: 60, borderRadius: 5 }}
-                            source={{ uri: `${BASEIMGURL}${media.src}` }}
+                            source={{ uri: `${media.src}` }}
                           />
                         ) : (
                           <Video
                             style={{ width: 60, height: 60, borderRadius: 5 }}
-                            source={{ uri: `${BASEIMGURL}${media.src}` }}
+                            source={{ uri: `${media.src}` }}
                             controls
                             resizeMode="contain"
                           />

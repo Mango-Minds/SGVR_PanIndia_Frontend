@@ -79,7 +79,7 @@ export default function EditMember({ route, navigation }) {
   const token = useSelector((state) => state.user.token);
 
   const [selectedImage, setSelectedImage] = useState({
-    uri: member.profileImage ? `${BASEIMGURL}${member.profileImage}` : null,
+    uri: member.profileImage ? `${member.profileImage}` : null,
   });
 
   const { loadingInBtn } = useSelector((state) => state.user);

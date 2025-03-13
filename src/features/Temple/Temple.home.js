@@ -450,7 +450,7 @@ const TempleHome = ({ navigation }) => {
                               <ImageBackground
                                 source={
                                   item.images.length > 0
-                                    ? { uri: `${BASEIMGURL}${item.images[0]}` }
+                                    ? { uri: "https://marathaapp.s3.ap-south-1.amazonaws.com/temple/images/1741776370103-image_0.jpg" }
                                     : ""
                                 }
                                 resizeMode="cover"
@@ -959,9 +959,9 @@ const TempleHome = ({ navigation }) => {
                         
                           source={
                             pandit.image && pandit.image.length > 0
-                              ? { uri: `${BASEIMGURL}${pandit?.owner?.image}` }
+                              ? { uri: `${pandit?.owner?.image}` }
                               : pandit?.owner?.image
-                              ? { uri: `${BASEIMGURL}${pandit?.owner?.image}` }
+                              ? { uri: `${pandit?.owner?.image}` }
                               : UserImg // Default image if both are unavailable
                           }
                         />

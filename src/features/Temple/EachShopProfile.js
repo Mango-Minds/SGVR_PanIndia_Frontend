@@ -181,7 +181,7 @@ const EachShopProfile = ({ route }) => {
             source={
               shop.image
                 ? {
-                  uri: `${BASEIMGURL}${shop.image}`,
+                  uri: `${shop.image}`,
                 }
                 : UserImg
             }
@@ -377,7 +377,7 @@ const EachShopProfile = ({ route }) => {
                   >
                     <Image
                       style={styles.eachJewelleryCardImg}
-                      source={{ uri: `${BASEIMGURL}${product.pictures[0]}` }}
+                      source={{ uri: `${product.pictures[0]}` }}
                     />
                     <View style={{ marginLeft: "2%", marginTop: "5%" }}>
                       <Text style={{ fontWeight: "700", fontSize: 14 }}>

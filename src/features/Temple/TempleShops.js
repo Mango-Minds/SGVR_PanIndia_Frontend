@@ -203,7 +203,7 @@ export default function TempleShops({ templeinfo }) {
                     marginRight: "10%",
                   }}
                   source={
-                    shop.image ? { uri: `${BASEIMGURL}${shop.image}` } : UserImg
+                    shop.image ? { uri: `${shop.image}` } : UserImg
                   }
                 />
                 <View style={{ flex: 1 }}>

@@ -80,7 +80,7 @@ export default function EditGod({ route, navigation }) {
   const token = useSelector((state) => state.user.token);
 
   const [selectedImage, setSelectedImage] = useState({
-    uri: god.godImage ? `${BASEIMGURL}${god.godImage}` : null,
+    uri: god.godImage ? `${god.godImage}` : null,
   });
 
   const { loadingInBtn } = useSelector((state) => state.user);

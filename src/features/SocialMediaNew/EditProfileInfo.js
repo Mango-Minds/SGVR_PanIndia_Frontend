@@ -135,7 +135,7 @@ export default function EditProfileInfo({ navigation, route }) {
 
   const [selectedImage, setSelectedImage] = useState({
     uri: userProfile.followData?.bannerImage
-      ? `${BASEIMGURL}${userProfile?.followData?.bannerImage}`
+      ? `${userProfile?.followData?.bannerImage}`
       : null,
   });
 

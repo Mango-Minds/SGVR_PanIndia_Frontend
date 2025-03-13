@@ -101,7 +101,7 @@ const MyMatrimonyProfile = ({ route }) => {
                 source={
                   userDetails?.images
                     ? {
-                        uri: `${BASEIMGURL}${userDetails.images[0]}`,
+                        uri: `${userDetails.images[0]}`,
                       }
                     : UserImg
                 }
@@ -112,7 +112,7 @@ const MyMatrimonyProfile = ({ route }) => {
                     source={
                       userData.user.image
                         ? {
-                            uri: `${BASEIMGURL}${userData.user.image}`,
+                            uri: `${userData.user.image}`,
                           }
                         : UserImg
                     }

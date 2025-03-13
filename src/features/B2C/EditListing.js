@@ -90,14 +90,14 @@ export default function EditListing({ route, navigation }) {
 
   const initialVideos =
     listing && listing.videos
-      ? listing.videos.map((video) => `${BASEIMGURL}${video}`)
+      ? listing.videos.map((video) => `${video}`)
       : [];
   const [selectedVideos, setSelectedVideos] = useState(initialVideos);
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
   const initialImages =
     listing && listing.images
-      ? listing.images.map((image) => `${BASEIMGURL}${image}`)
+      ? listing.images.map((image) => `${image}`)
       : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
@@ -190,10 +190,9 @@ export default function EditListing({ route, navigation }) {
       });
 
       selectedImages.forEach((image) => {
-        if (image.startsWith(BASEIMGURL)) {
-          formData.append("images", image.replace(BASEIMGURL, ""));
-        }
+        formData.append("images", image);
       });
+      
 
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {
@@ -203,10 +202,10 @@ export default function EditListing({ route, navigation }) {
           type: "image/jpeg",
         });
       });
-      selectedVideos.forEach((video, index) => {
-        if (video.startsWith(BASEIMGURL)) {
-          formData.append("videos", video.replace(BASEIMGURL, ""));
-        }
+      selectedVideos.forEach((video) => {
+        
+          formData.append("videos", video);
+        
       });
 
       // uploadedVideos.forEach((video, index) => {

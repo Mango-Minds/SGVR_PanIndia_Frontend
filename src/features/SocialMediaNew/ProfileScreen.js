@@ -280,7 +280,7 @@ const isFocused = useIsFocused();
             <NewSocialCard
               key={post._id}
               post={post}
-              profileImageUri={`${BASEIMGURL}${post.createdBy.image}`}
+              profileImageUri={`${post.createdBy.image}`}
               description={post.content}
               video={post.video}
               source="ProfileNewScreen"
@@ -299,7 +299,7 @@ const isFocused = useIsFocused();
             <NewSocialCard
               key={firstPost._id}
               post={firstPost}
-              profileImageUri={`${BASEIMGURL}${firstPost.createdBy.image}`}
+              profileImageUri={`${firstPost.createdBy.image}`}
               description={firstPost.content}
               video={firstPost.video}
               source="ProfileNewScreen"
@@ -366,17 +366,17 @@ const isFocused = useIsFocused();
   ];
 
   const profileImageUri = userProfile?.user?.image
-    ? `${BASEIMGURL}${userProfile.user.image}`
+    ? `${userProfile.user.image}`
     : null;
 
   const bannerImageUri = userProfile.followData?.bannerImage
-    ? `${BASEIMGURL}${userProfile.followData.bannerImage.replace(/\\/g, "/")}`
+    ? `${userProfile.followData.bannerImage.replace(/\\/g, "/")}`
     : null;
 
   const resumeUri =
     typeof userProfile.followData?.resume === "string" &&
     userProfile.followData.resume.trim() !== ""
-      ? `${BASEIMGURL}${userProfile.followData.resume}`
+      ? `${userProfile.followData.resume}`
       : null;
 
   const getFileNameFromUrl = (url) => {

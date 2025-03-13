@@ -167,7 +167,7 @@ const MyMatrimonyProfile = ({ route }) => {
 
   const getProfileImage = () => {
     if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
-      return { uri: `${BASEIMGURL}${loggedInShop.image}` };
+      return { uri: `${loggedInShop.image}` };
     } else {
       return UserImg;
     }
@@ -191,7 +191,7 @@ const MyMatrimonyProfile = ({ route }) => {
                 source={
                   userData.user.image
                     ? {
-                        uri: `${BASEIMGURL}${userData.user.image}`,
+                        uri: `${userData.user.image}`,
                       }
                     : UserImg
                 }
@@ -362,7 +362,7 @@ const MyMatrimonyProfile = ({ route }) => {
                   >
                     <Image
                       style={styles.eachJewelleryCardImg}
-                      source={{ uri: `${BASEIMGURL}${product.pictures[0]}` }}
+                      source={{ uri: `${product.pictures[0]}` }}
                     ></Image>
                     <View style={{ marginLeft: "2%", marginTop: "5%" }}>
                       <Text style={{ fontWeight: "700", fontSize: 14 }}>

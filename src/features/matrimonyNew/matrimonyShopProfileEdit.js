@@ -66,11 +66,10 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
   const [modifiedDetails, setModifiedDetails] = useState({});
 
   const initialImages =
-    userRoleData && userRoleData?.images
-      ? userRoleData?.images?.map(
-          (image) => `${BASEIMGURL}` + image.replace(/\\/g, "/")
-        )
-      : [];
+  userRoleData && userRoleData?.images
+    ? userRoleData?.images.map((image) => image.replace(/\\/g, "/"))
+    : [];
+
 
   const [selectedImages, setSelectedImages] = useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
@@ -131,10 +130,10 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
       return;
     }
 
-    selectedImages.forEach((image, index) => {
-      if (image.startsWith(BASEIMGURL)) {
-        formData.append("images", image.replace(BASEIMGURL, ""));
-      }
+    selectedImages.forEach((image) => {
+    
+        formData.append("images", image);
+      
     });
 
     uploadedImages.forEach((image, index) => {
@@ -189,7 +188,7 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
     }
   };
 
-  const shopImage = BASEIMGURL + modifiedDetails.image;
+  //const shopImage = BASEIMGURL + modifiedDetails.image;
 
   return (
     <>

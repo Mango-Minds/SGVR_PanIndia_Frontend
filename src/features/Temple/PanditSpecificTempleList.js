@@ -157,7 +157,7 @@ const PanditSpecificTempleList = ({ navigation }) => {
                     <ImageBackground
                       source={
                         item.images.length > 0
-                          ? { uri: `${BASEIMGURL}${item.images[0]}` }
+                          ? { uri: `${item.images[0]}` }
                           : ""
                       }
                       resizeMode="cover"

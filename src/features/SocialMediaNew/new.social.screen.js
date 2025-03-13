@@ -90,7 +90,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
   const user = useSelector((state) => state.user.user);
   console.log("User: ", user);
 
-  const profileImageUrl = user?.image ? `${BASEIMGURL}${user.image}` : null;
+  const profileImageUrl = user?.image ? `${user.image}` : null;
 
   const filterUserId = user?._id;
 
@@ -174,7 +174,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
               data={filteredPosts}
               renderItem={({ item }) => {
                 const profileImageUri = item.createdBy.image
-                  ? `${BASEIMGURL}${item.createdBy.image}`
+                  ? `${item.createdBy.image}`
                   : "";
 
                 const postImages =

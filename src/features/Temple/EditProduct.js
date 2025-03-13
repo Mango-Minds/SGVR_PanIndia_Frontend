@@ -81,7 +81,7 @@ export default function EditShopProduct({ route, navigation }) {
 
   const initialImages =
     product && product.pictures
-      ? product.pictures.map((image) => `${BASEIMGURL}${image}`)
+      ? product.pictures.map((image) => `${image}`)
       : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
@@ -127,10 +127,9 @@ export default function EditShopProduct({ route, navigation }) {
 
       // Append existing images without base URL
       selectedImages.forEach((image) => {
-        if (image.startsWith(BASEIMGURL)) {
-          formData.append("pictures", image.replace(BASEIMGURL, "")); // Add to pictures array
-        }
+        formData.append("pictures", image);
       });
+      
 
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {

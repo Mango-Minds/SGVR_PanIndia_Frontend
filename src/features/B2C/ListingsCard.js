@@ -45,7 +45,7 @@ const ListingCard = ({ items, fetchProducts, loadingAnimation }) => {
               <View style={styles.card}>
                 <Image
                   style={styles.productImage}
-                  source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                  source={{ uri: `${product.images[0]}` }}
                   resizeMode="cover"
                 />
               </View>

@@ -99,13 +99,7 @@ const DetailsScreen = ({ route, navigation }) => {
       console.error("Error deleting God:", error);
     }
   };
-  // const imageUrl = godDetails?.godImage
-  //   ? `${BASEIMGURL}${godDetails.godImage}`
-  //   : UserImg;
-  // console.log("Imageurl: ", imageUrl);
-  // // const imageUrl = godDetails?.godImage && Array.isArray(godDetails.godImage) && godDetails.godImage[0]
-  // // ? `${BASEIMGURL}${godDetails.godImage[0]}`
-  // // : UserImg;
+ 
   return (
     <SafeAreaView
       style={{
@@ -155,7 +149,7 @@ const DetailsScreen = ({ route, navigation }) => {
           source={
             godDetails?.godImage
               ? {
-                  uri: `${BASEIMGURL}${godDetails.godImage}`,
+                  uri: `${godDetails.godImage}`,
                 }
               : UserImg
           }
