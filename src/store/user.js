@@ -303,18 +303,17 @@ export const login =
       // Check for successful response
       if (res.status === 200 && res.data) {
         const { accessToken, refreshToken, user } = res.data;
-        console.log("User in login: ", user);
-        // Store tokens in AsyncStorage
+        console.log("User in login: ", res.data);
+
         await AsyncStorage.setItem("token", accessToken);
         await AsyncStorage.setItem("refresh_token", refreshToken);
-      await AsyncStorage.setItem("user", JSON.stringify(user));
-        // await AsyncStorage.setItem('refresh_token', refreshToken);
+        await AsyncStorage.setItem("user", JSON.stringify(user));
 
-        // Set user data in the state
         await dispatch(
           setInitialUser({
             user,
             token: accessToken,
+
             refreshToken,
           })
         );
@@ -566,7 +565,6 @@ export const editMyProfile = (formData) => async (dispatch) => {
 //   }
 // };
 
-
 // export const initialUser = () => async (dispatch) => {
 //   try {
 //     const token = await AsyncStorage.getItem("token");
@@ -585,7 +583,7 @@ export const editMyProfile = (formData) => async (dispatch) => {
 //           setInitialUser({
 //             user,
 //             token,
-//             refreshToken: null, 
+//             refreshToken: null,
 //           })
 //         );
 //         return;
@@ -600,12 +598,14 @@ export const editMyProfile = (formData) => async (dispatch) => {
 //   }
 // };
 
-
 export const initialUser = () => async (dispatch) => {
   try {
     const token = await AsyncStorage.getItem("token");
     const refreshToken = await AsyncStorage.getItem("refresh_token");
     const userData = await AsyncStorage.getItem("user");
+    console.log("token: ", token);
+    console.log("refreshToken: ", refreshToken);
+    console.log("userData: ", userData);
 
     if (!token || !refreshToken || !userData) {
       return dispatch(logoutSuccess()); // Logout if no data
@@ -708,8 +708,8 @@ export const logout = () => async (dispatch) => {
         })
       );
 
-      dispatch(logoutSuccess()); 
-      await AsyncStorage.clear(); 
+      dispatch(logoutSuccess());
+      await AsyncStorage.clear();
     } else {
       dispatch(
         setError({
@@ -729,7 +729,6 @@ export const logout = () => async (dispatch) => {
     );
   }
 };
-
 
 export const deleteAccountHandler = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");

@@ -52,39 +52,37 @@ export const Navigation = () => {
   //   }
   // };
 
-  // const IsLoggedIn = async () => {
-  //   try {
-  //     const refreshtoken = await AsyncStorage.getItem("refresh_token");
-  
-  //     if (refreshtoken) {
-  //       await dispatch(generateToken(await AsyncStorage.getItem("refresh_token"))); 
-  //       await AsyncStorage.setItem("loggedIn", "true"); // Persist login state
-  //     } else {
-  //       await AsyncStorage.setItem("loggedIn", "false");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error checking login status:", error);
-  //   } finally {
-  //     dispatch(Isloading(false));
-  //   }
-  // };
+
   const IsLoggedIn = async () => {
     try {
       const loggedIn = await AsyncStorage.getItem("loggedIn");
+      console.log("Logged in: ", loggedIn);
   
       if (loggedIn === "true") {
+        const accessToken = await AsyncStorage.getItem("token");
         const refreshToken = await AsyncStorage.getItem("refresh_token");
-        if (refreshToken) {
-          await dispatch(generateToken(refreshToken)); // Refresh token if needed
+  
+        if (accessToken) {
+          console.log("Access Token found, navigating to Dashboard");
+          dispatch(Isloading(false)); 
+        
+          return true;
+        } else if (refreshToken) {
+          await dispatch(generateToken(refreshToken)); 
+        } else {
+          dispatch(logoutSuccess()); // Log out if no token found
+          dispatch(Isloading(false)); // Hide loader
         }
       } else {
-        dispatch(Isloading(false));
+        console.log("User is not logged in, hiding loader");
+        dispatch(Isloading(false)); 
       }
     } catch (error) {
       console.error("Error checking login status:", error);
-      dispatch(Isloading(false));
+      dispatch(Isloading(false)); 
     }
   };
+  
   
   
   useEffect(() => {
