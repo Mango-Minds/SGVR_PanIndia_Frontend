@@ -577,7 +577,7 @@ const TempleDetails = ({ route, navigation }) => {
       <TouchableOpacity activeOpacity={1} onPress={() => setShowViewer(true)}>
         <Animated.View style={{ height: headerHeight }}>
           <Image
-            source={{ uri: `${BASEIMGURL}${templeDetails.images[0]}` }}
+            source={{ uri: `${templeDetails.images[0]}` }}
             resizeMode="cover"
             style={{ width: "100%", height: "100%" }}
           />
@@ -897,7 +897,7 @@ const TempleDetails = ({ route, navigation }) => {
                   key={index}
                 >
                   <Image
-                    source={{ uri: `${BASEIMGURL}${item}` }}
+                    source={{ uri: `${item}` }}
                     resizeMode="cover"
                     style={{
                       width: 60,
@@ -1077,7 +1077,7 @@ const TempleDetails = ({ route, navigation }) => {
                     }
                     style={{ position: "relative" }}
                   >
-                    {console.log("Image: ", `${BASEIMGURL}${god.godImage}`)}
+                    {console.log("Image: ", `${god.godImage}`)}
                     <Image
                       style={{
                         width: 90,
@@ -1089,7 +1089,7 @@ const TempleDetails = ({ route, navigation }) => {
                       source={
                         god.godImage
                           ? {
-                              uri: `${BASEIMGURL}${god.godImage}`,
+                              uri: `${god.godImage}`,
                             }
                           : UserImg
                       }
@@ -1305,7 +1305,7 @@ const TempleDetails = ({ route, navigation }) => {
                       source={
                         member.profileImage
                           ? {
-                              uri: `${BASEIMGURL}${member.profileImage}`,
+                              uri: `${member.profileImage}`,
                             }
                           : UserImg
                       }
@@ -1445,7 +1445,7 @@ const TempleDetails = ({ route, navigation }) => {
                       source={
                         pandit.image
                           ? {
-                              uri: `${BASEIMGURL}${pandit.image}`,
+                              uri: `${pandit.image}`,
                             }
                           : UserImg
                       }
@@ -1588,7 +1588,7 @@ const TempleDetails = ({ route, navigation }) => {
           onRequestClose={() => setShowViewer(false)}
         >
           <ImageViewerScreen
-            images={templeDetails.images.map((item) => `${BASEIMGURL}${item}`)}
+            images={templeDetails.images.map((item) => `${item}`)}
             setShowViewer={setShowViewer}
             index={currentIndex}
           />

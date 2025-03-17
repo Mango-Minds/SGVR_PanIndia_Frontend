@@ -142,7 +142,7 @@ const EachMember = ({ route }) => {
             source={
               member && member.profileImage
                 ? {
-                    uri: `${BASEIMGURL}${member.profileImage}`,
+                    uri: `${member.profileImage}`,
                   }
                 : UserImg
             }

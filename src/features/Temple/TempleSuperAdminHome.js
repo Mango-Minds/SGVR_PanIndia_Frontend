@@ -146,7 +146,7 @@ const TempleSuperAdminHome = ({ navigation }) => {
                       <ImageBackground
                         source={
                           item.images.length > 0
-                            ? { uri: `${BASEIMGURL}${item.images[0]}` }
+                            ? { uri: `${item.images[0]}` }
                             : ""
                         }
                         resizeMode="cover"
@@ -266,7 +266,7 @@ const TempleSuperAdminHome = ({ navigation }) => {
                         }}
                         source={
                           item.image
-                            ? { uri: `${BASEIMGURL}${item.image}` }
+                            ? { uri: `${item.image}` }
                             : require("../../assets/images/general/user.png")
                         }
                       />

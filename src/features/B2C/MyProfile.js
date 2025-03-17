@@ -116,7 +116,7 @@ const MyB2CProfile = ({ route }) => {
             source={
               userData.user.image
                 ? {
-                    uri: `${BASEIMGURL}${userData.user.image}`,
+                    uri: `${userData.user.image}`,
                   }
                 : UserImg
             }

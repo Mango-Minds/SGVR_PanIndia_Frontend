@@ -180,7 +180,7 @@ const EachProduct = ({ route }) => {
                   borderRadius: 5,
                 }}
                 source={{
-                  uri: `${BASEIMGURL}${productData.pictures[selectedImageIndex]}`,
+                  uri: `${productData.pictures[selectedImageIndex]}`,
                 }}
               ></Image>
             <View style={{ marginTop: "4%" }}>
@@ -219,7 +219,7 @@ const EachProduct = ({ route }) => {
                       <Image
                         style={{ width: 60, height: 60, borderRadius: 5 }}
                         source={{
-                          uri: `${BASEIMGURL}${productData.pictures[index]}`,
+                          uri: `${productData.pictures[index]}`,
                         }}
                       />
                     </TouchableOpacity>

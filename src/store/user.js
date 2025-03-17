@@ -567,36 +567,62 @@ export const editMyProfile = (formData) => async (dispatch) => {
 // };
 
 
+// export const initialUser = () => async (dispatch) => {
+//   try {
+//     const token = await AsyncStorage.getItem("token");
+//     const refreshToken = await AsyncStorage.getItem("refresh_token");
+
+//     if (!token || !refreshToken) {
+//       return; // No stored tokens, so user stays logged out
+//     }
+//     const authData = await AsyncStorage.getItem("auth_data");
+// console.log("authData: ", authData);
+//     if (authData) {
+//       const { user, token } = JSON.parse(authData);
+
+//       if (user && token) {
+//         dispatch(
+//           setInitialUser({
+//             user,
+//             token,
+//             refreshToken: null, 
+//           })
+//         );
+//         return;
+//       }
+//     }
+
+//     // If no user data is found, trigger logout
+//     dispatch(logoutSuccess());
+//   } catch (error) {
+//     console.error("Error loading user session:", error);
+//     dispatch(logoutSuccess());
+//   }
+// };
+
+
 export const initialUser = () => async (dispatch) => {
   try {
     const token = await AsyncStorage.getItem("token");
     const refreshToken = await AsyncStorage.getItem("refresh_token");
+    const userData = await AsyncStorage.getItem("user");
 
-    if (!token || !refreshToken) {
-      return; // No stored tokens, so user stays logged out
-    }
-    const authData = await AsyncStorage.getItem("auth_data");
-console.log("authData: ", authData);
-    if (authData) {
-      const { user, token } = JSON.parse(authData);
-
-      if (user && token) {
-        dispatch(
-          setInitialUser({
-            user,
-            token,
-            refreshToken: null, 
-          })
-        );
-        return;
-      }
+    if (!token || !refreshToken || !userData) {
+      return dispatch(logoutSuccess()); // Logout if no data
     }
 
-    // If no user data is found, trigger logout
-    dispatch(logoutSuccess());
+    const user = JSON.parse(userData);
+
+    dispatch(
+      setInitialUser({
+        user,
+        token,
+        refreshToken,
+      })
+    );
   } catch (error) {
     console.error("Error loading user session:", error);
-    dispatch(logoutSuccess());
+    dispatch(logoutSuccess()); // Logout on error
   }
 };
 

@@ -180,7 +180,7 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
       .replace(/^[\\/]/, "");
   };
 
-  const resumeUri = `${BASEIMGURL}${applicantProfileData?.followData?.resume?.replace(/\\/g, "/")}`
+  const resumeUri = `${applicantProfileData?.followData?.resume?.replace(/\\/g, "/")}`
 
   // console.log(resumeUri);
 

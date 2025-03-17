@@ -92,7 +92,7 @@ const EachPandit = ({ route }) => {
             source={
               userData?.image
                 ? {
-                    uri: `${BASEIMGURL}${userData?.image}`,
+                    uri: `${userData?.image}`,
                   }
                 : UserImg
             }

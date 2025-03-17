@@ -587,7 +587,7 @@ const NewMatrimony = ({ navigation }) => {
                           source={
                             product.images
                               ? {
-                                  uri: `${BASEIMGURL}${product.images[0]}`,
+                                  uri: `${product.images[0]}`,
                                 }
                               : UserImg
                           }
@@ -689,7 +689,7 @@ const NewMatrimony = ({ navigation }) => {
                           source={
                             product.images
                               ? {
-                                  uri: `${BASEIMGURL}${product.images[0]}`,
+                                  uri: `${product.images[0]}`,
                                 }
                               : UserImg
                           }
@@ -781,7 +781,7 @@ const NewMatrimony = ({ navigation }) => {
               >
                 <HallImageContainer>
                   <Image
-                   source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                   source={{ uri: `${product.images[0]}` }}
                     style={{ width: 120, height: 120, borderRadius: 8 }}
                   />
                 </HallImageContainer>
@@ -894,7 +894,7 @@ const NewMatrimony = ({ navigation }) => {
               >
                 <HallImageContainer>
                   <Image
-                    source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                    source={{ uri: `${product.images[0]}` }}
                     style={{ width: 120, height: 120, borderRadius: 8 }}
                   />
                 </HallImageContainer>
@@ -1004,7 +1004,7 @@ const NewMatrimony = ({ navigation }) => {
               >
                 <HallImageContainer>
                   <Image
-                    source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                    source={{ uri: `${product.images[0]}` }}
                     style={{ width: 120, height: 120, borderRadius: 8 }}
                   />
                 </HallImageContainer>
@@ -1114,7 +1114,7 @@ const NewMatrimony = ({ navigation }) => {
               >
                 <HallImageContainer>
                   <Image
-                      source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                      source={{ uri: `${product.images[0]}` }}
                     style={{ width: 120, height: 120, borderRadius: 8 }}
                   />
                 </HallImageContainer>
@@ -1221,7 +1221,7 @@ const NewMatrimony = ({ navigation }) => {
               >
                 <HallImageContainer>
                   <Image
-                   source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                   source={{ uri: `${product.images[0]}` }}
                     style={{ width: 120, height: 120, borderRadius: 8 }}
                   />
                 </HallImageContainer>

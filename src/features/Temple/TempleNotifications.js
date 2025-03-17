@@ -465,7 +465,7 @@ function TempleNotifications({ navigation, route }) {
                               }}
                               source={
                                 pandit.image
-                                  ? { uri: `${BASEIMGURL}${pandit.image}` }
+                                  ? { uri: `${pandit.image}` }
                                   : UserImg
                               }
                             />
@@ -598,7 +598,7 @@ function TempleNotifications({ navigation, route }) {
                               }}
                               source={
                                 shop.image
-                                  ? { uri: `${BASEIMGURL}${shop.image}` }
+                                  ? { uri: `${shop.image}` }
                                   : UserImg
                               }
                             />

@@ -195,7 +195,7 @@ export default function MatrimonyProfileNewWithConnection({
         <View style={styles.carouselContainer}>
           <FlatList
             ref={mainFlatListRef}
-            data={vendorData.images.map(imagePath => `${BASEIMGURL}${imagePath}`)}
+            data={vendorData.images.map(imagePath => `${imagePath}`)}
             renderItem={renderItem}
             keyExtractor={(item, index) => index.toString()}
             horizontal
@@ -267,7 +267,7 @@ export default function MatrimonyProfileNewWithConnection({
         <View style={styles.modalContainer}>
           <FlatList
             ref={modalFlatListRef}
-            data={vendorData.images.map(imagePath => `${BASEIMGURL}${imagePath}`)}
+            data={vendorData.images.map(imagePath => `${imagePath}`)}
             renderItem={({ item }) => (
                 <Image source={{ uri: item }} style={styles.modalImage} />
             )}

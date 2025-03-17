@@ -183,7 +183,7 @@ const MyNetwork = ({ navigation }) => {
     const isSentTab = selectedTab === "Sent";
 
     const user = isSentTab ? item.to : item.from;
-    const image = `${BASEIMGURL}${user.image}`;
+    const image = `${user.image}`;
     return (
       <View style={styles.itemContainer}>
         <View style={styles.profileContainer}>

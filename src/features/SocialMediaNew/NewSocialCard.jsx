@@ -530,7 +530,7 @@ const NewSocialCard = ({
 
   const renderItem = ({ item }) => {
     const imageUri = item?.userId?.image
-      ? `${BASEIMGURL}${item.userId?.image}`
+      ? `${item.userId?.image}`
       : UserImg;
 
     const isCommentOwner = item?.userId?._id === fromUserId;
@@ -715,7 +715,7 @@ const NewSocialCard = ({
             <TouchableOpacity onPress={openReelModal}>
               <View>
                 <Video
-                  source={{ uri: `${BASEIMGURL + video.replace(/\\/g, "/")}` }}
+                  source={{ uri: `${video.replace(/\\/g, "/")}` }}
                   style={styles.chatVideoThumbnail}
                   resizeMode="cover"
                   usePoster
@@ -755,9 +755,8 @@ const NewSocialCard = ({
 
                   <Video
                     ref={reelRef}
-                    source={{
-                      uri: `${BASEIMGURL + video.replace(/\\/g, "/")}`,
-                    }}
+                    source={{ uri: `${video.replace(/\\/g, "/")}` }}
+                    
                     style={styles.reelVideo}
                     resizeMode={ResizeMode.CONTAIN}
                     shouldPlay={isReelPlaying}
@@ -942,14 +941,14 @@ const NewSocialCard = ({
                   <Image
                     key={index}
                     style={styles.bannerImage}
-                    source={{ uri: `${BASEIMGURL}${image}` }}
+                    source={{ uri: `${image}` }}
                   />
                 ))}
               </ScrollView>
             ) : (
               <Image
                 style={styles.bannerSingleImage}
-                source={{ uri: `${BASEIMGURL}${images}` }}
+                source={{ uri: `${images}` }}
               />
             )}
 
@@ -1113,7 +1112,7 @@ const NewSocialCard = ({
                   <View>
                     <Video
                       source={{
-                        uri: `${BASEIMGURL + video.replace(/\\/g, "/")}`,
+                        uri: `${video.replace(/\\/g, "/")}`,
                       }}
                       style={styles.chatVideoThumbnail}
                       resizeMode="cover"
@@ -1152,14 +1151,14 @@ const NewSocialCard = ({
                         <Image
                           key={index}
                           style={styles.bannerImage}
-                          source={{ uri: `${BASEIMGURL}${image}` }}
+                          source={{ uri: `${image}` }}
                         />
                       ))}
                     </ScrollView>
                   ) : (
                     <Image
                       style={styles.bannerSingleImage}
-                      source={{ uri: `${BASEIMGURL}${images}` }}
+                      source={{ uri: `${images}` }}
                     />
                   )}
 

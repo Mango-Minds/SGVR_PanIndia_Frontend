@@ -298,7 +298,7 @@ const fetchRequest = async () => {
                               }}
                               source={
                                 receivedRequest.sender.images
-                                  ? { uri: `${BASEIMGURL}${receivedRequest.sender.images[0]}` }
+                                  ? { uri: `${receivedRequest.sender.images[0]}` }
                                   : UserImg
                               }
                             />

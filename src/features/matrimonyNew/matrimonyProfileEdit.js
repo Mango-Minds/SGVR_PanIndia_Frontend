@@ -55,7 +55,6 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
 
   const { user_details } = route.params;
 
-
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
@@ -74,10 +73,9 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
     useState("MotherTongue");
   const [show, setShow] = useState(false);
 
-
-    const openCalendar = () => {
-      setShow(true);
-    };
+  const openCalendar = () => {
+    setShow(true);
+  };
 
   // const fetchUser = async (user_id) => {
   //   const url = `${BASEAPIURL}/user/${user_id}`;
@@ -109,54 +107,51 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
 
   const initialImages =
     userRoleData && userRoleData?.images
-      ? userRoleData?.images?.map(
-          (image) => `${BASEIMGURL}` + image.replace(/\\/g, "/")
-        )
+      ? userRoleData?.images.map((image) => image.replace(/\\/g, "/"))
       : [];
 
   const [selectedImages, setSelectedImages] = useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
 
-  console.log("dob", userRoleData.dateOfBirth)
-  const user_dob = userRoleData?.dateOfBirth ? moment(userRoleData.dateOfBirth).format("YYYY-MM-DD") : null;
-
-
+  console.log("dob", userRoleData.dateOfBirth);
+  const user_dob = userRoleData?.dateOfBirth
+    ? moment(userRoleData.dateOfBirth).format("YYYY-MM-DD")
+    : null;
 
   const updateModifiedDetails = () => {
     setModifiedDetails({
-      name: userRoleData?.name ?? '',
-      gender: userRoleData?.gender ?? '',
+      name: userRoleData?.name ?? "",
+      gender: userRoleData?.gender ?? "",
       aboutMe: userRoleData?.aboutMe ?? null,
-      salary: userRoleData?.Annualincome?.salary ?? '',
+      salary: userRoleData?.Annualincome?.salary ?? "",
       annualincomeVisible: userRoleData?.Annualincome?.visible ?? false,
-      casteType: userRoleData?.caste?.type ?? '',
+      casteType: userRoleData?.caste?.type ?? "",
       casteVisible: userRoleData?.caste?.visible ?? false,
-      subcaste: userRoleData?.subcaste ?? '',
-      gothra: userRoleData?.gothra ?? '',
-      dosh: userRoleData?.dosh ?? '',
-      familyType: userRoleData?.familyType ?? '',
-      familyStatus: userRoleData?.familyStatus ?? '',
-      familyValues: userRoleData?.familyValues ?? '',
-      workLocation: userRoleData?.workLocation ?? '',
-      homeTown: userRoleData?.homeTown ?? '',
-      highestEducation: userRoleData?.highestEducation ?? '',
-      employedIn: userRoleData?.employedIn ?? '',
-      instagram: userRoleData?.socials?.instagram ?? '',
-      linkedin: userRoleData?.socials?.linkedin ?? '',
-      whatsapp: userRoleData?.socials?.whatsapp ?? '',
-      socialsVisible: userRoleData?.socials?.visible ?? '',
-      occupation: userRoleData?.occupation ?? '',
-      occupationDescription: userRoleData?.occupationDescription ?? '',
+      subcaste: userRoleData?.subcaste ?? "",
+      gothra: userRoleData?.gothra ?? "",
+      dosh: userRoleData?.dosh ?? "",
+      familyType: userRoleData?.familyType ?? "",
+      familyStatus: userRoleData?.familyStatus ?? "",
+      familyValues: userRoleData?.familyValues ?? "",
+      workLocation: userRoleData?.workLocation ?? "",
+      homeTown: userRoleData?.homeTown ?? "",
+      highestEducation: userRoleData?.highestEducation ?? "",
+      employedIn: userRoleData?.employedIn ?? "",
+      instagram: userRoleData?.socials?.instagram ?? "",
+      linkedin: userRoleData?.socials?.linkedin ?? "",
+      whatsapp: userRoleData?.socials?.whatsapp ?? "",
+      socialsVisible: userRoleData?.socials?.visible ?? "",
+      occupation: userRoleData?.occupation ?? "",
+      occupationDescription: userRoleData?.occupationDescription ?? "",
       hobbies: userRoleData?.hobbies ?? [],
       languages: userRoleData?.languages ?? [],
-      height: userRoleData?.height ?? '',
-      bloodGroup: userRoleData?.bloodGroup ?? '',
-      maritalStatus: userRoleData?.maritalStatus ?? '',
-      dateOfBirth: user_dob ?? '',
+      height: userRoleData?.height ?? "",
+      bloodGroup: userRoleData?.bloodGroup ?? "",
+      maritalStatus: userRoleData?.maritalStatus ?? "",
+      dateOfBirth: user_dob ?? "",
     });
   };
-  
-  
+
   useEffect(() => {
     updateModifiedDetails();
   }, [userRoleData]);
@@ -285,10 +280,8 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
       }
     }
 
-    selectedImages.forEach((image, index) => {
-      if (image.startsWith(BASEIMGURL)) {
-        formData.append("images", image.replace(BASEIMGURL, ""));
-      }
+    selectedImages.forEach((image) => {
+      formData.append("images", image);
     });
 
     uploadedImages.forEach((image, index) => {
@@ -307,7 +300,6 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
     const formattedDob = formatDate(selectedDate);
 
     formData.append("dateOfBirth", formattedDob);
-
 
     console.log("updated:", formData);
 
@@ -334,7 +326,6 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
       alert("Matrimony profile details updated successfully");
       navigation.goBack();
       await dispatch(setLoadingInBtn(false));
-
     } catch (error) {
       console.error("Error updating matrimony profile details:", error);
       await dispatch(setLoadingInBtn(false));
@@ -1422,10 +1413,9 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
                 }}
               /> */}
 
-
               <TouchableOpacity onPress={openCalendar}>
                 <LoginInputField
-                  value={selectedDate!=null ? formatDate(selectedDate) : ""}
+                  value={selectedDate != null ? formatDate(selectedDate) : ""}
                   selectionColor={Theme.themeColor}
                   activeUnderlineColor={Theme.themeColor}
                   style={[styles.input, { marginTop: 10, marginBottom: 5 }]}
@@ -1440,16 +1430,14 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
               {show && (
                 <DateTimePicker
                   testID="dateTimePicker"
-                  value={selectedDate!=null ? new Date(selectedDate) : new Date()}
+                  value={
+                    selectedDate != null ? new Date(selectedDate) : new Date()
+                  }
                   mode="date"
                   display="default"
                   onChange={onChange}
                 />
               )}
-
-
-
-
 
               <FormButton onPress={handleUpdate}>
                 <Text
@@ -1515,20 +1503,3 @@ const styles = StyleSheet.create({
   },
 });
 export default MatrimonyProfileEdit;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

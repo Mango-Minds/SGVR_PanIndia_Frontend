@@ -78,7 +78,7 @@ export default function EditTemple({ route, navigation }) {
   const token = useSelector((state) => state.user.token);
   const initialImages =
     temple && temple.images
-      ? temple.images.map((image) => `${BASEIMGURL}${image}`)
+      ? temple.images.map((image) => `${image}`)
       : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
@@ -132,11 +132,15 @@ export default function EditTemple({ route, navigation }) {
       });
 
       // Append existing images without base URL
-      selectedImages.forEach((image, index) => {
-        if (image.startsWith(BASEIMGURL)) {
-          formData.append("images", image.replace(BASEIMGURL, ""));
-        }
+      // selectedImages.forEach((image, index) => {
+      //   if (image.startsWith(BASEIMGURL)) {
+      //     formData.append("images", image.replace(BASEIMGURL, ""));
+      //   }
+      // });
+      selectedImages.forEach((image) => {
+        formData.append("images", image);
       });
+      
 
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {

@@ -47,6 +47,61 @@ export default function LoginScreen({ navigation }) {
 
   // const handleLogin = async () => {
   //   try {
+      // if (!email) {
+      //   dispatch(
+      //     ErrorToggle({
+      //       toggle: true,
+      //       msg: "Enter your correct email",
+      //       type: "error",
+      //     })
+      //   );
+      //   return;
+      // }
+      // if (!password) {
+      //   dispatch(
+      //     ErrorToggle({
+      //       toggle: true,
+      //       msg: "Enter your password",
+      //       type: "error",
+      //     })
+      //   );
+      //   return;
+      // }
+      // if (!tcCheck) {
+      //   dispatch(
+      //     ErrorToggle({
+      //       toggle: true,
+      //       msg: "You must agree to the terms and conditions",
+      //       type: "error",
+      //     })
+      //   );
+      //   return;
+      // }
+  //     await dispatch(IsBttnloading(true));
+  //     const data = await dispatch(login({ email, password, isAdmin: "false" }));
+  //     await dispatch(IsBttnloading(false));
+  //     if (data !== true)
+  //       if (data.msgCode === 1) {
+  //         navigation.navigate("Register");
+  //       } else if (data.msgCode === 4) {
+  //       } else if (data.msgCode === 5) {
+  //         navigation.navigate("Verify", {
+  //           phone: data.phone,
+  //           id: data.data.id,
+  //           password: password,
+  //           type: "login",
+  //         });
+  //       }
+  //   } catch (err) {
+  //     console.log("Error");
+  //     console.log(err);
+  //     dispatch(IsBttnloading(false));
+  //     dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
+  //   }
+  // };
+
+  // const handleLogin = async () => {
+  //   try {
   //     if (!email) {
   //       dispatch(
   //         ErrorToggle({
@@ -77,13 +132,18 @@ export default function LoginScreen({ navigation }) {
   //       );
   //       return;
   //     }
+  
   //     await dispatch(IsBttnloading(true));
+      
   //     const data = await dispatch(login({ email, password, isAdmin: "false" }));
+      
   //     await dispatch(IsBttnloading(false));
-  //     if (data !== true)
+  
+  //     if (data !== true) {
   //       if (data.msgCode === 1) {
   //         navigation.navigate("Register");
   //       } else if (data.msgCode === 4) {
+  //         // Handle case where msgCode is 4
   //       } else if (data.msgCode === 5) {
   //         navigation.navigate("Verify", {
   //           phone: data.phone,
@@ -92,9 +152,19 @@ export default function LoginScreen({ navigation }) {
   //           type: "login",
   //         });
   //       }
+  //       return;
+  //     }
+  
+      
+  //     const userData = {
+  //       email,
+  //       token: data.token,
+  //       user: data.user,  // Storing the user object
+  //     };
+      
+  
   //   } catch (err) {
-  //     console.log("Error");
-  //     console.log(err);
+  //     console.log("Login Error:", err);
   //     dispatch(IsBttnloading(false));
   //     dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
   //   }
@@ -132,39 +202,31 @@ export default function LoginScreen({ navigation }) {
         );
         return;
       }
-  
+
       await dispatch(IsBttnloading(true));
-      
+
       const data = await dispatch(login({ email, password, isAdmin: "false" }));
-      
       await dispatch(IsBttnloading(false));
-  
-      if (data !== true) {
+
+      if (data === true) {
+        console.log("✅ Login successful, setting loggedIn in AsyncStorage");
+        await AsyncStorage.setItem("loggedIn", "true"); // ✅ Ensure logged-in status is set
+      } else {
+        console.log("🚨 Login failed:", data);
+
         if (data.msgCode === 1) {
           navigation.navigate("Register");
-        } else if (data.msgCode === 4) {
-          // Handle case where msgCode is 4
         } else if (data.msgCode === 5) {
           navigation.navigate("Verify", {
             phone: data.phone,
             id: data.data.id,
-            password: password,
+            password,
             type: "login",
           });
         }
-        return;
       }
-  
-      
-      const userData = {
-        email,
-        token: data.token,
-        user: data.user,  // Storing the user object
-      };
-      
-  
     } catch (err) {
-      console.log("Login Error:", err);
+      console.error("🚨 Login error:", err);
       dispatch(IsBttnloading(false));
       dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
     }

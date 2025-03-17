@@ -62,7 +62,7 @@ const MyListingScreen = ({ route, navigation }) => {
       }
     >
       <Image
-        source={{ uri: `${BASEIMGURL}${item.images[0]}` }}
+        source={{ uri: `${item.images[0]}` }}
         style={styles.eachJewelleryCardImg}
       />
 
@@ -258,7 +258,7 @@ const MyListingScreen = ({ route, navigation }) => {
           if (item.videos?.length > 0) {
             try {
               const { uri } = await VideoThumbnails.getThumbnailAsync(
-                `${BASEIMGURL}${item.videos[0]}`,
+                `${item.videos[0]}`,
                 { time: 15000 }
               );
               newThumbnails[item._id] = uri;
@@ -358,7 +358,7 @@ const MyListingScreen = ({ route, navigation }) => {
                       {product.images?.length > 0 ? (
                         <Image
                           style={styles.eachJewelleryCardImg}
-                          source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                          source={{ uri: `${product.images[0]}` }}
                         />
                       ) : product.videos?.length > 0 ? (
                         <Pressable onPress={() => console.log("Play Video")}>
@@ -372,7 +372,7 @@ const MyListingScreen = ({ route, navigation }) => {
                       ) : (
                         <Image
                           style={styles.eachJewelleryCardImg}
-                          source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
+                          source={{ uri: `${product.images[0]}` }}
                         />
                       )}
                     </View>

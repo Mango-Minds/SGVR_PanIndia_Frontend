@@ -316,7 +316,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             source={
               route.params.matrimonyData.images
                 ? {
-                    uri: `${BASEIMGURL}${route.params.matrimonyData.images[0]}`,
+                    uri: `${route.params.matrimonyData.images[0]}`,
                   }
                 : UserImg
             }
