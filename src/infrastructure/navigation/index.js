@@ -53,6 +53,39 @@ export const Navigation = () => {
   // };
 
 
+  // const IsLoggedIn = async () => {
+  //   try {
+  //     const loggedIn = await AsyncStorage.getItem("loggedIn");
+  //     console.log("Logged in: ", loggedIn);
+  
+  //     if (loggedIn === "true") {
+  //       const accessToken = await AsyncStorage.getItem("token");
+  //       const refreshToken = await AsyncStorage.getItem("refresh_token");
+  
+  //       if (accessToken) {
+  //         console.log("Access Token found, navigating to Dashboard");
+  //         dispatch(Isloading(false)); 
+        
+  //         return true;
+  //       } else if (refreshToken) {
+  //         await dispatch(generateToken(refreshToken)); 
+  //       } else {
+  //         dispatch(logoutSuccess()); // Log out if no token found
+  //         dispatch(Isloading(false)); // Hide loader
+  //       }
+  //     } else {
+  //       console.log("User is not logged in, hiding loader");
+  //       dispatch(Isloading(false)); 
+  //     }
+  //   } catch (error) {
+  //     console.error("Error checking login status:", error);
+  //     dispatch(Isloading(false)); 
+  //   }
+  // };
+  
+
+  
+  
   const IsLoggedIn = async () => {
     try {
       const loggedIn = await AsyncStorage.getItem("loggedIn");
@@ -65,13 +98,23 @@ export const Navigation = () => {
         if (accessToken) {
           console.log("Access Token found, navigating to Dashboard");
           dispatch(Isloading(false)); 
-        
           return true;
         } else if (refreshToken) {
-          await dispatch(generateToken(refreshToken)); 
+          // Attempt to refresh the token here
+          const response = await dispatch(generateToken(refreshToken));
+          
+          if (response && response.accessToken) {
+            // Save new access token to AsyncStorage
+            await AsyncStorage.setItem("token", response.accessToken);
+            dispatch(Isloading(false));
+            return true;
+          } else {
+            dispatch(logoutSuccess()); // Log out if refresh token fails
+            dispatch(Isloading(false));
+          }
         } else {
           dispatch(logoutSuccess()); // Log out if no token found
-          dispatch(Isloading(false)); // Hide loader
+          dispatch(Isloading(false));
         }
       } else {
         console.log("User is not logged in, hiding loader");
@@ -79,7 +122,7 @@ export const Navigation = () => {
       }
     } catch (error) {
       console.error("Error checking login status:", error);
-      dispatch(Isloading(false)); 
+      dispatch(Isloading(false));
     }
   };
   
