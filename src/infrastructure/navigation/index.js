@@ -11,6 +11,7 @@ import {
   ErrorToggle,
   generateToken,
   updateTokens,
+  logoutSuccess
 } from "../../store/user";
 import { Snackbar } from "react-native-paper";
 import {
@@ -26,7 +27,7 @@ import {
 } from "../../store/Handlers/Reducer.Handler";
 import Theme from "../../styles/theme";
 import store from "../../store";
-
+import { decode } from "base-64";
 export const Navigation = () => {
   const { token, loading, error, user } = useSelector((state) => state.user);
 
@@ -37,21 +38,26 @@ export const Navigation = () => {
   const errorMarginBottom = Platform.OS === "ios" ? 0 : 40;
   const errorPaddingTop = Platform.OS === "ios" ? 10 : 0;
 
-  // const IsLoggedIn = async () => {
-  //   // await AsyncStorage.removeItem("firsttime");
-  //   // await dispatch(Isloading(true));
+  const IsLoggedIn = async () => {
+    // await AsyncStorage.removeItem("firsttime");
+    // await dispatch(Isloading(true));
 
-  //   const refreshtoken = await AsyncStorage.getItem("refresh_token");
-  //   if (refreshtoken) {
-  //     await dispatch(
-  //       generateToken(await AsyncStorage.getItem("refresh_token"))
-  //     );
-  //     dispatch(Isloading(false));
-  //   } else {
-  //     dispatch(Isloading(false));
-  //   }
-  // };
+    const refreshtoken = await AsyncStorage.getItem("refresh_token");
+    if (refreshtoken) {
+      await dispatch(
+        generateToken(await AsyncStorage.getItem("refresh_token"))
+      );
+      dispatch(Isloading(false));
+    } else {
+      dispatch(Isloading(false));
+    }
+  };
 
+
+  
+  
+
+  
 
   // const IsLoggedIn = async () => {
   //   try {
@@ -65,13 +71,23 @@ export const Navigation = () => {
   //       if (accessToken) {
   //         console.log("Access Token found, navigating to Dashboard");
   //         dispatch(Isloading(false)); 
-        
   //         return true;
   //       } else if (refreshToken) {
-  //         await dispatch(generateToken(refreshToken)); 
+  //         // Attempt to refresh the token here
+  //         const response = await dispatch(generateToken(refreshToken));
+          
+  //         if (response && response.accessToken) {
+  //           // Save new access token to AsyncStorage
+  //           await AsyncStorage.setItem("token", response.accessToken);
+  //           dispatch(Isloading(false));
+  //           return true;
+  //         } else {
+  //           dispatch(logoutSuccess()); // Log out if refresh token fails
+  //           dispatch(Isloading(false));
+  //         }
   //       } else {
   //         dispatch(logoutSuccess()); // Log out if no token found
-  //         dispatch(Isloading(false)); // Hide loader
+  //         dispatch(Isloading(false));
   //       }
   //     } else {
   //       console.log("User is not logged in, hiding loader");
@@ -79,58 +95,16 @@ export const Navigation = () => {
   //     }
   //   } catch (error) {
   //     console.error("Error checking login status:", error);
-  //     dispatch(Isloading(false)); 
+  //     dispatch(Isloading(false));
   //   }
   // };
   
-
+ 
   
   
-  const IsLoggedIn = async () => {
-    try {
-      const loggedIn = await AsyncStorage.getItem("loggedIn");
-      console.log("Logged in: ", loggedIn);
-  
-      if (loggedIn === "true") {
-        const accessToken = await AsyncStorage.getItem("token");
-        const refreshToken = await AsyncStorage.getItem("refresh_token");
-  
-        if (accessToken) {
-          console.log("Access Token found, navigating to Dashboard");
-          dispatch(Isloading(false)); 
-          return true;
-        } else if (refreshToken) {
-          // Attempt to refresh the token here
-          const response = await dispatch(generateToken(refreshToken));
-          
-          if (response && response.accessToken) {
-            // Save new access token to AsyncStorage
-            await AsyncStorage.setItem("token", response.accessToken);
-            dispatch(Isloading(false));
-            return true;
-          } else {
-            dispatch(logoutSuccess()); // Log out if refresh token fails
-            dispatch(Isloading(false));
-          }
-        } else {
-          dispatch(logoutSuccess()); // Log out if no token found
-          dispatch(Isloading(false));
-        }
-      } else {
-        console.log("User is not logged in, hiding loader");
-        dispatch(Isloading(false)); 
-      }
-    } catch (error) {
-      console.error("Error checking login status:", error);
-      dispatch(Isloading(false));
-    }
-  };
-  
-  
-  
-  useEffect(() => {
-    dispatch(initialUser());
-  }, []);
+  // useEffect(() => {
+  //   dispatch(initialUser());
+  // }, []);
   
 
 
