@@ -308,7 +308,7 @@ export const login = ({ email, password, isAdmin }) => async (dispatch) => {
 
       // Store tokens in AsyncStorage
       await AsyncStorage.setItem('token', accessToken);
-      // await AsyncStorage.setItem('refresh_token', refreshToken);
+      await AsyncStorage.setItem('refresh_token', refreshToken);
 
       // Set user data in the state
       await dispatch(

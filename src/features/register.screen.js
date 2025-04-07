@@ -44,6 +44,15 @@ const styles = StyleSheet.create({
     borderColor: "#E6E6E6",
     borderRadius: 4,
   },
+  radioContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 12, // Space between options
+  },
+  radioText: {
+    color: "#9b9b9b",
+    fontSize: 14,
+  },
 });
 export default function RegisterScreen({ navigation }) {
   const { loadingInBtn } = useSelector((state) => state.user);
@@ -76,26 +85,26 @@ export default function RegisterScreen({ navigation }) {
   };
 
   const handleSignup = async () => {
-    let yearInNumber = parseInt(year);
-    console.log(yearInNumber);
-    if (yearInNumber < 1900 || yearInNumber > 2100) {
-      await dispatch(
-        ErrorToggle({
-          toggle: true,
-          msg: "Enter a valid Birth year",
-          type: "error",
-        })
-      );
-      return;
-    }
+    // let yearInNumber = parseInt(year);
+    // console.log(yearInNumber);
+    // if (yearInNumber < 1900 || yearInNumber > 2100) {
+    //   await dispatch(
+    //     ErrorToggle({
+    //       toggle: true,
+    //       msg: "Enter a valid Birth year",
+    //       type: "error",
+    //     })
+    //   );
+    //   return;
+    // }
     if (
-      registerDetails.firstName === "" ||
-      registerDetails.lastName === "" ||
+      // registerDetails.firstName === "" ||
+      // registerDetails.lastName === "" ||
       // registerDetails.username === "" ||
       registerDetails.email === "" ||
-      registerDetails.phone === "" ||
-      registerDetails.password === "" ||
-      registerDetails.userType === "" ||
+      // registerDetails.phone === "" ||
+      registerDetails.password === ""
+      // registerDetails.userType === "" ||
       // registerDetails.suggestedBy === "" ||
       // registerDetails.dob === "" ||
       // registerDetails.gender === "" ||
@@ -103,9 +112,9 @@ export default function RegisterScreen({ navigation }) {
       // registerDetails.state === "" ||
       // registerDetails.pincode === "" ||
       // registerDetails.city === "" ||
-      date === "" ||
-      year === "" ||
-      month === ""
+      // date === "" ||
+      // year === "" ||
+      // month === ""
     ) {
       await dispatch(
         ErrorToggle({
@@ -118,12 +127,12 @@ export default function RegisterScreen({ navigation }) {
     }
 
     console.log(date, "date");
-    console.log({ ...registerDetails, dob: year + "-" + month + "-" + date });
+    // console.log({ ...registerDetails, dob: year + "-" + month + "-" + date });
     await dispatch(setLoadingInBtn(true));
     const data = await dispatch(
       signup({
         ...registerDetails,
-        dob: year + "-" + month + "-" + date,
+        // dob: year + "-" + month + "-" + date,
       })
     );
     if (data.status === 0) {
@@ -164,9 +173,17 @@ export default function RegisterScreen({ navigation }) {
   const userTypes = {
     //Jewellery: ["Shop", "Vendor", "Worker", "Gemologist", "Jewelry Designer"],
     Temple: ["Temple Admin", "Temple Shop", "Devotees", "Pandit"],
-    Matrimony:["Matrimony Man","Matrimony Woman","Matrimony Vendor","Planner","Decorator","Caterer","Venue"],
+    Matrimony: [
+      "Matrimony Man",
+      "Matrimony Woman",
+      "Matrimony Vendor",
+      "Planner",
+      "Decorator",
+      "Caterer",
+      "Venue",
+    ],
   };
-  
+
   const userTypeMappings = {
     // Shop: "shop",
     // Vendor: "vendor",
@@ -177,13 +194,13 @@ export default function RegisterScreen({ navigation }) {
     "Temple Shop": "templeShopOwner",
     Devotees: "basicUser",
     Pandit: "pandit",
-    "Matrimony Man":"matrimonyMan",
-    "Matrimony Woman":"matrimonyWoman",
-    "Matrimony Vendor":"matrimonyVendor",
-    Planner:"planner",
-    Decorator:"decorator",
-    Caterer:"caterer",
-    Venue:"venue",
+    "Matrimony Man": "matrimonyMan",
+    "Matrimony Woman": "matrimonyWoman",
+    "Matrimony Vendor": "matrimonyVendor",
+    Planner: "planner",
+    Decorator: "decorator",
+    Caterer: "caterer",
+    Venue: "venue",
   };
 
   return (
@@ -254,7 +271,7 @@ export default function RegisterScreen({ navigation }) {
                   setRegisterDetails({ ...registerDetails, lastName: text })
                 }
               />
-              <LoginInputField
+              {/*       <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
@@ -267,7 +284,7 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, phone: text })
                 }
-              />
+              />    */}
 
               <LoginInputField
                 selectionColor={Theme.themeColor}
@@ -337,9 +354,20 @@ export default function RegisterScreen({ navigation }) {
                 }}
               /> */}
 
-              <Row>
+              <View
+                style={{
+                  flexDirection: "row",
+                  flexWrap: "wrap",
+                  alignItems: "center",
+                  marginTop: 8,
+                }}
+              >
                 <Text
-                  style={{ color: Theme.themeColor, fontSize: 14, marginRight: 8 }}
+                  style={{
+                    color: Theme.themeColor,
+                    fontSize: 14,
+                    marginRight: 8,
+                  }}
                 >
                   I am*
                 </Text>
@@ -353,28 +381,48 @@ export default function RegisterScreen({ navigation }) {
                   }}
                   value={selectGender}
                 >
-                  <Row>
-                    <RadioButton.Android
-                      uncheckedColor={Theme.themeColor}
-                      color={Theme.themeColor}
-                      value="Male"
-                    />
-                    <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
-                      Male
-                    </Text>
-                    <RadioButton.Android
-                      uncheckedColor={Theme.themeColor}
-                      color={Theme.themeColor}
-                      value="Female"
-                    />
-                    <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
-                      Female
-                    </Text>
-                  </Row>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      flexWrap: "wrap",
+                      alignItems: "center",
+                    }}
+                  >
+                    <View style={styles.radioContainer}>
+                      <RadioButton.Android
+                        uncheckedColor={Theme.themeColor}
+                        color={Theme.themeColor}
+                        value="Male"
+                      />
+                      <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
+                        Male
+                      </Text>
+                    </View>
+                    <View style={styles.radioContainer}>
+                      <RadioButton.Android
+                        uncheckedColor={Theme.themeColor}
+                        color={Theme.themeColor}
+                        value="Female"
+                      />
+                      <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
+                        Female
+                      </Text>
+                    </View>
+                    <View style={styles.radioContainer}>
+                      <RadioButton.Android
+                        uncheckedColor={Theme.themeColor}
+                        color={Theme.themeColor}
+                        value="Female"
+                      />
+                      <Text style={{ color: "#9b9b9b", marginRight: 8 }}>
+                        Prefer not to say
+                      </Text>
+                    </View>
+                  </View>
                 </RadioButton.Group>
-              </Row>
+              </View>
 
-              <Text
+              {/* <Text
                 style={{
                   fontSize: 18,
                   fontWeight: "600",
@@ -505,7 +553,7 @@ export default function RegisterScreen({ navigation }) {
                   setRegisterDetails({ ...registerDetails, dob: e });
                 }}
               /> */}
-              <LoginInputField
+              {/*    <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
@@ -566,7 +614,7 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, pincode: text })
                 }
-              />
+              /> */}
 
               <View style={{ position: "relative" }}>
                 <LoginInputField
@@ -599,7 +647,7 @@ export default function RegisterScreen({ navigation }) {
                 </View>
               </View>
 
-              <LoginInputField
+              {/* <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
@@ -610,9 +658,9 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, suggestedBy: text })
                 }
-              />
+              /> */}
 
-              <LoginInputField
+              {/* <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
@@ -625,7 +673,7 @@ export default function RegisterScreen({ navigation }) {
                     referenceCode: text,
                   })
                 }
-              />
+              /> */}
               {/* </KeyboardAvoidingView> */}
 
               <FormButton onPress={handleSignup}>
