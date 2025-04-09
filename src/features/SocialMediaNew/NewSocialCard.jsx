@@ -14,6 +14,8 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
   Dimensions,
+  Pressable,
+
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -235,6 +237,32 @@ const NewSocialCard = ({
       }
     }
   };
+
+  const reportPost = async (postId, reason) => {
+    try {
+      console.log("Reporting post", postId);
+      const response = await fetch(`${BASEAPIURL}/social/post/report-post/${postId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ reason }),
+      });
+  
+      console.log("Report post response", response);
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert("Success", "If this post violates our policies, it will be removed within 24 hours."
+        );
+      } else {
+        Alert.alert("Error", "Failed to report post.");
+      }
+    } catch (error) {
+      console.error("Error reporting post:", error);
+      Alert.alert("Error", "An error occurred while trying to report the post.");
+    }
+  };
   
   
   useEffect(() => {
@@ -415,7 +443,7 @@ const NewSocialCard = ({
   const [menuVisibleId, setMenuVisibleId] = useState(null);
   const [isRepostModalVisible, setRepostModalVisible] = useState(false);
   const [isPostModalVisible, setPostModalVisible] = useState(false);
-
+  const [reportModalVisible, setReportModalVisible] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
 
   const toggleMenu = (id) => {
@@ -991,6 +1019,47 @@ const NewSocialCard = ({
               <Text style={styles.moreOptions}>...</Text>
             </TouchableOpacity>
           )}
+       <TouchableOpacity
+            onPress={() => setReportModalVisible(true)}
+            style={styles.moreOptionsButton}
+          >
+            <Icon name="ellipsis-vertical" size={22} color="grey" />
+          </TouchableOpacity>
+
+          {/* Report Post Modal */}
+          <Modal
+            animationType="slide"
+            transparent={true}
+            visible={reportModalVisible}
+            onRequestClose={() => setReportModalVisible(false)}
+          >
+            <Pressable
+              style={styles.reportModalOverlay}
+              onPress={() => setReportModalVisible(false)}
+            >
+              <View style={styles.reportModalContainer}>
+                {/* Report Post Option */}
+                <Text style={styles.modalTitle}>Post Options</Text>
+                <TouchableOpacity
+                  style={styles.reportModalOption}
+                  onPress={() => {
+                    setReportModalVisible(false);
+                    reportPost(postId, "Inappropriate content") // Change reason as needed
+                  }}
+                >
+                  <Icon name="flag-outline" size={22} color="red" />
+                  <Text style={styles.reportModalOptionText}>Report Post</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  style={[styles.optionButton, styles.cancelButton]}
+                  onPress={() => setReportModalVisible(false)}
+                >
+                  <Text style={styles.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </Modal>
         </View>
 
         {renderDescription()}
@@ -2336,6 +2405,55 @@ const styles = StyleSheet.create({
     color: "blue",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  // Report Modal Styles
+  reportModalButton: {
+    padding: 10,
+  },
+  reportModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)",
+  },
+  reportModalContainer: {
+    backgroundColor: "#fff",
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    elevation: 5,
+    alignItems: "center",
+  },
+  reportModalOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  reportModalOptionText: {
+    fontSize: 16,
+    marginLeft: 10,
+    color: "#000",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  cancelButton: {
+    backgroundColor: "#f2f2f2",
+    marginTop: 10,
+    borderBottomWidth: 0,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: "red",
+  },
+  moreOptionsButton: {
+    paddingLeft: 4,
+    justifyContent: "center",
+    alignItems: "center",
   },
 });
 

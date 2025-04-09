@@ -108,6 +108,15 @@ const ChatScreenNew = ({ route }) => {
       setChats((chats) => [...chats, chatMessage]);
     });
 
+    socket.on("chatMessage", (data) => {
+      if (data.success === false) {
+        Alert.alert(data.message); // Show the alert if message sending is not allowed
+      } else {
+        // Handle normal chat message received
+        console.log("New Chat Message:", data);
+      }
+    });
+
     //Update Message
     socket.on("messageEdited", ({ messageId, newMessage }) => {
       console.log("chats", chats);

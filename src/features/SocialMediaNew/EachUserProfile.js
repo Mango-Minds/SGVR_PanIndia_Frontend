@@ -10,6 +10,8 @@ import {
   TouchableWithoutFeedback,
   Keyboard,
   Alert,
+  Pressable,
+
 } from "react-native";
 import Theme from "../../styles/theme";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -377,8 +379,32 @@ export default function EachProfile() {
     unfollowUserAPI(fromUserId, setIsFollowing);
   };
 
+  const blockUser = async (blockedUserId) => {
+    try {
+      console.log("Blocking user", blockedUserId);
+      const response = await fetch(`${BASEAPIURL}/social/post/block-user/${blockedUserId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      console.log("Block user response", response);
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert("Success", data.message);
+      } else {
+        Alert.alert("Error", "Failed to block user.");
+      }
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      Alert.alert("Error", "An error occurred while trying to block the user.");
+    }
+  };
 
   const [isRequestSent, setIsRequestSent] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
 
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const navigation = useNavigation();
@@ -492,7 +518,10 @@ export default function EachProfile() {
           <SearchField placeholder="Search" style={styles.searchField} />
         </View>
 
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton}
+          onPress={() => setModalVisible(true)}
+
+        >
           <Icon name="settings" size={24} color="#000" />
         </TouchableOpacity>
       </View>
@@ -615,6 +644,48 @@ export default function EachProfile() {
           <Text style={styles.description}>{jobExperience?.description}</Text>
         </View>
       ))}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <Pressable
+          style={styles.modalOverlay}
+          onPress={() => setModalVisible(false)}
+        />
+
+        <View style={styles.modalContainer}>
+          <Text style={styles.modalTitle}>User Options</Text>
+          {/* Report User */}
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => {
+              setModalVisible(false);
+              alert("Reported User!");
+            }}
+          >
+            <Text style={styles.optionText}>🚩 Report User</Text>
+          </TouchableOpacity>
+          {/* Block User */}
+          <TouchableOpacity
+            style={styles.optionButton}
+            onPress={() => {
+              setModalVisible(false);
+              blockUser(userId);
+            }}
+          >
+            <Text style={styles.optionText}>🚫 Block User</Text>
+          </TouchableOpacity>
+          {/* Cancel Button */}
+          <TouchableOpacity
+            style={[styles.optionButton, styles.cancelButton]}
+            onPress={() => setModalVisible(false)}
+          >
+            <Text style={styles.cancelText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -937,5 +1008,44 @@ const styles = StyleSheet.create({
     color: "gray",
     marginHorizontal: 4,
     fontWeight: "bold",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContainer: {
+    backgroundColor: "#fff",
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    position: "absolute",
+    bottom: 0,
+    width: "100%",
+    alignItems: "center",
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 15,
+  },
+  optionButton: {
+    width: "100%",
+    padding: 15,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#000",
+  },
+  cancelButton: {
+    backgroundColor: "#f2f2f2",
+    marginTop: 10,
+    borderBottomWidth: 0,
+  },
+  cancelText: {
+    fontSize: 16,
+    color: "red",
   },
 });
