@@ -34,7 +34,7 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -117,30 +117,78 @@ export default function EditShop({ route, navigation }) {
   });
   console.log("modified details", modifiedDetails);
 
+  // const handleUpdate = async () => {
+  //   await dispatch(setLoadingInBtn(true));
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     // Append modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== shop[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+
+     
+  //     selectedImages.forEach((image) => {
+  //       formData.append("images", image);
+  //     });
+
+  //     // Append newly uploaded images
+  //     uploadedImages.forEach((image, index) => {
+  //       formData.append("images", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+  //     console.log("formdata--", formData);
+
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/templeShops/${shop._id}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response--", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update shop");
+  //     }
+
+  //     alert("shop updated successfully");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating shop:", error);
+  //   }
+  // };
+
   const handleUpdate = async () => {
-    await dispatch(setLoadingInBtn(true));
-
     try {
+      await dispatch(setLoadingInBtn(true));
+  
       const formData = new FormData();
-
-      // Append modified details
+  
+      // Append only modified details
       Object.keys(modifiedDetails).forEach((key) => {
         if (modifiedDetails[key] !== shop[key]) {
           formData.append(key, modifiedDetails[key]);
         }
       });
-
-      // Append existing images without base URL
-      // selectedImages.forEach((image, index) => {
-      //   if (image.startsWith(BASEIMGURL)) {
-      //     formData.append("images", image.replace(BASEIMGURL, ""));
-      //   }
-      // });
+  
+      // Append existing images
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
-
-      // Append newly uploaded images
+  
+      // Append new images
       uploadedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
@@ -148,36 +196,30 @@ export default function EditShop({ route, navigation }) {
           type: "image/jpeg",
         });
       });
-      console.log("formdata--", formData);
-
-      const response = await fetch(
-        `${BASEAPIURL}/templeShops/${shop._id}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-      await dispatch(setLoadingInBtn(false));
-
-      console.log("response--", response);
-
-      if (!response.ok) {
+  
+      console.log("FormData:", formData);
+  
+      const response = await apiClient.patch(`/templeShops/${shop._id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      dispatch(setLoadingInBtn(false));
+  
+      if (response.status !== 200) {
         throw new Error("Failed to update shop");
       }
-
-      alert("shop updated successfully");
+  
+      Alert.alert("Success", "Shop updated successfully");
       navigation.goBack();
     } catch (error) {
       console.error("Error updating shop:", error);
+      dispatch(setLoadingInBtn(false));
+      Alert.alert("Error", "Failed to update shop");
     }
   };
-
-  const CategoryData = ["gold", "silver", "diamond"];
-  const ConditionData = ["old", "new"];
-
   return (
     <SafeArea>
       <Provider>
@@ -206,91 +248,7 @@ export default function EditShop({ route, navigation }) {
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="always"
           >
-            {/* <Text
-              style={{
-                fontSize: 16,
-                marginLeft: 24,
-                color: "#000000",
-                fontWeight: "600",
-                marginTop: 20,
-              }}
-            >
-              Add More shop Images
-            </Text> */}
-            {/* <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
-              {selectedImages.map((image, index) => (
-                <View
-                  key={`selected-${index}`}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "red",
-                    // marginTop: "10%",
-                    marginRight: 12,
-                    alignSelf: "center",
-                  }}
-                >
-                  <Image style={styles.profileImg} source={{ uri: image }} />
-                  <TouchableOpacity
-                    onPress={() => removeProfileImage(index, false)}
-                  >
-                    <View
-                      style={{
-                        position: "absolute",
-                        right: 3,
-                        bottom: 22,
-                      }}
-                    >
-                      <Image
-                        source={require("../../assets/images/general/cross.png")}
-                        style={{ width: 17, height: 17 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
-              {uploadedImages.map((image, index) => (
-                <View
-                  key={`uploaded-${index}`}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: 30,
-                    backgroundColor: "red",
-                    // marginTop: "10%",
-                    marginRight: 12,
-                    alignSelf: "center",
-                  }}
-                >
-                  <Image
-                    style={styles.profileImg}
-                    source={{ uri: image.uri }}
-                  />
-                  <TouchableOpacity
-                    onPress={() => removeProfileImage(index, true)}
-                  >
-                    <View
-                      style={{
-                        position: "absolute",
-                        right: 3,
-                        bottom: 22,
-                      }}
-                    >
-                      <Image
-                        source={require("../../assets/images/general/cross.png")}
-                        style={{ width: 17, height: 17 }}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                </View>
-              ))}
-              {selectedImages.length + uploadedImages.length < 6 && (
-                <AddProfileBox onPress={_pickDocument}>
-                  <Icon name="plus" size={35} color="#d4af37" />
-                </AddProfileBox>
-              )}
-            </Row> */}
+            
             <FormSection style={{ paddingTop: 0 }}>
               <Text
                 style={{
@@ -355,54 +313,7 @@ export default function EditShop({ route, navigation }) {
                   },
                 ]}
               />
-              {/* <Text
-                style={{
-                  fontSize: 16,
-                  marginLeft: 4,
-                  color: "grey",
-                  fontWeight: "600",
-                  marginTop: 20,
-                }}
-              >
-                Email
-              </Text>
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={[styles.input, { marginTop: 5 }]}
-                placeholder="Email"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={modifiedDetails.email}
-                onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, email: text })
-                }
-              />
-                 <Text
-                style={{
-                  fontSize: 16,
-                  marginLeft: 4,
-                  color: "grey",
-                  fontWeight: "600",
-                  marginTop: 20,
-                }}
-              >
-                Phone Number
-              </Text>
-
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={[styles.input, { marginTop: 5 }]}
-                placeholder="Phone Number"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                keyboardType="numeric"
-                value={modifiedDetails.phoneNumber}
-                onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, phoneNumber: text })
-                }
-              /> */}
+              
               <Text
                 style={{
                   fontSize: 16,

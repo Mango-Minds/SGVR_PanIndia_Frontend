@@ -28,6 +28,9 @@ import UserImg from "../../assets/images/general/user.png";
 //import ProfileHeader from "../../components/Jewellery/Header";
 import ProfileHeader from "./ProfileHeader";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { fetchMatrimonyUserProfile } from "./matrimonyAPIs";
 const MyMatrimonyProfile = ({ route }) => {
   const [userDetails, setUserDetails] = useState({});
   const [userRoleData, setUserRoleData] = useState({});
@@ -47,34 +50,73 @@ const MyMatrimonyProfile = ({ route }) => {
   const userId = decodedPayload.id;
 
   const [userData, setUserData] = useState({});
+//correct
+  // const fetchUser = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       setUserData(data);
+  //       setUserDetails(data.user.roleData);
+  //       console.log("user matrimony data", data)
+  //     } else {
+  //       throw new Error("Failed to fetch user");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // const fetchUser = async () => {
+  //   const token = await AsyncStorage.getItem("token");
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  
+  //     const response = await apiClient.get(`${BASEAPIURL}/user/${userId}`, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  
+  //     setUserData(data);
+  //     setUserDetails(data.user.roleData);
+  //     console.log("user matrimony data", data);
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
   const fetchUser = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        setUserData(data);
-        setUserDetails(data.user.roleData);
-        console.log("user matrimony data", data)
-      } else {
-        throw new Error("Failed to fetch user");
-      }
+  
+      const data = await fetchMatrimonyUserProfile(userId);
+  
+      setUserData(data);
+      setUserDetails(data.user.roleData);
+      console.log("user matrimony data", data);
     } catch (error) {
       console.error("Error fetching user:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchUser();

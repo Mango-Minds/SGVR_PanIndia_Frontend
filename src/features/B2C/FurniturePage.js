@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Theme from "../../styles/theme";
@@ -32,7 +34,9 @@ import { useIsFocused } from "@react-navigation/native";
 import SortMenu from "./SortMenu";
 import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
+import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
 const { width } = Dimensions.get("window");
+
 const FurnitureScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
   const isFocused = useIsFocused();
@@ -161,74 +165,151 @@ const FurnitureScreen = ({ route, navigation }) => {
     }
   };
 
-  const fetchProducts = async (
-    searchTerm,
-    selectedFiltersArray,
-    sortOption
-  ) => {
-    const queryParams = new URLSearchParams();
+  // const fetchProducts = async (
+  //   searchTerm,
+  //   selectedFiltersArray,
+  //   sortOption
+  // ) => {
+  //   const queryParams = new URLSearchParams();
 
-    // Include the category in the API request
-    if (category) {
-      queryParams.append("category", category);
-    }
+  //   // Include the category in the API request
+  //   if (category) {
+  //     queryParams.append("category", category);
+  //   }
 
-    selectedFiltersArray.forEach((filter) => {
-      if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) =>
-          queryParams.append("condition", option)
-        );
-      } else if (filter["Filter name"] === "Price") {
-        filter.Options.forEach((option) => {
-          if (option.includes("Below")) {
-            const maxPrice = option.split(" ")[1];
-            queryParams.append("maxPrice", maxPrice);
-          } else if (option.includes("Above")) {
-            const minPrice = option.split(" ")[1];
-            queryParams.append("minPrice", minPrice);
-          } else {
-            const [minPrice, maxPrice] = option.split("-");
-            queryParams.append("minPrice", minPrice);
-            queryParams.append("maxPrice", maxPrice);
-          }
-        });
-      }
-    });
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Condition") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("condition", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Price") {
+  //       filter.Options.forEach((option) => {
+  //         if (option.includes("Below")) {
+  //           const maxPrice = option.split(" ")[1];
+  //           queryParams.append("maxPrice", maxPrice);
+  //         } else if (option.includes("Above")) {
+  //           const minPrice = option.split(" ")[1];
+  //           queryParams.append("minPrice", minPrice);
+  //         } else {
+  //           const [minPrice, maxPrice] = option.split("-");
+  //           queryParams.append("minPrice", minPrice);
+  //           queryParams.append("maxPrice", maxPrice);
+  //         }
+  //       });
+  //     }
+  //   });
 
-    if (searchTerm.trim() !== "") {
-      queryParams.append("search", searchTerm);
-    }
-    if (sortOption) {
-      queryParams.append("priceSort", sortOption);
-    }
-    const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/listings?${queryString}`;
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
+  //   if (sortOption) {
+  //     queryParams.append("priceSort", sortOption);
+  //   }
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/listings?${queryString}`;
 
-    console.log("Fetching products with URL:", url);
+  //   console.log("Fetching products with URL:", url);
 
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Data:", data);
+
+  //       setProducts(data.listings);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+  //co
+  const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
     try {
+      let token = await AsyncStorage.getItem("token");
+  
+      if (!token) {
+        console.error("Bearer token not found");
+        Alert.alert("Error", "Authentication token is missing.");
+        return;
+      }
+  
+      const queryParams = new URLSearchParams();
+  
+      // Include category if available
+      if (category) {
+        queryParams.append("category", category.toLowerCase());
+      }
+  
+      selectedFiltersArray.forEach((filter) => {
+        if (filter["Filter name"] === "Condition") {
+          filter.Options.forEach((option) =>
+            queryParams.append("condition", option.toLowerCase())
+          );
+        } else if (filter["Filter name"] === "Price") {
+          filter.Options.forEach((option) => {
+            if (option.includes("Below")) {
+              const maxPrice = option.split(" ")[1];
+              queryParams.append("maxPrice", maxPrice);
+            } else if (option.includes("Above")) {
+              const minPrice = option.split(" ")[1];
+              queryParams.append("minPrice", minPrice);
+            } else {
+              const [minPrice, maxPrice] = option.split("-");
+              queryParams.append("minPrice", minPrice);
+              queryParams.append("maxPrice", maxPrice);
+            }
+          });
+        }
+      });
+  
+      if (searchTerm.trim() !== "") {
+        queryParams.append("search", searchTerm);
+      }
+      if (sortOption) {
+        queryParams.append("priceSort", sortOption);
+      }
+  
+      const queryString = queryParams.toString();
+      console.log("Fetching products with query:", queryString);
+  
       setLoadingAnimation(true);
-      const response = await fetch(url, {
-        method: "GET",
+  
+      // Use `apiClient` for better error handling
+      const response = await apiClient.get(`/listings?${queryString}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Data:", data);
-
-        setProducts(data.listings);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
+  
+      console.log("Products:", response.data);
+      setProducts(response.data.listings);
     } catch (error) {
       console.error("Error fetching products:", error);
+      Alert.alert("Error", "Failed to fetch products.");
     } finally {
       setLoadingAnimation(false);
     }
   };
+  // const fetchProducts = async (searchTerm = "", selectedFiltersArray = []) => {
+  //     setLoadingAnimation(true);
+  //     const data = await apiFetchProducts(searchTerm, selectedFiltersArray);
+  //     setItems(data);
+  //     setLoadingAnimation(false);
+  //   };
+    
+  
   useEffect(() => {
     console.log("inside useEffect");
     setMenuVisible(false);

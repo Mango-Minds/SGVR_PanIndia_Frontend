@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
+import apiClient from "../../store/apiClient";
 import { IconButton, Provider } from "react-native-paper";
 import {
   FormButton,
@@ -76,6 +77,12 @@ const styles = StyleSheet.create({
 export default function AddTemple({ navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
+  const token = useSelector((state) => state.user.token);
+   const userType = useSelector((state) => state.user.user.userType);
+  console.log("User Type:", userType);
+console.log("Token:", token);
+
+
   const { loadingInBtn } = useSelector((state) => state.user);
   const [selectedImages, setSelectedImages] = React.useState([]);
   const [registerDetails, setRegisterDetails] = React.useState({
@@ -113,16 +120,18 @@ export default function AddTemple({ navigation }) {
     setSelectedImages(newArray);
   };
 
-  const token = useSelector((state) => state.user.token);
+  // const token = useSelector((state) => state.user.token);
 
 
   const addTemple = async () => {
     try {
+      let token = await AsyncStorage.getItem("token");
+  console.log("Async token: ", token);
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
-
+  
       const formData = new FormData();
       formData.append("templeName", registerDetails.templeName);
       formData.append("address", registerDetails.address);
@@ -132,26 +141,24 @@ export default function AddTemple({ navigation }) {
       formData.append("description", registerDetails.description);
       formData.append("phoneNumber", registerDetails.phoneNumber);
       formData.append("email", registerDetails.email);
-     
       formData.append("templeLocationLink", registerDetails.templeLocationLink);
   
       registerDetails.donation.forEach((donation, index) => {
         formData.append(`donation[${index}]`, donation);
       });
-
-    
+  
       registerDetails.members.forEach((member, index) => {
         formData.append(`members[${index}]`, member);
       });
-       registerDetails.templeShops.forEach((shop, index) => {
+  
+      registerDetails.templeShops.forEach((shop, index) => {
         formData.append(`templeShops[${index}]`, shop);
       });
-
-    
+  
       registerDetails.templeEvents.forEach((event, index) => {
         formData.append(`templeEvents[${index}]`, event);
       });
-
+  
       selectedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
@@ -159,64 +166,41 @@ export default function AddTemple({ navigation }) {
           type: "image/jpeg",
         });
       });
-
-     
+  
       await dispatch(setLoadingInBtn(true));
-      console.log(registerDetails, "registerDetails");
-      console.log(formData, "registerDetails");
-
-
-      const response = await fetch(`${BASEAPIURL}/temple`, {
-        method: "POST",
+  
+      console.log("FormData:", formData);
+  
+      const response = await apiClient.post("/temple", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        body: formData,
       });
+  
+      console.log("API Response:", response);
+  
       await dispatch(setLoadingInBtn(false));
-
-      console.log("responseee", response);
-      if (!response.ok) {
-        throw new Error("Failed to add Temple");
-      }
-
-      setRegisterDetails({
-        templeName: "",
-        address: "",
-        city: "",
-        state: "",
-        pincode: "",
-        description: "",
-        phoneNumber: "",
-        email: "",
-        templeLocationLink: "",
-        images: [],
-        donation: [],
-        members: [],
-        templeShops: [],
-        templeEvents: [],
-      });
-
-      const data = await response.json();
-      console.log("Added Temple:", data);
-
+  
       Alert.alert(
         "Success",
         "Temple Created successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ],
+        [{ text: "OK", onPress: () => navigation.goBack() }],
         { cancelable: false }
       );
     } catch (error) {
       console.error("Error adding Temple:", error);
-
+  
+      if (error.response?.status === 401) {
+        console.error("Token expired, attempting refresh...");
+        await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
+        token = await AsyncStorage.getItem("token");
+  
+        if (token) {
+          return addTemple(); // Retry the function with the new token
+        }
+      }
+  
       Alert.alert(
         "Error",
         "Failed to add temple",
@@ -225,6 +209,7 @@ export default function AddTemple({ navigation }) {
       );
     }
   };
+  
 
   return (
     <SafeArea>

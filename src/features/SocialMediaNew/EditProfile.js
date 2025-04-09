@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { IconButton, Provider } from "react-native-paper";
+import { Platform } from "react-native";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import Theme from "../../styles/theme";
 import {
@@ -20,7 +21,8 @@ import {
   AddProfileBox,
 } from "../../styles/prelogin.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
@@ -74,9 +76,14 @@ export default function EditUserProfile({ navigation, route }) {
   const [firstName, setFirstName] = useState(userData.user?.firstName);
   const [lastName, setLastName] = useState(userData.user?.lastName);
   const [address, setAddress] = useState(userData.user?.address);
+  // const [selectedImage, setSelectedImage] = useState({
+  //   uri: userData.user.image ? `${userData.user.image}` : null,
+  // });
   const [selectedImage, setSelectedImage] = useState({
-    uri: userData.user.image ? `${userData.user.image}` : null,
+    uri: userData.user.image ? userData.user.image.replace(/\\/g, "/") : null,
   });
+  
+  
 
   const { loadingInBtn } = useSelector((state) => state.user);
 
@@ -94,53 +101,120 @@ export default function EditUserProfile({ navigation, route }) {
   };
   const userType = useSelector((state) => state.user.user.userType);
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     let formData = new FormData();
+  //     formData.append("firstName", firstName);
+  //     formData.append("lastName", lastName);
+  //     formData.append("address", address);
+
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("image", {
+  //         uri: localUri,
+  //         name: filename,
+  //         type: type,
+  //       });
+  //     }
+
+  //     await dispatch(setLoadingInBtn(true));
+
+  //     const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+
+  //     await dispatch(setLoadingInBtn(false));
+  //     console.log("Formdata: ", formData);
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(`Failed to update user: ${errorText}`);
+  //     }
+
+  //     alert("Information Updated Successfully");
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //     alert(`Error: ${error.message}`);
+  //   }
+  // };
+
+
+
+
+
+
+  
   const handleSubmit = async () => {
     try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
       let formData = new FormData();
       formData.append("firstName", firstName);
       formData.append("lastName", lastName);
       formData.append("address", address);
-
+  
+      // ✅ Check and normalize image
       if (selectedImage && selectedImage.uri) {
-        let localUri = selectedImage.uri;
-        let filename = localUri.split("/").pop();
-        let match = /\.(\w+)$/.exec(filename);
-        let type = match ? `image/${match[1]}` : `image`;
-
+        const localUri = selectedImage.uri;
+        const filename = localUri.split("/").pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : `image`;
+  
+        const imageUri = Platform.OS === "ios" ? localUri.replace("file://", "") : localUri;
+  
         formData.append("image", {
-          uri: localUri,
+          uri: imageUri,
           name: filename,
           type: type,
         });
       }
-
+  
       await dispatch(setLoadingInBtn(true));
-
-      const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
+  
+      const response = await apiClient
+        .patch(`/user/update/${userId}`, formData, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            // ❌ Do NOT set content-type manually – Axios handles it
+          },
+        })
+        .catch((error) => {
+          console.log("AXIOS ERROR:", error?.response || error.message);
+          throw error;
+        });
+  
       await dispatch(setLoadingInBtn(false));
-      console.log("Formdata: ", formData);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update user: ${errorText}`);
+  
+      if (response?.status !== 200) {
+        throw new Error(response?.data?.message || "Failed to update user.");
       }
-
+  
       alert("Information Updated Successfully");
-      fetchUser();
-      navigation.goBack();
+      fetchUser(); // refresh profile
+      navigation.goBack(); // go back to previous screen
     } catch (error) {
       console.error("Error updating user:", error);
-      alert(`Error: ${error.message}`);
+      alert(`Error: ${error?.message || "Something went wrong."}`);
+      dispatch(setLoadingInBtn(false));
     }
   };
-
+  
+  
   return (
     <SafeArea>
       <Provider>

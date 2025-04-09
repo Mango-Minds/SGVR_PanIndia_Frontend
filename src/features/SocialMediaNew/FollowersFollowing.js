@@ -17,7 +17,8 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { Ionicons } from "react-native-vector-icons";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import {
@@ -92,29 +93,65 @@ const FollowersFollowing = ({ navigation, route }) => {
     useState(true);
   const [followersRefreshing, setFollowersRefreshing] = useState(false);
 
+  // const fetchFollowers = async (querystring) => {
+  //   if (allFollowersLoaded) return;
+  //   try {
+  //     setLoadingFollowersAnimation(true);
+  //     console.log(
+  //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`
+  //     );
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //     const data = await response.json();
+  //     // console.log("Followers:", data);
+  //     console.log(data.followers);
+  //     if (data.followers.length < 10) setAllFollowersLoaded(true);
+  //     setFollowers((prevPosts) => [...prevPosts, ...data.followers]);
+  //     setFollowersPage((prevPage) => prevPage + 1);
+  //   } catch (err) {
+  //     console.log(err.message);
+  //   } finally {
+  //     setLoadingFollowersAnimation(false);
+  //   }
+  // };
+
+  //variables for user following data
   const fetchFollowers = async (querystring) => {
     if (allFollowersLoaded) return;
+  
     try {
       setLoadingFollowersAnimation(true);
-      console.log(
-        `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`
-      );
-      const response = await fetch(
-        `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+  
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
       }
-      const data = await response.json();
-      // console.log("Followers:", data);
+  
+      const url = `/social/${userId}/followers?page=${followersPage}&limit=10&${querystring}`;
+      console.log(`${BASEAPIURL}${url}`);
+  
+      const response = await apiClient.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = response.data;
       console.log(data.followers);
+  
       if (data.followers.length < 10) setAllFollowersLoaded(true);
       setFollowers((prevPosts) => [...prevPosts, ...data.followers]);
       setFollowersPage((prevPage) => prevPage + 1);
@@ -124,8 +161,7 @@ const FollowersFollowing = ({ navigation, route }) => {
       setLoadingFollowersAnimation(false);
     }
   };
-
-  //variables for user following data
+  
   const [following, setFollowing] = useState([]);
   const [followingPage, setFollowingPage] = useState(1);
   const [allFollowingLoaded, setAllFollowingLoaded] = useState(false);
@@ -133,28 +169,62 @@ const FollowersFollowing = ({ navigation, route }) => {
     useState(true);
   const [followingRefreshing, setFollowingRefreshing] = useState(false);
 
+  // const fetchFollowing = async (querystring) => {
+  //   if (allFollowingLoaded) return;
+  //   try {
+  //     setLoadingFollowingAnimation(true);
+  //     console.log(
+  //       `${BASEAPIURL}/social/${userId}/following?page=${followingPage}&limit=10?${querystring}`,
+  //     );
+  //     const response = await fetch(
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //     const data = await response.json();
+  //     console.log("Following:", data);
+
+  //     if (data.following.length < 10) setAllFollowingLoaded(true);
+  //     setFollowing((prevPosts) => [...prevPosts, ...data.following]);
+  //     setFollowingPage((prevPage) => prevPage + 1);
+  //   } catch (err) {
+  //     console.log(err.message);
+  //   } finally {
+  //     setLoadingFollowingAnimation(false);
+  //   }
+  // };
   const fetchFollowing = async (querystring) => {
     if (allFollowingLoaded) return;
+  
     try {
       setLoadingFollowingAnimation(true);
-      console.log(
-        `${BASEAPIURL}/social/${userId}/following?page=${followingPage}&limit=10?${querystring}`,
-      );
-      const response = await fetch(
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
+  
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
       }
-      const data = await response.json();
+  
+      const url = `/social/${userId}/following?page=${followingPage}&limit=10&${querystring}`;
+      console.log(`${BASEAPIURL}${url}`);
+  
+      const response = await apiClient.get(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      const data = response.data;
       console.log("Following:", data);
-
+  
       if (data.following.length < 10) setAllFollowingLoaded(true);
       setFollowing((prevPosts) => [...prevPosts, ...data.following]);
       setFollowingPage((prevPage) => prevPage + 1);
@@ -164,7 +234,7 @@ const FollowersFollowing = ({ navigation, route }) => {
       setLoadingFollowingAnimation(false);
     }
   };
-
+  
   const followersFollowingdata = type === "Followers" ? followers : following;
   console.log("followers:", following);
 

@@ -7,8 +7,7 @@ import {
   ScrollView,
   View,
   TouchableOpacity,
-  ActivityIndicator
-
+  ActivityIndicator,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -27,9 +26,10 @@ import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { BASEIMGURL } from "../../infrastructure/constants";
-import {setLoadingInBtn} from "../../store/user";
+import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -70,31 +70,27 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
   const dispatch = useDispatch();
 
   const token = useSelector((state) => state.user.token);
-  const {userData, user, fetchUser, userId } = route.params;
- 
+  const { userData, user, fetchUser, userId } = route.params;
+
   const [firstName, setFirstName] = useState(userData.user.firstName);
   const [lastName, setLastName] = useState(userData.user.lastName);
   const [email, setEmail] = useState(userData.user.email);
   const [phone, setPhone] = useState(userData.user.phone);
   const [address, setAddress] = useState(userData.user.address);
   const [selectedImage, setSelectedImage] = useState({
-    uri: userData.user.image ? `${userData.user.image}` : null
+    uri: userData.user.image ? `${userData.user.image}` : null,
   });
-  
+
   const { loadingInBtn } = useSelector((state) => state.user);
-
-
-
-  
 
   const _pickDocument = async () => {
     // let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  
+
     // if (permissions.granted === false) {
     //   alert("Permission is required");
     //   return;
     // }
-    
+
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -102,11 +98,10 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
       quality: 1,
       crop: true,
     });
-  
+
     if (result.canceled === true) return;
     setSelectedImage(result.assets[0]);
   };
-  
 
   const _pickDocumentAlt = async () => {
     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -129,55 +124,225 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
 
   const userType = useSelector((state) => state.user.user.userType);
   const heading =
-  userType === "templeAdmin"
-    ? "Edit Temple Admin Profile"
-    : userType === "templeShopOwner"
-    ? "Edit Shop Profile"
-    : "Edit Profile";
+    userType === "templeAdmin"
+      ? "Edit Temple Admin Profile"
+      : userType === "templeShopOwner"
+      ? "Edit Shop Profile"
+      : "Edit Profile";
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     let formData = new FormData();
+  //     formData.append("firstName", firstName);
+  //     formData.append("lastName", lastName);
+  //     formData.append("email", email);
+  //     formData.append("phone", phone);
+  //     formData.append("address", address);
+
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("image", { uri: localUri, name: filename, type });
+  //     }
+  //     await dispatch(setLoadingInBtn(true));
+  //     const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update user");
+  //     }
+  //     alert("Information Updated Successfully");
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //   }
+  // };
+  // const handleSubmit = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+      
+  //         if (!token) {
+  //           console.error("Bearer token not found");
+  //           throw new Error("Bearer token is missing");
+  //         }
+  //     let formData = new FormData();
+  //     formData.append("firstName", firstName);
+  //     formData.append("lastName", lastName);
+  //     formData.append("email", email);
+  //     formData.append("phone", phone);
+  //     formData.append("address", address);
+  
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+  
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+  
+  //       formData.append("image", { uri: localUri, name: filename, type });
+  //     }
+  
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     await apiClient.patch(`/user/update/${userId}`, formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data", // Required for file uploads
+  //       },
+  //     });
+  
+  //     dispatch(setLoadingInBtn(false));
+  
+  //     alert("Information Updated Successfully");
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //     dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+  
+  // const handleSubmit = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     const fullUrl = `${BASEAPIURL}/user/update/${userId}`;
+  //     console.log("Hitting URL:", fullUrl);
+  
+  //     let bodyToSend;
+  //     let headers;
+  
+  //     if (selectedImage && selectedImage.uri) {
+  //       // still using FormData if image exists
+  //       let formData = new FormData();
+  //       formData.append("firstName", firstName);
+  //       formData.append("lastName", lastName);
+  //       formData.append("email", email);
+  //       formData.append("phone", phone);
+  //       formData.append("address", address);
+  
+  //       const localUri = selectedImage.uri;
+  //       const filename = localUri.split("/").pop();
+  //       const match = /\.(\w+)$/.exec(filename);
+  //       const type = match ? `image/${match[1]}` : `image/jpeg`;
+  
+  //       formData.append("image", { uri: localUri, name: filename, type });
+  
+  //       bodyToSend = formData;
+  //       headers = {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       };
+  //     } else {
+  //       // send as raw JSON
+  //       bodyToSend = {
+  //         firstName,
+  //         lastName,
+  //         email,
+  //         phone,
+  //         address,
+  //       };
+  //       headers = {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "application/json",
+  //       };
+  //     }
+  
+  //     const response = await apiClient.patch(fullUrl, bodyToSend, { headers });
+  
+  //     await dispatch(setLoadingInBtn(false));
+  
+  //     console.log("API Response:", response.data);
+  //     Alert.alert("Success", "Information Updated Successfully");
+  
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //     Alert.alert("Error", "Failed to update user information.");
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
   
 
+
+  const handleSubmit = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
   
-      const handleSubmit = async () => {
-        try {
-          let formData = new FormData();
-          formData.append("firstName", firstName);
-          formData.append("lastName", lastName);
-          formData.append("email", email);
-          formData.append("phone", phone);
-          formData.append("address", address);
-    
-          if (selectedImage && selectedImage.uri) {
-            let localUri = selectedImage.uri;
-            let filename = localUri.split('/').pop();
-    
-            let match = /\.(\w+)$/.exec(filename);
-            let type = match ? `image/${match[1]}` : `image`;
-    
-            formData.append('image', { uri: localUri, name: filename, type });
-          }
-          await dispatch(setLoadingInBtn(true));
-          const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
-            },
-            body: formData,
-          });
-          await dispatch(setLoadingInBtn(false));
-    
-          if (!response.ok) {
-            throw new Error("Failed to update user");
-          }
-          alert("Information Updated Successfully");
-          fetchUser();
-          navigation.goBack();
-        } catch (error) {
-          console.error("Error updating user:", error);
+      let formData = new FormData();
+  
+      formData.append("firstName", firstName);
+      formData.append("lastName", lastName);
+      formData.append("email", email);
+      formData.append("phone", phone);
+      formData.append("address", address);
+  
+      if (selectedImage && selectedImage.uri && selectedImage.uri.startsWith("file://")) {
+        let localUri = selectedImage.uri;
+        let filename = localUri.split("/").pop();
+  
+        let match = /\.(\w+)$/.exec(filename);
+        let type = match ? `image/${match[1]}` : `image`;
+  
+        formData.append("image", {
+          uri: localUri,
+          name: filename,
+          type: type,
+        });
+      }
+  
+      await dispatch(setLoadingInBtn(true));
+  
+      const response = await apiClient.patch(
+        `/user/update/${userId}`,
+        formData,
+        {
+          headers: {
+            // DO NOT manually set Content-Type here
+            Authorization: `Bearer ${token}`,
+          },
         }
-      };
-
+      );
+  
+      await dispatch(setLoadingInBtn(false));
+  
+      if (response.status !== 200) {
+        throw new Error("Failed to update user");
+      }
+  
+      alert("Information Updated Successfully");
+      fetchUser();
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error updating user:", error);
+      alert("Error updating user: " + error.message);
+      await dispatch(setLoadingInBtn(false));
+    }
+  };
+  
+  
   return (
     <SafeArea>
       <Provider>
@@ -197,7 +362,7 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                   letterSpacing: 0.5,
                 }}
               >
-              {heading}
+                {heading}
               </Text>
             </View>
           </RowBetween>
@@ -207,7 +372,7 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="always"
           >
-             {selectedImage.uri ? (
+            {selectedImage.uri ? (
               <View
                 style={{
                   width: 120,
@@ -218,7 +383,7 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                   alignSelf: "center",
                 }}
               >
-                 <Image
+                <Image
                   style={styles.logo}
                   source={{ uri: selectedImage.uri }}
                 />
@@ -278,8 +443,6 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                 onChangeText={setLastName}
               />
 
-             
-
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
@@ -309,20 +472,20 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
                 >
                   {loadingInBtn === true ? (
-                  <ActivityIndicator
-                    style={{
-                      display: "flex",
-                      alignSelf: "center",
-                      justifyContent: "center",
-                      alignItems: "center",
-                      flex: 1,
-                    }}
-                    // size={"large"}
-                    color={"white"}
-                  />
-                ) : (
-                  "Update Profile"
-                )}
+                    <ActivityIndicator
+                      style={{
+                        display: "flex",
+                        alignSelf: "center",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flex: 1,
+                      }}
+                      // size={"large"}
+                      color={"white"}
+                    />
+                  ) : (
+                    "Update Profile"
+                  )}
                 </Text>
               </FormButton>
             </FormSection>
@@ -332,3 +495,9 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
     </SafeArea>
   );
 }
+
+
+
+
+
+

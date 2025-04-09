@@ -22,6 +22,7 @@ import {
   ScrollView,
   Switch,
 } from "react-native";
+import { updateMatrimonyUserProfile } from "./matrimonyAPIs";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
 import {
@@ -38,7 +39,8 @@ import { useDispatch } from "react-redux";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import DateTimePicker from "@react-native-community/datetimepicker";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import {
   BASEIMGURL,
   BASEAPIURL,
@@ -243,9 +245,186 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
 
   const FILE_SIZE_LIMIT = 5 * 1024 * 1024; //5mb
 
+  // const handleUpdate = async () => {
+  //   const formData = new FormData();
+  //   keysToRemove = [
+  //     "name",
+  //     "gender",
+  //     "aboutMe",
+  //     "salary",
+  //     "annualincomeVisible",
+  //     "casteType",
+  //     "casteVisible",
+  //     "subcaste",
+  //     "gothra",
+  //     "dosh",
+  //     "familyType",
+  //     "familyStatus",
+  //     "familyValues",
+  //     "workLocation",
+  //     "homeTown",
+  //     "highestEducation",
+  //     "employedIn",
+  //     "instagram",
+  //     "linkedin",
+  //     "whatsapp",
+  //     "socialsVisible",
+  //     "occupation",
+  //     "occupationDescription",
+  //     "height",
+  //     "bloodGroup",
+  //     "maritalStatus",
+  //   ];
+
+  //   for (const [key, value] of Object.entries(modifiedDetails)) {
+  //     if (keysToRemove.includes(key)) {
+  //       formData.append(key, value);
+  //     }
+  //   }
+
+  //   selectedImages.forEach((image) => {
+  //     formData.append("images", image);
+  //   });
+
+  //   uploadedImages.forEach((image, index) => {
+  //     formData.append("images", {
+  //       uri: image.uri,
+  //       name: `image_${index}.jpg`,
+  //       type: "image/jpeg",
+  //     });
+  //   });
+
+  //   modifiedDetails.hobbies.forEach((hobby) => {
+  //     formData.append("hobbies", hobby);
+  //   });
+
+  //   formData.append("languages", JSON.stringify(modifiedDetails.languages));
+  //   const formattedDob = formatDate(selectedDate);
+
+  //   formData.append("dateOfBirth", formattedDob);
+
+  //   console.log("updated:", formData);
+
+  //   await dispatch(setLoadingInBtn(true));
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/matrimony/matrimonyUser/edit/${userId}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           // 'Content-Type': 'application/json',
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         // body: JSON.stringify(modifiedDetails),
+  //         body: formData,
+  //       }
+  //     );
+  //     console.log("response of user edit", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update matrimony profile details");
+  //     }
+
+  //     alert("Matrimony profile details updated successfully");
+  //     navigation.goBack();
+  //     await dispatch(setLoadingInBtn(false));
+  //   } catch (error) {
+  //     console.error("Error updating matrimony profile details:", error);
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+
+  // const handleUpdate = async () => {
+  //   const token = await AsyncStorage.getItem("token");
+  
+  //   const formData = new FormData();
+  //   const keysToRemove = [
+  //     "name",
+  //     "gender",
+  //     "aboutMe",
+  //     "salary",
+  //     "annualincomeVisible",
+  //     "casteType",
+  //     "casteVisible",
+  //     "subcaste",
+  //     "gothra",
+  //     "dosh",
+  //     "familyType",
+  //     "familyStatus",
+  //     "familyValues",
+  //     "workLocation",
+  //     "homeTown",
+  //     "highestEducation",
+  //     "employedIn",
+  //     "instagram",
+  //     "linkedin",
+  //     "whatsapp",
+  //     "socialsVisible",
+  //     "occupation",
+  //     "occupationDescription",
+  //     "height",
+  //     "bloodGroup",
+  //     "maritalStatus",
+  //   ];
+  
+  //   for (const [key, value] of Object.entries(modifiedDetails)) {
+  //     if (keysToRemove.includes(key)) {
+  //       formData.append(key, value);
+  //     }
+  //   }
+  
+  //   selectedImages.forEach((image) => {
+  //     formData.append("images", image);
+  //   });
+  
+  //   uploadedImages.forEach((image, index) => {
+  //     formData.append("images", {
+  //       uri: image.uri,
+  //       name: `image_${index}.jpg`,
+  //       type: "image/jpeg",
+  //     });
+  //   });
+  
+  //   modifiedDetails.hobbies.forEach((hobby) => {
+  //     formData.append("hobbies", hobby);
+  //   });
+  
+  //   formData.append("languages", JSON.stringify(modifiedDetails.languages));
+  //   const formattedDob = formatDate(selectedDate);
+  //   formData.append("dateOfBirth", formattedDob);
+  
+  //   console.log("updated:", formData);
+  
+  //   await dispatch(setLoadingInBtn(true));
+  //   try {
+  //     const response = await apiClient.put(
+  //       `${BASEAPIURL}/matrimony/matrimonyUser/edit/${userId}`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  
+  //     console.log("response of user edit", response);
+  
+  //     alert("Matrimony profile details updated successfully");
+  //     navigation.goBack();
+  //     await dispatch(setLoadingInBtn(false));
+  //   } catch (error) {
+  //     console.error("Error updating matrimony profile details:", error);
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+ 
+ 
   const handleUpdate = async () => {
+    const token = await AsyncStorage.getItem("token");
+
     const formData = new FormData();
-    keysToRemove = [
+    const keysToRemove = [
       "name",
       "gender",
       "aboutMe",
@@ -298,40 +477,24 @@ const MatrimonyProfileEdit = ({ route, navigation }) => {
 
     formData.append("languages", JSON.stringify(modifiedDetails.languages));
     const formattedDob = formatDate(selectedDate);
-
     formData.append("dateOfBirth", formattedDob);
 
     console.log("updated:", formData);
 
     await dispatch(setLoadingInBtn(true));
-    try {
-      const response = await fetch(
-        `${BASEAPIURL}/matrimony/matrimonyUser/edit/${userId}`,
-        {
-          method: "PUT",
-          headers: {
-            // 'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          // body: JSON.stringify(modifiedDetails),
-          body: formData,
-        }
-      );
-      console.log("response of user edit", response);
 
-      if (!response.ok) {
-        throw new Error("Failed to update matrimony profile details");
-      }
+    try {
+      const response = await updateMatrimonyUserProfile(userId, formData);
+      console.log("response of user edit", response);
 
       alert("Matrimony profile details updated successfully");
       navigation.goBack();
-      await dispatch(setLoadingInBtn(false));
     } catch (error) {
       console.error("Error updating matrimony profile details:", error);
+    } finally {
       await dispatch(setLoadingInBtn(false));
     }
   };
-
   return (
     <SafeArea>
       <Provider>

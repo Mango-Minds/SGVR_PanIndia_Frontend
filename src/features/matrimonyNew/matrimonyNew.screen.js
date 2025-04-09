@@ -36,6 +36,16 @@ import {
 import UserImg from "../../assets/images/general/user.png";
 import FilterMenu from "./FilterMenu";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import {
+  fetchMatrimonyData,
+  fetchVendorData,
+  fetchDecoratorData,
+  fetchCatererData,
+  fetchPlannerData,
+  fetchVenueData
+} from "./matrimonyAPIs";
 const NewMatrimony = ({ navigation }) => {
   //user data
   const { user } = useSelector((state) => state.user);
@@ -186,214 +196,460 @@ const NewMatrimony = ({ navigation }) => {
   const [matrimonyData, setMatrimonyData] = useState([]);
   const [bridesData, setBridesData] = useState([]);
   const [groomsData, setGroomsData] = useState([]);
+  const [vendorData, setVendorData] = useState([]);
+  const [decoratorData, setDecoratorData] = useState([]);
+  const [catererData, setCatererData] = useState([]);
+  const [venueData, setVenueData] = useState([]);
+  const [plannerData, setPlannerData] = useState([]);
 
-  const fetchMatrimonyData = async (queryString, selectedFiltersArray) => {
-    selectedFiltersArray.forEach((filter) => {
-      if (filter["Filter name"] === "Marital Status") {
-        filter.Options.forEach((option) =>
-          queryParams.append("maritalStatus", option)
-        );
-      } else if (filter["Filter name"] === "Age") {
-        const ageRanges = {
-          "18-25": { ageFrom: 18, ageTo: 25 },
-          "26-35": { ageFrom: 26, ageTo: 35 },
-          "36-45": { ageFrom: 36, ageTo: 45 },
-          "46-60": { ageFrom: 46, ageTo: 60 },
-          "60+": { ageFrom: 60, ageTo: 100 },
-        };
+  // const fetchMatrimonyData = async (queryString, selectedFiltersArray) => {
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Marital Status") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("maritalStatus", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Age") {
+  //       const ageRanges = {
+  //         "18-25": { ageFrom: 18, ageTo: 25 },
+  //         "26-35": { ageFrom: 26, ageTo: 35 },
+  //         "36-45": { ageFrom: 36, ageTo: 45 },
+  //         "46-60": { ageFrom: 46, ageTo: 60 },
+  //         "60+": { ageFrom: 60, ageTo: 100 },
+  //       };
 
-        // Make sure you get the correct selected option
-        const selectedOption = filter.Options[0]; // Assuming one option can be selected at a time
-        const selectedRange = ageRanges[selectedOption];
+  //       // Make sure you get the correct selected option
+  //       const selectedOption = filter.Options[0]; // Assuming one option can be selected at a time
+  //       const selectedRange = ageRanges[selectedOption];
 
-        if (selectedRange) {
-          queryParams.append("ageFrom", selectedRange.ageFrom);
-          queryParams.append("ageTo", selectedRange.ageTo);
-        }
-      }
-    });
+  //       if (selectedRange) {
+  //         queryParams.append("ageFrom", selectedRange.ageFrom);
+  //         queryParams.append("ageTo", selectedRange.ageTo);
+  //       }
+  //     }
+  //   });
 
-    const url = `${BASEAPIURL}/matrimony/matrimonyUsers?${queryString}`;
+  //   const url = `${BASEAPIURL}/matrimony/matrimonyUsers?${queryString}`;
 
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setMatrimonyData(data.data);
+  //       console.log("fetched data", data.data);
+  //       setBridesData(
+  //         data.data.filter((matrimony) => matrimony.gender === "female")
+  //       );
+  //       setGroomsData(
+  //         data.data.filter((matrimony) => matrimony.gender === "male")
+  //       );
+  //     } else {
+  //       throw new Error("Failed to fetch matrimony data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching matrimony data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // // to fetch vendor data
+  // const fetchVendorData = async (queryString, selectedFiltersArray) => {
+  //   const vendorUrl = `${BASEAPIURL}/matrimony/matrimonyVendor/matrimonyVendors?${queryString}`;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(vendorUrl, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched vendor data:", data);
+  //       setVendorData(data.data);
+  //     } else {
+  //       throw new Error("Failed to fetch vendor data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching vendor data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // // to fetch decorator data
+  // const fetchDecoratorData = async (queryString, selectedFiltersArray) => {
+  //   const decoratorUrl = `${BASEAPIURL}/matrimony/decorator/decorators?${queryString}`;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(decoratorUrl, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched decorator data:", data);
+  //       setDecoratorData(data.data);
+  //     } else {
+  //       throw new Error("Failed to fetch decorator data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching decorator data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // // to fetch caterers data
+  // const fetchCatererData = async (queryString, selectedFiltersArray) => {
+  //   const catererUrl = `${BASEAPIURL}/matrimony/caterer/caterers?${queryString}`;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(catererUrl, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched caterer data:", data);
+  //       setCatererData(data.data);
+  //     } else {
+  //       throw new Error("Failed to fetch caterer data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching caterer data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // // to fetch planners data
+  // const fetchPlannerData = async (queryString, selectedFiltersArray) => {
+  //   const plannerUrl = `${BASEAPIURL}/matrimony/planner/planners?${queryString}`;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(plannerUrl, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched planner data:", data);
+  //       setPlannerData(data.data);
+  //     } else {
+  //       throw new Error("Failed to fetch planner data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching planner data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // // to fetch venues data
+  // const fetchVenueData = async (queryString, selectedFiltersArray) => {
+  //   const venueUrl = `${BASEAPIURL}/matrimony/venue/venues?${queryString}`;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(venueUrl, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Fetched venue data:", data);
+  //       setVenueData(data.data);
+  //     } else {
+  //       throw new Error("Failed to fetch venue data");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching venue data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+
+
+  //correct one
+  // const fetchMatrimonyData = async (queryString, selectedFiltersArray) => {
+  //   const queryParams = new URLSearchParams();
+  
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Marital Status") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("maritalStatus", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Age") {
+  //       const ageRanges = {
+  //         "18-25": { ageFrom: 18, ageTo: 25 },
+  //         "26-35": { ageFrom: 26, ageTo: 35 },
+  //         "36-45": { ageFrom: 36, ageTo: 45 },
+  //         "46-60": { ageFrom: 46, ageTo: 60 },
+  //         "60+": { ageFrom: 60, ageTo: 100 },
+  //       };
+  
+  //       const selectedOption = filter.Options[0];
+  //       const selectedRange = ageRanges[selectedOption];
+  
+  //       if (selectedRange) {
+  //         queryParams.append("ageFrom", selectedRange.ageFrom);
+  //         queryParams.append("ageTo", selectedRange.ageTo);
+  //       }
+  //     }
+  //   });
+  
+  //   const token = await AsyncStorage.getItem("token");
+  //   const url = `${BASEAPIURL}/matrimony/matrimonyUsers?${queryString}&${queryParams.toString()}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(url, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     setMatrimonyData(data.data);
+  //     console.log("fetched data", data.data);
+  //     setBridesData(data.data.filter((matrimony) => matrimony.gender === "female"));
+  //     setGroomsData(data.data.filter((matrimony) => matrimony.gender === "male"));
+  //   } catch (error) {
+  //     console.error("Error fetching matrimony data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  // const fetchVendorData = async (queryString, selectedFiltersArray) => {
+  //   const token = await AsyncStorage.getItem("token");
+  //   const vendorUrl = `${BASEAPIURL}/matrimony/matrimonyVendor/matrimonyVendors?${queryString}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(vendorUrl, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     console.log("Fetched vendor data:", data);
+  //     setVendorData(data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching vendor data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  // const fetchDecoratorData = async (queryString, selectedFiltersArray) => {
+  //   const token = await AsyncStorage.getItem("token");
+  //   const decoratorUrl = `${BASEAPIURL}/matrimony/decorator/decorators?${queryString}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(decoratorUrl, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     console.log("Fetched decorator data:", data);
+  //     setDecoratorData(data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching decorator data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  // const fetchCatererData = async (queryString, selectedFiltersArray) => {
+  //   const token = await AsyncStorage.getItem("token");
+  //   const catererUrl = `${BASEAPIURL}/matrimony/caterer/caterers?${queryString}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(catererUrl, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     console.log("Fetched caterer data:", data);
+  //     setCatererData(data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching caterer data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  // const fetchPlannerData = async (queryString, selectedFiltersArray) => {
+  //   const token = await AsyncStorage.getItem("token");
+  //   const plannerUrl = `${BASEAPIURL}/matrimony/planner/planners?${queryString}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(plannerUrl, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     console.log("Fetched planner data:", data);
+  //     setPlannerData(data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching planner data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  // const fetchVenueData = async (queryString, selectedFiltersArray) => {
+  //   const token = await AsyncStorage.getItem("token");
+  //   const venueUrl = `${BASEAPIURL}/matrimony/venue/venues?${queryString}`;
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await apiClient.get(venueUrl, {
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     const data = response.data;
+  //     console.log("Fetched venue data:", data);
+  //     setVenueData(data.data);
+  //   } catch (error) {
+  //     console.error("Error fetching venue data:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  const handleFetchMatrimonyData = async (queryString, selectedFiltersArray) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMatrimonyData(data.data);
-        console.log("fetched data", data.data);
-        setBridesData(
-          data.data.filter((matrimony) => matrimony.gender === "female")
-        );
-        setGroomsData(
-          data.data.filter((matrimony) => matrimony.gender === "male")
-        );
-      } else {
-        throw new Error("Failed to fetch matrimony data");
-      }
+      const data = await fetchMatrimonyData(queryString, selectedFiltersArray);
+      setMatrimonyData(data);
+      setBridesData(data.filter((matrimony) => matrimony.gender === "female"));
+      setGroomsData(data.filter((matrimony) => matrimony.gender === "male"));
     } catch (error) {
       console.error("Error fetching matrimony data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // to fetch vendor data
-  const [vendorData, setVendorData] = useState([]);
-  const fetchVendorData = async (queryString, selectedFiltersArray) => {
-    const vendorUrl = `${BASEAPIURL}/matrimony/matrimonyVendor/matrimonyVendors?${queryString}`;
+  const handleFetchVendorData = async (queryString) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(vendorUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched vendor data:", data);
-        setVendorData(data.data);
-      } else {
-        throw new Error("Failed to fetch vendor data");
-      }
+      const data = await fetchVendorData(queryString);
+      setVendorData(data);
     } catch (error) {
       console.error("Error fetching vendor data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // to fetch decorator data
-  const [decoratorData, setDecoratorData] = useState([]);
-  const fetchDecoratorData = async (queryString, selectedFiltersArray) => {
-    const decoratorUrl = `${BASEAPIURL}/matrimony/decorator/decorators?${queryString}`;
+  const handleFetchVenueData = async (queryString) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(decoratorUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched decorator data:", data);
-        setDecoratorData(data.data);
-      } else {
-        throw new Error("Failed to fetch decorator data");
-      }
+      const data = await fetchVenueData(queryString);
+      setVenueData(data);
     } catch (error) {
-      console.error("Error fetching decorator data:", error);
+      console.error("Error fetching vendor data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // to fetch caterers data
-  const [catererData, setCatererData] = useState([]);
-  const fetchCatererData = async (queryString, selectedFiltersArray) => {
-    const catererUrl = `${BASEAPIURL}/matrimony/caterer/caterers?${queryString}`;
+  const handleFetchCatererData = async (queryString) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(catererUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched caterer data:", data);
-        setCatererData(data.data);
-      } else {
-        throw new Error("Failed to fetch caterer data");
-      }
+      const data = await fetchCatererData(queryString);
+      setCatererData(data);
     } catch (error) {
-      console.error("Error fetching caterer data:", error);
+      console.error("Error fetching vendor data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // to fetch planners data
-  const [plannerData, setPlannerData] = useState([]);
-  const fetchPlannerData = async (queryString, selectedFiltersArray) => {
-    const plannerUrl = `${BASEAPIURL}/matrimony/planner/planners?${queryString}`;
+  const handleFetchDecoratorData = async (queryString) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(plannerUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched planner data:", data);
-        setPlannerData(data.data);
-      } else {
-        throw new Error("Failed to fetch planner data");
-      }
+      const data = await fetchDecoratorData(queryString);
+      setDecoratorData(data);
     } catch (error) {
-      console.error("Error fetching planner data:", error);
+      console.error("Error fetching vendor data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // to fetch venues data
-  const [venueData, setVenueData] = useState([]);
-  const fetchVenueData = async (queryString, selectedFiltersArray) => {
-    const venueUrl = `${BASEAPIURL}/matrimony/venue/venues?${queryString}`;
+  const handleFetchPlannerData = async (queryString) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(venueUrl, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Fetched venue data:", data);
-        setVenueData(data.data);
-      } else {
-        throw new Error("Failed to fetch venue data");
-      }
+      const data = await fetchPlannerData(queryString);
+      setPlannerData(data);
     } catch (error) {
-      console.error("Error fetching venue data:", error);
+      console.error("Error fetching vendor data:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
+  
+  
+  // const tabToFetchFunction = {
+  //   Brides: fetchMatrimonyData,
+  //   Grooms: fetchMatrimonyData,
+  //   Vendors: fetchVendorData,
+  //   Decorators: fetchDecoratorData,
+  //   Caterers: fetchCatererData,
+  //   Planners: fetchPlannerData,
+  //   Venues: fetchVenueData,
+  // };
 
   const tabToFetchFunction = {
-    Brides: fetchMatrimonyData,
-    Grooms: fetchMatrimonyData,
-    Vendors: fetchVendorData,
-    Decorators: fetchDecoratorData,
-    Caterers: fetchCatererData,
-    Planners: fetchPlannerData,
-    Venues: fetchVenueData,
+    Brides: handleFetchMatrimonyData,
+    Grooms: handleFetchMatrimonyData,
+    Vendors: handleFetchVendorData,
+    Decorators: handleFetchDecoratorData,
+    Caterers: handleFetchCatererData,
+    Planners: handleFetchPlannerData,
+    Venues: handleFetchVenueData,
   };
+
+  
 
   // Debounced fetch function to avoid unnecessary API calls
   const debouncedFetchData = useCallback(

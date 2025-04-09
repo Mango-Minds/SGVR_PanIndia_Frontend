@@ -18,6 +18,9 @@ import {
 } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { submitNewJob } from "./SocialMediaAPIs";
 const CreateNewJob = ({ navigation }) => {
   const token = useSelector((state) => state.user.token);
   const [jobData, setJobData] = useState({
@@ -40,29 +43,20 @@ const CreateNewJob = ({ navigation }) => {
   const handleSubmit = async () => {
     if (Object.values(jobData).some((value) => value === "")) {
       Alert.alert("Error", "Please fill all fields.");
-    } else {
-      const url = `${BASEAPIURL}/social/job/create`;
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(jobData),
-        });
+      return;
+    }
 
-        const data = await response.json();
-        if (response.ok) {
-          Alert.alert("Success", "Job created successfully!");
-          navigation.goBack();
-        } else {
-          Alert.alert("Error", data.error || "Something went wrong.");
-        }
-      } catch (error) {
-        console.error(error);
-        Alert.alert("Error", "Unable to submit job.");
+    try {
+      const response = await submitNewJob(jobData); // ✅ call central API
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Success", "Job created successfully!");
+        navigation.goBack();
+      } else {
+        Alert.alert("Error", response.data?.error || "Something went wrong.");
       }
+    } catch (error) {
+      console.error("Job submission error:", error);
+      Alert.alert("Error", error?.response?.data?.message || "Unable to submit job.");
     }
   };
 
@@ -155,7 +149,11 @@ const CreateNewJob = ({ navigation }) => {
       </View>
     </ScrollView>
   );
+
 };
+
+
+
 
 const styles = StyleSheet.create({
   container: {

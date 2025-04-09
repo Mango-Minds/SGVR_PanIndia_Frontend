@@ -14,6 +14,8 @@ import { RowBetween } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Divider } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
@@ -25,7 +27,7 @@ import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "./BottomNavigation";
-
+import { fetchUserDetails } from "./B2CAPI";
 const MyB2CProfile = ({ route }) => {
   const navigation = useNavigation();
 
@@ -42,32 +44,44 @@ const MyB2CProfile = ({ route }) => {
 
   const [userData, setUserData] = useState({});
 
-  const fetchUser = async () => {
-    try {
-      setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-
-        setUserData(data);
-        console.log("data.user", data.user);
-      } else {
-        throw new Error("Failed to fetch user");
-      }
-    } catch (error) {
-      console.error("Error fetching user:", error);
-    } finally {
-      setLoadingAnimation(false);
-    }
+  
+  // const fetchUser = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Authentication token is missing.");
+  //       Alert.alert("Error", "You are not authorized. Please log in again.");
+  //       return;
+  //     }
+  
+  //     setLoadingAnimation(true);
+      
+  //     const response = await apiClient.get(`/user/${userId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (response.status === 200) {
+  //       console.log("User Data:", response.data);
+  //       setUserData(response.data);
+  //     } else {
+  //       throw new Error(`Failed to fetch user. Status: ${response.status}`);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //     Alert.alert("Error", "Unable to fetch user data. Please try again later.");
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  const fetchUser = () => {
+    fetchUserDetails({ userId, setUserData, setLoadingAnimation });
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchUser();

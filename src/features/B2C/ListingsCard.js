@@ -11,6 +11,8 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const ListingCard = ({ items, fetchProducts, loadingAnimation }) => {
   console.log("Items in card: ", items);
   const navigation = useNavigation();

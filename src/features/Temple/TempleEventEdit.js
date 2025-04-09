@@ -41,7 +41,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode } from "base-64";
 import { useRoute } from "@react-navigation/native";
-
+import apiClient from "../../store/apiClient";
 const TempleEventEdit = ({ navigation }) => {
   const dispatch = useDispatch();
 
@@ -195,13 +195,102 @@ const TempleEventEdit = ({ navigation }) => {
     setCalendarVisible(false); // Close the calendar when a date is selected
   };
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       return;
+  //     }
+  //     dispatch(setLoadingInBtn(true));
+  //     const eventDate = formatDate(selectedDate);
+  //     const eventTime = times.map((time) => formatTime(time));
+  //     const formattedAvailability = availability.map((slot) => ({
+  //       startTime: formatTime(slot.startTime),
+  //       endTime: formatTime(slot.endTime),
+  //       isBooked: slot.isBooked, // Retain the isBooked property if needed
+  //     }));
+
+  //     // Construct the base event data object
+  //     let eventData = {
+  //       eventName,
+  //       eventDate,
+  //       eventDescription,
+  //       eventType,
+  //       eventDuration: parseInt(eventDuration),
+  //     };
+
+  //     // Conditionally add fields if the event is a "Pooja Event"
+  //     if (eventType === "normal") {
+  //       eventData = {
+  //         ...eventData,
+  //         eventTime,
+  //       };
+  //     }
+
+  //     if (eventType === "puja") {
+  //       eventData = {
+  //         ...eventData,
+  //         eventRequirements: poojaMaterials,
+  //         availableSlots: formattedAvailability,
+  //         instructions: poojaPractices,
+  //         pandits: poojaPanditId,
+  //       };
+  //     }
+
+  //     const response = await fetch(`${BASEAPIURL}/templeEvents/${event._id}`, {
+  //       method: "PUT",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(eventData),
+  //     });
+
+  //     dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to edit Event");
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("event date", eventDate);
+
+  //     console.log("Edited Event:", data);
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Event Edited successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error Edit Event:", error);
+
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to Edit event",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+
   const handleSubmit = async () => {
     try {
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
+  
       dispatch(setLoadingInBtn(true));
+  
       const eventDate = formatDate(selectedDate);
       const eventTime = times.map((time) => formatTime(time));
       const formattedAvailability = availability.map((slot) => ({
@@ -209,7 +298,7 @@ const TempleEventEdit = ({ navigation }) => {
         endTime: formatTime(slot.endTime),
         isBooked: slot.isBooked, // Retain the isBooked property if needed
       }));
-
+  
       // Construct the base event data object
       let eventData = {
         eventName,
@@ -218,7 +307,7 @@ const TempleEventEdit = ({ navigation }) => {
         eventType,
         eventDuration: parseInt(eventDuration),
       };
-
+  
       // Conditionally add fields if the event is a "Pooja Event"
       if (eventType === "normal") {
         eventData = {
@@ -226,7 +315,7 @@ const TempleEventEdit = ({ navigation }) => {
           eventTime,
         };
       }
-
+  
       if (eventType === "puja") {
         eventData = {
           ...eventData,
@@ -236,27 +325,17 @@ const TempleEventEdit = ({ navigation }) => {
           pandits: poojaPanditId,
         };
       }
-
-      const response = await fetch(`${BASEAPIURL}/templeEvents/${event._id}`, {
-        method: "PUT",
+  
+      const response = await apiClient.put(`/templeEvents/${event._id}`, eventData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify(eventData),
       });
-
+  
       dispatch(setLoadingInBtn(false));
-
-      if (!response.ok) {
-        throw new Error("Failed to edit Event");
-      }
-
-      const data = await response.json();
-      console.log("event date", eventDate);
-
-      console.log("Edited Event:", data);
-
+  
+      console.log("Edited Event:", response.data);
+  
       Alert.alert(
         "Success",
         "Event Edited successfully",
@@ -271,8 +350,9 @@ const TempleEventEdit = ({ navigation }) => {
         { cancelable: false }
       );
     } catch (error) {
-      console.error("Error Edit Event:", error);
-
+      dispatch(setLoadingInBtn(false));
+      console.error("Error Editing Event:", error);
+  
       Alert.alert(
         "Error",
         "Failed to Edit event",
@@ -281,7 +361,6 @@ const TempleEventEdit = ({ navigation }) => {
       );
     }
   };
-
   const isDateFormatted = (date) => {
     const formattedDatePattern = /^\d{4}-\d{2}-\d{2}$/;
     return formattedDatePattern.test(date);

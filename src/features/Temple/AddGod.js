@@ -35,6 +35,8 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
+import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // import DateTimePicker from "@react-native-community/datetimepicker";
 
 const styles = StyleSheet.create({
@@ -131,23 +133,102 @@ export default function AddGod({ navigation, route }) {
 
   const userType = decodedPayload.userType;
 
+  // const addGod = async () => {
+  //   console.log("Tid: ", templeId);
+  //   try {
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       return;
+  //     }
+
+  //     const formData = new FormData();
+  //     formData.append("godName", registerDetails.godName);
+  //     formData.append("description", registerDetails.godDescription);
+
+  //     formData.append("symbol", registerDetails.godSymbol);
+
+  //     formData.append("festivals", registerDetails.godFestivals);
+  //     formData.append("relatedDeities", registerDetails.godRelatedDeities);
+
+  //     selectedImages.forEach((image, index) => {
+  //       formData.append("godImage", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+
+  //     console.log("formdata add god", formData);
+  //     await dispatch(setLoadingInBtn(true));
+
+  //     const response = await fetch(`${BASEAPIURL}/temple/${templeId}/gods`, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data", // Required for file uploads
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add product");
+  //     }
+
+  //     setRegisterDetails({
+  //       godName: "",
+  //       godDescription: "",
+  //       godSymbol: "",
+  //       godFestivals: "",
+  //       godRelatedDeities: "",
+  //     });
+
+  //     const data = await response.json();
+  //     console.log("Added god:", data);
+
+  //     Alert.alert(
+  //       "Success",
+  //       "God Added Successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error adding god:", error);
+
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to add god",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+
   const addGod = async () => {
     console.log("Tid: ", templeId);
+    let token = await AsyncStorage.getItem("token");
     try {
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
-
+  
       const formData = new FormData();
       formData.append("godName", registerDetails.godName);
       formData.append("description", registerDetails.godDescription);
-
       formData.append("symbol", registerDetails.godSymbol);
-
       formData.append("festivals", registerDetails.godFestivals);
       formData.append("relatedDeities", registerDetails.godRelatedDeities);
-
+  
       selectedImages.forEach((image, index) => {
         formData.append("godImage", {
           uri: image.uri,
@@ -155,26 +236,25 @@ export default function AddGod({ navigation, route }) {
           type: "image/jpeg",
         });
       });
-
+  
       console.log("formdata add god", formData);
       await dispatch(setLoadingInBtn(true));
-
-      const response = await fetch(`${BASEAPIURL}/temple/${templeId}/gods`, {
-        method: "POST",
+  
+      const response = await apiClient.post(`/temple/${templeId}/gods`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data", // Required for file uploads
         },
-        body: formData,
       });
+  
       await dispatch(setLoadingInBtn(false));
-
+  
       console.log("response", response);
-
-      if (!response.ok) {
-        throw new Error("Failed to add product");
+  
+      if (!response || (response.status !== 200 && response.status !== 201)) {
+        throw new Error("Failed to add god");
       }
-
+  
       setRegisterDetails({
         godName: "",
         godDescription: "",
@@ -182,10 +262,10 @@ export default function AddGod({ navigation, route }) {
         godFestivals: "",
         godRelatedDeities: "",
       });
-
-      const data = await response.json();
+  
+      const data = response.data;
       console.log("Added god:", data);
-
+  
       Alert.alert(
         "Success",
         "God Added Successfully",
@@ -201,7 +281,7 @@ export default function AddGod({ navigation, route }) {
       );
     } catch (error) {
       console.error("Error adding god:", error);
-
+  
       Alert.alert(
         "Error",
         "Failed to add god",
@@ -210,8 +290,6 @@ export default function AddGod({ navigation, route }) {
       );
     }
   };
-
- 
 
   return (
     <SafeArea>

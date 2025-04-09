@@ -27,6 +27,8 @@ import {
 import { debounce } from "lodash";
 import { useSelector } from "react-redux";
 import { useIsFocused } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const SocialJobs = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState("searchJobs");
   const [modalVisible, setModalVisible] = useState(false);
@@ -49,45 +51,97 @@ const SocialJobs = ({ navigation }) => {
     navigation.navigate("ViewJobPost", { jobId: job._id });
   };
 
+  // const deleteJob = async (jobId) => {
+  //   Alert.alert(
+  //     "Confirm Deletion", // Title
+  //     `Are you sure you want to delete the entry?`, // Message
+  //     [
+  //       {
+  //         text: "No", // No button
+  //         onPress: () => {
+  //           console.log("Deletion canceled.");
+  //         },
+  //         style: "cancel", // Makes it stand out as a cancel option
+  //       },
+  //       {
+  //         text: "Yes",
+  //         onPress: async () => {
+  //           const apiUrl = `${BASEAPIURL}/social/job/delete/${jobId}`; // Random API for demonstration
+
+  //           try {
+  //             const response = await fetch(apiUrl, {
+  //               method: "DELETE",
+  //               headers: {
+  //                 Authorization: `Bearer ${token}`,
+  //               },
+  //             });
+
+  //             if (response.ok) {
+  //               alert(`Job entry was deleted successfully.`);
+  //               setAllUserJobs((prevJobs) =>
+  //                 prevJobs.filter((job) => job._id !== jobId)
+  //               );
+  //             } else {
+  //               alert(`Failed to delete the entry. Status: ${response.status}`);
+  //               return false; // Indicate failure
+  //             }
+  //           } catch (error) {
+  //             alert(
+  //               `An error occurred while deleting the entry: ${error.message}`
+  //             );
+  //             return false; // Indicate failure
+  //           }
+  //         },
+  //       },
+  //     ],
+  //     { cancelable: false }
+  //   );
+  // };
   const deleteJob = async (jobId) => {
     Alert.alert(
-      "Confirm Deletion", // Title
-      `Are you sure you want to delete the entry?`, // Message
+      "Confirm Deletion",
+      `Are you sure you want to delete the entry?`,
       [
         {
-          text: "No", // No button
+          text: "No",
           onPress: () => {
             console.log("Deletion canceled.");
           },
-          style: "cancel", // Makes it stand out as a cancel option
+          style: "cancel",
         },
         {
           text: "Yes",
           onPress: async () => {
-            const apiUrl = `${BASEAPIURL}/social/job/delete/${jobId}`; // Random API for demonstration
-
             try {
-              const response = await fetch(apiUrl, {
-                method: "DELETE",
+              const token = await AsyncStorage.getItem("token");
+              if (!token) {
+                alert("You are not authorized. Please log in again.");
+                return;
+              }
+  
+              const apiUrl = `/social/job/delete/${jobId}`;
+              const response = await apiClient.delete(apiUrl, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
               });
-
-              if (response.ok) {
+  
+              if (response.status === 200) {
                 alert(`Job entry was deleted successfully.`);
                 setAllUserJobs((prevJobs) =>
                   prevJobs.filter((job) => job._id !== jobId)
                 );
               } else {
-                alert(`Failed to delete the entry. Status: ${response.status}`);
-                return false; // Indicate failure
+                alert(
+                  `Failed to delete the entry. Status: ${response.status}`
+                );
+                return false;
               }
             } catch (error) {
               alert(
                 `An error occurred while deleting the entry: ${error.message}`
               );
-              return false; // Indicate failure
+              return false;
             }
           },
         },
@@ -95,7 +149,7 @@ const SocialJobs = ({ navigation }) => {
       { cancelable: false }
     );
   };
-
+  
   const [appliedJobsPage, setAppliedJobsPage] = useState(1);
   const [allAppliedJobsLoaded, setAllAppliedJobsLoaded] = useState(false);
   const [allAppliedJobs, setAllAppliedJobs] = useState([]);
@@ -114,108 +168,237 @@ const SocialJobs = ({ navigation }) => {
  
 
   // Fetch Applied Jobs
-  const fetchAppliedJobs = async (query = "") => {
-    if (allAppliedJobsLoaded || loading) return;
-    setLoading(true);
-    console.log("inside all applied jobs", query, allAppliedJobsLoaded);
-    try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("response 1 of applied jobs", response)
+  // const fetchAppliedJobs = async (query = "") => {
+  //   if (allAppliedJobsLoaded || loading) return;
+  //   setLoading(true);
+  //   console.log("inside all applied jobs", query, allAppliedJobsLoaded);
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("response 1 of applied jobs", response)
 
 
-      console.log("applied jobs data", response);
-      if (response.ok) {
-        const data = await response.json();
-        if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
-        setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
-        setAppliedJobsPage((prevPage) => prevPage + 1);
-      } else {
-        throw new Error("Failed to fetch applied jobs");
+  //     console.log("applied jobs data", response);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
+  //       setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
+  //       setAppliedJobsPage((prevPage) => prevPage + 1);
+  //     } else {
+  //       throw new Error("Failed to fetch applied jobs");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching applied jobs:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+//   const fetchAppliedJobs = async (query = "") => {
+//   if (allAppliedJobsLoaded || loading) return;
+
+//   setLoading(true);
+//   console.log("Inside all applied jobs fetch:", query, allAppliedJobsLoaded);
+
+//   try {
+//     const token = await AsyncStorage.getItem("token");
+//     if (!token) throw new Error("Unauthorized");
+
+//     console.log("Token:", token);
+//     console.log("User ID:", userId);
+
+//     const response = await apiClient.get(
+//       `/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
+//       {
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+
+//     const data = response.data;
+//     console.log("Fetched applied jobs:", data);
+
+//     if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
+//     setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
+//     setAppliedJobsPage((prevPage) => prevPage + 1);
+//   } catch (error) {
+//     console.error("Error fetching applied jobs:", error.response?.data || error.message);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+
+const fetchAppliedJobs = async (query = "") => {
+  if (allAppliedJobsLoaded || loading) return;
+
+  query = typeof query === "string" ? query : "";
+  console.log("Inside all applied jobs fetch:", query);
+
+  setLoading(true);
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) throw new Error("Unauthorized");
+
+    console.log("Token:", token);
+    console.log("User ID:", userId);
+
+    const response = await apiClient.get(
+      `/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
-    } catch (error) {
-      console.error("Error fetching applied jobs:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    );
+
+    const data = response.data;
+    console.log("Fetched applied jobs:", data);
+
+    if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
+    setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
+    setAppliedJobsPage((prevPage) => prevPage + 1);
+  } catch (error) {
+    console.error("Error fetching applied jobs:", error.response?.data || error.message);
+  } finally {
+    setLoading(false);
+  }
+};
+
+  
 
   // Fetch All Jobs
+  // const fetchAllJobs = async (query = "") => {
+  //   console.log("in search ");
+  //   if (allJobsLoaded || loading) return;
+  //   setLoading(true);
+  //   console.log("in search ");
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/job/all?page=${allJobsPage}&limit=10&search=${query}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.jobs.length < 10) setAllJobsLoaded(true);
+  //       console.log("all jobs data", data.jobs);
+  //       const filteredJobs = data.jobs.filter(
+  //         (job) => job.createdBy !== userId
+  //       );
+
+  //       setAllJobs((prev) => [...prev, ...filteredJobs]);
+  //       console.log(data.jobs);
+  //       setAllJobsPage((prevPage) => prevPage + 1);
+  //     } else {
+  //       throw new Error("Failed to fetch all jobs");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching all jobs:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const fetchAllJobs = async (query = "") => {
-    console.log("in search ");
     if (allJobsLoaded || loading) return;
     setLoading(true);
-    console.log("in search ");
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/job/all?page=${allJobsPage}&limit=10&search=${query}`,
+      const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+  
+      const response = await apiClient.get(
+        `/social/job/all?page=${allJobsPage}&limit=10&search=${query}`,
         {
-          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.jobs.length < 10) setAllJobsLoaded(true);
-        console.log("all jobs data", data.jobs);
-        const filteredJobs = data.jobs.filter(
-          (job) => job.createdBy !== userId
-        );
-
-        setAllJobs((prev) => [...prev, ...filteredJobs]);
-        console.log(data.jobs);
-        setAllJobsPage((prevPage) => prevPage + 1);
-      } else {
-        throw new Error("Failed to fetch all jobs");
-      }
+  
+      const data = response.data;
+      if (data.jobs.length < 10) setAllJobsLoaded(true);
+  
+      const filteredJobs = data.jobs.filter((job) => job.createdBy !== userId);
+      setAllJobs((prev) => [...prev, ...filteredJobs]);
+      setAllJobsPage((prevPage) => prevPage + 1);
     } catch (error) {
       console.error("Error fetching all jobs:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
   // Fetch User Jobs
+  // const fetchJobsByUser = async (query = "") => {
+  //   if (allUserJobsLoaded || loading) return;
+  //   setLoading(true);
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/job/all/${userId}?page=${userJobsPage}&limit=10&search=${query}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       if (data.userJobs.length < 10) setAllUserJobsLoaded(true);
+  //       // console.log("your listing data",data.userJobs[4].applicants)
+  //       setAllUserJobs((prev) => [...prev, ...data.userJobs]);
+  //       setUserJobsPage((prevPage) => prevPage + 1);
+  //     } else {
+  //       throw new Error("Failed to fetch user jobs");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user jobs:", error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
   const fetchJobsByUser = async (query = "") => {
     if (allUserJobsLoaded || loading) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/job/all/${userId}?page=${userJobsPage}&limit=10&search=${query}`,
+      const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+  
+      const response = await apiClient.get(
+        `/social/job/all/${userId}?page=${userJobsPage}&limit=10&search=${query}`,
         {
-          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        if (data.userJobs.length < 10) setAllUserJobsLoaded(true);
-        // console.log("your listing data",data.userJobs[4].applicants)
-        setAllUserJobs((prev) => [...prev, ...data.userJobs]);
-        setUserJobsPage((prevPage) => prevPage + 1);
-      } else {
-        throw new Error("Failed to fetch user jobs");
-      }
+  
+      const data = response.data;
+      if (data.userJobs.length < 10) setAllUserJobsLoaded(true);
+      setAllUserJobs((prev) => [...prev, ...data.userJobs]);
+      setUserJobsPage((prevPage) => prevPage + 1);
     } catch (error) {
       console.error("Error fetching user jobs:", error);
     } finally {
       setLoading(false);
     }
   };
+  
 
 
   const debouncedFetchData = useCallback(

@@ -30,7 +30,8 @@ import { BASEIMGURL } from "../../infrastructure/constants";
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
 import { FlatList } from "react-native-gesture-handler";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -196,30 +197,66 @@ export default function EditUserEducationInfo({ navigation, route }) {
 
   const { loadingInBtn } = useSelector((state) => state.user);
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     let formData = new FormData();
+  //     formData.append("about", about);
+  //     formData.append("education", JSON.stringify(education));
+  //     formData.append("jobExperience", JSON.stringify(jobExperience));
+
+  //     await dispatch(setLoadingInBtn(true));
+
+  //     const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       const errorText = await response.text();
+  //       throw new Error(`Failed to update user: ${errorText}`);
+  //     }
+
+  //     alert("Information Updated Successfully");
+  //     fetchUserProfile();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //     alert(`Error: ${error.message}`);
+  //   }
+  // };
   const handleSubmit = async () => {
     try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
       let formData = new FormData();
       formData.append("about", about);
       formData.append("education", JSON.stringify(education));
       formData.append("jobExperience", JSON.stringify(jobExperience));
-
+  
       await dispatch(setLoadingInBtn(true));
-
-      const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
-        method: "PATCH",
+  
+      const response = await apiClient.patch("/user/update-follow-data", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        body: formData,
       });
-
+  
       await dispatch(setLoadingInBtn(false));
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to update user: ${errorText}`);
+  
+      if (response.status !== 200) {
+        throw new Error(`Failed to update user: ${response.statusText}`);
       }
-
+  
       alert("Information Updated Successfully");
       fetchUserProfile();
       navigation.goBack();
@@ -228,7 +265,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
       alert(`Error: ${error.message}`);
     }
   };
-
+  
   return (
     <SafeArea>
       <Provider>

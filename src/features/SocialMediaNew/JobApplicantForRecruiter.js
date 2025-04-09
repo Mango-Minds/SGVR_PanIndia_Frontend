@@ -28,7 +28,8 @@ import { useSelector } from "react-redux";
 import { Provider, RadioButton, ActivityIndicator } from "react-native-paper";
 import * as FileSystem from "expo-file-system";
 import { shareAsync } from "expo-sharing";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const JobApplicantForRecruiter = ({ route, navigation }) => {
   const { item, job } = route.params;
   const token = useSelector((state) => state.user.token);
@@ -44,43 +45,100 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
 
   // console.log(applicant);
 
+  // const changeApplicationStatus = async () => {
+  //   const statusData = {
+  //     status: applicationStatus,
+  //   };
+  //   try {
+  //     url = `${BASEAPIURL}/social/job/applicant/${jobId}/${applicantId}`;
+  //     const response = await fetch(url, {
+  //       method: "PUT",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(statusData),
+  //     });
+  //     const data = response.json();
+  //     if (response.ok) {
+  //       Alert.alert("Success", "Job Application updated successfully!");
+  //       navigation.goBack();
+  //     } else {
+  //       Alert.alert("Error", data.message || "Something went wrong.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Job update error:", error);
+  //   }
+  // };
+
+  // const followProfile = async () => {
+  //   try {
+  //     url = `${BASEAPIURL}/user/profile/${applicantId}`;
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     if (response.ok) {
+  //       setApplicantProfileData(data);
+  //     } else {
+  //       console.error("cannot get profile data", data.error);
+  //     }
+  //   } catch (error) {
+  //     console.error("Job application error:", error);
+  //   }
+  // };
+
   const changeApplicationStatus = async () => {
     const statusData = {
       status: applicationStatus,
     };
     try {
-      url = `${BASEAPIURL}/social/job/applicant/${jobId}/${applicantId}`;
-      const response = await fetch(url, {
-        method: "PUT",
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
+      const url = `/social/job/applicant/${jobId}/${applicantId}`;
+      const response = await apiClient.put(url, statusData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify(statusData),
       });
-      const data = response.json();
-      if (response.ok) {
+  
+      if (response.status === 200) {
         Alert.alert("Success", "Job Application updated successfully!");
         navigation.goBack();
       } else {
-        Alert.alert("Error", data.message || "Something went wrong.");
+        Alert.alert("Error", response?.data?.message || "Something went wrong.");
       }
     } catch (error) {
       console.error("Job update error:", error);
     }
   };
-
+  
   const followProfile = async () => {
     try {
-      url = `${BASEAPIURL}/user/profile/${applicantId}`;
-      const response = await fetch(url, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
+      const url = `/user/profile/${applicantId}`;
+      const response = await apiClient.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
-      if (response.ok) {
+  
+      const data = response.data;
+      if (response.status === 200) {
         setApplicantProfileData(data);
       } else {
         console.error("cannot get profile data", data.error);
@@ -89,6 +147,7 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
       console.error("Job application error:", error);
     }
   };
+  
 
   useEffect(() => {
     followProfile();

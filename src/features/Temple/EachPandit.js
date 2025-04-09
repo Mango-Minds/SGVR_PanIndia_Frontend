@@ -21,7 +21,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { BASEIMGURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;
 
@@ -37,24 +37,32 @@ const EachPandit = ({ route }) => {
   const [userData, setUserData] = useState({});
 
   //get user data
-  const getUserData = async () => {
-    const url = `${BASEAPIURL}/user/${pandit.owner}`;
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+  // const getUserData = async () => {
+  //   const url = `${BASEAPIURL}/user/${pandit.owner}`;
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
-      if (response.ok) {
-        const data = await response.json();
-        setUserData(data.user);
-      } else {
-        console.error("Failed to get user");
-      }
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUserData(data.user);
+  //     } else {
+  //       console.error("Failed to get user");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //   }
+  // };
+  const getUserData = async () => {
+    try {
+      const response = await apiClient.get(`/user/${pandit.owner}`);
+      setUserData(response.data.user);
     } catch (error) {
-      console.error("Error connecting to user:", error);
+      console.error("Failed to get user data:", error);
     }
   };
 

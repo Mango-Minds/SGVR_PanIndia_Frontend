@@ -34,7 +34,7 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -107,60 +107,112 @@ export default function EditMember({ route, navigation }) {
   });
   console.log("modified details", modifiedDetails);
 
+  // const handleUpdate = async () => {
+  //   await dispatch(setLoadingInBtn(true));
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     // Append modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== member[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+
+  //     // Append existing images without base URL
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("profileImage", {
+  //         uri: localUri,
+  //         name: filename,
+  //         type,
+  //       });
+  //     }
+  //     console.log("formdata--", formData);
+
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeinfo._id}/members/${member._id}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response--", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update member");
+  //     }
+
+  //     alert("member updated successfully");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating member:", error);
+  //   }
+  // };
+
   const handleUpdate = async () => {
     await dispatch(setLoadingInBtn(true));
-
+  
     try {
       const formData = new FormData();
-
+  
       // Append modified details
       Object.keys(modifiedDetails).forEach((key) => {
         if (modifiedDetails[key] !== member[key]) {
           formData.append(key, modifiedDetails[key]);
         }
       });
-
-      // Append existing images without base URL
+  
+      // Append selected image if available
       if (selectedImage && selectedImage.uri) {
         let localUri = selectedImage.uri;
         let filename = localUri.split("/").pop();
-
         let match = /\.(\w+)$/.exec(filename);
         let type = match ? `image/${match[1]}` : `image`;
-
+  
         formData.append("profileImage", {
           uri: localUri,
           name: filename,
           type,
         });
       }
+  
       console.log("formdata--", formData);
-
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeinfo._id}/members/${member._id}`,
+  
+      const response = await apiClient.put(
+        `/temple/${templeinfo._id}/members/${member._id}`,
+        formData,
         {
-          method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
         }
       );
+  
       await dispatch(setLoadingInBtn(false));
-
       console.log("response--", response);
-
-      if (!response.ok) {
+  
+      if (!response || response.status !== 200) {
         throw new Error("Failed to update member");
       }
-
-      alert("member updated successfully");
+  
+      alert("Member updated successfully");
       navigation.goBack();
     } catch (error) {
       console.error("Error updating member:", error);
     }
   };
-
   const CategoryData = ["gold", "silver", "diamond"];
   const ConditionData = ["old", "new"];
 

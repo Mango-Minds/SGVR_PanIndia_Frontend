@@ -8,6 +8,7 @@ import {
   Pressable,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { useSelector } from "react-redux";
@@ -19,7 +20,7 @@ import { useNavigation } from "@react-navigation/native";
 import Icon from "react-native-vector-icons/Ionicons";
 import UserImg from "../../assets/images/general/user.png";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { BASEIMGURL } from "../../infrastructure/constants";
 
@@ -37,27 +38,58 @@ const EachMember = ({ route }) => {
   console.log("decodedpayload:", decodedPayload);
 
   const [loadingAnimation, setLoadingAnimation] = useState(true);
-  const deleteProduct = async () => {
-    console.log(" delete product");
-  };
+  
+  // const deleteMember = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeinfo._id}/members/${member._id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("member deletion response", response);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete member");
+  //     }
 
+  //     Alert.alert(
+  //       "Success",
+  //       "Member deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting member:", error);
+  //   }
+  // };
   const deleteMember = async () => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeinfo._id}/members/${member._id}`,
+      const response = await apiClient.delete(
+        `/temple/${templeinfo._id}/members/${member._id}`,
         {
-          method: "DELETE",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
+  
       console.log("member deletion response", response);
-      if (!response.ok) {
+  
+      if (!response || response.status !== 200) {
         throw new Error("Failed to delete member");
       }
-
+  
       Alert.alert(
         "Success",
         "Member deleted successfully",

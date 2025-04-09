@@ -28,7 +28,8 @@ import { useQueryClient } from "react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const ChatHome = ({ navigation }) => {
   // get userdata for apis
   const token = useSelector((state) => state.user.token);
@@ -41,52 +42,96 @@ const ChatHome = ({ navigation }) => {
   const [userData, setUserData] = useState({});
   const [userRooms, setUserRooms] = useState([]);
 
+  // const fetchUser = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       setUserData(data);
+  //     } else {
+  //       throw new Error("Failed to fetch user");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //   } finally {
+  //   }
+  // };
+
+  // const fetchUserRooms = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/chat/rooms/`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setUserRooms(data);
+  //     } else {
+  //       throw new Error("Failed to fetch rooms");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching room:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
   const fetchUser = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.get(`/user/${userId}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        setUserData(data);
+  
+      if (response.status === 200) {
+        setUserData(response.data);
       } else {
         throw new Error("Failed to fetch user");
       }
     } catch (error) {
       console.error("Error fetching user:", error);
-    } finally {
+      Alert.alert("Error", "Unable to fetch user data.");
     }
   };
-
+  
   const fetchUserRooms = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.get("/chat/rooms/", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.ok) {
-        const data = await response.json();
-        setUserRooms(data);
+  
+      if (response.status === 200) {
+        setUserRooms(response.data);
       } else {
         throw new Error("Failed to fetch rooms");
       }
     } catch (error) {
       console.error("Error fetching room:", error);
+      Alert.alert("Error", "Unable to fetch chat rooms.");
     } finally {
       setLoadingAnimation(false);
     }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchUser();

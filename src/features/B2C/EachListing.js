@@ -15,6 +15,8 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { useSelector } from "react-redux";
 import { Row } from "../../styles/dashboard.styles";
 import Theme from "../../styles/theme";
@@ -38,9 +40,9 @@ import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
-
+import { fetchSingleProduct, deleteSingleProduct } from "./B2CAPI";
 import { Container } from "../../styles/common.styles";
-
+import { connectToChat } from "./B2CAPI";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;
 
@@ -63,73 +65,106 @@ const EachListing = ({ route }) => {
 
   const [productData, setProductData] = useState({});
 
-  const deleteProduct = async () => {
-    try {
-      // Make the DELETE request
-      const response = await fetch(`${BASEAPIURL}/listings/delete/${itemId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
 
-      if (!response.ok) {
-        const errorText = await response.text();
+  
+  
 
-        throw new Error(`Failed to delete product: ${errorText}`);
-      }
-
-      Alert.alert(
-        "Success",
-        "Product deleted successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              fetchProducts();
-              navigation.goBack();
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } catch (error) {
-      console.error("Error deleting product:", error);
-      Alert.alert(
-        "Error",
-        `Something went wrong: ${error.message}`,
-        [{ text: "OK" }],
-        { cancelable: false }
-      );
-    }
-  };
+  //co
+  // const deleteProduct = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     // Make the DELETE request using apiClient
+  //     const response = await apiClient.delete(`/listings/delete/${itemId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     Alert.alert(
+  //       "Success",
+  //       "Product deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             fetchProducts();
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting product:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       `Something went wrong: ${error.message}`,
+  //       [{ text: "OK" }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+  
+  // const fetchProduct = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     setLoadingAnimation(true);
+  
+  //     // Make the GET request using apiClient
+  //     const response = await apiClient.get(`/listings/${itemId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     setProductData(response.data.listing);
+  //   } catch (error) {
+  //     console.error("Error fetching product:", error);
+  //     Alert.alert("Error", "Failed to fetch product.");
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
 
   const fetchProduct = async () => {
-    try {
-      setLoadingAnimation(true);
-
-      const response = await fetch(`${BASEAPIURL}/listings/${itemId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+    setLoadingAnimation(true);
+    const data = await fetchSingleProduct(itemId);
+    if (data) {
+      setProductData(data);
+    }
+    setLoadingAnimation(false);
+  };
+  
+  const deleteProduct = async (id) => {
+    const success = await deleteSingleProduct(id);
+    if (success) {
+      Alert.alert("Success", "Product deleted successfully", [
+        {
+          text: "OK",
+          onPress: () => {
+            fetchProducts(); // if passed via props or can be removed if not needed
+            navigation.goBack();
+          },
         },
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch product: ${await response.text()}`);
-      }
-
-      const data = await response.json();
-      setProductData(data.listing);
-    } catch (error) {
-      console.error("Error fetching product:", error);
-    } finally {
-      setLoadingAnimation(false);
+      ]);
     }
   };
-
+  
+  
   useEffect(() => {
     if (isFocused) {
       fetchProduct();
@@ -178,203 +213,7 @@ const EachListing = ({ route }) => {
     })
   ).current;
 
-  // const renderContentBackground = (user) => {
-  //   console.log("Pd in content background: ", productData);
-  //   const url = productData?.address_link;
-  //   const [mapReady, setMapReady] = useState(false);
-  //   const [layout, setLayout] = useState({
-  //     width: Dimensions.get("window").width,
-  //     height: 200,
-  //   });
-  //   const [locationPermissionGranted, setLocationPermissionGranted] =
-  //     useState(false);
-  //   const requestLocationPermission = async () => {
-  //     const { status } = await Location.requestForegroundPermissionsAsync();
-  //     if (status !== "granted") {
-  //       Alert.alert(
-  //         "Permission Denied",
-  //         "Permission to access location was denied. The map feature may not work as expected."
-  //       );
-  //       setLocationPermissionGranted(false);
-  //       return false;
-  //     }
-  //     setLocationPermissionGranted(true);
-  //     return true;
-  //   };
-
-  //   const extractCoordinates = (url) => {
-  //     if (!url) return null;
-
-  //     const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
-  //     const match = url.match(regex);
-
-  //     if (match) {
-  //       const latitude = parseFloat(match[1]);
-  //       const longitude = parseFloat(match[2]);
-  //       const zoom = parseInt(match[3]);
-
-  //       let latitudeDelta, longitudeDelta;
-  //       switch (zoom) {
-  //         case 19:
-  //           latitudeDelta = 0.0001;
-  //           longitudeDelta = 0.0001;
-  //           break;
-  //         case 15:
-  //           latitudeDelta = 0.01;
-  //           longitudeDelta = 0.01;
-  //           break;
-  //         case 10:
-  //           latitudeDelta = 0.1;
-  //           longitudeDelta = 0.1;
-  //           break;
-  //         default:
-  //           latitudeDelta = 0.1;
-  //           longitudeDelta = 0.1;
-  //       }
-
-  //       return {
-  //         latitude,
-  //         longitude,
-  //         latitudeDelta,
-  //         longitudeDelta,
-  //       };
-  //     } else {
-  //       return null;
-  //     }
-  //   };
-
-  //   const coordinates = extractCoordinates(url);
-
-  //   useEffect(() => {
-  //     requestLocationPermission(); // Request location permissions on component mount
-  //   }, []);
-  //   console.log("coordinates: ", coordinates);
-  //   console.log("Layout: ", layout);
-  //   console.log("Map Ready: ", mapReady);
-  //   console.log("Location Granted: ", locationPermissionGranted);
-
-  //   useEffect(() => {
-  //     if (layout.width > 0 && layout.height > 0 && coordinates) {
-  //       setMapReady(true);
-  //     }
-  //   }, [layout, coordinates]);
-
-  //   return (
-  //     <View style={styles.scrollContainer}>
-  //       <RowBetween>
-  //         <Modal
-  //           transparent={true}
-  //           visible={isRepostModalVisible}
-  //           animationType="slide"
-  //           onRequestClose={closeRepostModal}
-  //         >
-  //           <TouchableWithoutFeedback onPress={closeRepostModal}>
-  //             <View style={styles.modalOverlay}>
-  //               <Animated.View
-  //                 style={[
-  //                   styles.modalContainer,
-  //                   { transform: [{ translateY: pan.y }] },
-  //                 ]}
-  //                 {...panResponder.panHandlers}
-  //               >
-  //                 <TouchableOpacity style={styles.modalOption}>
-  //                   <View style={styles.iconTextContainer}>
-  //                     <Text style={styles.modalText}>
-  //                       Product: {productData.name}
-  //                     </Text>
-  //                   </View>
-  //                 </TouchableOpacity>
-
-  //                 {/* Map Section */}
-  //                 <TouchableOpacity style={styles.mapModalOption}>
-  //                   <View
-  //                     style={styles.mapContainer}
-  //                     onLayout={(event) => {
-  //                       const { width, height } = event.nativeEvent.layout;
-  //                       if (width > 0 && height > 0) {
-  //                         setLayout({ width, height });
-  //                       }
-  //                     }}
-  //                   >
-  //                     {coordinates && mapReady && locationPermissionGranted ? (
-  //                       <MapView
-  //                         style={{ width: layout.width, height: layout.height }}
-  //                         provider={PROVIDER_GOOGLE}
-  //                         initialRegion={{
-  //                           latitude: coordinates.latitude,
-  //                           longitude: coordinates.longitude,
-  //                           latitudeDelta: coordinates.latitudeDelta,
-  //                           longitudeDelta: coordinates.longitudeDelta,
-  //                         }}
-  //                         showsUserLocation
-  //                         showsMyLocationButton
-  //                         scrollEnabled={true}
-  //                         zoomEnabled={true}
-  //                         rotateEnabled={true}
-  //                       >
-  //                         <Marker
-  //                           coordinate={{
-  //                             latitude: coordinates.latitude,
-  //                             longitude: coordinates.longitude,
-  //                           }}
-  //                         />
-  //                       </MapView>
-  //                     ) : (
-  //                       <View style={styles.noMapContainer}>
-  //                         <Text style={{ textAlign: "center", padding: 10 }}>
-  //                           {coordinates === null
-  //                             ? "Map preview not available."
-  //                             : "Location not available"}
-  //                         </Text>
-  //                         {url && (
-  //                           <TouchableOpacity
-  //                             onPress={() => Linking.openURL(url)}
-  //                           >
-  //                             <Text
-  //                               style={{ textAlign: "center", color: "blue" }}
-  //                             >
-  //                               Open in Google Maps
-  //                             </Text>
-  //                           </TouchableOpacity>
-  //                         )}
-  //                       </View>
-  //                     )}
-  //                   </View>
-  //                 </TouchableOpacity>
-
-  //                 {/* Address Section */}
-  //                 <View style={styles.locationText}>
-  //                   <View style={styles.iconTextContainer}>
-  //                     <Text style={styles.modalSubText}>
-  //                       {productData.address || "Address not available"}
-  //                     </Text>
-
-  //                     {url && (
-  //                       <Ionicons
-  //                         name="navigate"
-  //                         size={24}
-  //                         style={styles.navigateIcon}
-  //                         onPress={() => {
-  //                           Linking.openURL(url).catch((err) =>
-  //                             console.error(
-  //                               "Error opening location link: ",
-  //                               err
-  //                             )
-  //                           );
-  //                         }}
-  //                       />
-  //                     )}
-  //                   </View>
-  //                 </View>
-  //               </Animated.View>
-  //             </View>
-  //           </TouchableWithoutFeedback>
-  //         </Modal>
-  //       </RowBetween>
-  //     </View>
-  //   );
-  // };
-
+  
   const extractCoordinates = (url) => {
     if (!url) return null;
 
@@ -570,92 +409,90 @@ const EachListing = ({ route }) => {
 
   const businessId = productData?.createdBy;
 
-  const connectToChat = async (owner_id, business_id, item) => {
-    console.log("Owner id: ", owner_id);
-    console.log("Business id: ", business_id);
-    console.log("Item: ", item);
-    console.log("PD in connectToChat: ", productData);
-    if (owner_id === business_id) {
-      console.log("Chat room Cannot be created: same id");
-    } else {
-      try {
-        const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userIds: [owner_id, business_id] }),
-        });
-        console.log("Response: ", response);
-        console.log("Authorization: ", `Bearer ${token}`);
-        if (response.ok) {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            console.log("Room Details: ", roomData);
-            if (roomData && roomData.rooms && roomData.rooms.length > 0) {
-              const room = roomData.rooms[0];
-              console.log("Room: ", room);
-
-              const room_with_user = roomData?.rooms.filter((room) => {
-                console.log(
-                  "room?.participants[0].id:",
-                  room?.participants[0]?.id
-                );
-                console.log("business_id:", business_id);
-                return room?.participants[0]?.id === business_id;
-              })[0];
-
-              console.log("Room with user: ", room_with_user);
-              const initialMessage = `Hi, I have a query about this product:${item?.name}\n Price: Rs. ${item.price} \n\nCan you provide more details?`;
-              console.log("IM: ", initialMessage);
-
-              Alert.alert("OK", "Chat Room Created", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    console.log(
-                      "Navigating with Initial msg: ",
-                      initialMessage
-                    );
-                    navigation.navigate("ChatScreenNew", {
-                      user_auth_token: token,
-                      room: room_with_user,
-                      participant_name:
-                        room_with_user.participants[0].firstName +
-                        " " +
-                        room_with_user.participants[0].lastName,
-                      initialMessage, // Pass the message correctly
-                    });
-                  },
-                },
-              ]);
-            } else {
-              Alert.alert("No rooms found");
-            }
-          } else {
-            const errorData = await roomResponse.json();
-            console.error("Error Fetching Room Details:", errorData);
-            Alert.alert("Error Fetching Room Details");
-          }
-        } else {
-          const errorData = await response.json();
-          console.error("Error Creating Chat Room:", errorData);
-          Alert.alert("Error Creating Chat Room");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    }
-  };
-
+ 
+  
+  // const connectToChat = async (owner_id, business_id, item) => {
+  //   console.log("Owner id: ", owner_id);
+  //   console.log("Business id: ", business_id);
+  //   console.log("Item: ", item);
+  
+  //   if (owner_id === business_id) {
+  //     console.log("Chat room cannot be created: same ID");
+  //     return;
+  //   }
+  
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     console.log("PD in connectToChat: ", productData);
+  //     console.log("Authorization Header: ", `Bearer ${token}`);
+  
+  //     // Create chat room
+  //     const response = await apiClient.post(
+  //       "/chat/room/",
+  //       { userIds: [owner_id, business_id] },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  
+  //     console.log("Chat room creation response:", response);
+  
+  //     // Fetch chat rooms
+  //     const roomResponse = await apiClient.get("/chat/rooms/", {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (roomResponse.data && roomResponse.data.rooms.length > 0) {
+  //       const room_with_user = roomResponse.data.rooms.find(
+  //         (room) => room?.participants[0]?.id === business_id
+  //       );
+  
+  //       console.log("Room with user: ", room_with_user);
+  
+  //       if (!room_with_user) {
+  //         Alert.alert("Error", "No chat room found for this user.");
+  //         return;
+  //       }
+  
+  //       const initialMessage = `Hi, I have a query about this product: ${item?.name}\n Price: Rs. ${item.price} \n\nCan you provide more details?`;
+  
+  //       console.log("Initial Message: ", initialMessage);
+  
+  //       Alert.alert("OK", "Chat Room Created", [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             console.log("Navigating with Initial Message: ", initialMessage);
+  //             navigation.navigate("ChatScreenNew", {
+  //               user_auth_token: token,
+  //               room: room_with_user,
+  //               participant_name:
+  //                 `${room_with_user.participants[0].firstName} ${room_with_user.participants[0].lastName}`,
+  //               initialMessage,
+  //             });
+  //           },
+  //         },
+  //       ]);
+  //     } else {
+  //       Alert.alert("No rooms found");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to chat:", error);
+  //     Alert.alert("Error", "Something went wrong while creating the chat room.");
+  //   }
+  // };
+  
   return (
     <SafeAreaView
       style={{
@@ -849,8 +686,16 @@ const EachListing = ({ route }) => {
                     <Text style={styles.priceText}>Interested</Text>
                     <TouchableOpacity
                       style={styles.bookNowButton}
+                      // onPress={() => {
+                      //   connectToChat(loggedInUserId, businessId, productData);
+                      // }}
                       onPress={() => {
-                        connectToChat(loggedInUserId, businessId, productData);
+                        connectToChat({
+                          owner_id: loggedInUserId,
+                          business_id: businessId,
+                          productData,
+                          navigation,
+                        });
                       }}
                     >
                       <Text style={styles.bookNowButtonText}>

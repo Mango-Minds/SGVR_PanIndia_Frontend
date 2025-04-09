@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Theme from "../../styles/theme";
@@ -32,6 +34,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import SortMenu from "./SortMenu";
+import { fetchProducts } from "./B2CAPI";
 const { width } = Dimensions.get("window");
 const AllListingScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
@@ -140,78 +143,172 @@ const AllListingScreen = ({ route, navigation }) => {
     { label: "Price: Low to High", value: "low" },
   ];
 
-  const fetchProducts = async (
-    searchTerm,
-    selectedFiltersArray,
-    sortOption
-  ) => {
-    const queryParams = new URLSearchParams();
+  // const fetchProducts = async (
+  //   searchTerm,
+  //   selectedFiltersArray,
+  //   sortOption
+  // ) => {
+  //   const queryParams = new URLSearchParams();
 
-    selectedFiltersArray.forEach((filter) => {
-      if (filter["Filter name"] === "Category") {
-        filter.Options.forEach((option) =>
-          queryParams.append("category", option)
-        );
-      } else if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) =>
-          queryParams.append("condition", option)
-        );
-      } else if (filter["Filter name"] === "Price") {
-        filter.Options.forEach((option) => {
-          if (option.includes("Below")) {
-            const maxPrice = option.split(" ")[1];
-            queryParams.append("maxPrice", maxPrice);
-          } else if (option.includes("Above")) {
-            const minPrice = option.split(" ")[1];
-            queryParams.append("minPrice", minPrice);
-          } else {
-            const [minPrice, maxPrice] = option.split("-");
-            queryParams.append("minPrice", minPrice);
-            queryParams.append("maxPrice", maxPrice);
-          }
-        });
-      }
-    });
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Category") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("category", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Condition") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("condition", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Price") {
+  //       filter.Options.forEach((option) => {
+  //         if (option.includes("Below")) {
+  //           const maxPrice = option.split(" ")[1];
+  //           queryParams.append("maxPrice", maxPrice);
+  //         } else if (option.includes("Above")) {
+  //           const minPrice = option.split(" ")[1];
+  //           queryParams.append("minPrice", minPrice);
+  //         } else {
+  //           const [minPrice, maxPrice] = option.split("-");
+  //           queryParams.append("minPrice", minPrice);
+  //           queryParams.append("maxPrice", maxPrice);
+  //         }
+  //       });
+  //     }
+  //   });
 
-    if (searchTerm.trim() !== "") {
-      queryParams.append("search", searchTerm);
-    }
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
 
-    // Append sort option to query params
-    if (sortOption) {
-      queryParams.append("priceSort", sortOption);
-    }
+  //   // Append sort option to query params
+  //   if (sortOption) {
+  //     queryParams.append("priceSort", sortOption);
+  //   }
 
-    console.log("Sort option: ", sortOption);
-    const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/listings?${queryString}`;
+  //   console.log("Sort option: ", sortOption);
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/listings?${queryString}`;
 
-    console.log("Fetching products with URL:", url);
+  //   console.log("Fetching products with URL:", url);
 
-    try {
-      setLoadingAnimation(true);
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Data:", data);
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Data:", data);
 
-        setProducts(data.listings);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoadingAnimation(false);
-    }
+  //       setProducts(data.listings);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+  
+
+//co
+  // const fetchProducts = async (searchTerm, selectedFiltersArray = [], sortOption) => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token missing.");
+  //       return;
+  //     }
+  
+  //     const queryParams = new URLSearchParams();
+  
+  //     selectedFiltersArray.forEach((filter) => {
+  //       if (filter["Filter name"] === "Category") {
+  //         filter.Options.forEach((option) => queryParams.append("category", option));
+  //       } else if (filter["Filter name"] === "Condition") {
+  //         filter.Options.forEach((option) => queryParams.append("condition", option));
+  //       } else if (filter["Filter name"] === "Price") {
+  //         filter.Options.forEach((option) => {
+  //           if (option.includes("Below")) {
+  //             const maxPrice = option.split(" ")[1];
+  //             queryParams.append("maxPrice", maxPrice);
+  //           } else if (option.includes("Above")) {
+  //             const minPrice = option.split(" ")[1];
+  //             queryParams.append("minPrice", minPrice);
+  //           } else {
+  //             const [minPrice, maxPrice] = option.split("-");
+  //             queryParams.append("minPrice", minPrice);
+  //             queryParams.append("maxPrice", maxPrice);
+  //           }
+  //         });
+  //       }
+  //     });
+  
+  //     if (searchTerm.trim() !== "") {
+  //       queryParams.append("search", searchTerm);
+  //     }
+  
+  //     if (sortOption) {
+  //       queryParams.append("priceSort", sortOption);
+  //     }
+  
+  //     const queryString = queryParams.toString();
+  //     console.log("Fetching products with URL:", `/listings?${queryString}`);
+  
+  //     setLoadingAnimation(true);
+  
+  //     const response = await apiClient.get(`/listings?${queryString}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     console.log("Response:", response);
+  
+  //     if (response.data && response.status === 200) {
+  //       console.log("Data:", response.data);
+  //       setProducts(response.data.listings);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //     Alert.alert("Error", "Failed to fetch products.");
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  // const loadProducts = async () => {
+  //   setLoadingAnimation(true);
+  //   const data = await fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+  //   setProducts(data);
+  //   setLoadingAnimation(false);
+  // };
+  const loadProducts = async () => {
+    await fetchProducts(
+      searchTerm,
+      selectedFiltersArray,
+      selectedSortOption,
+      setProducts,
+      setLoadingAnimation
+    );
   };
+  
+  
+  useEffect(() => {
+    loadProducts();
+  }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
 
+  
+  
   useEffect(() => {
     console.log("inside useEffect");
     setMenuVisible(false);

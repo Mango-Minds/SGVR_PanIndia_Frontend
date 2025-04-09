@@ -21,7 +21,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import { useIsFocused } from "@react-navigation/native";
-
+import apiClient from "../../store/apiClient";
 const DetailsScreen = ({ route, navigation }) => {
   const { god, userType, templeinfo, godId, setGods } = route.params;
 
@@ -32,31 +32,48 @@ const DetailsScreen = ({ route, navigation }) => {
     templeinfo ? templeinfo.gods : []
   );
 
+  // const fetchTempleGods = async () => {
+  //   console.log("Temple id: ", templeinfo._id);
+  //   console.log("God id in details: ", godId);
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeinfo._id}/gods/${godId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch gods");
+  //     }
+  //     const data = await response.json();
+  //     console.log("gods response data", data);
+  //     setGodDetails(data);
+  //   } catch (error) {
+  //     console.error("Error fetching gods:", error);
+  //   }
+  // };
   const fetchTempleGods = async () => {
     console.log("Temple id: ", templeinfo._id);
     console.log("God id in details: ", godId);
+  
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeinfo._id}/gods/${godId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
+      const response = await apiClient.get(`/temple/${templeinfo._id}/gods/${godId}`);
+  
+      if (response.status === 200) {
+        console.log("Gods response data", response.data);
+        setGodDetails(response.data);
+      } else {
         throw new Error("Failed to fetch gods");
       }
-      const data = await response.json();
-      console.log("gods response data", data);
-      setGodDetails(data);
     } catch (error) {
       console.error("Error fetching gods:", error);
     }
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchTempleGods();
@@ -64,42 +81,64 @@ const DetailsScreen = ({ route, navigation }) => {
   }, [isFocused]);
   console.log("God details in detail page: ", godDetails);
 
+  // const deleteGod = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeinfo._id}/gods/${godId}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("God deletion response", response);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete god");
+  //     }
+  //     fetchTempleGods();
+
+  //     Alert.alert(
+  //       "Success",
+  //       "God deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting God:", error);
+  //   }
+  // };
   const deleteGod = async () => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeinfo._id}/gods/${godId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await apiClient.delete(`/temple/${templeinfo._id}/gods/${godId}`);
+  
       console.log("God deletion response", response);
-      if (!response.ok) {
-        throw new Error("Failed to delete god");
-      }
-      fetchTempleGods();
-
-      Alert.alert(
-        "Success",
-        "God deleted successfully",
-        [
+  
+      if (response.status === 200) {
+        fetchTempleGods();
+  
+        Alert.alert("Success", "God deleted successfully", [
           {
             text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
+            onPress: () => navigation.goBack(),
           },
-        ],
-        { cancelable: false }
-      );
+        ]);
+      } else {
+        throw new Error("Failed to delete god");
+      }
     } catch (error) {
       console.error("Error deleting God:", error);
     }
   };
- 
+  
   return (
     <SafeAreaView
       style={{

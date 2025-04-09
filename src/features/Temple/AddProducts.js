@@ -35,7 +35,8 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
-
+import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -112,7 +113,82 @@ export default function AddShopProduct({ navigation, route }) {
 
   const userType = decodedPayload.userType;
 
+  // const addProduct = async () => {
+  //   try {
+  //     const formData = new FormData();
+  //     formData.append("name", registerDetails.productName);
+  //     formData.append("price", parseFloat(registerDetails.productPrice));
+  //     formData.append("description", registerDetails.productDescription);
+  //     formData.append("quantity", parseInt(registerDetails.productQuantity));
+  //     formData.append("shop", shopId);
+
+  //     selectedImages.forEach((image, index) => {
+  //       formData.append("pictures", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+
+  //     console.log("formdata add product", formData);
+  //     await dispatch(setLoadingInBtn(true));
+
+  //     const response = await fetch(`${BASEAPIURL}/products`, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add product");
+  //     }
+
+  //     setRegisterDetails({
+  //       productName: "",
+  //       productPrice: "",
+
+  //       productDescription: "",
+
+  //       productQuantity: "",
+  //     });
+
+  //     const data = await response.json();
+  //     console.log("Added Product:", data);
+
+  //     // fetchData();
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Product Created successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error adding product:", error);
+
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to add jewelry product",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
   const addProduct = async () => {
+    let token = await AsyncStorage.getItem("token");
     try {
       const formData = new FormData();
       formData.append("name", registerDetails.productName);
@@ -120,7 +196,7 @@ export default function AddShopProduct({ navigation, route }) {
       formData.append("description", registerDetails.productDescription);
       formData.append("quantity", parseInt(registerDetails.productQuantity));
       formData.append("shop", shopId);
-
+  
       selectedImages.forEach((image, index) => {
         formData.append("pictures", {
           uri: image.uri,
@@ -128,40 +204,34 @@ export default function AddShopProduct({ navigation, route }) {
           type: "image/jpeg",
         });
       });
-
+  
       console.log("formdata add product", formData);
       await dispatch(setLoadingInBtn(true));
-
-      const response = await fetch(`${BASEAPIURL}/products`, {
-        method: "POST",
+  
+      const response = await apiClient.post("/products", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        body: formData,
       });
+  
       await dispatch(setLoadingInBtn(false));
-
       console.log("response", response);
-
-      if (!response.ok) {
+  
+      if (!response || (response.status !== 200 && response.status !== 201)) {
         throw new Error("Failed to add product");
       }
-
+  
       setRegisterDetails({
         productName: "",
         productPrice: "",
-
         productDescription: "",
-
         productQuantity: "",
       });
-
-      const data = await response.json();
+  
+      const data = response.data;
       console.log("Added Product:", data);
-
-      // fetchData();
-
+  
       Alert.alert(
         "Success",
         "Product Created successfully",
@@ -177,7 +247,7 @@ export default function AddShopProduct({ navigation, route }) {
       );
     } catch (error) {
       console.error("Error adding product:", error);
-
+  
       Alert.alert(
         "Error",
         "Failed to add jewelry product",
@@ -186,7 +256,6 @@ export default function AddShopProduct({ navigation, route }) {
       );
     }
   };
-
   const CategoryData = ["gold", "silver", "diamond"];
 
   return (

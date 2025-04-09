@@ -22,7 +22,8 @@ import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
 import Theme from "../../styles/theme";
-
+import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const statusOptions = [
   {
     title: "Accepted",
@@ -67,31 +68,51 @@ export default function TempleShops({ templeinfo }) {
   const fetchShops = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/templeShops`, {
-        method: "GET",
+  
+      // Get the latest token
+      let token = await AsyncStorage.getItem("token");
+  
+      if (!token) {
+        console.error("Bearer token not found");
+        throw new Error("Bearer token is missing");
+      }
+  
+      const response = await apiClient.get("/templeShops", {
         headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${token}`, // Ensure the token is included
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        setShops(data);
-        console.log("Shops Data: ", data);
-      //   const filteredShops = data.filter(shop => shop.temple._id === templeId);
-      //   console.log(" Filtered Shops Data: ", filteredShops);
-      // setShops(filteredShops);
-      } else {
-        throw new Error("Failed to fetch shops");
-      }
+  
+      console.log("Response Status:", response.status);
+      console.log("Response Data:", response.data);
+  
+      // ✅ Fix: Axios stores response in `response.data`
+      setShops(response.data);
+      
     } catch (error) {
       console.error("Error fetching shops:", error);
+  
+      // If the error is a 401 Unauthorized, attempt token refresh
+      if (error.response?.status === 401) {
+        console.error("Token expired, refreshing...");
+  
+        const refreshToken = await AsyncStorage.getItem("refresh_token");
+        const newTokens = await getUpdatedTokens(refreshToken);
+  
+        if (newTokens && newTokens.status === 0) {
+          await AsyncStorage.setItem("token", newTokens.accessToken);
+          await AsyncStorage.setItem("refresh_token", newTokens.refreshToken);
+  
+          return fetchShops(); // Retry fetching shops with the new token
+        } else {
+          console.error("Failed to refresh token");
+        }
+      }
     } finally {
       setLoadingAnimation(false);
     }
   };
+  
 
 
  
@@ -104,24 +125,49 @@ export default function TempleShops({ templeinfo }) {
   }, [isFocused]);
 
   const [shopData, setShopData] = useState([]);
+  // const handleShopStatus = async (shopId, status) => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/templeShops/status/${shopId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ status }),
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       setShops((prevShops) =>
+  //         prevShops.map((shop) =>
+  //           shop._id === shopId ? { ...shop, status: status } : shop
+  //         )
+  //       );
+  //     } else {
+  //       throw new Error("Failed to change shop's status");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error changing shop's status:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
   const handleShopStatus = async (shopId, status) => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(
-        `${BASEAPIURL}/templeShops/status/${shopId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status }),
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-
+  
+      const response = await apiClient.patch(`/templeShops/status/${shopId}`, {
+        status,
+      });
+  
+      if (response.status === 200) {
+        const data = response.data;
+  
         setShops((prevShops) =>
           prevShops.map((shop) =>
             shop._id === shopId ? { ...shop, status: status } : shop
@@ -136,7 +182,6 @@ export default function TempleShops({ templeinfo }) {
       setLoadingAnimation(false);
     }
   };
-
   const confirmStatusChange = (shop, newStatus) => {
     Alert.alert(
       "Confirm Status Change",

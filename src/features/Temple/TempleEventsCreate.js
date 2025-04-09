@@ -41,6 +41,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode } from "base-64";
 import { useRoute } from "@react-navigation/native";
 
+import apiClient from "../../store/apiClient";
 const TempleEventsCreate = ({ navigation }) => {
   const dispatch = useDispatch();
 
@@ -165,29 +166,124 @@ const TempleEventsCreate = ({ navigation }) => {
     setCalendarVisible(false); // Close the calendar when a date is selected
   };
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       return;
+  //     }
+  //     dispatch(setLoadingInBtn(true));
+
+  //     // const eventDate = selectedDate.toISOString().split("T")[0];
+  //     const eventDate = selectedDate
+  // ? `${selectedDate.getDate().toString().padStart(2, "0")}/${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}/${selectedDate.getFullYear()}`
+  // : "";
+
+  //     const eventTime = times.map((time) => formatTime(time));
+  //     // const formattedAvailability = availability.map((slot) =>
+  //     //   slot.map((time) => formatTime(time))
+  //     // );
+  //     const formattedAvailability = availability.map((slot) => ({
+  //       startTime: formatTime(slot[0]),
+  //       endTime: formatTime(slot[1]),
+        
+  //     }));
+      
+  //     // Construct the base event data object
+  //     let eventData = {
+  //       eventName,
+  //       eventDate,
+  //       eventDescription,
+  //       temple: templeId,
+  //       eventType,
+  //       eventDuration: parseInt(eventDuration),
+  //     };
+
+  //     // Conditionally add fields if the event is a "Pooja Event"
+  //     if (eventType === "normal") {
+  //       eventData = {
+  //         ...eventData,
+  //         eventTime,
+  //       };
+  //     }
+
+  //     if (eventType === "puja") {
+  //       eventData = {
+  //         ...eventData,
+  //         eventRequirements: poojaMaterials,
+  //         availableSlots: formattedAvailability,
+  //         instructions: poojaPractices,
+  //         pandits: poojaPandit,
+  //       };
+  //     }
+  //     console.log("sent event data", eventData);
+
+  //     const response = await fetch(`${BASEAPIURL}/templeEvents`, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify(eventData),
+  //     });
+  //     console.log("response", response);
+
+  //     dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add Event");
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("event date", eventDate);
+
+  //     console.log("Added Event:", data);
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Event Created successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error adding Event:", error);
+
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to add temple",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+
   const handleSubmit = async () => {
     try {
+      let token = await AsyncStorage.getItem("token");
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
       dispatch(setLoadingInBtn(true));
-
-      // const eventDate = selectedDate.toISOString().split("T")[0];
+  
       const eventDate = selectedDate
-  ? `${selectedDate.getDate().toString().padStart(2, "0")}/${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}/${selectedDate.getFullYear()}`
-  : "";
-
+        ? `${selectedDate.getDate().toString().padStart(2, "0")}/${(selectedDate.getMonth() + 1).toString().padStart(2, "0")}/${selectedDate.getFullYear()}`
+        : "";
+  
       const eventTime = times.map((time) => formatTime(time));
-      // const formattedAvailability = availability.map((slot) =>
-      //   slot.map((time) => formatTime(time))
-      // );
+  
       const formattedAvailability = availability.map((slot) => ({
         startTime: formatTime(slot[0]),
         endTime: formatTime(slot[1]),
-        
       }));
-      
+  
       // Construct the base event data object
       let eventData = {
         eventName,
@@ -197,7 +293,7 @@ const TempleEventsCreate = ({ navigation }) => {
         eventType,
         eventDuration: parseInt(eventDuration),
       };
-
+  
       // Conditionally add fields if the event is a "Pooja Event"
       if (eventType === "normal") {
         eventData = {
@@ -205,7 +301,7 @@ const TempleEventsCreate = ({ navigation }) => {
           eventTime,
         };
       }
-
+  
       if (eventType === "puja") {
         eventData = {
           ...eventData,
@@ -215,29 +311,26 @@ const TempleEventsCreate = ({ navigation }) => {
           pandits: poojaPandit,
         };
       }
+  
       console.log("sent event data", eventData);
-
-      const response = await fetch(`${BASEAPIURL}/templeEvents`, {
-        method: "POST",
+  
+      const response = await apiClient.post("/templeEvents", eventData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(eventData),
       });
-      console.log("response", response);
-
+  
       dispatch(setLoadingInBtn(false));
-
-      if (!response.ok) {
-        throw new Error("Failed to add Event");
+  
+      if (!response || (response.status !== 200 && response.status !== 201)) {
+        throw new Error("Failed to add event");
       }
-
-      const data = await response.json();
+  
+      const data = response.data;
       console.log("event date", eventDate);
-
       console.log("Added Event:", data);
-
+  
       Alert.alert(
         "Success",
         "Event Created successfully",
@@ -253,7 +346,7 @@ const TempleEventsCreate = ({ navigation }) => {
       );
     } catch (error) {
       console.error("Error adding Event:", error);
-
+  
       Alert.alert(
         "Error",
         "Failed to add temple",
@@ -262,8 +355,6 @@ const TempleEventsCreate = ({ navigation }) => {
       );
     }
   };
-
-
 
   return (
     <SafeArea>

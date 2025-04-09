@@ -36,7 +36,7 @@ import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 // import DateTimePicker from "@react-native-community/datetimepicker";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -92,18 +92,7 @@ export default function AddShops({ navigation }) {
 
   console.log(registerDetails, "registerDetails");
 
-  // const _pickDocument = async () => {
-  //   let result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  //     allowsEditing: true,
-  //     aspect: [4, 3],
-  //     quality: 1,
-  //     crop: true,
-  //   });
-  //   if (result.canceled === true) return;
-  //   console.log(result, "sel");
-  //   setSelectedImages((prev) => [...prev, result.assets[0]]);
-  // };
+ 
 
   const _pickDocument = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -130,80 +119,7 @@ export default function AddShops({ navigation }) {
 
   const userType = decodedPayload.userType;
 
-  // const addProduct = async () => {
-  //   try {
-  //     if (!token) {
-  //       console.error("Bearer token not found");
-  //       return;
-  //     }
-
-  //     const response = await fetch(`${BASEAPIURL}/jewelry-products/`, {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({
-  //         name: registerDetails.productName,
-  //         price: parseFloat(registerDetails.productPrice),
-  //         images: selectedImages.map((image) => image.uri),
-  //         category: registerDetails.productCategory,
-  //         description: registerDetails.productDescription,
-  //         condition: registerDetails.productCondition,
-  //         quantity: parseInt(registerDetails.productQuantity),
-  //         quality: registerDetails.productQuality,
-  //         weightPerProduct: parseFloat(registerDetails.productweight),
-  //         goldAvailable: registerDetails.goldAvailable,
-  //       }),
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to add product");
-  //     }
-
-  //     setRegisterDetails({
-  //       productName: "",
-  //       productPrice: "",
-  //       productCategory: "",
-  //       productDescription: "",
-  //       productCondition: "",
-  //       productQuantity: "",
-  //       productQuality: "",
-  //       productweight: "",
-  //       goldAvailable: "",
-  //     });
-
-  //     const data = await response.json();
-  //     console.log("Added Product:", data);
-
-  //     fetchData();
-
-  //     Alert.alert(
-  //       "Success",
-  //       "Product Created successfully",
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             fetchData();
-  //             navigation.goBack();
-  //           },
-  //         },
-  //       ],
-  //       { cancelable: false }
-  //     );
-  //   } catch (error) {
-  //     console.error("Error adding product:", error);
-
-  //     Alert.alert(
-  //       "Error",
-  //       "Failed to add jewelry product",
-  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
-  //       { cancelable: false }
-  //     );
-  //   }
-  // };
-
+ 
   const addProduct = async () => {
     try {
       if (!token) {
@@ -294,34 +210,7 @@ export default function AddShops({ navigation }) {
     }
   };
 
-  // const fetchData = async () => {
-  //   try {
-  //     console.log("Token: ", token);
-  //     if (!token) {
-  //       console.error("Bearer token not found");
-  //       return;
-  //     }
-
-  //     const response = await fetch(`${BASEAPIURL}/jewelry-products/`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       const errorMessage = await response.text();
-  //       throw new Error(`Failed to fetch products: ${errorMessage}`);
-  //     }
-
-  //     const data = await response.json();
-  //     console.log("Fetched Products:", data);
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   }
-  // };
-
+  
   const CategoryData = ["Sun Temple", "Golden Temple", "Meenakshi Temple"];
   const ConditionData = ["old", "new"];
   const [date, setDate] = useState(new Date());
@@ -473,132 +362,7 @@ export default function AddShops({ navigation }) {
                   });
                 }}
               />
-              {/* <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Event Type*"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={registerDetails.productPrice}
-                onChangeText={(text) =>
-                  setRegisterDetails({ ...registerDetails, productPrice: text })
-                }
-              />
-
-              <SelectDropdown
-                buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
-                buttonTextStyle={{
-                  textAlign: "left",
-                  color: "#9B9B9B",
-                  fontSize: 16,
-                }}
-                data={CategoryData}
-                defaultButtonText="Select Temple"
-                value={registerDetails.productCategory}
-                onSelect={(selectedItem) => {
-                  setRegisterDetails({
-                    ...registerDetails,
-                    productCategory: selectedItem,
-                  });
-                }}
-              />
-              
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Event Time*"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={registerDetails.productPrice}
-                onChangeText={(text) =>
-                  setRegisterDetails({ ...registerDetails, productPrice: text })
-                }
-              /> */}
-
-              {/* <SelectDropdown
-                buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
-                buttonTextStyle={{
-                  textAlign: "left",
-                  color: "#9B9B9B",
-                  fontSize: 16,
-                }}
-                data={ConditionData}
-                defaultButtonText="Select Condition"
-                value={registerDetails.productCondition}
-                onSelect={(selectedItem) => {
-                  setRegisterDetails({
-                    ...registerDetails,
-                    productCondition: selectedItem,
-                  });
-                }}
-              />
              
-
-              <LoginInputField
-                color
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Product Quantity*"
-                underlineColor="transparent"
-                keyboardType="numeric"
-                placeholderTextColor="#9B9B9B"
-                onChangeText={(text) =>
-                  setRegisterDetails({
-                    ...registerDetails,
-                    productQuantity: text,
-                  })
-                }
-                value={registerDetails.productQuantity}
-              />
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Product Quality*"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={registerDetails.productQuality}
-                onChangeText={(text) =>
-                  setRegisterDetails({
-                    ...registerDetails,
-                    productQuality: text,
-                  })
-                }
-              />
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Gold Available*"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={registerDetails.goldAvailable}
-                onChangeText={(text) =>
-                  setRegisterDetails({
-                    ...registerDetails,
-                    goldAvailable: text,
-                  })
-                }
-              />
-              <LoginInputField
-                selectionColor="#d4af37"
-                activeUnderlineColor="#d4af37"
-                style={styles.input}
-                placeholder="Weight (Each Product)*"
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                keyboardType="numeric"
-                value={registerDetails.productweight}
-                onChangeText={(text) =>
-                  setRegisterDetails({
-                    ...registerDetails,
-                    productweight: text,
-                  })
-                }
-              /> */}
 
               <FormButton onPress={addProduct}>
                 <Text

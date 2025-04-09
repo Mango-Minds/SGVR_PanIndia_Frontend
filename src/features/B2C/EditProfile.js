@@ -8,10 +8,13 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  Alert
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import {
   FormButton,
   FormSection,
@@ -28,7 +31,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
-
+import { updateUserProfile } from "./B2CAPI";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -124,44 +127,116 @@ export default function EditUserProfile({ navigation, route }) {
   const userType = useSelector((state) => state.user.user.userType);
   const heading = "Edit Profile";
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     let formData = new FormData();
+  //     formData.append("firstName", firstName);
+  //     formData.append("lastName", lastName);
+  //     formData.append("email", email);
+  //     formData.append("phone", phone);
+  //     formData.append("address", address);
+
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("image", { uri: localUri, name: filename, type });
+  //     }
+  //     await dispatch(setLoadingInBtn(true));
+  //     const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         "Content-Type": "multipart/form-data",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update user");
+  //     }
+  //     alert("Information Updated Successfully");
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //   }
+  // };
+
+  
+//co
+  // const handleSubmit = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     let formData = new FormData();
+  //     formData.append("firstName", firstName);
+  //     formData.append("lastName", lastName);
+  //     formData.append("email", email);
+  //     formData.append("phone", phone);
+  //     formData.append("address", address);
+  
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+  
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image/jpeg`;
+  
+  //       formData.append("image", { uri: localUri, name: filename, type });
+  //     }
+  
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     const fullUrl = `${BASEAPIURL}/user/update/${userId}`;
+  //     console.log("Hitting URL:", fullUrl); // 👈 Add this
+  
+  //     const response = await apiClient.patch(fullUrl, formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+  
+  //     await dispatch(setLoadingInBtn(false));
+  
+  //     console.log("API Response:", response.data);
+  
+  //     Alert.alert("Success", "Information Updated Successfully");
+  
+  //     fetchUser();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //     Alert.alert("Error", "Failed to update user information.");
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+  
   const handleSubmit = async () => {
-    try {
-      let formData = new FormData();
-      formData.append("firstName", firstName);
-      formData.append("lastName", lastName);
-      formData.append("email", email);
-      formData.append("phone", phone);
-      formData.append("address", address);
-
-      if (selectedImage && selectedImage.uri) {
-        let localUri = selectedImage.uri;
-        let filename = localUri.split("/").pop();
-
-        let match = /\.(\w+)$/.exec(filename);
-        let type = match ? `image/${match[1]}` : `image`;
-
-        formData.append("image", { uri: localUri, name: filename, type });
-      }
-      await dispatch(setLoadingInBtn(true));
-      const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-      await dispatch(setLoadingInBtn(false));
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
-      }
-      alert("Information Updated Successfully");
-      fetchUser();
-      navigation.goBack();
-    } catch (error) {
-      console.error("Error updating user:", error);
-    }
+    updateUserProfile({
+      firstName,
+      lastName,
+      email,
+      phone,
+      address,
+      selectedImage,
+      userId,
+      dispatch,
+      setLoadingInBtn, 
+      fetchUser,
+      navigation,
+    });
   };
 
   return (

@@ -22,6 +22,8 @@ import { SearchField } from "../../styles/common.styles";
 import SearchResults from "./SearchResults";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const MyNetwork = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("Sent");
   const [selectedFilter, setSelectedFilter] = useState("People");
@@ -30,155 +32,252 @@ const MyNetwork = ({ navigation }) => {
   const [sentRequests, setSentRequests] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // const fetchRequests = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/social/list-requests`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     setRequests(data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchRequests();
+  // }, []);
+
+  // const handleDeleteRequest = async (requestId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/update-request/${requestId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           status: "rejected",
+  //         }),
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       Alert.alert("Request rejected successfully.");
+  //       fetchRequests();
+  //     } else {
+  //       const responseText = await response.text();
+  //       console.error(
+  //         "Failed to reject request:",
+  //         response.status,
+  //         responseText
+  //       );
+  //       throw new Error("Failed to reject request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error rejecting request:", error);
+  //   }
+  // };
+  // const handleAcceptRequest = async (requestId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/update-request/${requestId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           status: "approved",
+  //         }),
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       Alert.alert("Request accepted successfully.");
+  //       fetchRequests();
+  //     } else {
+  //       const responseText = await response.text();
+  //       console.error(
+  //         "Failed to accept request:",
+  //         response.status,
+  //         responseText
+  //       );
+  //       throw new Error("Failed to accept request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error accepting request:", error);
+  //   }
+  // };
+
+  // const fetchSentRequests = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/social/sent-requests`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     setSentRequests(data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchSentRequests();
+  // }, []);
+
+  // const handleWithdrawRequest = async (toUserId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/cancel-request/${toUserId}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       Alert.alert("Your invitation to connect is withdrawn successfully");
+  //       fetchSentRequests();
+  //     } else {
+  //       const responseText = await response.text();
+  //       console.error(
+  //         "Failed to delete request:",
+  //         response.status,
+  //         responseText
+  //       );
+  //       throw new Error("Failed to delete request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting request:", error);
+  //   }
+  // };
+
   const fetchRequests = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/social/list-requests`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.get("/social/list-requests", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      setRequests(data);
+  
+      setRequests(response.data);
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching requests:", err);
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchRequests();
   }, []);
-
+  
   const handleDeleteRequest = async (requestId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/update-request/${requestId}`,
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.patch(
+        `/social/update-request/${requestId}`,
+        { status: "rejected" },
         {
-          method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            status: "rejected",
-          }),
         }
       );
-
-      if (response.ok) {
-        Alert.alert("Request rejected successfully.");
-        fetchRequests();
-      } else {
-        const responseText = await response.text();
-        console.error(
-          "Failed to reject request:",
-          response.status,
-          responseText
-        );
-        throw new Error("Failed to reject request");
-      }
+  
+      Alert.alert("Request rejected successfully.");
+      fetchRequests();
     } catch (error) {
       console.error("Error rejecting request:", error);
     }
   };
+  
   const handleAcceptRequest = async (requestId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/update-request/${requestId}`,
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.patch(
+        `/social/update-request/${requestId}`,
+        { status: "approved" },
         {
-          method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            status: "approved",
-          }),
         }
       );
-
-      if (response.ok) {
-        Alert.alert("Request accepted successfully.");
-        fetchRequests();
-      } else {
-        const responseText = await response.text();
-        console.error(
-          "Failed to accept request:",
-          response.status,
-          responseText
-        );
-        throw new Error("Failed to accept request");
-      }
+  
+      Alert.alert("Request accepted successfully.");
+      fetchRequests();
     } catch (error) {
       console.error("Error accepting request:", error);
     }
   };
-
+  
   const fetchSentRequests = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/social/sent-requests`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.get("/social/sent-requests", {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      setSentRequests(data);
+  
+      setSentRequests(response.data);
     } catch (err) {
-      console.log(err);
+      console.log("Error fetching sent requests:", err);
     } finally {
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchSentRequests();
   }, []);
-
+  
   const handleWithdrawRequest = async (toUserId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/cancel-request/${toUserId}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        Alert.alert("Your invitation to connect is withdrawn successfully");
-        fetchSentRequests();
-      } else {
-        const responseText = await response.text();
-        console.error(
-          "Failed to delete request:",
-          response.status,
-          responseText
-        );
-        throw new Error("Failed to delete request");
-      }
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.delete(`/social/cancel-request/${toUserId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+  
+      Alert.alert("Your invitation to connect is withdrawn successfully");
+      fetchSentRequests();
     } catch (error) {
-      console.error("Error deleting request:", error);
+      console.error("Error withdrawing request:", error);
     }
   };
-
   const renderItem = ({ item }) => {
     const isSentTab = selectedTab === "Sent";
 

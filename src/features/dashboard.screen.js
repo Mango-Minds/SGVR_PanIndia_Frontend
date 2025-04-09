@@ -299,7 +299,7 @@ export default function DashboardScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <TopHeader style={{ marginBottom: 24 }}>
-            <HeaderText>Mi Maratha</HeaderText>
+            <HeaderText>Me Maratha</HeaderText>
             <View
               style={{
                 flexDirection: "row",
@@ -556,7 +556,7 @@ export default function DashboardScreen({ navigation }) {
                       letterSpacing: 1,
                     }}
                   >
-                    Mi Maratha
+                    Me Maratha
                   </Text>
                 </View>
               </View>

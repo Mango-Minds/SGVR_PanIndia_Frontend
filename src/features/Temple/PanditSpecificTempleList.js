@@ -20,7 +20,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import Profile from "../../assets/images/B2b/profile.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
-
+import apiClient from "../../store/apiClient";
 import {
   TempleHomeCard,
   MatrimonyHomeCardSubTitle,
@@ -44,38 +44,60 @@ const PanditSpecificTempleList = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const isFocused = useIsFocused();
 
+  // const fetchPanditTemples = async () => {
+  //   const queryParams = new URLSearchParams();
+  //   queryParams.append("panditId", user.roleData._id);
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/temple?${queryString}`;
+
+  //   console.log("Fetching temples with URL:", url);
+  //   try {
+  //     setLoadingAnimation(true);
+
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Temples data :", data);
+
+  //       setPanditTemples(data);
+  //     } else {
+  //       throw new Error("Failed to fetch temples");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching temples:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
   const fetchPanditTemples = async () => {
     const queryParams = new URLSearchParams();
     queryParams.append("panditId", user.roleData._id);
     const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/temple?${queryString}`;
-
+  
+    const url = `/temple?${queryString}`; 
+  
     console.log("Fetching temples with URL:", url);
     try {
       setLoadingAnimation(true);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Temples data :", data);
-
-        setPanditTemples(data);
-      } else {
-        throw new Error("Failed to fetch temples");
-      }
+  
+      const response = await apiClient.get(url); 
+  
+      console.log("Temples data:", response.data);
+      setPanditTemples(response.data);
+      
     } catch (error) {
       console.error("Error fetching temples:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchPanditTemples();

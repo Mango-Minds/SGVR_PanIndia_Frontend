@@ -26,6 +26,14 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { SearchField } from "../../styles/common.styles";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import NewSocialCard from "./NewSocialCard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import {
+  fetchFollowStatusAPI,
+  fetchPostsAPI,
+  fetchProfileAPI,
+  sendFollowRequestAPI,
+  unfollowUserAPI } from "./SocialMediaAPIs"
 
 const Tab = createBottomTabNavigator();
 
@@ -52,162 +60,323 @@ export default function EachProfile() {
     setShowAllPosts((prev) => !prev);
   };
 
+  // useEffect(() => {
+  //   const fetchFollowStatus = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${BASEAPIURL}/social/check-follow-status/${userId}`,
+  //         {
+  //           method: "GET",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setIsFollowing(data.isFollowing);
+  //       } else {
+  //         console.error("Failed to fetch follow status");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching follow status:", error);
+  //     }
+  //   };
+
+  //   if (userId) {
+  //     fetchFollowStatus();
+  //   }
+  // }, [userId]);
+
+  // const fetchPosts = async () => {
+  //   if (allLoaded) return;
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/social/post/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //     const data = await response.json();
+  //     setUserPosts(data);
+  //   } catch (err) {
+  //     setError(err.message);
+  //   }
+  // };
+
+  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/send-request/${toUserId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("response of sending req", response);
+  //     if (response.ok) {
+  //       setIsFollowing(true);
+  //       Alert.alert("Success", "Connection request sent successfully.");
+  //     } else {
+  //       const data = await response.json();
+  //       if (data.message === "You are already following this user.") {
+  //         setIsFollowing(true);
+  //         Alert.alert(
+  //           "Already Following",
+  //           "You are already following this user."
+  //         );
+  //       } else if (
+  //         data.message === "Follow request already sent to this user."
+  //       ) {
+  //         Alert.alert(
+  //           "Request Already Sent",
+  //           "You have already sent a connection request to this user."
+  //         );
+  //       } else {
+  //         Alert.alert("Error", "Failed to send connection request.");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       "An error occurred while trying to send the follow request."
+  //     );
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchPosts();
+  // }, []);
+
+  // const fetchProfile = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/user/profile/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("profile data", data);
+  //     setProfile(data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // // unfollow a user
+  // const unFollowUser = async ({ fromUserId, userId }) => {
+  //   console.log(`removing ${profile.user._id}`);
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/unfollow/${fromUserId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setIsFollowing(false);
+  //       Alert.alert("Success", `${data.message}`);
+  //     } else {
+  //       Alert.alert("Error", "Failed to send unfollow request.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       "An error occurred while trying to send the follow request."
+  //     );
+  //   }
+  // };
+
+
+
+  //correct one
+  // useEffect(() => {
+  //   const fetchFollowStatus = async () => {
+  //     try {
+  //       console.log("userId: ", userId);
+  //       const token = await AsyncStorage.getItem("token");
+  //       const response = await apiClient.get(`/social/check-follow-status/${userId}`, {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       });
+  
+  //       if (response.status === 200) {
+  //         setIsFollowing(response.data.isFollowing);
+  //       } else {
+  //         console.error("Failed to fetch follow status");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching follow status:", error);
+  //     }
+  //   };
+  
+  //   if (userId) {
+  //     fetchFollowStatus();
+  //   }
+  // }, [userId]);
+  
+  // const fetchPosts = async () => {
+  //   if (allLoaded) return;
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     const response = await apiClient.get(`/social/post/user/${userId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (response.status === 200) {
+  //       setUserPosts(response.data);
+  //     } else {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //   }
+  // };
+  
+  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     const response = await apiClient.post(`/social/send-request/${toUserId}`, null, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     console.log("response of sending req", response);
+  
+  //     if (response.status === 200) {
+  //       setIsFollowing(true);
+  //       Alert.alert("Success", "Connection request sent successfully.");
+  //     } else {
+  //       const data = response.data;
+  //       if (data.message === "You are already following this user.") {
+  //         setIsFollowing(true);
+  //         Alert.alert("Already Following", "You are already following this user.");
+  //       } else if (data.message === "Follow request already sent to this user.") {
+  //         Alert.alert("Request Already Sent", "You have already sent a connection request to this user.");
+  //       } else {
+  //         Alert.alert("Error", "Failed to send connection request.");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //     Alert.alert("Error", "An error occurred while trying to send the follow request.");
+  //   }
+  // };
+  
+  // useEffect(() => {
+  //   fetchPosts();
+  // }, []);
+  
+  // const fetchProfile = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     const response = await apiClient.get(`/user/profile/${userId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (response.status !== 200) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  
+  //     console.log("profile data", response.data);
+  //     setProfile(response.data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+  
+  // // unfollow a user
+  // const unFollowUser = async ({ fromUserId, userId }) => {
+  //   console.log(`removing ${profile.user._id}`);
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     const response = await apiClient.patch(`/social/unfollow/${fromUserId}`, null, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     if (response.status === 200) {
+  //       setIsFollowing(false);
+  //       Alert.alert("Success", `${response.data.message}`);
+  //     } else {
+  //       Alert.alert("Error", "Failed to send unfollow request.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //     Alert.alert("Error", "An error occurred while trying to send the follow request.");
+  //   }
+  // };
+  
+  // useEffect(() => {
+  //   fetchProfile();
+  // }, []);
+
   useEffect(() => {
-    const fetchFollowStatus = async () => {
-      try {
-        const response = await fetch(
-          `${BASEAPIURL}/social/check-follow-status/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsFollowing(data.isFollowing);
-        } else {
-          console.error("Failed to fetch follow status");
-        }
-      } catch (error) {
-        console.error("Error fetching follow status:", error);
-      }
-    };
-
     if (userId) {
-      fetchFollowStatus();
+      fetchFollowStatusAPI(userId, setIsFollowing);
     }
   }, [userId]);
-
-  const fetchPosts = async () => {
-    if (allLoaded) return;
-    try {
-      const response = await fetch(`${BASEAPIURL}/social/post/user/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      setUserPosts(data);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const handleSendFollowRequest = async (fromUserId, toUserId) => {
-    try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/send-request/${toUserId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("response of sending req", response);
-      if (response.ok) {
-        setIsFollowing(true);
-        Alert.alert("Success", "Connection request sent successfully.");
-      } else {
-        const data = await response.json();
-        if (data.message === "You are already following this user.") {
-          setIsFollowing(true);
-          Alert.alert(
-            "Already Following",
-            "You are already following this user."
-          );
-        } else if (
-          data.message === "Follow request already sent to this user."
-        ) {
-          Alert.alert(
-            "Request Already Sent",
-            "You have already sent a connection request to this user."
-          );
-        } else {
-          Alert.alert("Error", "Failed to send connection request.");
-        }
-      }
-    } catch (error) {
-      console.error("Error connecting to user:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while trying to send the follow request."
-      );
-    }
-  };
 
   useEffect(() => {
     fetchPosts();
   }, []);
 
-  const fetchProfile = async () => {
-    try {
-      const response = await fetch(`${BASEAPIURL}/user/profile/${userId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      console.log("profile data", data);
-      setProfile(data);
-    } catch (err) {
-      console.log(err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // unfollow a user
-  const unFollowUser = async ({ fromUserId, userId }) => {
-    console.log(`removing ${profile.user._id}`);
-    try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/unfollow/${fromUserId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        setIsFollowing(false);
-        Alert.alert("Success", `${data.message}`);
-      } else {
-        Alert.alert("Error", "Failed to send unfollow request.");
-      }
-    } catch (error) {
-      console.error("Error connecting to user:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while trying to send the follow request."
-      );
-    }
-  };
-
   useEffect(() => {
     fetchProfile();
   }, []);
+
+  const fetchPosts = async () => {
+    if (allLoaded) return;
+    fetchPostsAPI(userId, setUserPosts);
+  };
+
+  const fetchProfile = async () => {
+    fetchProfileAPI(userId, setProfile, setLoading);
+  };
+
+  const handleSendFollowRequest = async (fromUserId, toUserId) => {
+    sendFollowRequestAPI(toUserId, setIsFollowing);
+  };
+
+  const unFollowUser = async ({ fromUserId, userId }) => {
+    unfollowUserAPI(fromUserId, setIsFollowing);
+  };
+
 
   const [isRequestSent, setIsRequestSent] = useState(false);
 
@@ -306,6 +475,7 @@ export default function EachProfile() {
   const educationData = profile?.followData?.education || [];
   const followersCount = profile?.followData?.followers?.length || 0;
   const jobExperienceData = profile?.followData?.jobExperience || [];
+
   return (
     <ScrollView style={styles.container}>
       {/* Header with Back Arrow, Search Bar, and Settings Icon */}

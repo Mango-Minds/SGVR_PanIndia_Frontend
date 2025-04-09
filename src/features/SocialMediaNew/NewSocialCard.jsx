@@ -30,7 +30,8 @@ import {
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
 import UserImg from "../../assets/images/general/user.png";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const windowWidth = Dimensions.get("window").width;
 
 const NewSocialCard = ({
@@ -85,96 +86,240 @@ const NewSocialCard = ({
 
   const [isRequestSent, setIsRequestSent] = useState(false);
 
+  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/send-request/${toUserId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //       console.log("response of sending req", response);
+  //     if (response.ok) {
+  //       setIsFollowing(true);
+  //       Alert.alert("Success", "Connection request sent successfully.");
+  //     } else {
+  //       const data = await response.json();
+  //       if (data.message === "You are already following this user.") {
+  //         setIsFollowing(true);
+  //         Alert.alert(
+  //           "Already Following",
+  //           "You are already following this user."
+  //         );
+  //       } else if (
+  //         data.message === "Follow request already sent to this user."
+  //       ) {
+  //         Alert.alert(
+  //           "Request Already Sent",
+  //           "You have already sent a connection request to this user."
+  //         );
+  //       } else {
+  //         Alert.alert("Error", "Failed to send connection request.");
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       "An error occurred while trying to send the follow request."
+  //     );
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   const fetchFollowStatus = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${BASEAPIURL}/social/check-follow-status/${userId}`,
+  //         {
+  //           method: "GET",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setIsFollowing(data.isFollowing);
+  //       } else {
+  //         console.error("Failed to fetch follow status");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching follow status:", error);
+  //     }
+  //   };
+
+  //   if (userId) {
+  //     fetchFollowStatus();
+  //   }
+  // }, [userId]);
+
+  // const handleDeletePost = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/post/delete/${post._id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete post");
+  //     }
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Post deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             fetchPosts();
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting product:", error);
+  //   }
+  // };
+
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
     try {
-      const response = await fetch(
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.post(
         `${BASEAPIURL}/social/send-request/${toUserId}`,
+        {}, // Empty body if not needed
         {
-          method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
-        console.log("response of sending req", response);
-      if (response.ok) {
+  
+      console.log("response of sending req", response);
+  
+      // Axios throws on non-2xx status, so if you're here, it's successful
+      if (response.status === 200) {
         setIsFollowing(true);
         Alert.alert("Success", "Connection request sent successfully.");
-      } else {
-        const data = await response.json();
-        if (data.message === "You are already following this user.") {
-          setIsFollowing(true);
-          Alert.alert(
-            "Already Following",
-            "You are already following this user."
-          );
-        } else if (
-          data.message === "Follow request already sent to this user."
-        ) {
-          Alert.alert(
-            "Request Already Sent",
-            "You have already sent a connection request to this user."
-          );
-        } else {
-          Alert.alert("Error", "Failed to send connection request.");
-        }
       }
     } catch (error) {
       console.error("Error connecting to user:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while trying to send the follow request."
-      );
+  
+      if (error.response) {
+        const message = error.response.data.message;
+        if (message === "You are already following this user.") {
+          setIsFollowing(true);
+          Alert.alert("Already Following", message);
+        } else if (message === "Follow request already sent to this user.") {
+          Alert.alert("Request Already Sent", message);
+        } else {
+          Alert.alert("Error", message || "Failed to send connection request.");
+        }
+      } else {
+        Alert.alert("Error", "An unexpected error occurred.");
+      }
     }
   };
-
+  
+  
   useEffect(() => {
     const fetchFollowStatus = async () => {
       try {
-        const response = await fetch(
+        const token = await AsyncStorage.getItem("token");
+        const response = await apiClient.get(
           `${BASEAPIURL}/social/check-follow-status/${userId}`,
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsFollowing(data.isFollowing);
+  
+        if (response.status === 200) {
+          setIsFollowing(response.data.isFollowing);
         } else {
           console.error("Failed to fetch follow status");
         }
       } catch (error) {
-        console.error("Error fetching follow status:", error);
+        console.error("Error fetching follow status:", error.message);
       }
     };
-
+  
     if (userId) {
       fetchFollowStatus();
     }
   }, [userId]);
-
+  
+  
+  // const handleDeletePost = async () => {
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  //     const response = await apiClient(
+  //       `${BASEAPIURL}/social/post/delete/${post._id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete post");
+  //     }
+  
+  //     Alert.alert(
+  //       "Success",
+  //       "Post deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             fetchPosts();
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting post:", error);
+  //   }
+  // };
+  
   const handleDeletePost = async () => {
     try {
-      const response = await fetch(
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.delete(
         `${BASEAPIURL}/social/post/delete/${post._id}`,
         {
-          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
+  
       if (!response.ok) {
-        throw new Error("Failed to delete post");
-      }
-
+              throw new Error("Failed to delete post");
+            }
       Alert.alert(
         "Success",
         "Post deleted successfully",
@@ -190,10 +335,16 @@ const NewSocialCard = ({
         { cancelable: false }
       );
     } catch (error) {
-      console.error("Error deleting product:", error);
+      console.error("Error deleting post:", error);
+  
+      if (error.response) {
+        Alert.alert("Error", error.response.data.message || "Failed to delete post.");
+      } else {
+        Alert.alert("Error", "Something went wrong.");
+      }
     }
   };
-
+  
   const toggleDescription = () => {
     setShowFullDescription(!showFullDescription);
   };
@@ -290,83 +441,227 @@ const NewSocialCard = ({
     pan.setValue({ x: 0, y: 0 });
   };
 
+  // useEffect(() => {
+  //   const fetchLikeStatus = async () => {
+  //     try {
+  //       const response = await fetch(
+  //         `${BASEAPIURL}/social/post/like-status/${post._id}`,
+  //         {
+  //           method: "GET",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         }
+  //       );
+
+  //       if (response.ok) {
+  //         const data = await response.json();
+  //         setIsLiked(data.isLiked);
+  //       } else {
+  //         const errorData = await response.json();
+  //         console.error("Error fetching like status:", errorData.message);
+  //       }
+  //     } catch (error) {
+  //       console.error("Error fetching like status:", error);
+  //     }
+  //   };
+
+  //   fetchLikeStatus();
+  // }, [post._id]);
+
+  // const toggleLike = async () => {
+  //   const url = `${BASEAPIURL}/social/post/${isLiked ? "unlike" : "like"}/${
+  //     post._id
+  //   }`;
+  //   const method = "POST";
+
+  //   try {
+  //     const response = await fetch(url, {
+  //       method,
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({
+  //         userId: fromUserId,
+  //         postId: post._id,
+  //       }),
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setLikeCount(data.likesCount);
+  //       setIsLiked(!isLiked);
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Error:", errorData.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error toggling like:", error);
+  //   }
+  // };
+
+  // const fetchComments = async () => {
+  //   setLoading(true);
+
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/post/comments/${post._id}/10`,
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setComments(data.comments);
+  //       console.log("Fetched comments data: ", data);
+  //     } else {
+  //       console.error("Failed to fetch comments:", response.status);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching comments:", error.message);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   fetchComments();
+  // }, [post._id]);
+
+  // const handleAddComment = async () => {
+  //   if (!newCommentText.trim()) {
+  //     alert("Comment cannot be empty.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/post/comment/${post._id}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ content: newCommentText }),
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setComments([data.comment, ...comments]);
+  //       setNewCommentText("");
+  //       fetchComments();
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Error adding comment:", errorData.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error adding comment:", error.message);
+  //   }
+  // };
+
+  // const handleDeleteComment = async (commentId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/post/comment/${post._id}/${commentId}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       setComments(data.comments);
+  //       fetchComments();
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Error deleting comment:", errorData.message);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting comment:", error.message);
+  //   }
+  // };
+
+
   useEffect(() => {
     const fetchLikeStatus = async () => {
       try {
-        const response = await fetch(
-          `${BASEAPIURL}/social/post/like-status/${post._id}`,
+        const token = await AsyncStorage.getItem("token");
+        const response = await apiClient.get(
+          `/social/post/like-status/${post._id}`,
           {
-            method: "GET",
             headers: {
-              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           }
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          setIsLiked(data.isLiked);
+  
+        if (response.status === 200) {
+          setIsLiked(response.data.isLiked);
         } else {
-          const errorData = await response.json();
-          console.error("Error fetching like status:", errorData.message);
+          console.error("Error fetching like status:", response.data.message);
         }
       } catch (error) {
         console.error("Error fetching like status:", error);
       }
     };
-
+  
     fetchLikeStatus();
   }, [post._id]);
-
+  
   const toggleLike = async () => {
-    const url = `${BASEAPIURL}/social/post/${isLiked ? "unlike" : "like"}/${
-      post._id
-    }`;
+    const token = await AsyncStorage.getItem("token");
+    const url = `/social/post/${isLiked ? "unlike" : "like"}/${post._id}`;
     const method = "POST";
-
+  
     try {
-      const response = await fetch(url, {
+      const response = await apiClient(url, {
         method,
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
+        data: {
           userId: fromUserId,
           postId: post._id,
-        }),
+        },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setLikeCount(data.likesCount);
+  
+      if (response.status === 200) {
+        setLikeCount(response.data.likesCount);
         setIsLiked(!isLiked);
       } else {
-        const errorData = await response.json();
-        console.error("Error:", errorData.message);
+        console.error("Error:", response.data.message);
       }
     } catch (error) {
       console.error("Error toggling like:", error);
     }
   };
-
+  
   const fetchComments = async () => {
     setLoading(true);
-
+  
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/post/comments/${post._id}/10`,
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.get(
+        `/social/post/comments/${post._id}/10`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments);
-        console.log("Fetched comments data: ", data);
+  
+      if (response.status === 200) {
+        setComments(response.data.comments);
+        console.log("Fetched comments data: ", response.data);
       } else {
         console.error("Failed to fetch comments:", response.status);
       }
@@ -376,69 +671,65 @@ const NewSocialCard = ({
       setLoading(false);
     }
   };
-
+  
   useEffect(() => {
     fetchComments();
   }, [post._id]);
-
+  
   const handleAddComment = async () => {
     if (!newCommentText.trim()) {
       alert("Comment cannot be empty.");
       return;
     }
-
+  
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/post/comment/${post._id}`,
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.post(
+        `/social/post/comment/${post._id}`,
+        { content: newCommentText },
         {
-          method: "POST",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ content: newCommentText }),
         }
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        setComments([data.comment, ...comments]);
+  
+      if (response.status >= 200 && response.status < 300) {
+        setComments([response.data.comment, ...comments]);
         setNewCommentText("");
         fetchComments();
       } else {
-        const errorData = await response.json();
-        console.error("Error adding comment:", errorData.message);
+        console.error("Error adding comment:", response.data.message);
       }
     } catch (error) {
       console.error("Error adding comment:", error.message);
     }
   };
-
+  
+  
   const handleDeleteComment = async (commentId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/social/post/comment/${post._id}/${commentId}`,
+      const token = await AsyncStorage.getItem("token");
+      const response = await apiClient.delete(
+        `/social/post/comment/${post._id}/${commentId}`,
         {
-          method: "DELETE",
           headers: {
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        setComments(data.comments);
+  
+      if (response.status === 200) {
+        setComments(response.data.comments);
         fetchComments();
       } else {
-        const errorData = await response.json();
-        console.error("Error deleting comment:", errorData.message);
+        console.error("Error deleting comment:", response.data.message);
       }
     } catch (error) {
       console.error("Error deleting comment:", error.message);
     }
   };
-
+  
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,

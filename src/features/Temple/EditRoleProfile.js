@@ -30,6 +30,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import { setLoadingInBtn } from "../../store/user";
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -137,85 +138,140 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
     fetchUserDetails();
   }, []);
 
+  // const handleSubmit = async () => {
+  //   try {
+  //     let apiUrl;
+  //     let fetchFunction;
+
+  //     if (userType === "templeShopOwner") {
+  //       apiUrl = `${BASEAPIURL}/templeShops/${shopId}`;
+  //       fetchFunction = fetchShops;
+  //     }
+
+  //     const requestBody = {};
+  //     if (userType === "templeShopOwner") {
+  //       if (shopName !== initialUserName) {
+  //         requestBody.name = shopName;
+  //       }
+
+  //       if (selectedImage && selectedImage.uri) {
+  //         requestBody.image = selectedImage.uri;
+  //       }
+  //       if (templeId) {
+  //         requestBody.temple = templeId;
+  //       }
+
+  //       if (loggedInShop?.owner?.id?._id) {
+  //         requestBody.owner = loggedInShop?.owner?.id?._id;
+  //       } else if (loggedInShop?.owner) {
+  //         requestBody.owner = loggedInShop.owner;
+  //       }
+  //     }
+
+  //     console.log("Request Body:", requestBody);
+
+  //     const formData = new FormData();
+  //     for (const key in requestBody) {
+  //       formData.append(key, requestBody[key]);
+  //     }
+
+  //     if (selectedImage) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("image", {
+  //         uri: localUri,
+  //         name: filename,
+  //         type,
+  //       });
+  //     }
+
+  //     await dispatch(setLoadingInBtn(true));
+  //     console.log("Form Data:", formData);
+
+  //     const response = await fetch(apiUrl, {
+  //       method: "PATCH",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update user");
+  //     }
+
+  //     Alert.alert("Information Updated Successfully");
+
+  //     if (fetchFunction) {
+  //       fetchFunction();
+  //     }
+
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating user:", error);
+  //   }
+  // };
   const handleSubmit = async () => {
     try {
-      let apiUrl;
-      let fetchFunction;
-
-      if (userType === "templeShopOwner") {
-        apiUrl = `${BASEAPIURL}/templeShops/${shopId}`;
-        fetchFunction = fetchShops;
+      if (userType !== "templeShopOwner") return; // Ensure function is valid for shop owners
+  
+      const apiUrl = `/templeShops/${shopId}`;
+  
+      // Construct request body
+      let requestBody = {};
+      if (shopName !== initialUserName) requestBody.name = shopName;
+      if (templeId) requestBody.temple = templeId;
+  
+      if (loggedInShop?.owner?.id?._id) {
+        requestBody.owner = loggedInShop?.owner?.id?._id;
+      } else if (loggedInShop?.owner) {
+        requestBody.owner = loggedInShop.owner;
       }
-
-      const requestBody = {};
-      if (userType === "templeShopOwner") {
-        if (shopName !== initialUserName) {
-          requestBody.name = shopName;
-        }
-
-        if (selectedImage && selectedImage.uri) {
-          requestBody.image = selectedImage.uri;
-        }
-        if (templeId) {
-          requestBody.temple = templeId;
-        }
-
-        if (loggedInShop?.owner?.id?._id) {
-          requestBody.owner = loggedInShop?.owner?.id?._id;
-        } else if (loggedInShop?.owner) {
-          requestBody.owner = loggedInShop.owner;
-        }
-      }
-
+  
       console.log("Request Body:", requestBody);
-
+  
+      // Construct FormData
       const formData = new FormData();
-      for (const key in requestBody) {
+      Object.keys(requestBody).forEach((key) => {
         formData.append(key, requestBody[key]);
-      }
-
-      if (selectedImage) {
+      });
+  
+      if (selectedImage && selectedImage.uri) {
         let localUri = selectedImage.uri;
         let filename = localUri.split("/").pop();
         let match = /\.(\w+)$/.exec(filename);
         let type = match ? `image/${match[1]}` : `image`;
-
-        formData.append("image", {
-          uri: localUri,
-          name: filename,
-          type,
-        });
+  
+        formData.append("image", { uri: localUri, name: filename, type });
       }
-
+  
       await dispatch(setLoadingInBtn(true));
+  
       console.log("Form Data:", formData);
-
-      const response = await fetch(apiUrl, {
-        method: "PATCH",
+  
+      await apiClient.patch(apiUrl, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
-        body: formData,
       });
-      await dispatch(setLoadingInBtn(false));
-
-      if (!response.ok) {
-        throw new Error("Failed to update user");
-      }
-
+  
+      dispatch(setLoadingInBtn(false));
+  
       Alert.alert("Information Updated Successfully");
-
-      if (fetchFunction) {
-        fetchFunction();
-      }
-
+  
+      fetchShops(); // Refresh shops data
       navigation.goBack();
     } catch (error) {
       console.error("Error updating user:", error);
+      dispatch(setLoadingInBtn(false));
     }
   };
-
   return (
     <SafeArea>
       <Provider>

@@ -21,7 +21,11 @@ import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "../../components/Jewellery/BottomNavigation";
 import Theme from "../../styles/theme";
 import SelectDropdown from "react-native-select-dropdown";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { fetchConnectionRequests,
+  acceptConnectionRequest,
+  rejectConnectionRequest,} from "./matrimonyAPIs";
 function MatrimonyNotifications({ navigation, route }) {
   const [selectedTab, setSelectedTab] = useState("Requests");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
@@ -82,38 +86,138 @@ const [sentRequests, setSentRequests] = useState([]);
 //   };
 
 
+
+//correct
+// const fetchRequest = async () => {
+//   console.log("userId in req: ", userId);
+//   const token = await AsyncStorage.getItem("token");
+
+//   try {
+//     setLoadingAnimation(true);
+//     const response = await apiClient.get(
+//       `${BASEAPIURL}/matrimony/connection/requests/${userId}`,
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+//     console.log("Request List", response);
+
+//     const data = response.data;
+//     console.log("Req data: ", data);
+
+//     setReceivedRequests(data.receivedRequests || []);
+//     setSentRequests(data.sentRequests || []);
+//   } catch (error) {
+//     console.error("Error fetching requests:", error);
+//   } finally {
+//     setLoadingAnimation(false);
+//   }
+// };
+
+// const handleAcceptRequest = async (requestId) => {
+//   const token = await AsyncStorage.getItem("token");
+
+//   try {
+//     console.log("req id: ", requestId);
+//     const response = await apiClient.post(
+//       `${BASEAPIURL}/matrimony/connection/accept-request/${requestId}`,
+//       { action: "accepted" },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+
+//     if (response.status === 200) {
+//       Alert.alert("Request Accept Successfully.");
+//       removeAcceptedRequest(requestId, setReceivedRequests);
+//     } else {
+//       console.error("Failed to accept request:", response.data);
+//       throw new Error("Failed to accept request");
+//     }
+//   } catch (error) {
+//     console.error("Error accepting request:", error);
+//   }
+// };
+
+// const handleDeleteRequest = async (requestId) => {
+//   const token = await AsyncStorage.getItem("token");
+
+//   try {
+//     const response = await apiClient.post(
+//       `${BASEAPIURL}/matrimony/connection/reject-request/${requestId}`,
+//       { action: "rejected" },
+//       {
+//         headers: {
+//           "Content-Type": "application/json",
+//           Authorization: `Bearer ${token}`,
+//         },
+//       }
+//     );
+
+//     if (response.status === 200) {
+//       Alert.alert("Request Deleted Successfully.");
+//       fetchRequest();
+//     } else {
+//       console.error("Failed to delete request:", response.data);
+//       throw new Error("Failed to delete request");
+//     }
+//   } catch (error) {
+//     console.error("Error deleting request:", error);
+//   }
+// };
 const fetchRequest = async () => {
-    console.log("userId in req: ", userId);
-    try {
-      setLoadingAnimation(true);
-      const response = await fetch(
-        `${BASEAPIURL}/matrimony/connection/requests/${userId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("Request List", response);
-  
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Req data: ", data);
-  
-        // Set the received and sent requests in state
-        setReceivedRequests(data.receivedRequests || []);
-        setSentRequests(data.sentRequests || []);
-      } else {
-        throw new Error("Failed to fetch requests");
-      }
-    } catch (error) {
-      console.error("Error fetching requests:", error);
-    } finally {
-      setLoadingAnimation(false);
+  console.log("userId in req: ", userId);
+
+  try {
+    setLoadingAnimation(true);
+    const data = await fetchConnectionRequests(userId);
+    console.log("Req data: ", data);
+
+    setReceivedRequests(data.receivedRequests || []);
+    setSentRequests(data.sentRequests || []);
+  } catch (error) {
+    console.error("Error fetching requests:", error);
+  } finally {
+    setLoadingAnimation(false);
+  }
+};
+const handleAcceptRequest = async (requestId) => {
+  try {
+    console.log("req id: ", requestId);
+    const response = await acceptConnectionRequest(requestId);
+
+    if (response.status === 200) {
+      Alert.alert("Request Accepted Successfully.");
+      removeAcceptedRequest(requestId, setReceivedRequests);
+    } else {
+      throw new Error("Failed to accept request");
     }
-  };
+  } catch (error) {
+    console.error("Error accepting request:", error);
+  }
+};
+const handleDeleteRequest = async (requestId) => {
+  try {
+    const response = await rejectConnectionRequest(requestId);
+
+    if (response.status === 200) {
+      Alert.alert("Request Deleted Successfully.");
+      fetchRequest();
+    } else {
+      throw new Error("Failed to delete request");
+    }
+  } catch (error) {
+    console.error("Error deleting request:", error);
+  }
+};
+
+
   
   console.log("rec req: ", receivedRequests);
   console.log("sent req: ", sentRequests);
@@ -125,59 +229,59 @@ const fetchRequest = async () => {
   };
 
   
-  const handleAcceptRequest = async (requestId) => {
-    try {
-      console.log("req id: ", requestId);
-      const response = await fetch(
-        `${BASEAPIURL}/matrimony/connection/accept-request/${requestId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "accepted" }),
-        }
-      );
-      const responseData = await response.json();
+  // const handleAcceptRequest = async (requestId) => {
+  //   try {
+  //     console.log("req id: ", requestId);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/matrimony/connection/accept-request/${requestId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ action: "accepted" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
 
-      if (response.ok) {
-        Alert.alert("Request Accept Successfully.");
-        removeAcceptedRequest(requestId, setReceivedRequests);
-      } else {
-        console.error("Failed to accept request:", responseData);
-        throw new Error("Failed to accept request");
-      }
-    } catch (error) {
-      console.error("Error accepting request:", error);
-    }
-  };
-  const handleDeleteRequest = async (requestId) => {
-    try {
-      const response = await fetch(
-        `${BASEAPIURL}/matrimony/connection/reject-request/${requestId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "rejected" }),
-        }
-      );
-      const responseData = await response.json();
+  //     if (response.ok) {
+  //       Alert.alert("Request Accept Successfully.");
+  //       removeAcceptedRequest(requestId, setReceivedRequests);
+  //     } else {
+  //       console.error("Failed to accept request:", responseData);
+  //       throw new Error("Failed to accept request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error accepting request:", error);
+  //   }
+  // };
+  // const handleDeleteRequest = async (requestId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/matrimony/connection/reject-request/${requestId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ action: "rejected" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
 
-      if (response.ok) {
-        Alert.alert("Request Deleted Successfully.");
-        fetchRequest();
-      } else {
-        console.error("Failed to delete request:", responseData);
-        throw new Error("Failed to delete request");
-      }
-    } catch (error) {
-      console.error("Error deleting request:", error);
-    }
-  };
+  //     if (response.ok) {
+  //       Alert.alert("Request Deleted Successfully.");
+  //       fetchRequest();
+  //     } else {
+  //       console.error("Failed to delete request:", responseData);
+  //       throw new Error("Failed to delete request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting request:", error);
+  //   }
+  // };
 
 
 

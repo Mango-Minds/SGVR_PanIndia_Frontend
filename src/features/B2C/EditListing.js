@@ -9,8 +9,11 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
+  Alert
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import {
   FormButton,
   FormSection,
@@ -22,6 +25,7 @@ import {
 import { SafeArea } from "../../components/utility/safe-area.component";
 import SelectDropdown from "react-native-select-dropdown";
 import { useDispatch } from "react-redux";
+import { updateListing } from "./B2CAPI";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
 
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -103,23 +107,7 @@ export default function EditListing({ route, navigation }) {
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
 
-  // const _pickDocument = async () => {
-  //   let result = await ImagePicker.launchImageLibraryAsync({
-  //     mediaTypes: ImagePicker.MediaTypeOptions.All,
-  //     allowsEditing: true,
-  //     aspect: [4, 3],
-  //     quality: 1,
-  //   });
-
-  //   if (result.canceled) return;
-
-  //   const media = result.assets[0];
-  //   if (media.type === "image") {
-  //     setUploadedImages((prev) => [...prev, media]);
-  //   } else if (media.type === "video") {
-  //     setUploadedVideos((prev) => [...prev, media]);
-  //   }
-  // };
+ 
 
   const _pickDocument = async () => {
     let result = await DocumentPicker.getDocumentAsync({
@@ -174,89 +162,113 @@ export default function EditListing({ route, navigation }) {
   });
   console.log("modified details", modifiedDetails);
 
-  const handleUpdate = async () => {
-    await dispatch(setLoadingInBtn(true));
-
-    console.log(productId);
-
-    try {
-      const formData = new FormData();
-
-      // Append modified details
-      Object.keys(modifiedDetails).forEach((key) => {
-        if (modifiedDetails[key] !== listing[key]) {
-          formData.append(key, modifiedDetails[key]);
-        }
-      });
-
-      selectedImages.forEach((image) => {
-        formData.append("images", image);
-      });
-      
-
-      // Append newly uploaded images
-      uploadedImages.forEach((image, index) => {
-        formData.append("images", {
-          uri: image.uri,
-          name: `image_${index}.jpg`,
-          type: "image/jpeg",
-        });
-      });
-      selectedVideos.forEach((video) => {
-        
-          formData.append("videos", video);
-        
-      });
-
-      // uploadedVideos.forEach((video, index) => {
-      //   formData.append("videos", {
-      //     uri: video.uri,
-      //     name: `video_${index}.mp4`,
-      //     type: "video/mp4",
-      //   });
-      // });
-      uploadedVideos.forEach((video, index) => {
-        if (!video.uri) {
-          console.error(`Video at index ${index} has an invalid URI:`, video);
-          return;
-        }
-        formData.append("videos", {
-          uri: video.uri,
-          name: video.name || `video_${index}.mp4`,
-          type: video.type || "video/mp4",
-        });
-      });
-
-      console.log("formdata--", formData);
-
-      const response = await fetch(
-        `${BASEAPIURL}/listings/edit/${listing._id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-      await dispatch(setLoadingInBtn(false));
-
-      console.log("response data--", response);
-      const responseText = await response.text();
-      console.log("API Response:", responseText);
-
-      if (!response.ok) {
-        throw new Error("Failed to update listing");
-      }
-
-      alert("listing updated successfully");
-      fetchProduct();
-      navigation.goBack();
-    } catch (error) {
-      console.error("Error updating product:", error);
-    }
+ 
+  
+  
+  // const handleUpdate = async () => {
+  //   try {
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       await dispatch(setLoadingInBtn(false));
+  //       return;
+  //     }
+  
+  //     console.log("Product ID:", productId);
+  
+  //     const formData = new FormData();
+  
+  //     // Append modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== listing[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+  
+  //     // Append existing images
+  //     selectedImages.forEach((image, index) => {
+  //       formData.append("images", {
+  //         uri: image.uri,
+  //         name: `selected_image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+  
+  //     // Append newly uploaded images
+  //     uploadedImages.forEach((image, index) => {
+  //       formData.append("images", {
+  //         uri: image.uri,
+  //         name: `uploaded_image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+  
+  //     // Append selected videos
+  //     selectedVideos.forEach((video, index) => {
+  //       formData.append("videos", {
+  //         uri: video.uri,
+  //         name: `selected_video_${index}.mp4`,
+  //         type: "video/mp4",
+  //       });
+  //     });
+  
+  //     // Append newly uploaded videos
+  //     uploadedVideos.forEach((video, index) => {
+  //       if (!video.uri) {
+  //         console.error(`Video at index ${index} has an invalid URI:`, video);
+  //         return;
+  //       }
+  //       formData.append("videos", {
+  //         uri: video.uri,
+  //         name: video.name || `uploaded_video_${index}.mp4`,
+  //         type: video.type || "video/mp4",
+  //       });
+  //     });
+  
+  //     console.log("Final FormData:", formData);
+  
+  //     // Use apiClient for better error handling
+  //     const response = await apiClient.put(`/listings/edit/${listing._id}`, formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+  
+  //     await dispatch(setLoadingInBtn(false));
+  
+  //     console.log("API Response:", response.data);
+  
+  //     Alert.alert("Success", "Listing updated successfully");
+  
+  //     fetchProduct();
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating product:", error);
+  //     Alert.alert("Error", "Failed to update listing.");
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+  
+  const handleUpdate = () => {
+    updateListing({
+      listing,
+      modifiedDetails,
+      selectedImages,
+      uploadedImages,
+      selectedVideos,
+      uploadedVideos,
+      productId,
+      fetchProduct,
+      navigation,
+      dispatch,
+    });
   };
-
+  
   const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
   const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
   const SubCategoryData = [

@@ -22,7 +22,7 @@ import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "../../components/Jewellery/BottomNavigation";
 import TempleShops from "./TempleShops";
 import SelectDropdown from "react-native-select-dropdown";
-
+import apiClient from "../../store/apiClient";
 function TempleNotifications({ navigation, route }) {
   const [selectedTab, setSelectedTab] = useState("Requests");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
@@ -159,38 +159,53 @@ function TempleNotifications({ navigation, route }) {
   //     Alert.alert("Request Deleted Successfully.");
   //   };
 
+  // const fetchPanditToTempleRequest = async () => {
+  //   console.log("templeid in req: ", templeId);
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/panditToTempleReqList/${templeId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("PanditToTempleRequest List", response);
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       // setPandits(data);
+  //       setPandits(data.requests || []);
+
+  //       console.log("PanditToTemple Req data: ", data);
+  //     } else {
+  //       throw new Error("Failed to fetch requests");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching requests:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
   const fetchPanditToTempleRequest = async () => {
-    console.log("templeid in req: ", templeId);
+    console.log("Temple ID in request:", templeId);
     try {
       setLoadingAnimation(true);
-      const response = await fetch(
-        `${BASEAPIURL}/panditToTempleReqList/${templeId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("PanditToTempleRequest List", response);
-
-      if (response.ok) {
-        const data = await response.json();
-        // setPandits(data);
-        setPandits(data.requests || []);
-
-        console.log("PanditToTemple Req data: ", data);
-      } else {
-        throw new Error("Failed to fetch requests");
-      }
+  
+      const response = await apiClient.get(`/panditToTempleReqList/${templeId}`);
+      console.log("PanditToTempleRequest List", response.data);
+  
+      setPandits(response.data.requests || []);
     } catch (error) {
-      console.error("Error fetching requests:", error);
+      console.error("Error fetching PanditToTemple requests:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
   console.log("pandits: ", pandits);
   const removeAcceptedRequest = (requestId, setStateFunc) => {
     setStateFunc((prevRequests) =>
@@ -198,145 +213,237 @@ function TempleNotifications({ navigation, route }) {
     );
   };
 
+  // const handleAcceptRequest = async (requestId) => {
+  //   try {
+  //     console.log("T req id: ", requestId);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ action: "accept" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
+
+  //     if (response.ok) {
+  //       Alert.alert("Request Accept Successfully.");
+  //       removeAcceptedRequest(requestId, setPandits);
+  //     } else {
+  //       console.error("Failed to accept request:", responseData);
+  //       throw new Error("Failed to accept request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error accepting request:", error);
+  //   }
+  // };
+  // const handleDeleteRequest = async (requestId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ action: "delete" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
+
+  //     if (response.ok) {
+  //       Alert.alert("Request Deleted Successfully.");
+  //       fetchPanditToTempleRequest();
+  //     } else {
+  //       console.error("Failed to delete request:", responseData);
+  //       throw new Error("Failed to delete request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting request:", error);
+  //   }
+  // };
+
+  // const fetchShopToTempleRequest = async () => {
+  //   console.log("templeid in req: ", templeId);
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/templeConnections/requests/${templeId}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("ShopToTempleRequest List", response);
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       setShops(data);
+
+  //       console.log("ShopToTemple Req data: ", data);
+  //     } else {
+  //       throw new Error("Failed to fetch ShopToTemple requests");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching ShopToTemple requests:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+ 
   const handleAcceptRequest = async (requestId) => {
     try {
       console.log("T req id: ", requestId);
-      const response = await fetch(
-        `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "accept" }),
-        }
-      );
-      const responseData = await response.json();
-
-      if (response.ok) {
-        Alert.alert("Request Accept Successfully.");
+  
+      const response = await apiClient.post(`/panditToTempleRequest/${requestId}`, {
+        action: "accept",
+      });
+  
+      if (response.status === 200) {
+        Alert.alert("Request Accepted Successfully.");
         removeAcceptedRequest(requestId, setPandits);
       } else {
-        console.error("Failed to accept request:", responseData);
+        console.error("Failed to accept request:", response.data);
         throw new Error("Failed to accept request");
       }
     } catch (error) {
       console.error("Error accepting request:", error);
     }
   };
+  
   const handleDeleteRequest = async (requestId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ action: "delete" }),
-        }
-      );
-      const responseData = await response.json();
-
-      if (response.ok) {
+      const response = await apiClient.post(`/panditToTempleRequest/${requestId}`, {
+        action: "delete",
+      });
+  
+      if (response.status === 200) {
         Alert.alert("Request Deleted Successfully.");
         fetchPanditToTempleRequest();
       } else {
-        console.error("Failed to delete request:", responseData);
+        console.error("Failed to delete request:", response.data);
         throw new Error("Failed to delete request");
       }
     } catch (error) {
       console.error("Error deleting request:", error);
     }
   };
-
+ 
   const fetchShopToTempleRequest = async () => {
-    console.log("templeid in req: ", templeId);
+    console.log("Temple ID in request:", templeId);
     try {
       setLoadingAnimation(true);
-      const response = await fetch(
-        `${BASEAPIURL}/templeConnections/requests/${templeId}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("ShopToTempleRequest List", response);
-
-      if (response.ok) {
-        const data = await response.json();
-
-        setShops(data);
-
-        console.log("ShopToTemple Req data: ", data);
-      } else {
-        throw new Error("Failed to fetch ShopToTemple requests");
-      }
+  
+      const response = await apiClient.get(`/templeConnections/requests/${templeId}`);
+      console.log("ShopToTempleRequest List", response.data);
+  
+      setShops(response.data);
     } catch (error) {
       console.error("Error fetching ShopToTemple requests:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
+  // const handleShopAcceptRequest = async (requestId) => {
+  //   try {
+  //     console.log("S req id: ", requestId);
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/templeConnections/action/${requestId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ status: "accepted" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
+
+  //     if (response.ok) {
+  //       Alert.alert("Request Accept Successfully.");
+  //       removeAcceptedRequest(requestId, setShops);
+  //     } else {
+  //       console.error("Failed to accept Shop to temple request:", responseData);
+  //       throw new Error("Failed to accept Shop to temple request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error accepting Shop to temple request:", error);
+  //   }
+  // };
+  // const handleShopDeleteRequest = async (requestId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/templeConnections/action/${requestId}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ status: "rejected" }),
+  //       }
+  //     );
+  //     const responseData = await response.json();
+
+  //     if (response.ok) {
+  //       Alert.alert("Request Deleted Successfully.");
+  //       fetchShopToTempleRequest();
+  //     } else {
+  //       console.error("Failed to delete Shop to temple request:", responseData);
+  //       throw new Error("Failed to delete Shop to temple request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting Shop to temple request:", error);
+  //   }
+  // };
+
   const handleShopAcceptRequest = async (requestId) => {
     try {
       console.log("S req id: ", requestId);
-      const response = await fetch(
-        `${BASEAPIURL}/templeConnections/action/${requestId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: "accepted" }),
-        }
-      );
-      const responseData = await response.json();
-
-      if (response.ok) {
-        Alert.alert("Request Accept Successfully.");
+  
+      const response = await apiClient.patch(`/templeConnections/action/${requestId}`, {
+        status: "accepted",
+      });
+  
+      if (response.status === 200) {
+        Alert.alert("Request Accepted Successfully.");
         removeAcceptedRequest(requestId, setShops);
       } else {
-        console.error("Failed to accept Shop to temple request:", responseData);
+        console.error("Failed to accept Shop to temple request:", response.data);
         throw new Error("Failed to accept Shop to temple request");
       }
     } catch (error) {
       console.error("Error accepting Shop to temple request:", error);
     }
   };
+  
   const handleShopDeleteRequest = async (requestId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/templeConnections/action/${requestId}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: "rejected" }),
-        }
-      );
-      const responseData = await response.json();
-
-      if (response.ok) {
+      const response = await apiClient.patch(`/templeConnections/action/${requestId}`, {
+        status: "rejected",
+      });
+  
+      if (response.status === 200) {
         Alert.alert("Request Deleted Successfully.");
         fetchShopToTempleRequest();
       } else {
-        console.error("Failed to delete Shop to temple request:", responseData);
+        console.error("Failed to delete Shop to temple request:", response.data);
         throw new Error("Failed to delete Shop to temple request");
       }
     } catch (error) {
       console.error("Error deleting Shop to temple request:", error);
     }
   };
-
+  
   useEffect(() => {
     fetchPanditToTempleRequest();
     fetchShopToTempleRequest();

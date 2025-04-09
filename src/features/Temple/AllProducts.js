@@ -26,6 +26,7 @@ import { decode } from "base-64";
 import { useIsFocused } from "@react-navigation/native";
 import FilterMenu from "./FilterMenu";
 import Theme from "../../styles/theme";
+import apiClient from "../../store/apiClient";
 const AllProductsScreen = ({ route }) => {
   const { userType, ownerId, userId, shopId, loggedInShop } = route.params;
 
@@ -125,33 +126,49 @@ const AllProductsScreen = ({ route }) => {
     }
   };
 
+  // const fetchProducts = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/products`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       const filteredProducts = data.filter(
+  //         (product) => product.shop._id === shopId
+  //       );
+  //       setProducts(filteredProducts);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setIsloading(false);
+  //   }
+  // };
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/products`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        const filteredProducts = data.filter(
-          (product) => product.shop._id === shopId
-        );
-        setProducts(filteredProducts);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
+      setIsloading(true); // Ensure loading starts
+  
+      const { data } = await apiClient.get("/products");
+  
+      const filteredProducts = data.filter(
+        (product) => product.shop._id === shopId
+      );
+  
+      setProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
-      setIsloading(false);
+      setIsloading(false); // Ensure loading stops
     }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchProducts();

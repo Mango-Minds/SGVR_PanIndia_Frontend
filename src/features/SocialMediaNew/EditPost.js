@@ -16,7 +16,8 @@ import {
   MainContainer,
 } from "../../styles/prelogin.styles";
 import { SafeArea } from "../../components/utility/safe-area.component";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { useDispatch } from "react-redux";
 import {setLoadingInBtn } from "../../store/user";
 import { en, registerTranslation } from "react-native-paper-dates";
@@ -75,49 +76,101 @@ export default function EditPost({ route, navigation }) {
   console.log("modified details", modifiedDetails);
 
 
-const handleUpdate = async () => {
-    await dispatch(setLoadingInBtn(true));
+// const handleUpdate = async () => {
+//     await dispatch(setLoadingInBtn(true));
   
-    try {
-      const formData = new FormData();
+//     try {
+//       const formData = new FormData();
       
      
-      if (modifiedDetails.description !== post.content) {
-        formData.append("content", modifiedDetails.description);
-      }
+//       if (modifiedDetails.description !== post.content) {
+//         formData.append("content", modifiedDetails.description);
+//       }
   
-      const response = await fetch(`${BASEAPIURL}/social/post/update/${post._id}`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+//       const response = await fetch(`${BASEAPIURL}/social/post/update/${post._id}`, {
+//         method: "PATCH",
+//         headers: {
+//           Authorization: `Bearer ${token}`,
+//         },
+//         body: formData,
+//       });
   
-      await dispatch(setLoadingInBtn(false));
+//       await dispatch(setLoadingInBtn(false));
   
-      if (!response.ok) {
-        throw new Error("Failed to update post");
-      }
+//       if (!response.ok) {
+//         throw new Error("Failed to update post");
+//       }
   
-      const data = await response.json();  
+//       const data = await response.json();  
   
-      console.log("Response from server:", data);
+//       console.log("Response from server:", data);
   
      
-      if (data?.post?.content === modifiedDetails.description) {
-        alert("Post updated successfully");
-        fetchPosts();  
-        navigation.goBack();
-      } else {
-        alert("Failed to update post description");
-      }
-    } catch (error) {
-      console.error("Error updating post:", error);
-      alert("Error updating the post");
+//       if (data?.post?.content === modifiedDetails.description) {
+//         alert("Post updated successfully");
+//         fetchPosts();  
+//         navigation.goBack();
+//       } else {
+//         alert("Failed to update post description");
+//       }
+//     } catch (error) {
+//       console.error("Error updating post:", error);
+//       alert("Error updating the post");
+//     }
+//   };
+const handleUpdate = async () => {
+  await dispatch(setLoadingInBtn(true));
+
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) {
+      console.error("Authentication token is missing.");
+      Alert.alert("Error", "You are not authorized. Please log in again.");
+      await dispatch(setLoadingInBtn(false));
+      return;
     }
-  };
-  
+
+    const formData = new FormData();
+
+    if (modifiedDetails.description !== post.content) {
+      formData.append("content", modifiedDetails.description);
+    }
+
+    const response = await apiClient.patch(
+      `/social/post/update/${post._id}`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    await dispatch(setLoadingInBtn(false));
+
+    if (response.status !== 200) {
+      throw new Error("Failed to update post");
+    }
+
+    const data = response.data;
+
+    console.log("Response from server:", data);
+
+    if (data?.post?.content === modifiedDetails.description) {
+      alert("Post updated successfully");
+      fetchPosts();
+      navigation.goBack();
+    } else {
+      alert("Failed to update post description");
+    }
+  } catch (error) {
+    console.error("Error updating post:", error);
+    alert("Error updating the post");
+    await dispatch(setLoadingInBtn(false));
+  }
+};
+
   return (
     <SafeArea>
       <Provider>

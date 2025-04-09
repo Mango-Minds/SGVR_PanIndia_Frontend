@@ -13,6 +13,8 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { IconButton, Provider } from "react-native-paper";
+import { addProductAPI } from "./B2CAPI";
+import apiClient from "../../store/apiClient";
 import {
   FormButton,
   FormSection,
@@ -134,131 +136,255 @@ export default function AddProduct({ navigation, route }) {
 
   const userType = decodedPayload.userType;
 
-  const addProduct = async () => {
-    try {
-      if (!token) {
-        console.error("Bearer token not found");
-        return;
-      }
+  // const addProduct = async () => {
+  //   try {
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       return;
+  //     }
 
-      const formData = new FormData();
-      console.log("Register Details:", registerDetails);
+  //     const formData = new FormData();
+  //     console.log("Register Details:", registerDetails);
 
-      formData.append("name", registerDetails.productName);
-      formData.append("price", parseFloat(registerDetails.productPrice));
-      formData.append(
-        "originalPrice",
-        parseFloat(registerDetails.productOriginalPrice)
-      );
-      formData.append("category", registerDetails.productCategory);
-      formData.append("subcategory", registerDetails.productSubCategory);
-      formData.append("description", registerDetails.productDescription);
-      formData.append("condition", registerDetails.productCondition);
+  //     formData.append("name", registerDetails.productName);
+  //     formData.append("price", parseFloat(registerDetails.productPrice));
+  //     formData.append(
+  //       "originalPrice",
+  //       parseFloat(registerDetails.productOriginalPrice)
+  //     );
+  //     formData.append("category", registerDetails.productCategory);
+  //     formData.append("subcategory", registerDetails.productSubCategory);
+  //     formData.append("description", registerDetails.productDescription);
+  //     formData.append("condition", registerDetails.productCondition);
 
-      formData.append("productAge", registerDetails.productAge);
-      formData.append("address", registerDetails.address);
-      formData.append("address_link", registerDetails.address_link);
+  //     formData.append("productAge", registerDetails.productAge);
+  //     formData.append("address", registerDetails.address);
+  //     formData.append("address_link", registerDetails.address_link);
 
       
-      selectedImages.forEach((media, index) => {
-        console.log(`Media ${index}:`, media.uri);
+  //     selectedImages.forEach((media, index) => {
+  //       console.log(`Media ${index}:`, media.uri);
 
-        let mimeType = "";
-        let fileName = "";
-        let fieldName = "";
+  //       let mimeType = "";
+  //       let fileName = "";
+  //       let fieldName = "";
 
-        // Determine the MIME type and file name based on the media type
-        if (media.uri) {
-          if (media.type === "image") {
-            mimeType = "image/jpeg";
-            fileName = `image_${index}.jpg`;
-            fieldName = "images";
-          } else if (media.type === "video") {
-            mimeType = "video/mp4";
-            fileName = `video_${index}.mp4`;
-            fieldName = "videos"; 
-          } else if (media.type === "application") {
-            mimeType = "application/pdf"; 
-            fileName = `document_${index}.pdf`;
-            fieldName = "documents"; 
-          } else {
-            console.log(`Unsupported media type: ${media.type}`);
-            return;
-          }
+  //       // Determine the MIME type and file name based on the media type
+  //       if (media.uri) {
+  //         if (media.type === "image") {
+  //           mimeType = "image/jpeg";
+  //           fileName = `image_${index}.jpg`;
+  //           fieldName = "images";
+  //         } else if (media.type === "video") {
+  //           mimeType = "video/mp4";
+  //           fileName = `video_${index}.mp4`;
+  //           fieldName = "videos"; 
+  //         } else if (media.type === "application") {
+  //           mimeType = "application/pdf"; 
+  //           fileName = `document_${index}.pdf`;
+  //           fieldName = "documents"; 
+  //         } else {
+  //           console.log(`Unsupported media type: ${media.type}`);
+  //           return;
+  //         }
 
-          // Append to the correct field in formData (images, videos, or documents)
-          formData.append(fieldName, {
-            uri: media.uri,
-            name: fileName,
-            type: mimeType,
-          });
-        }
-      });
+  //         // Append to the correct field in formData (images, videos, or documents)
+  //         formData.append(fieldName, {
+  //           uri: media.uri,
+  //           name: fileName,
+  //           type: mimeType,
+  //         });
+  //       }
+  //     });
 
-      console.log("FormData:", formData);
+  //     console.log("FormData:", formData);
 
-      await dispatch(setLoadingInBtn(true));
+  //     await dispatch(setLoadingInBtn(true));
 
-      const response = await fetch(`${BASEAPIURL}/listings/create`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
-        },
-        body: formData,
-      });
+  //     const response = await fetch(`${BASEAPIURL}/listings/create`, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //       body: formData,
+  //     });
 
-      await dispatch(setLoadingInBtn(false));
+  //     await dispatch(setLoadingInBtn(false));
 
-      console.log("Response:", response);
+  //     console.log("Response:", response);
 
-      if (!response.ok) {
-        throw new Error("Failed to add product");
-      }
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add product");
+  //     }
 
-      const data = await response.json();
-      console.log("Added Product Data:", data);
-      fetchProducts();
+  //     const data = await response.json();
+  //     console.log("Added Product Data:", data);
+  //     fetchProducts();
 
-      setRegisterDetails({
-        productName: "",
-        productPrice: "",
-        productCategory: "",
-        productSubCategory: "",
-        productDescription: "",
-        productCondition: "",
-        productAge: "",
-        productOriginalPrice: "",
-        address: "",
-        address_link: "",
-      });
+  //     setRegisterDetails({
+  //       productName: "",
+  //       productPrice: "",
+  //       productCategory: "",
+  //       productSubCategory: "",
+  //       productDescription: "",
+  //       productCondition: "",
+  //       productAge: "",
+  //       productOriginalPrice: "",
+  //       address: "",
+  //       address_link: "",
+  //     });
 
-      // Show success alert
-      Alert.alert(
-        "Success",
-        "Product Created successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } catch (error) {
-      console.error("Error adding product:", error);
+  //     // Show success alert
+  //     Alert.alert(
+  //       "Success",
+  //       "Product Created successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error adding product:", error);
 
-      Alert.alert(
-        "Error",
-        "Failed to add product",
-        [{ text: "OK", onPress: () => console.log("OK Pressed") }],
-        { cancelable: false }
-      );
-    }
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to add product",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+  
+  
+  //correct one
+  // const addProduct = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token missing.");
+  //       return;
+  //     }
+  
+  //     const formData = new FormData();
+  //     console.log("Register Details:", registerDetails);
+  
+  //     formData.append("name", registerDetails.productName);
+  //     formData.append("price", parseFloat(registerDetails.productPrice));
+  //     formData.append("originalPrice", parseFloat(registerDetails.productOriginalPrice));
+  //     formData.append("category", registerDetails.productCategory);
+  //     formData.append("subcategory", registerDetails.productSubCategory);
+  //     formData.append("description", registerDetails.productDescription);
+  //     formData.append("condition", registerDetails.productCondition);
+  //     formData.append("productAge", registerDetails.productAge);
+  //     formData.append("address", registerDetails.address);
+  //     formData.append("address_link", registerDetails.address_link);
+  
+  //     // Append images, videos, or documents
+  //     selectedImages.forEach((media, index) => {
+  //       console.log(`Media ${index}:`, media.uri);
+  
+  //       let mimeType = "";
+  //       let fileName = "";
+  //       let fieldName = "";
+  
+  //       if (media.uri) {
+  //         if (media.type === "image") {
+  //           mimeType = "image/jpeg";
+  //           fileName = `image_${index}.jpg`;
+  //           fieldName = "images";
+  //         } else if (media.type === "video") {
+  //           mimeType = "video/mp4";
+  //           fileName = `video_${index}.mp4`;
+  //           fieldName = "videos";
+  //         } else if (media.type === "application") {
+  //           mimeType = "application/pdf";
+  //           fileName = `document_${index}.pdf`;
+  //           fieldName = "documents";
+  //         } else {
+  //           console.log(`Unsupported media type: ${media.type}`);
+  //           return;
+  //         }
+  
+  //         formData.append(fieldName, { uri: media.uri, name: fileName, type: mimeType });
+  //       }
+  //     });
+  
+  //     console.log("FormData:", formData);
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     const response = await apiClient.post("/listings/create", formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+  
+  //     await dispatch(setLoadingInBtn(false));
+  //     console.log("Response:", response);
+  
+  //     if (!response.data || response.status !== 201) {
+  //       throw new Error("Failed to add product");
+  //     }
+  
+  //     console.log("Added Product Data:", response.data);
+  //     fetchProducts();
+  
+  //     // Reset form fields
+  //     setRegisterDetails({
+  //       productName: "",
+  //       productPrice: "",
+  //       productCategory: "",
+  //       productSubCategory: "",
+  //       productDescription: "",
+  //       productCondition: "",
+  //       productAge: "",
+  //       productOriginalPrice: "",
+  //       address: "",
+  //       address_link: "",
+  //     });
+  
+  //     Alert.alert("Success", "Product Created successfully", [
+  //       { text: "OK", onPress: () => navigation.goBack() },
+  //     ]);
+  //   } catch (error) {
+  //     console.error("Error adding product:", error);
+  
+  //     Alert.alert("Error", "Failed to add product", [{ text: "OK" }]);
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+
+  const addProduct = () => {
+    addProductAPI({
+      registerDetails,
+      selectedImages,
+      setLoading: (value) => dispatch(setLoadingInBtn(value)),
+      fetchProducts,
+      navigation,
+      resetForm: () =>
+        setRegisterDetails({
+          productName: "",
+          productPrice: "",
+          productCategory: "",
+          productSubCategory: "",
+          productDescription: "",
+          productCondition: "",
+          productAge: "",
+          productOriginalPrice: "",
+          address: "",
+          address_link: "",
+        }),
+    });
   };
-
+  
   const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
   const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
   const SubCategoryData = [

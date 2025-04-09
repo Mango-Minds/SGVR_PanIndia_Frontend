@@ -32,6 +32,8 @@ import { useIsFocused } from "@react-navigation/native";
 import { Video } from "expo-av";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import SortMenu from "./SortMenu";
+import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const { width } = Dimensions.get("window");
 const MyListingScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
@@ -50,26 +52,7 @@ const MyListingScreen = ({ route, navigation }) => {
   const [selectedSortOption, setSelectedSortOption] = useState(null);
   const filteredItems = items.filter((item) => item.category === category);
   console.log("User: ", user);
-  const renderItem = ({ item }) => (
-    <TouchableOpacity
-      style={style.card}
-      onPress={() =>
-        navigation.navigate("EachListing", {
-          itemId: item._id,
-          item: item,
-          fetchProducts: fetchProducts,
-        })
-      }
-    >
-      <Image
-        source={{ uri: `${item.images[0]}` }}
-        style={styles.eachJewelleryCardImg}
-      />
-
-      <Text style={style.price}>{item.price}</Text>
-      <Text style={style.title}>{item.name}</Text>
-    </TouchableOpacity>
-  );
+  
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -161,14 +144,83 @@ const MyListingScreen = ({ route, navigation }) => {
     { label: "Price: Low to High", value: "low" },
   ];
 
+  // const fetchProducts = async (
+  //   searchTerm,
+  //   selectedFiltersArray,
+  //   sortOption
+  // ) => {
+  //   //Construct the query parameters from selectedFiltersArray
+  //   const queryParams = new URLSearchParams();
+
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Category") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("category", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Condition") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("condition", option)
+  //       );
+  //     } else if (filter["Filter name"] === "Price") {
+  //       filter.Options.forEach((option) => {
+  //         if (option.includes("Below")) {
+  //           const maxPrice = option.split(" ")[1];
+  //           queryParams.append("maxPrice", maxPrice);
+  //         } else if (option.includes("Above")) {
+  //           const minPrice = option.split(" ")[1];
+  //           queryParams.append("minPrice", minPrice);
+  //         } else {
+  //           const [minPrice, maxPrice] = option.split("-");
+  //           queryParams.append("minPrice", minPrice);
+  //           queryParams.append("maxPrice", maxPrice);
+  //         }
+  //       });
+  //     }
+  //   });
+
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
+  //   if (sortOption) {
+  //     queryParams.append("priceSort", sortOption);
+  //   }
+
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/listings/all/${user._id}?${queryString}`;
+
+  //   console.log("Fetching products with URL:", url);
+
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log(" Data:", data);
+
+  //       setProducts(data.listings);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
   const fetchProducts = async (
     searchTerm,
     selectedFiltersArray,
     sortOption
   ) => {
-    //Construct the query parameters from selectedFiltersArray
     const queryParams = new URLSearchParams();
-
+  
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Category") {
         filter.Options.forEach((option) =>
@@ -194,33 +246,38 @@ const MyListingScreen = ({ route, navigation }) => {
         });
       }
     });
-
+  
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
+  
     if (sortOption) {
       queryParams.append("priceSort", sortOption);
     }
-
+  
     const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/listings/all/${user._id}?${queryString}`;
-
+    const url = `/listings/all/${user._id}?${queryString}`;
+  
     console.log("Fetching products with URL:", url);
-
+  
     try {
+      const token = await AsyncStorage.getItem("token");
+  
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
       setLoadingAnimation(true);
-      const response = await fetch(url, {
-        method: "GET",
+      const response = await apiClient.get(url, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-      if (response.ok) {
-        const data = await response.json();
-        console.log(" Data:", data);
-
-        setProducts(data.listings);
+  
+      if (response.status === 200) {
+        console.log("Data:", response.data);
+        setProducts(response.data.listings);
       } else {
         throw new Error("Failed to fetch products");
       }
@@ -230,7 +287,7 @@ const MyListingScreen = ({ route, navigation }) => {
       setLoadingAnimation(false);
     }
   };
-
+  
   useEffect(() => {
     fetchProducts();
   }, []);

@@ -22,6 +22,9 @@ import {
   BASEIMGURL,
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { connectToChat } from "./matrimonyAPIs";
 const screenWidth = Dimensions.get("window").width;
 const imageHeight = screenWidth * 0.6;
 
@@ -117,74 +120,80 @@ export default function MatrimonyProfileNewWithConnection({
     syncScrollToIndex(newIndex);
   };
 
-  const connectToChat = async (owner_id, business_id) => {
-    console.log("OI:",owner_id);
-    console.log("BI:",business_id);
-    if (owner_id === business_id) {
-      alert("Chat room Cannot be created: same id");
-    } else {
-      try {
-        const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userIds: [owner_id, business_id] }),
-        });
-        console.log("Response: ", response);
-        console.log("Authorization: ", `Bearer ${token}`);
-        if (response.ok) {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            console.log("Room Details: ", roomData);
-            if (roomData && roomData.rooms && roomData.rooms.length > 0) {
-              const room = roomData.rooms[0];
-              const room_with_user = roomData.rooms.filter(
-                (room) => room.participants[0].id === vendorId
-              )[0];
-
-              Alert.alert("OK", "Chat Room Created", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    navigation.navigate("ChatScreenNew", {
-                      user_auth_token: token,
-                      room: room_with_user,
-                      participant_name:
-                        room_with_user.participants[0].firstName +
-                        " " +
-                        room_with_user.participants[0].lastName,
-                    });
-                  },
-                },
-              ]);
-            } else {
-              Alert.alert("No rooms found");
-            }
-          } else {
-            const errorData = await roomResponse.json();
-            console.error("Error Fetching Room Details:", errorData);
-            Alert.alert("Error Fetching Room Details");
-          }
-        } else {
-          const errorData = await response.json();
-          console.error("Error Creating Chat Room:", errorData);
-          Alert.alert("Error Creating Chat Room");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
-    }
-  };
-
+  
+  // const connectToChat = async (owner_id, business_id) => {
+  //   console.log("OI:", owner_id);
+  //   console.log("BI:", business_id);
+  
+  //   if (owner_id === business_id) {
+  //     alert("Chat room Cannot be created: same id");
+  //     return;
+  //   }
+  
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  
+  //     const response = await apiClient.post(
+  //       `${BASEAPIURL}/chat/room/`,
+  //       { userIds: [owner_id, business_id] },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  
+  //     console.log("Response:", response);
+  //     console.log("Authorization:", `Bearer ${token}`);
+  
+  //     if (response.status === 200 || response.status === 201) {
+  //       const roomResponse = await apiClient.get(`${BASEAPIURL}/chat/rooms/`, {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       });
+  
+  //       if (roomResponse.status === 200) {
+  //         const roomData = roomResponse.data;
+  //         console.log("Room Details:", roomData);
+  
+  //         if (roomData?.rooms?.length > 0) {
+  //           const room_with_user = roomData.rooms.find(
+  //             (room) => room.participants[0].id === vendorId
+  //           );
+  
+  //           Alert.alert("OK", "Chat Room Created", [
+  //             {
+  //               text: "OK",
+  //               onPress: () => {
+  //                 navigation.navigate("ChatScreenNew", {
+  //                   user_auth_token: token,
+  //                   room: room_with_user,
+  //                   participant_name:
+  //                     room_with_user.participants[0].firstName +
+  //                     " " +
+  //                     room_with_user.participants[0].lastName,
+  //                 });
+  //               },
+  //             },
+  //           ]);
+  //         } else {
+  //           Alert.alert("No rooms found");
+  //         }
+  //       } else {
+  //         const errorData = roomResponse.data;
+  //         console.error("Error Fetching Room Details:", errorData);
+  //         Alert.alert("Error Fetching Room Details");
+  //       }
+  //     } else {
+  //       const errorData = response.data;
+  //       console.error("Error Creating Chat Room:", errorData);
+  //       Alert.alert("Error Creating Chat Room");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // };
   return (
     <SafeArea style={{ flex: 1 }}>
       <View style={styles.header}>
@@ -252,7 +261,7 @@ export default function MatrimonyProfileNewWithConnection({
           <TouchableOpacity
             style={styles.bookNowButton}
             onPress={() => {
-              connectToChat(ownerId, vendorId);
+              connectToChat(ownerId, vendorId, vendorId, navigation);
             }}
           >
             <Text style={styles.bookNowButtonText}>Book Now</Text>

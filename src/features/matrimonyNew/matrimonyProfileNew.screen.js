@@ -21,7 +21,9 @@ import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Alert } from "react-native";
 import { decode } from "base-64";
 import { LinearGradient } from "expo-linear-gradient";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { sendConnectionRequest } from "./matrimonyAPIs";
 export default function MatrimonyProfileNew({ route, navigation }) {
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
@@ -259,6 +261,51 @@ export default function MatrimonyProfileNew({ route, navigation }) {
   const senderId = user?.roleData?._id;
   console.log("SID: ", senderId);
 
+
+
+  // const handleConnect = async () => {
+  //   if (isRequestSent) {
+  //     Alert.alert(
+  //       "Request Already Sent",
+  //       "You have already sent a connection request."
+  //     );
+  //     return;
+  //   }
+  
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  
+  //     console.log("Rec ID:", receiverId);
+  //     console.log("Sender id:", senderId);
+  //     console.log("usertype:", userType);
+  
+  //     const response = await apiClient.post(
+  //       `${BASEAPIURL}/matrimony/connection/send-request`,
+  //       {
+  //         senderId: senderId,
+  //         receiverId: receiverId,
+  //         createdBy: userType,
+  //       },
+  //       {
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  
+  //     if (response.status === 200 || response.status === 201) {
+  //       setIsRequestSent(true);
+  //       Alert.alert("Success", "Connection request sent successfully", [
+  //         { text: "OK" },
+  //       ]);
+  //     } else {
+  //       console.error("Failed to send connection request", response);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //   }
+  // };
+  
   const handleConnect = async () => {
     if (isRequestSent) {
       Alert.alert(
@@ -267,39 +314,42 @@ export default function MatrimonyProfileNew({ route, navigation }) {
       );
       return;
     }
+
     try {
+     
+
       console.log("Rec ID:", receiverId);
-      console.log("Sender id: ", senderId);
-      console.log("usertype: ", userType);
+      console.log("Sender id:", senderId);
+      console.log("usertype:", userType);
 
-      const response = await fetch(
-        `${BASEAPIURL}/matrimony/connection/send-request`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            senderId: senderId,
-            receiverId: receiverId,
-            createdBy: userType,
-          }),
-        }
-      );
+      const payload = {
+        senderId: senderId?.trim(),
+        receiverId: receiverId?.trim(),
+        createdBy: userType,
+      };
+      console.log("Sending:", payload);
+      
+      const response = await sendConnectionRequest(payload);
 
-      if (response.ok) {
+      if (response.status === 200 || response.status === 201) {
         setIsRequestSent(true);
         Alert.alert("Success", "Connection request sent successfully", [
-          {
-            text: "OK",
-          },
+          { text: "OK" },
         ]);
       } else {
-        console.error("Failed to send connection request");
+        console.error("Failed to send connection request", response);
       }
-    } catch (error) {
-      console.error("Error connecting to user:", error);
+    }  catch (error) {
+      if (error.response) {
+        console.error("Backend response error:", error.response.data);
+        Alert.alert(
+          "Error",
+          error.response.data?.message || "Something went wrong while sending request."
+        );
+      } else {
+        console.error("Error connecting to user:", error);
+        Alert.alert("Error", "Unable to send connection request.");
+      }
     }
   };
 

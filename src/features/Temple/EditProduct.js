@@ -30,10 +30,7 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
-import {
-  getJewelleryData,
-  editJewelleryData,
-} from "../../services/jewellery.services";
+import apiClient from "../../store/apiClient";
 
 const styles = StyleSheet.create({
   logo: {
@@ -115,56 +112,101 @@ export default function EditShopProduct({ route, navigation }) {
     quantity: product.quantity.toString(),
   });
 
+  // const handleUpdate = async () => {
+  //   await dispatch(setLoadingInBtn(true));
+  //   try {
+  //     const formData = new FormData();
+
+  //     formData.append("name", modifiedDetails.name);
+  //     formData.append("price", modifiedDetails.price);
+  //     formData.append("description", modifiedDetails.description);
+  //     formData.append("quantity", modifiedDetails.quantity);
+
+  //     // Append existing images without base URL
+  //     selectedImages.forEach((image) => {
+  //       formData.append("pictures", image);
+  //     });
+      
+
+  //     // Append newly uploaded images
+  //     uploadedImages.forEach((image, index) => {
+  //       formData.append("pictures", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       }); // Add to pictures array
+  //     });
+
+  //     console.log("formData:", formData);
+
+  //     const response = await fetch(`${BASEAPIURL}/products/${product._id}`, {
+  //       method: "PATCH",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update product");
+  //       await dispatch(setLoadingInBtn(false));
+  //     }
+
+  //     alert("Product updated successfully");
+  //     fetchProduct();
+  //     navigation.goBack();
+  //     await dispatch(setLoadingInBtn(false));
+  //   } catch (error) {
+  //     console.error("Error updating product:", error);
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
   const handleUpdate = async () => {
     await dispatch(setLoadingInBtn(true));
+  
     try {
       const formData = new FormData();
-
+  
       formData.append("name", modifiedDetails.name);
       formData.append("price", modifiedDetails.price);
       formData.append("description", modifiedDetails.description);
       formData.append("quantity", modifiedDetails.quantity);
-
-      // Append existing images without base URL
+  
+      // Append existing images
       selectedImages.forEach((image) => {
         formData.append("pictures", image);
       });
-      
-
+  
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {
         formData.append("pictures", {
           uri: image.uri,
           name: `image_${index}.jpg`,
           type: "image/jpeg",
-        }); // Add to pictures array
+        });
       });
-
+  
       console.log("formData:", formData);
-
-      const response = await fetch(`${BASEAPIURL}/products/${product._id}`, {
-        method: "PATCH",
+  
+      const response = await apiClient.patch(`/products/${product._id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data", // Required for file uploads
         },
-        body: formData,
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to update product");
-        await dispatch(setLoadingInBtn(false));
-      }
-
+  
+      dispatch(setLoadingInBtn(false));
+  
+      console.log("Updated Product:", response.data);
       alert("Product updated successfully");
+  
       fetchProduct();
       navigation.goBack();
-      await dispatch(setLoadingInBtn(false));
     } catch (error) {
       console.error("Error updating product:", error);
-      await dispatch(setLoadingInBtn(false));
+      dispatch(setLoadingInBtn(false));
     }
   };
-
   return (
     <SafeArea>
       <Provider>

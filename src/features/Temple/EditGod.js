@@ -8,9 +8,11 @@ import {
   View,
   TouchableOpacity,
   TextInput,
+  Alert,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   FormButton,
   FormSection,
@@ -34,7 +36,7 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -76,7 +78,7 @@ export default function EditGod({ route, navigation }) {
 
   const { god, templeinfo, setGodDetails, fetchTempleGods } = route.params;
   console.log("God: ", god);
-  
+
   const token = useSelector((state) => state.user.token);
 
   const [selectedImage, setSelectedImage] = useState({
@@ -102,15 +104,78 @@ export default function EditGod({ route, navigation }) {
     godName: god.godName,
     description: god.description,
     symbol: god.symbol,
-    festivals: god.festivals.join(', '), 
-  relatedDeities: god.relatedDeities.join(', '), 
+    festivals: god.festivals.join(", "),
+    relatedDeities: god.relatedDeities.join(", "),
   });
   console.log("modified details", modifiedDetails);
+
+  // const handleUpdate = async () => {
+  //   await dispatch(setLoadingInBtn(true));
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     // Append modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== god[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+
+  //     // Append existing images without base URL
+  //     if (selectedImage && selectedImage.uri) {
+  //       let localUri = selectedImage.uri;
+  //       let filename = localUri.split("/").pop();
+
+  //       let match = /\.(\w+)$/.exec(filename);
+  //       let type = match ? `image/${match[1]}` : `image`;
+
+  //       formData.append("godImage", {
+  //         uri: localUri,
+  //         name: filename,
+  //         type,
+  //       });
+  //     }
+  //     console.log("formdata--", formData);
+
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeinfo._id}/gods/${god._id}`,
+  //       {
+  //         method: "PATCH",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response--", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update god");
+  //     }
+  //     const data = await response.json();
+  //     setGodDetails(data);
+  //     fetchTempleGods();
+  //     alert("God Updated Successfully");
+  //     console.log("edit data: ", data);
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating god:", error);
+  //   }
+  // };
 
   const handleUpdate = async () => {
     await dispatch(setLoadingInBtn(true));
 
     try {
+      let token = await AsyncStorage.getItem("token");
+
+      if (!token) {
+        console.error("Bearer token not found");
+        return;
+      }
       const formData = new FormData();
 
       // Append modified details
@@ -120,11 +185,10 @@ export default function EditGod({ route, navigation }) {
         }
       });
 
-      // Append existing images without base URL
+      // Append selected image if available
       if (selectedImage && selectedImage.uri) {
         let localUri = selectedImage.uri;
         let filename = localUri.split("/").pop();
-
         let match = /\.(\w+)$/.exec(filename);
         let type = match ? `image/${match[1]}` : `image`;
 
@@ -134,37 +198,44 @@ export default function EditGod({ route, navigation }) {
           type,
         });
       }
+
       console.log("formdata--", formData);
 
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeinfo._id}/gods/${god._id}`,
+      const response = await apiClient.patch(
+        `/temple/${templeinfo._id}/gods/${god._id}`,
+        formData,
         {
-          method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
-          body: formData,
         }
       );
-      await dispatch(setLoadingInBtn(false));
 
+      await dispatch(setLoadingInBtn(false));
       console.log("response--", response);
 
-      if (!response.ok) {
-        throw new Error("Failed to update god");
-      }
-      const data = await response.json();  
+    
+      const data = response.data;
       setGodDetails(data);
       fetchTempleGods();
       alert("God Updated Successfully");
       console.log("edit data: ", data);
+      // Handle token expiration and refresh
+      if (error.response?.status === 1) {
+        console.error("Token expired, trying to refresh...");
+        await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
+        token = await AsyncStorage.getItem("token");
+
+        if (token) {
+          return handleUpdate(); // Retry request with new token
+        }
+      }
       navigation.goBack();
     } catch (error) {
       console.error("Error updating god:", error);
     }
   };
-
- 
 
   return (
     <SafeArea>
@@ -350,7 +421,6 @@ export default function EditGod({ route, navigation }) {
                 placeholder="Festivals"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
-                
                 value={modifiedDetails.festivals}
                 onChangeText={(text) =>
                   setModifiedDetails({ ...modifiedDetails, festivals: text })
@@ -375,13 +445,14 @@ export default function EditGod({ route, navigation }) {
                 placeholder="Related Deities"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
-                
                 value={modifiedDetails.relatedDeities}
                 onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, relatedDeities: text })
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    relatedDeities: text,
+                  })
                 }
               />
-             
 
               <FormButton onPress={handleUpdate}>
                 <Text

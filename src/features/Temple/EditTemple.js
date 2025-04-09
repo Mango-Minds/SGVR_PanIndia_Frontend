@@ -8,6 +8,7 @@ import {
   View,
   TouchableOpacity,
   TextInput,
+  Alert
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
@@ -23,7 +24,7 @@ import { SafeArea } from "../../components/utility/safe-area.component";
 import SelectDropdown from "react-native-select-dropdown";
 import { useDispatch } from "react-redux";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 // import DatePicker from "react-native-datepicker";
 import { en, registerTranslation } from "react-native-paper-dates";
@@ -34,7 +35,7 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { BASEAPIURL } from "../../infrastructure/constants";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -118,30 +119,139 @@ export default function EditTemple({ route, navigation }) {
   });
   console.log("modified details", temple.templeLocationLink);
 
+  // const handleUpdate = async () => {
+  //   await dispatch(setLoadingInBtn(true));
+
+  //   try {
+  //     const formData = new FormData();
+
+  //     // Append modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== temple[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+
+      
+  //     selectedImages.forEach((image) => {
+  //       formData.append("images", image);
+  //     });
+      
+
+  //     // Append newly uploaded images
+  //     uploadedImages.forEach((image, index) => {
+  //       formData.append("images", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+  //     console.log("formdata--", formData);
+
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${temple._id}`,
+  //       {
+  //         method: "PUT",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: formData,
+  //       }
+  //     );
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response--", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update temple");
+  //     }
+  //     fetchTemple();
+  //     alert("Temple updated successfully");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating temple:", error);
+  //   }
+  // };
+
+  // const handleUpdate = async () => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  //     await dispatch(setLoadingInBtn(true));
+  
+  //     const formData = new FormData();
+  
+  //     // Append only modified details
+  //     Object.keys(modifiedDetails).forEach((key) => {
+  //       if (modifiedDetails[key] !== temple[key]) {
+  //         formData.append(key, modifiedDetails[key]);
+  //       }
+  //     });
+  
+  //     // Append existing images
+  //     selectedImages.forEach((image) => {
+  //       formData.append("images", image);
+  //     });
+  
+  //     // Append newly uploaded images
+  //     uploadedImages.forEach((image, index) => {
+  //       formData.append("images", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+  
+  //     console.log("FormData:", formData);
+  
+  //     const response = await fetch(`${BASEAPIURL}/temple/${temple._id}`, {
+  //       method: "PUT",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: formData,
+  //     });
+  
+  //     await dispatch(setLoadingInBtn(false));
+  
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update temple");
+  //     }
+  
+  //     fetchTemple();
+  //     Alert.alert("Success", "Temple updated successfully");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating temple:", error);
+  //     Alert.alert("Error", "Failed to update temple");
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
   const handleUpdate = async () => {
-    await dispatch(setLoadingInBtn(true));
-
     try {
+      await dispatch(setLoadingInBtn(true));
+  
+      // Ensure we always use the latest token from AsyncStorage
+      let token = await AsyncStorage.getItem("token");
+  
+      if (!token) {
+        console.error("Bearer token not found");
+        return;
+      }
+  
       const formData = new FormData();
-
-      // Append modified details
+  
+      // Append only modified details
       Object.keys(modifiedDetails).forEach((key) => {
         if (modifiedDetails[key] !== temple[key]) {
           formData.append(key, modifiedDetails[key]);
         }
       });
-
-      // Append existing images without base URL
-      // selectedImages.forEach((image, index) => {
-      //   if (image.startsWith(BASEIMGURL)) {
-      //     formData.append("images", image.replace(BASEIMGURL, ""));
-      //   }
-      // });
+  
+      // Append existing images
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
-      
-
+  
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {
         formData.append("images", {
@@ -150,36 +260,42 @@ export default function EditTemple({ route, navigation }) {
           type: "image/jpeg",
         });
       });
-      console.log("formdata--", formData);
-
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${temple._id}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+  
+      console.log("FormData:", formData);
+  
+      const response = await apiClient.put(`/temple/${temple._id}`, formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
       await dispatch(setLoadingInBtn(false));
-
-      console.log("response--", response);
-
-      if (!response.ok) {
-        throw new Error("Failed to update temple");
-      }
-      fetchTemple();
-      alert("Temple updated successfully");
+  
+      console.log("API Response:", response);
+  
+      fetchTemple(); // Refresh temple data
+      Alert.alert("Success", "Temple updated successfully");
       navigation.goBack();
     } catch (error) {
       console.error("Error updating temple:", error);
+  console.log("error.response?.status: ", error.response?.status);
+      // Handle token expiration and refresh
+      if (error.response?.status === 1) {
+        console.error("Token expired, trying to refresh...");
+        await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
+        token = await AsyncStorage.getItem("token");
+  
+        if (token) {
+          return handleUpdate(); // Retry request with new token
+        }
+      }
+  
+      Alert.alert("Error", "Failed to update temple");
+      await dispatch(setLoadingInBtn(false));
     }
   };
-
-  const CategoryData = ["gold", "silver", "diamond"];
-  const ConditionData = ["old", "new"];
-
+  
   return (
     <SafeArea>
       <Provider>

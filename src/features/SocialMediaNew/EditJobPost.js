@@ -20,7 +20,8 @@ import {
   AddProfileBox,
 } from "../../styles/prelogin.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
@@ -56,23 +57,57 @@ const EditJobPost = ({ route, navigation }) => {
     updateModifiedDetails();
   }, [userRoleData]);
 
-  const handleUpdate = async () => {
-    let url = `${BASEAPIURL}/social/job/update/${job._id}`;
-    try {
-      const response = await fetch(url, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(modifiedDetails),
-      });
-      console.log("response of edit job details", response);
+  // const handleUpdate = async () => {
+  //   let url = `${BASEAPIURL}/social/job/update/${job._id}`;
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: "PUT",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify(modifiedDetails),
+  //     });
+  //     console.log("response of edit job details", response);
 
-      if (!response.ok) {
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update job");
+  //     }
+
+  //     alert("job Posting updated successfully");
+  //     navigation.goBack();
+  //     await dispatch(setLoadingInBtn(false));
+  //   } catch (error) {
+  //     console.error("Error updating Job details:", error);
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+  const handleUpdate = async () => {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) {
+      console.error("Authentication token is missing.");
+      Alert.alert("Error", "You are not authorized. Please log in again.");
+      return;
+    }
+  
+    let url = `/social/job/update/${job._id}`;
+    try {
+      const response = await apiClient.put(
+        url,
+        modifiedDetails,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      console.log("response of edit job details", response);
+  
+      if (response.status !== 200) {
         throw new Error("Failed to update job");
       }
-
+  
       alert("job Posting updated successfully");
       navigation.goBack();
       await dispatch(setLoadingInBtn(false));
@@ -81,6 +116,7 @@ const EditJobPost = ({ route, navigation }) => {
       await dispatch(setLoadingInBtn(false));
     }
   };
+  
   return (
     <>
       <SafeArea>

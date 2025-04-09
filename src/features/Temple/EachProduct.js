@@ -47,31 +47,42 @@ const EachProduct = ({ route }) => {
 
   
 
+  // const fetchProduct = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     setLoadingAnimation(false);
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log(" Product Data: ", data);
+
+  //       setProductData(data);
+  //     } else {
+  //       throw new Error("Failed to fetch temple product");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching product:", error);
+  //   } 
+  // };
   const fetchProduct = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      setLoadingAnimation(false);
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log(" Product Data: ", data);
-
-        setProductData(data);
-      } else {
-        throw new Error("Failed to fetch temple product");
-      }
+      const { data } = await apiClient.get(`/products/${productId}`);
+      console.log("Product Data: ", data);
+      setProductData(data);
     } catch (error) {
       console.error("Error fetching product:", error);
-    } 
+    } finally {
+      setLoadingAnimation(false);
+    }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchProduct();
@@ -82,29 +93,48 @@ const EachProduct = ({ route }) => {
 
   const token = useSelector((state) => state.user.token);
 
+  // const deleteProduct = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete product");
+  //     }
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Product deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             // fetchProducts();
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting product:", error);
+  //   }
+  // };
   const deleteProduct = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete product");
-      }
-
+      await apiClient.delete(`/products/${productId}`);
+  
       Alert.alert(
         "Success",
         "Product deleted successfully",
         [
           {
             text: "OK",
-            onPress: () => {
-              // fetchProducts();
-              navigation.goBack();
-            },
+            onPress: () => navigation.goBack(),
           },
         ],
         { cancelable: false }
@@ -113,7 +143,6 @@ const EachProduct = ({ route }) => {
       console.error("Error deleting product:", error);
     }
   };
-
   const tokenPayload = token.split(".")[1];
 
   const decodedPayload = JSON.parse(decode(tokenPayload));

@@ -26,7 +26,8 @@ import {
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const ViewJobPost = ({ route }) => {
   const navigation = useNavigation();
   const { jobId } = route.params; // receives job id details from SocialJobs component
@@ -36,48 +37,77 @@ const ViewJobPost = ({ route }) => {
   const [job, setJob] = useState(null);
   const isFocused = useIsFocused();
 
+  // const sendApplication = async () => {
+  //   url = `${BASEAPIURL}/social/job/apply/${job._id}`;
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     if (response.ok) {
+  //       Alert.alert("Success", "Job Application sent successfully!");
+  //       navigation.goBack();
+  //     } else {
+  //       Alert.alert("Error", data.message || "Something went wrong.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Job application error:", error);
+  //   }
+  // };
   const sendApplication = async () => {
-    url = `${BASEAPIURL}/social/job/apply/${job._id}`;
     try {
-      const response = await fetch(url, {
-        method: "POST",
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
+      const url = `/social/job/apply/${job._id}`;
+      const response = await apiClient.post(url, {}, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
-      if (response.ok) {
-        Alert.alert("Success", "Job Application sent successfully!");
+  
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Success", response?.data?.message || "Job Application sent successfully!");
         navigation.goBack();
       } else {
-        Alert.alert("Error", data.message || "Something went wrong.");
+        Alert.alert("Error", response?.data?.message || "Something went wrong.");
       }
     } catch (error) {
-      console.error("Job application error:", error);
+      console.error("Job application error:", error.response?.data || error.message);
+      Alert.alert("Error", error.response?.data?.message || "Something went wrong.");
     }
   };
-
-  const handleApplicantScreen = (item) => {
-    navigation.navigate("JobApplicantForRecruiter", { item,job });
-  };
-
-
+  
+  
   
   const fetchJobDetails = async () => {
-    const url = `${BASEAPIURL}/social/job/${jobId}`;
     try {
-      const response = await fetch(url, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+      if (!token) {
+        console.error("Authentication token is missing.");
+        Alert.alert("Error", "You are not authorized. Please log in again.");
+        return;
+      }
+  
+      const url = `/social/job/${jobId}`;
+      const response = await apiClient.get(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      const data = await response.json();
-      console.log("one job", data.job);
-      if (response.ok) {
-        setJob(data.job);
+  
+      if (response.status === 200) {
+        console.log("one job", response.data.job);
+        setJob(response.data.job);
       } else {
-        setError(data.message || "Failed to fetch job details");
+        setError(response?.data?.message || "Failed to fetch job details");
       }
     } catch (err) {
       console.error("Error fetching job details:", err);
@@ -86,6 +116,36 @@ const ViewJobPost = ({ route }) => {
       setLoading(false);
     }
   };
+  
+  const handleApplicantScreen = (item) => {
+    navigation.navigate("JobApplicantForRecruiter", { item,job });
+  };
+
+
+  
+  // const fetchJobDetails = async () => {
+  //   const url = `${BASEAPIURL}/social/job/${jobId}`;
+  //   try {
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     const data = await response.json();
+  //     console.log("one job", data.job);
+  //     if (response.ok) {
+  //       setJob(data.job);
+  //     } else {
+  //       setError(data.message || "Failed to fetch job details");
+  //     }
+  //   } catch (err) {
+  //     console.error("Error fetching job details:", err);
+  //     setError("An unexpected error occurred.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
 
   useEffect(() => {
     if(isFocused){

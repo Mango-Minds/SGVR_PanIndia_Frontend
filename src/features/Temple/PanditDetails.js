@@ -45,6 +45,7 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
 import * as Location from "expo-location";
+import apiClient from "../../store/apiClient";
 
 const TemplePanditDetails = ({ route, navigation }) => {
   const Navigation = useNavigation();
@@ -92,29 +93,45 @@ const TemplePanditDetails = ({ route, navigation }) => {
   console.log("PanditInfo in pandit page: ", panditinfo);
   const [panditDetails, setPanditDetails] = useState(panditinfo);
   console.log("PanditDetails: ", panditDetails);
+  // const fetchPandit = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/panditcrud/${panditDetails._id}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch pandit");
+  //     }
+  //     const data = await response.json();
+  //     console.log("pandit response data", data);
+  //     setPanditDetails(data);
+  //   } catch (error) {
+  //     console.error("Error fetching pandit:", error);
+  //   }
+  // };
+
   const fetchPandit = async () => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/panditcrud/${panditDetails._id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
+      const response = await apiClient.get(`/panditcrud/${panditDetails._id}`);
+  
+      if (response.status === 200) {
+        const data = response.data;
+        console.log("Pandit response data:", data);
+        setPanditDetails(data);
+      } else {
         throw new Error("Failed to fetch pandit");
       }
-      const data = await response.json();
-      console.log("pandit response data", data);
-      setPanditDetails(data);
     } catch (error) {
       console.error("Error fetching pandit:", error);
     }
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchPandit();
@@ -145,47 +162,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   
   const [eventsByMonth, setEventsByMonth] = useState([]);
 
-  // const fetchPanditEventDates = async (month, year) => {
-  //   setLoadingDates(true); // Show loading indicator while fetching
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       const dates = data.dates;
-  //       let updatedMarkedDates = {};
-
-  //       dates.forEach((date) => {
-  //         updatedMarkedDates[date] = {
-  //           marked: true,
-  //           dotColor: Theme.themeColor,
-  //         };
-  //       });
-
-  //       setMarkedDates((prevDates) => ({
-  //         ...prevDates,
-  //         ...updatedMarkedDates,
-  //       }));
-  //     } else {
-  //       console.error("Failed to fetch pandit events");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching pandit event dates:", error);
-  //   } finally {
-  //     setLoadingDates(false);
-  //   }
-  // };
-
-  // Use effect to fetch pandit events for the current month on load
 
   // const fetchPanditEventDates = async (month, year) => {
   //   setLoadingDates(true); // Show loading indicator while fetching
@@ -206,10 +183,10 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //       const dates = data.dates;
   //       let updatedMarkedDates = {};
 
-  //       const today = new Date().toISOString().slice(0, 10); // Get today's date in YYYY-MM-DD format
-  //       console.log("Today's Date:", today); // Log today's date for debugging
+  //       const today = new Date().toISOString().slice(0, 10);
+  //       console.log("Today's Date:", today);
 
-  //       // Ensure today is included in the marked dates
+  //       // Ensure today is included in the marked dates with two dots
   //       if (!dates.includes(today)) {
   //         updatedMarkedDates[today] = {
   //           marked: true,
@@ -221,18 +198,21 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //         };
   //       }
 
+  //       // Process event dates
   //       dates.forEach((date) => {
   //         console.log("Processing date:", date); // Log each date being processed
 
-  //         if (date !== today) { // Skip today since it's already added
+  //         if (date !== today) {
+  //           // Skip today since it's already added
   //           updatedMarkedDates[date] = {
   //             marked: true,
-  //             dotColor: Theme.themeColor, // Single dot for other event dates
+  //             dotColor: Theme.themeColor, // Dot color for event dates
+  //             dots: [{ key: "dot1", color: Theme.themeColor }], // Ensure at least one dot
   //           };
   //         }
   //       });
 
-  //       console.log("Updated marked dates:", updatedMarkedDates); // Log the updated marked dates before setting state
+  //       console.log("Updated marked dates:", updatedMarkedDates);
 
   //       setMarkedDates((prevDates) => ({
   //         ...prevDates,
@@ -247,29 +227,20 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //     setLoadingDates(false);
   //   }
   // };
-
   const fetchPanditEventDates = async (month, year) => {
     setLoadingDates(true); // Show loading indicator while fetching
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        const dates = data.dates;
+      const response = await apiClient.get(`/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`, {
+        
+      });
+  
+      if (response.status === 200) {
+        const dates = response.data.dates;
         let updatedMarkedDates = {};
-
+  
         const today = new Date().toISOString().slice(0, 10);
         console.log("Today's Date:", today);
-
+  
         // Ensure today is included in the marked dates with two dots
         if (!dates.includes(today)) {
           updatedMarkedDates[today] = {
@@ -281,11 +252,11 @@ const TemplePanditDetails = ({ route, navigation }) => {
             ], // Two dots for today
           };
         }
-
+  
         // Process event dates
         dates.forEach((date) => {
           console.log("Processing date:", date); // Log each date being processed
-
+  
           if (date !== today) {
             // Skip today since it's already added
             updatedMarkedDates[date] = {
@@ -295,9 +266,9 @@ const TemplePanditDetails = ({ route, navigation }) => {
             };
           }
         });
-
+  
         console.log("Updated marked dates:", updatedMarkedDates);
-
+  
         setMarkedDates((prevDates) => ({
           ...prevDates,
           ...updatedMarkedDates,
@@ -311,7 +282,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
       setLoadingDates(false);
     }
   };
-
+  
   const handleMonthChange = (data) => {
     const month = parseInt(data.dateString.slice(5, 7));
     const year = parseInt(data.year);

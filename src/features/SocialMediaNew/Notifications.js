@@ -6,7 +6,8 @@ import { SearchField } from "../../styles/common.styles";
 import { useSelector } from 'react-redux';
 import { BASEAPIURL } from '../../infrastructure/constants';
 import moment from 'moment';
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 
 const sampleNotificationData = [
   {
@@ -67,30 +68,48 @@ const NotificationsScreen = ({navigation}) => {
   const [activeTab, setActiveTab] = useState('All');
   const token = useSelector((state) => state.user.token);
   const [notifications, setNotifications] = useState(null);
+// const fetchNotifications = async () => {
+//   try {
+//     // setLoading(true);
+//     const response = await fetch(`${BASEAPIURL}/notifications/`, {
+//       method: "GET", 
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${token}`, 
+//       },
+//     });
+//     if (!response.ok) {
+//       throw new Error(`Error ${response.status}: ${response.statusText}`);
+//     }
+
+//     const data = await response.json();
+//       console.log("notification data", data)
+//     setNotifications(data.notifications);
+//   } catch (error) {
+//     console.error("Failed to fetch notifications:", error);
+//     setError("Unable to fetch notifications. Please try again later.");
+//   } finally {
+//     // setLoading(false);
+//   }
+// };
 const fetchNotifications = async () => {
   try {
-    // setLoading(true);
-    const response = await fetch(`${BASEAPIURL}/notifications/`, {
-      method: "GET", 
+    const token = await AsyncStorage.getItem("token");
+
+    const response = await apiClient.get(`${BASEAPIURL}/notifications/`, {
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`, 
+        Authorization: `Bearer ${token}`,
       },
     });
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
 
-    const data = await response.json();
-      console.log("notification data", data)
-    setNotifications(data.notifications);
+    console.log("notification data", response.data);
+    setNotifications(response.data.notifications);
   } catch (error) {
     console.error("Failed to fetch notifications:", error);
     setError("Unable to fetch notifications. Please try again later.");
-  } finally {
-    // setLoading(false);
   }
 };
+
 
 useEffect(() => {
   fetchNotifications();

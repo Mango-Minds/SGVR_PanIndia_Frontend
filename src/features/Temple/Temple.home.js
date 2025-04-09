@@ -21,7 +21,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import Profile from "../../assets/images/B2b/profile.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
-
+import apiClient from "../../store/apiClient";
 import {
   TempleHomeCard,
   MatrimonyHomeCardSubTitle,
@@ -187,9 +187,83 @@ const TempleHome = ({ navigation }) => {
 
   const [temples, setTemples] = useState([]);
 
+  // const fetchTemples = async (searchTerm, selectedFiltersArray) => {
+  //   const queryParams = new URLSearchParams();
+
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Temple Name") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("templeName", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "State") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("state", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "City") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("city", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "Address") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("address", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "Gods") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("gods", option.toLowerCase())
+  //       );
+  //     }
+  //   });
+
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
+  //   // if (user.userType === "pandit") {
+  //   //   queryParams.append("panditId", user.roleData._id);
+  //   // }
+  //   // if (user.userType === "templeAdmin") {
+  //   //   queryParams.append("templeAdminId", user.roleData._id);
+  //   // }
+  //   // if (user.userType === "templeShop") {
+  //   //   queryParams.append("templeShopId", user.roleData._id);
+  //   // }
+  //   const queryString = queryParams.toString();
+  //   const url = `${BASEAPIURL}/temple?${queryString}`;
+
+  //   console.log("Fetching temples with URL:", url);
+  //   try {
+  //     setLoadingAnimation(true);
+
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Temples data:", data);
+
+  //       setTemples(data);
+  //     } else {
+  //       throw new Error("Failed to fetch temples");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching temples:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+  // useEffect(() => {
+  //   if (isFocused) {
+  //     fetchTemples(searchTerm, selectedFiltersArray);
+  //   }
+  // }, [isFocused]);
+
   const fetchTemples = async (searchTerm, selectedFiltersArray) => {
     const queryParams = new URLSearchParams();
-
+  
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Temple Name") {
         filter.Options.forEach((option) =>
@@ -213,74 +287,37 @@ const TempleHome = ({ navigation }) => {
         );
       }
     });
-
+  
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
-    // if (user.userType === "pandit") {
-    //   queryParams.append("panditId", user.roleData._id);
-    // }
-    // if (user.userType === "templeAdmin") {
-    //   queryParams.append("templeAdminId", user.roleData._id);
-    // }
-    // if (user.userType === "templeShop") {
-    //   queryParams.append("templeShopId", user.roleData._id);
-    // }
+  
     const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/temple?${queryString}`;
-
-    console.log("Fetching temples with URL:", url);
+    
     try {
       setLoadingAnimation(true);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Temples data:", data);
-
-        setTemples(data);
-      } else {
-        throw new Error("Failed to fetch temples");
-      }
+      console.log("Fetching temples with query:", queryString);
+  
+      const response = await apiClient.get(`/temple?${queryString}`);
+      console.log("Temples data:", response.data);
+  
+      setTemples(response.data);
     } catch (error) {
       console.error("Error fetching temples:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     fetchTemples(searchTerm, selectedFiltersArray);
-  //   }
-  // }, [isFocused]);
-
   const [pandits, setPandits] = useState([]);
   const fetchPandits = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/panditcrud/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Pandits data:", data);
-
-        setPandits(data);
-      } else {
-        throw new Error("Failed to fetch pandits");
-      }
+      console.log("Fetching pandits...");
+  
+      const response = await apiClient.get("/panditcrud/");
+      console.log("Pandits data:", response.data);
+  
+      setPandits(response.data);
     } catch (error) {
       console.error("Error fetching pandits:", error);
     } finally {

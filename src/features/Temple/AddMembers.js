@@ -35,8 +35,9 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 // import DateTimePicker from "@react-native-community/datetimepicker";
-
+import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -132,24 +133,105 @@ export default function AddMembers({ navigation, route }) {
 
   const userType = decodedPayload.userType;
 
+  // const addMember = async () => {
+  //   console.log("Tid: ", templeId);
+  //   try {
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       return;
+  //     }
+
+  //     const formData = new FormData();
+  //     formData.append("name", registerDetails.memberName);
+
+  //     formData.append("designation", registerDetails.memberDesignation);
+  //     formData.append("email", registerDetails.memberEmail);
+
+  //     formData.append("phone", registerDetails.memberPhone);
+  //     formData.append("location", registerDetails.memberLocation);
+  //     formData.append("description", registerDetails.memberDescription);
+
+  //     selectedImages.forEach((image, index) => {
+  //       formData.append("profileImage", {
+  //         uri: image.uri,
+  //         name: `image_${index}.jpg`,
+  //         type: "image/jpeg",
+  //       });
+  //     });
+
+  //     console.log("formdata add member", formData);
+  //     await dispatch(setLoadingInBtn(true));
+
+  //     const response = await fetch(`${BASEAPIURL}/temple/${templeId}/members`, {
+  //       method: "POST",
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data", // Required for file uploads
+  //       },
+  //       body: formData,
+  //     });
+  //     await dispatch(setLoadingInBtn(false));
+
+  //     console.log("response", response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to add product");
+  //     }
+
+  //     setRegisterDetails({
+  //       memberName: "",
+  //       memberDesignation: "",
+  //       memberEmail: "",
+  //       memberPhone: "",
+  //       memberLocation: "",
+  //       memberDescription: "",
+  //     });
+
+  //     const data = await response.json();
+  //     console.log("Added Member:", data);
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Member Added successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error adding member:", error);
+
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to add member",
+  //       [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+  //       { cancelable: false }
+  //     );
+  //   }
+  // };
+
   const addMember = async () => {
     console.log("Tid: ", templeId);
+      let token = await AsyncStorage.getItem("token");
     try {
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
-
+  
       const formData = new FormData();
       formData.append("name", registerDetails.memberName);
-
       formData.append("designation", registerDetails.memberDesignation);
       formData.append("email", registerDetails.memberEmail);
-
       formData.append("phone", registerDetails.memberPhone);
       formData.append("location", registerDetails.memberLocation);
       formData.append("description", registerDetails.memberDescription);
-
+  
       selectedImages.forEach((image, index) => {
         formData.append("profileImage", {
           uri: image.uri,
@@ -157,26 +239,25 @@ export default function AddMembers({ navigation, route }) {
           type: "image/jpeg",
         });
       });
-
+  
       console.log("formdata add member", formData);
       await dispatch(setLoadingInBtn(true));
-
-      const response = await fetch(`${BASEAPIURL}/temple/${templeId}/members`, {
-        method: "POST",
+  
+      const response = await apiClient.post(`/temple/${templeId}/members`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data", // Required for file uploads
         },
-        body: formData,
       });
+  
       await dispatch(setLoadingInBtn(false));
-
+  
       console.log("response", response);
-
-      if (!response.ok) {
-        throw new Error("Failed to add product");
+  
+      if (!response || (response.status !== 200 && response.status !== 201)) {
+        throw new Error("Failed to add member");
       }
-
+  
       setRegisterDetails({
         memberName: "",
         memberDesignation: "",
@@ -185,10 +266,10 @@ export default function AddMembers({ navigation, route }) {
         memberLocation: "",
         memberDescription: "",
       });
-
-      const data = await response.json();
+  
+      const data = response.data;
       console.log("Added Member:", data);
-
+  
       Alert.alert(
         "Success",
         "Member Added successfully",
@@ -204,7 +285,7 @@ export default function AddMembers({ navigation, route }) {
       );
     } catch (error) {
       console.error("Error adding member:", error);
-
+  
       Alert.alert(
         "Error",
         "Failed to add member",
@@ -213,8 +294,6 @@ export default function AddMembers({ navigation, route }) {
       );
     }
   };
-
-
 
   const CategoryData = ["gold", "silver", "diamond"];
   const ConditionData = ["old", "new"];

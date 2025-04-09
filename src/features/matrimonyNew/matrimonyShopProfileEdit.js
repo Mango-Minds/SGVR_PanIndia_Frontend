@@ -51,7 +51,9 @@ import { ErrorToggle, setLoadingInBtn } from "../../store/user";
 import { decode } from "base-64";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
+import { updateMatrimonyShopProfile } from "./matrimonyAPIs";
 const MatrimonyShopProfileEdit = ({ navigation, route }) => {
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user);
@@ -109,33 +111,120 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
 
   const FILE_SIZE_LIMIT = 5 * 1024 * 1024; //5mb
 
+ 
+  // const handleUpdate = async () => {
+  //   const formData = new FormData();
+  
+  //   // Image validations
+  //   console.log("Uploaded Images:", uploadedImages);
+  //   for (let i = 0; i < uploadedImages.length; i++) {
+  //     if (uploadedImages[i].size > FILE_SIZE_LIMIT) {
+  //       Alert.alert("Size Limit Reached", `Image ${i + 1} is exceeding the size limit.`, [
+  //         { text: "OK" },
+  //       ]);
+  //       return;
+  //     }
+  //   }
+  
+  //   if (selectedImages.length + uploadedImages.length > 5) {
+  //     Alert.alert("Limit Reached", "You can only upload up to 5 images.", [
+  //       { text: "OK" },
+  //     ]);
+  //     return;
+  //   }
+  
+  //   // Append selected and uploaded images
+  //   selectedImages.forEach((image) => {
+  //     formData.append("images", image);
+  //   });
+  
+  //   uploadedImages.forEach((image, index) => {
+  //     formData.append("images", {
+  //       uri: image.uri,
+  //       name: `image_${index}.jpg`,
+  //       type: "image/jpeg",
+  //     });
+  //   });
+  
+  //   // Append text fields
+  //   formData.append("name", modifiedDetails.name);
+  //   formData.append("businessName", modifiedDetails.businessName);
+  //   formData.append("address", modifiedDetails.address);
+  //   formData.append("description", modifiedDetails.description);
+  //   formData.append("contactInfo", modifiedDetails.contactInfo);
+  
+  //   await dispatch(setLoadingInBtn(true));
+  
+  //   let editUrl = "";
+  //   switch (ownerRole) {
+  //     case "matrimonyVendor":
+  //       editUrl = `${BASEAPIURL}/matrimony/matrimonyVendor/matrimonyVendors/edit/${ownerId}`;
+  //       break;
+  //     case "decorator":
+  //       editUrl = `${BASEAPIURL}/matrimony/decorator/decorators/edit/${ownerId}`;
+  //       break;
+  //     case "caterer":
+  //       editUrl = `${BASEAPIURL}/matrimony/caterer/caterers/edit/${ownerId}`;
+  //       break;
+  //     case "planner":
+  //       editUrl = `${BASEAPIURL}/matrimony/planner/planners/edit/${ownerId}`;
+  //       break;
+  //     case "venue":
+  //       editUrl = `${BASEAPIURL}/matrimony/venue/venues/edit/${ownerId}`;
+  //       break;
+  //   }
+  
+  //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  
+  //     const response = await apiClient.put(editUrl, formData, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //         "Content-Type": "multipart/form-data",
+  //       },
+  //     });
+  
+  //     if (response.status !== 200 && response.status !== 201) {
+  //       throw new Error("Failed to update matrimony shop details");
+  //     }
+  
+  //     Alert.alert("Success", "Matrimony shop details updated successfully");
+  //     navigation.goBack();
+  //   } catch (error) {
+  //     console.error("Error updating matrimony shop details:", error);
+  //     Alert.alert("Error", "Something went wrong while updating shop details.");
+  //   } finally {
+  //     await dispatch(setLoadingInBtn(false));
+  //   }
+  // };
+  
+  
   const handleUpdate = async () => {
     const formData = new FormData();
-
-    // image checks :)
+  
+    // Image validations
     console.log("Uploaded Images:", uploadedImages);
-    uploadedImages.forEach((file, index) => {
-      if (file.size > FILE_SIZE_LIMIT) {
-        Alert.alert("Size Limit Reached", `Image ${index+1} is exceeding the size limit.`, [
+    for (let i = 0; i < uploadedImages.length; i++) {
+      if (uploadedImages[i].size > FILE_SIZE_LIMIT) {
+        Alert.alert("Size Limit Reached", `Image ${i + 1} is exceeding the size limit.`, [
           { text: "OK" },
         ]);
         return;
       }
-    });
-
+    }
+  
     if (selectedImages.length + uploadedImages.length > 5) {
       Alert.alert("Limit Reached", "You can only upload up to 5 images.", [
         { text: "OK" },
       ]);
       return;
     }
-
+  
+    // Append selected and uploaded images
     selectedImages.forEach((image) => {
-    
-        formData.append("images", image);
-      
+      formData.append("images", image);
     });
-
+  
     uploadedImages.forEach((image, index) => {
       formData.append("images", {
         uri: image.uri,
@@ -143,53 +232,33 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
         type: "image/jpeg",
       });
     });
-
+  
+    // Append text fields
     formData.append("name", modifiedDetails.name);
     formData.append("businessName", modifiedDetails.businessName);
     formData.append("address", modifiedDetails.address);
     formData.append("description", modifiedDetails.description);
     formData.append("contactInfo", modifiedDetails.contactInfo);
-
+  
     await dispatch(setLoadingInBtn(true));
-
-    let editUrl = "";
-
-    if (ownerRole === "matrimonyVendor") {
-      editUrl = `${BASEAPIURL}/matrimony/matrimonyVendor/matrimonyVendors/edit/${ownerId}`;
-    } else if (ownerRole === "decorator") {
-      editUrl = `${BASEAPIURL}/matrimony/decorator/decorators/edit/${ownerId}`;
-    } else if (ownerRole === "caterer") {
-      editUrl = `${BASEAPIURL}/matrimony/caterer/caterers/edit/${ownerId}`;
-    } else if (ownerRole === "planner") {
-      editUrl = `${BASEAPIURL}/matrimony/planner/planners/edit/${ownerId}`;
-    } else if (ownerRole === "venue") {
-      editUrl = `${BASEAPIURL}/matrimony/venue/venues/edit/${ownerId}`;
-    }
-
+  
     try {
-      const response = await fetch(editUrl, {
-        method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
+      const response = await updateMatrimonyShopProfile(ownerRole, ownerId, formData);
+  
+      if (response.status !== 200 && response.status !== 201) {
         throw new Error("Failed to update matrimony shop details");
       }
-
-      alert("Matrimony shop details updated successfully");
+  
+      Alert.alert("Success", "Matrimony shop details updated successfully");
       navigation.goBack();
-      await dispatch(setLoadingInBtn(false));
     } catch (error) {
       console.error("Error updating matrimony shop details:", error);
+      Alert.alert("Error", "Something went wrong while updating shop details.");
+    } finally {
       await dispatch(setLoadingInBtn(false));
     }
   };
-
-  //const shopImage = BASEIMGURL + modifiedDetails.image;
-
+  
   return (
     <>
       <SafeArea>

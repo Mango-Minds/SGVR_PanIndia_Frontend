@@ -29,6 +29,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   BASEAPIURL,
@@ -144,12 +146,78 @@ const ChatScreenNew = ({ route }) => {
     };
   }, []);
 
+  // const handleSubmit = async (event) => {
+  //   event.preventDefault();
+
+  //   // Check if there's any uploaded media (image, video, or document)
+  //   let uploaded_media = uploadedImage || uploadedVideo || uploadedDoc;
+
+  //   if (uploaded_media || chat.trim() !== "") {
+  //     if (uploaded_media) {
+  //       try {
+  //         // Upload media first
+  //         const formData = new FormData();
+  //         formData.append("media", {
+  //           uri: uploaded_media.uri,
+  //           name: uploaded_media.name,
+  //           type: uploaded_media.mimeType,
+  //           size: uploaded_media.size,
+  //         });
+
+  //         const response = await fetch(`${BASEAPIURL}/upload/${chat_room_id}`, {
+  //           method: "POST",
+  //           headers: {
+  //             Authorization: `Bearer ${auth_token}`,
+  //           },
+  //           body: formData,
+  //         });
+
+  //         let data_media = null;
+  //         if (response.ok) {
+  //           data_media = await response.json();
+
+  //           const media_object = {
+  //             mimeType: data_media.mimeType,
+  //             name: data_media.name,
+  //             size: data_media.size,
+  //             uri: data_media.uri,
+  //           };
+
+  //           socket.emit("chatMessage", {
+  //             roomId: chat_room_id,
+  //             message: chat.trim() === "" ? null : chat, // Handle text or media-only
+  //             media: media_object,
+  //             userId: userId,
+  //           });
+  //         } else {
+  //           throw new Error("Failed to upload media");
+  //         }
+  //       } catch (error) {
+  //         console.error("Error uploading media:", error);
+  //       }
+  //     } else {
+  //       // Proceed to send the chat message without media
+  //       socket.emit("chatMessage", {
+  //         roomId: chat_room_id,
+  //         message: chat,
+  //         media: null,
+  //         userId: userId,
+  //       });
+  //     }
+  //     setChats([...chats, { id: Date.now().toString(), text: chat, sender: "You" }]);
+  //     // Clear the input fields after sending the message
+  //     setChat("");
+  //     setUploadedImage(null);
+  //     setUploadedVideo(null);
+  //     setUploadedDoc(null);
+  //   }
+  // };
   const handleSubmit = async (event) => {
     event.preventDefault();
-
+  
     // Check if there's any uploaded media (image, video, or document)
     let uploaded_media = uploadedImage || uploadedVideo || uploadedDoc;
-
+  
     if (uploaded_media || chat.trim() !== "") {
       if (uploaded_media) {
         try {
@@ -161,26 +229,25 @@ const ChatScreenNew = ({ route }) => {
             type: uploaded_media.mimeType,
             size: uploaded_media.size,
           });
-
-          const response = await fetch(`${BASEAPIURL}/upload/${chat_room_id}`, {
-            method: "POST",
+  
+          const response = await apiClient.post(`/upload/${chat_room_id}`, formData, {
             headers: {
               Authorization: `Bearer ${auth_token}`,
+              "Content-Type": "multipart/form-data",
             },
-            body: formData,
           });
-
+  
           let data_media = null;
-          if (response.ok) {
-            data_media = await response.json();
-
+          if (response.status === 200) {
+            data_media = response.data;
+  
             const media_object = {
               mimeType: data_media.mimeType,
               name: data_media.name,
               size: data_media.size,
               uri: data_media.uri,
             };
-
+  
             socket.emit("chatMessage", {
               roomId: chat_room_id,
               message: chat.trim() === "" ? null : chat, // Handle text or media-only
@@ -202,6 +269,7 @@ const ChatScreenNew = ({ route }) => {
           userId: userId,
         });
       }
+  
       setChats([...chats, { id: Date.now().toString(), text: chat, sender: "You" }]);
       // Clear the input fields after sending the message
       setChat("");
@@ -210,7 +278,6 @@ const ChatScreenNew = ({ route }) => {
       setUploadedDoc(null);
     }
   };
-
   const goBackAndDisconnect = async () => {
     console.log(`Going back and leaving room: ${chat_room_id}`);
     navigation.goBack();

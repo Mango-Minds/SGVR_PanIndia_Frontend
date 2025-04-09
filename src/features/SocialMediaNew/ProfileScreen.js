@@ -44,7 +44,8 @@ import {
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
 import { decode } from "base-64";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const Tab = createBottomTabNavigator();
 
 export default function ProfileNewScreen() {
@@ -61,59 +62,96 @@ const isFocused = useIsFocused();
   const [userProfile, setUserProfile] = useState([]);
   const [userData, setUserData] = useState([]);
   const pan = useRef(new Animated.ValueXY()).current;
+  // const fetchUserProfile = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/user/profile/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     setUserProfile(data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //     // setLoading(false);
+  //   }
+  // };
+  // const fetchUser = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     setUserData(data);
+  //   } catch (err) {
+  //     console.log(err);
+  //   } finally {
+  //     // setLoading(false);
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+
   const fetchUserProfile = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/user/profile/${userId}`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.get(`/user/profile/${userId}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      setUserProfile(data);
-    } catch (err) {
-      console.log(err);
+  
+      setUserProfile(response.data);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
     } finally {
       setLoadingAnimation(false);
-      // setLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchUserProfile();
-  }, []);
-
   const fetchUser = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+  
+      const response = await apiClient.get(`/user/${userId}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
-      setUserData(data);
-    } catch (err) {
-      console.log(err);
+  
+      setUserData(response.data);
+    } catch (error) {
+      console.error("Error fetching user:", error);
     } finally {
-      // setLoading(false);
       setLoadingAnimation(false);
     }
   };
+    
+  useEffect(() => {
+    fetchUserProfile();
+  }, []);
 
   useEffect(() => {
     fetchUser();
@@ -169,32 +207,54 @@ const isFocused = useIsFocused();
   const [userposts, setUserPosts] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // const fetchPosts = async () => {
+  //   if (allLoaded) return;
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/social/post/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+  //     const data = await response.json();
+  //     setUserPosts(data);
+  //     console.log("DATA: ", data);
+  //   } catch (err) {
+  //     console.log(err);
+  //     setError(err.message);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
   const fetchPosts = async () => {
     if (allLoaded) return;
+  
     try {
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/social/post/user/${userId}`, {
-        method: "GET",
+  
+      const token = await AsyncStorage.getItem("token"); 
+      const response = await apiClient.get(`/social/post/user/${userId}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-      const data = await response.json();
-      setUserPosts(data);
-      console.log("DATA: ", data);
+  
+      setUserPosts(response.data);
+      console.log("Posts fetched: ", response.data);
     } catch (err) {
-      console.log(err);
-      setError(err.message);
+      console.error("Error fetching posts:", err);
+      setError(err.message || "Something went wrong while fetching posts.");
     } finally {
       setLoadingAnimation(false);
     }
   };
-
+  
   useEffect(() => {
     fetchPosts();
   }, []);
@@ -240,19 +300,43 @@ const isFocused = useIsFocused();
   const handleSeeAllClick = () => {
     setShowAllPosts((prev) => !prev);
   };
+  // const handleDeletePost = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/social/post/${postId}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete post");
+  //     }
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Post deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             fetchPosts();
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting product:", error);
+  //   }
+  // };
+ 
   const handleDeletePost = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/social/post/${postId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete post");
-      }
-
+      const response = await apiClient.delete(`/social/post/${postId}`);
+      console.log("Delete response:", response); 
+  
       Alert.alert(
         "Success",
         "Post deleted successfully",
@@ -268,10 +352,28 @@ const isFocused = useIsFocused();
         { cancelable: false }
       );
     } catch (error) {
-      console.error("Error deleting product:", error);
+      console.error("Error deleting post:", error);
+  
+      // Add more logs to understand what's coming back
+      console.log("Axios error object:", {
+        status: error?.response?.status,
+        data: error?.response?.data,
+        message: error.message,
+      });
+  
+      Alert.alert(
+        "Error",
+        error?.response?.data?.message ||
+          error.message ||
+          "Something went wrong while deleting the post."
+      );
     }
   };
-
+  
+  
+  
+  
+  
   const renderContent = () => {
     switch (activeTab) {
       case "Posts":
@@ -470,49 +572,90 @@ const isFocused = useIsFocused();
     }
   };
 
+  // const submitDoc = async (event) => {
+  //   event.preventDefault();
+
+  //   // Check if there's any uploaded media (image, video, or document)
+  //   let uploaded_media = uploadedDoc;
+
+  //   if (uploaded_media) {
+  //     try {
+  //       // Upload media first
+  //       const formData = new FormData();
+  //       formData.append("resume", {
+  //         uri: uploaded_media.uri,
+  //         name: uploaded_media.name,
+  //         type: uploaded_media.mimeType,
+  //         size: uploaded_media.size,
+  //       });
+
+  //       const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
+  //         method: "PATCH",
+  //         headers: {
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: formData,
+  //       });
+
+  //       let data_media = null;
+  //       if (response.ok) {
+  //         data_media = await response.json();
+
+  //         alert("Resume Updated Successfully");
+  //         fetchUserProfile();
+  //         setDocModalVisible(false);
+  //       } else {
+  //         throw new Error("Failed to upload resume");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error uploading resume:", error);
+  //     }
+  //   }
+
+  //   setUploadedDoc(null);
+  // };
   const submitDoc = async (event) => {
     event.preventDefault();
-
-    // Check if there's any uploaded media (image, video, or document)
-    let uploaded_media = uploadedDoc;
-
-    if (uploaded_media) {
-      try {
-        // Upload media first
-        const formData = new FormData();
-        formData.append("resume", {
-          uri: uploaded_media.uri,
-          name: uploaded_media.name,
-          type: uploaded_media.mimeType,
-          size: uploaded_media.size,
-        });
-
-        const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
-          method: "PATCH",
+  
+    if (!uploadedDoc) return;
+  
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) throw new Error("Unauthorized");
+  
+      const formData = new FormData();
+      formData.append("resume", {
+        uri: uploadedDoc.uri,
+        name: uploadedDoc.name,
+        type: uploadedDoc.mimeType || "application/pdf",
+      });
+  
+      const response = await apiClient.patch(
+        "/user/update-follow-data",
+        formData,
+        {
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "multipart/form-data",
           },
-          body: formData,
-        });
-
-        let data_media = null;
-        if (response.ok) {
-          data_media = await response.json();
-
-          alert("Resume Updated Successfully");
-          fetchUserProfile();
-          setDocModalVisible(false);
-        } else {
-          throw new Error("Failed to upload resume");
         }
-      } catch (error) {
-        console.error("Error uploading resume:", error);
+      );
+  
+      if (response.status === 200) {
+        alert("Resume Updated Successfully");
+        fetchUserProfile();
+        setDocModalVisible(false);
+      } else {
+        throw new Error("Failed to upload resume");
       }
+    } catch (error) {
+      console.error("Error uploading resume:", error);
+      alert("Error uploading resume");
+    } finally {
+      setUploadedDoc(null);
     }
-
-    setUploadedDoc(null);
   };
-
+  
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerContainer}>

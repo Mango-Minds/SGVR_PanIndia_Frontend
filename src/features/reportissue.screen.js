@@ -67,7 +67,7 @@ const Reportscreen = ({ navigation }) => {
               padding: 10,
             }}
           >
-            <Image source={Logo} alt="Mi Maratha" />
+            <Image source={Logo} alt="Me Maratha" />
           </View>
 
           <View

@@ -25,7 +25,8 @@ import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "./BottomNavigation";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 const MyTempleProfile = ({ route }) => {
   const {pandits, fetchPandits} = route.params;
   console.log("Pandits in profile: ", pandits);
@@ -51,20 +52,79 @@ const MyTempleProfile = ({ route }) => {
 
   const templeId = templeDetails?.roleData?.temple;
 
+  // const fetchUser = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       setUserData(data);
+  //       console.log("data.user", data.user);
+  //     } else {
+  //       throw new Error("Failed to fetch user");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+  // const [shopData, setShopData] = useState([]);
+
+  // const fetchShops = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const response = await fetch(`${BASEAPIURL}/templeShops`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("fetch Shop Data: ", data);
+  //       setShopData(data);
+  //       const loggedInShopUser = data.find(
+  //         (shop) =>
+  //           (shop.owner && shop.owner.id?._id === userId) || shop.owner === userId
+  //       );
+  //     const loggedInShopId = loggedInShopUser ? loggedInShopUser._id : null;
+  //       fetchProducts(loggedInShopId);
+  //     } else {
+  //       throw new Error("Failed to fetch shops");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching shops:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
   const fetchUser = async () => {
     try {
+      const token = await AsyncStorage.getItem("token");
+  if (!token) throw new Error("Unauthorized");
+  
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/user/${userId}`, {
-        method: "GET",
+      const response = await apiClient.get(`/user/${userId}`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-
+  
+      if (response.status === 200) {
+        const data = response.data;
         setUserData(data);
         console.log("data.user", data.user);
       } else {
@@ -76,29 +136,32 @@ const MyTempleProfile = ({ route }) => {
       setLoadingAnimation(false);
     }
   };
-
+  
   const [shopData, setShopData] = useState([]);
-
+  
   const fetchShops = async () => {
     try {
+      const token = await AsyncStorage.getItem("token");
+  if (!token) throw new Error("Unauthorized");
+  
       setLoadingAnimation(true);
-      const response = await fetch(`${BASEAPIURL}/templeShops`, {
-        method: "GET",
+      const response = await apiClient.get(`/templeShops`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
+  
+      if (response.status === 200) {
+        const data = response.data;
         console.log("fetch Shop Data: ", data);
         setShopData(data);
+  
         const loggedInShopUser = data.find(
           (shop) =>
-            (shop.owner && shop.owner.id?._id === userId) || shop.owner === userId
+            (shop.owner && shop.owner.id?._id === userId) ||
+            shop.owner === userId
         );
-      const loggedInShopId = loggedInShopUser ? loggedInShopUser._id : null;
+        const loggedInShopId = loggedInShopUser ? loggedInShopUser._id : null;
         fetchProducts(loggedInShopId);
       } else {
         throw new Error("Failed to fetch shops");
@@ -109,7 +172,7 @@ const MyTempleProfile = ({ route }) => {
       setLoadingAnimation(false);
     }
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchShops();
@@ -137,23 +200,51 @@ const MyTempleProfile = ({ route }) => {
 
   const [products, setProducts] = useState([]);
 
+  // const fetchProducts = async (loggedInShopId) => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/products`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       const filteredProducts = data.filter(
+  //         (product) => product.shop._id === loggedInShopId
+  //       );
+
+  //       setProducts(filteredProducts);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setIsloading(false);
+  //   }
+  // };
   const fetchProducts = async (loggedInShopId) => {
     try {
-      const response = await fetch(`${BASEAPIURL}/products`, {
-        method: "GET",
+      const token = await AsyncStorage.getItem("token");
+  if (!token) throw new Error("Unauthorized");
+  
+      const response = await apiClient.get(`/products`, {
         headers: {
-          "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
       });
-
-      if (response.ok) {
-        const data = await response.json();
-
+  
+      if (response.status === 200) {
+        const data = response.data;
+  
         const filteredProducts = data.filter(
           (product) => product.shop._id === loggedInShopId
         );
-
+  
         setProducts(filteredProducts);
       } else {
         throw new Error("Failed to fetch products");

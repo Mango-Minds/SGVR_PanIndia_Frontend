@@ -24,7 +24,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import BottomNavigation from "../../components/Jewellery/BottomNavigation";
-
+import apiClient from "../../store/apiClient";
 const EachShopProfile = ({ route }) => {
   const token = useSelector((state) => state.user.token);
 
@@ -45,55 +45,82 @@ const EachShopProfile = ({ route }) => {
 
   
 
+  // const fetchShop = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/templeShops/${shopId}`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (!response.ok) {
+  //       const errorMessage = await response.text();
+  //       throw new Error(`Failed to fetch products: ${errorMessage}`);
+  //     }
+  //     const data = await response.json();
+  //     console.log("fetched shop:", data)
+  //     console.log("Products for logged-in worker: ", shopProducts);
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   }
+  // };
+
+  // const fetchShopProducts = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/products`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+
+  //       const filteredProducts = data.filter(
+  //         (product) => product.shop._id === shopId
+  //       );
+  //       setShopProducts(filteredProducts);
+  //     } else {
+  //       throw new Error("Failed to fetch products");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setIsloading(false);
+  //   }
+  // };
+
   const fetchShop = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/templeShops/${shopId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        const errorMessage = await response.text();
-        throw new Error(`Failed to fetch products: ${errorMessage}`);
-      }
-      const data = await response.json();
-      console.log("fetched shop:", data)
-      console.log("Products for logged-in worker: ", shopProducts);
+      const response = await apiClient.get(`/templeShops/${shopId}`);
+  
+      console.log("Fetched shop:", response.data);
+      console.log("Products for logged-in worker:", shopProducts);
     } catch (error) {
-      console.error("Error fetching products:", error);
+      console.error("Error fetching shop:", error);
     }
   };
-
+  
   const fetchShopProducts = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/products`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-
-        const filteredProducts = data.filter(
-          (product) => product.shop._id === shopId
-        );
-        setShopProducts(filteredProducts);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
+      const response = await apiClient.get("/products");
+  
+      const filteredProducts = response.data.filter(
+        (product) => product.shop._id === shopId
+      );
+  
+      setShopProducts(filteredProducts);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
       setIsloading(false);
     }
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchShop()
@@ -105,19 +132,41 @@ const EachShopProfile = ({ route }) => {
   console.log("Image: ", shopProducts.pictures);
   console.log("Picture 1: ");
 
+  // const deleteShop = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/templeShops/${shopId}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete shop");
+  //     }
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Shop deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting shop:", error);
+  //   }
+  // };
   const deleteShop = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/templeShops/${shopId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        throw new Error("Failed to delete shop");
-      }
-
+      await apiClient.delete(`/templeShops/${shopId}`);
+  
       Alert.alert(
         "Success",
         "Shop deleted successfully",
@@ -125,7 +174,6 @@ const EachShopProfile = ({ route }) => {
           {
             text: "OK",
             onPress: () => {
-
               navigation.goBack();
             },
           },
@@ -136,7 +184,7 @@ const EachShopProfile = ({ route }) => {
       console.error("Error deleting shop:", error);
     }
   };
-
+  
   return (
     <Container
       style={{

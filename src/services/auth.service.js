@@ -1,7 +1,7 @@
 import axios from "axios";
 import { BASEAPIURL } from "../infrastructure/constants";
 import authHeader from "./auth.header";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
 export const UserLogin = async ({ email, password }) => {
   const res = await axios.post(BASEAPIURL + "/auth/login", {
     email,
@@ -53,22 +53,56 @@ export const getUserData = async () => {
   }
 };
 
-export const getUpdatedTokens = async (token) => {
+// export const getUpdatedTokens = async (refreshToken) => {
+//   try {
+//     const res = await axios.post(
+//       `${BASEAPIURL}/user/refresh`,
+//       {
+//         refreshToken
+//       },
+//       {
+//         headers: await authHeader(),
+//       }
+//     );
+//     if (res && res.data && res.data.status === 0) {
+//       console.log("getUpdatedTokens res.data: ", res.data);
+//       return res.data;
+//     } else {
+//       console.log("Invalid response data:", res);
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error("Error in getUpdatedTokens:", error);
+//     return null;
+//   }
+// };
+
+export const getUpdatedTokens = async (refreshToken) => {
   try {
     const res = await axios.post(
-      `${BASEAPIURL}/auth/refresh-token`,
-      {
-        token: token,
-      },
-      {
-        headers: await authHeader(),
-      }
+      `${BASEAPIURL}/user/refresh`,
+      { refreshToken },
+      { headers: await authHeader() }
     );
-    return res.data;
+
+    if (res && res.data && res.data.status === 0) {
+      console.log("New Tokens Received:", res.data);
+
+      // ✅ STORE NEW TOKENS IN ASYNCSTORAGE
+      await AsyncStorage.setItem("token", res.data.accessToken);
+      await AsyncStorage.setItem("refresh_token", res.data.refreshToken);
+
+      return res.data; // Return new tokens
+    } else {
+      console.error("Invalid response:", res);
+      return null;
+    }
   } catch (error) {
-    return;
+    console.error("Error in getUpdatedTokens:", error);
+    return null;
   }
 };
+
 
 export const reportIssue = async (issue) => {
   try {

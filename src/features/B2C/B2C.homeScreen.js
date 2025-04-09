@@ -23,6 +23,9 @@ import { decode } from "base-64";
 import { debounce } from "lodash";
 import ListingCard from "./ListingsCard";
 import PageComingSoon from "./B2c.PageComingSoon";
+import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 
 const products = [
   // Furniture
@@ -209,56 +212,109 @@ const BuySellScreen = ({ navigation }) => {
     setSearchTerm(e);
   };
 
-  const fetchProducts = async (searchTerm, selectedFiltersArray) => {
-    const queryParams = new URLSearchParams();
+  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
+  //   const queryParams = new URLSearchParams();
+  
+  //   selectedFiltersArray.forEach((filter) => {
+  //     if (filter["Filter name"] === "Category") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("category", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "Sub Category") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("subcategory", option.toLowerCase())
+  //       );
+  //     } else if (filter["Filter name"] === "Condition") {
+  //       filter.Options.forEach((option) =>
+  //         queryParams.append("condition", option.toLowerCase())
+  //       );
+  //     }
+  //   });
+  
+  //   if (searchTerm.trim() !== "") {
+  //     queryParams.append("search", searchTerm);
+  //   }
+  
+  //   const queryString = queryParams.toString();
+  
+  //   try {
+  //     setLoadingAnimation(true);
+  //     console.log("Fetching products with query:", queryString);
+  
+  //     const response = await apiClient.get(`/listings?${queryString}`);
+  //     console.log("Products:", response.data);
+  
+  //     setItems(response.data.listings);
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+  
+  
+  //co
+  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
+  //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token missing.");
+  //       return;
+  //     }
+  
+  //     const queryParams = new URLSearchParams();
+  
+  //     selectedFiltersArray.forEach((filter) => {
+  //       if (filter["Filter name"] === "Category") {
+  //         filter.Options.forEach((option) =>
+  //           queryParams.append("category", option.toLowerCase())
+  //         );
+  //       } else if (filter["Filter name"] === "Sub Category") {
+  //         filter.Options.forEach((option) =>
+  //           queryParams.append("subcategory", option.toLowerCase())
+  //         );
+  //       } else if (filter["Filter name"] === "Condition") {
+  //         filter.Options.forEach((option) =>
+  //           queryParams.append("condition", option.toLowerCase())
+  //         );
+  //       }
+  //     });
+  
+  //     if (searchTerm.trim() !== "") {
+  //       queryParams.append("search", searchTerm);
+  //     }
+  
+  //     const queryString = queryParams.toString();
+  
+  //     setLoadingAnimation(true);
+  //     console.log("Fetching products with query:", queryString);
+  
+  //     const response = await apiClient.get(`/listings?${queryString}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  
+  //     console.log("Products:", response.data);
+  
+  //     setItems(response.data.listings);
+  //   } catch (error) {
+  //     console.error("Error fetching products:", error);
+  //     Alert.alert("Error", "Failed to fetch products.");
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
 
-    selectedFiltersArray.forEach((filter) => {
-      if (filter["Filter name"] === "Category") {
-        filter.Options.forEach((option) =>
-          queryParams.append("category", option.toLowerCase())
-        );
-      } else if (filter["Filter name"] === "Sub Category") {
-        filter.Options.forEach((option) =>
-          queryParams.append("subcategory", option.toLowerCase())
-        );
-      } else if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) =>
-          queryParams.append("condition", option.toLowerCase())
-        );
-      }
-    });
-
-    if (searchTerm.trim() !== "") {
-      queryParams.append("search", searchTerm);
-    }
-    const queryString = queryParams.toString();
-    const url = `${BASEAPIURL}/listings?${queryString}`;
-
-    console.log("Fetching temples with URL:", url);
-    try {
-      setLoadingAnimation(true);
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Products: ", data);
-        setItems(data.listings);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoadingAnimation(false);
-    }
+  const fetchProducts = async (searchTerm = "", selectedFiltersArray = []) => {
+    setLoadingAnimation(true);
+    const data = await apiFetchProducts(searchTerm, selectedFiltersArray);
+    setItems(data);
+    setLoadingAnimation(false);
   };
-
+  
   useEffect(() => {
     if (isFocused) {
       fetchProducts();

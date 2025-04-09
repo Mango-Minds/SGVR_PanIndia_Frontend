@@ -45,10 +45,11 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
 import * as Location from "expo-location";
-
+import apiClient from "../../store/apiClient";
 const TempleDetails = ({ route, navigation }) => {
   const Navigation = useNavigation();
   const { user } = useSelector((state) => state.user);
+  console.log("User in temple details: ", user);
   const outeruser = useSelector((state) => state.user);
   const isFocused = useIsFocused();
 
@@ -289,72 +290,95 @@ const TempleDetails = ({ route, navigation }) => {
   const pandits = templeinfo ? templeinfo.pandits : [];
   console.log("Pandits: ", pandits);
 
+  // const fetchTemple = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeDetails._id}`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch temple");
+  //     }
+  //     const data = await response.json();
+  //     console.log("temple response data", data);
+  //     setTempleDetails(data);
+  //     setMembers(data.members);
+  //     setGods(data.gods);
+  //   } catch (error) {
+  //     console.error("Error deleting temple:", error);
+  //   }
+  // };
   const fetchTemple = async () => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeDetails._id}`,
-        {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch temple");
-      }
-      const data = await response.json();
-      console.log("temple response data", data);
-      setTempleDetails(data);
-      setMembers(data.members);
-      setGods(data.gods);
+      const response = await apiClient.get(`/temple/${templeDetails._id}`);
+      console.log("temple response data", response.data);
+
+      setTempleDetails(response.data);
+      setMembers(response.data.members);
+      setGods(response.data.gods);
     } catch (error) {
-      console.error("Error deleting temple:", error);
+      console.error("Error fetching temple:", error);
     }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchTemple();
     }
   }, [isFocused]);
 
+  // const deleteTemple = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/temple/${templeDetails._id}`,
+  //       {
+  //         method: "DELETE",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+  //     console.log("temple deletion response", response);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete temple");
+  //     }
+
+  //     Alert.alert(
+  //       "Success",
+  //       "Temple deleted successfully",
+  //       [
+  //         {
+  //           text: "OK",
+  //           onPress: () => {
+  //             navigation.goBack();
+  //           },
+  //         },
+  //       ],
+  //       { cancelable: false }
+  //     );
+  //   } catch (error) {
+  //     console.error("Error deleting temple:", error);
+  //   }
+  // };
   const deleteTemple = async () => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/temple/${templeDetails._id}`,
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      console.log("temple deletion response", response);
-      if (!response.ok) {
-        throw new Error("Failed to delete temple");
-      }
-
+      await apiClient.delete(`/temple/${templeDetails._id}`);
       Alert.alert(
         "Success",
         "Temple deleted successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ],
+        [{ text: "OK", onPress: () => navigation.goBack() }],
         { cancelable: false }
       );
     } catch (error) {
       console.error("Error deleting temple:", error);
     }
   };
-
   const confirmDelete = () => {
     Alert.alert(
       "Confirm Deletion",
@@ -375,28 +399,36 @@ const TempleDetails = ({ route, navigation }) => {
 
   const [shopData, setShopData] = useState([]);
 
+  // const fetchShops = async () => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/templeShops`, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     console.log("response of fetch shops", response);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Shop Data: ", data);
+  //       setShopData(data);
+  //     } else {
+  //       throw new Error("Failed to fetch shops");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching shops:", error);
+  //   }
+  // };
   const fetchShops = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/templeShops`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("response of fetch shops", response);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Shop Data: ", data);
-        setShopData(data);
-      } else {
-        throw new Error("Failed to fetch shops");
-      }
+      const response = await apiClient.get("/templeShops");
+      console.log("Shop Data: ", response.data);
+      setShopData(response.data);
     } catch (error) {
       console.error("Error fetching shops:", error);
     }
   };
-
   useEffect(() => {
     if (isFocused) {
       fetchShops();
@@ -415,53 +447,49 @@ const TempleDetails = ({ route, navigation }) => {
 
   console.log("shop id:", templeShopId);
 
-  const handleConnect = async () => {
-    try {
-      // console.log("From shop: ", templeShopId);
-      // console.log("To temple: ", templeinfo._id);
-      // console.log("requestToTempleId: ", templeinfo._id);
-      // console.log( "requestByPanditId: ", user.roleData._id);
+  // const handleConnect = async () => {
+  //   try {
 
-      let url;
-      let requestBody;
+  //     let url;
+  //     let requestBody;
 
-      if (userType === "templeShopOwner") {
-        url = `${BASEAPIURL}/templeConnections/request`;
-        requestBody = {
-          templeId: templeinfo._id,
-          templeShopId,
-        };
-      } else if (userType === "pandit") {
-        url = `${BASEAPIURL}/panditToTempleRequest`;
-        requestBody = {
-          requestToTempleId: templeinfo._id,
-          requestByPanditId: user.roleData._id,
-        };
-      }
+  //     if (userType === "templeShopOwner") {
+  //       url = `${BASEAPIURL}/templeConnections/request`;
+  //       requestBody = {
+  //         templeId: templeinfo._id,
+  //         templeShopId,
+  //       };
+  //     } else if (userType === "pandit") {
+  //       url = `${BASEAPIURL}/panditToTempleRequest`;
+  //       requestBody = {
+  //         requestToTempleId: templeinfo._id,
+  //         requestByPanditId: user.roleData._id,
+  //       };
+  //     }
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(requestBody),
-      });
-      console.log("response of sending request", response);
-      if (response.ok) {
-        setIsRequestSent(true);
-        Alert.alert("Success", "Connection request sent successfully", [
-          {
-            text: "OK",
-          },
-        ]);
-      } else {
-        console.error("Failed to send connection request");
-      }
-    } catch (error) {
-      console.error("Error connecting to user:", error);
-    }
-  };
+  //     const response = await fetch(url, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify(requestBody),
+  //     });
+  //     console.log("response of sending request", response);
+  //     if (response.ok) {
+  //       setIsRequestSent(true);
+  //       Alert.alert("Success", "Connection request sent successfully", [
+  //         {
+  //           text: "OK",
+  //         },
+  //       ]);
+  //     } else {
+  //       console.error("Failed to send connection request");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error connecting to user:", error);
+  //   }
+  // };
 
   // const goToEvents = (date) => {
   //   Navigation.navigate("TempleEvents", {
@@ -472,6 +500,34 @@ const TempleDetails = ({ route, navigation }) => {
 
   //   });
   // };
+  const handleConnect = async () => {
+    try {
+      let url = "";
+      let requestBody = {};
+
+      if (userType === "templeShopOwner") {
+        url = "/templeConnections/request";
+        requestBody = {
+          templeId: templeinfo._id,
+          templeShopId,
+        };
+      } else if (userType === "pandit") {
+        url = "/panditToTempleRequest";
+        requestBody = {
+          requestToTempleId: templeinfo._id,
+          requestByPanditId: user.roleData._id,
+        };
+      }
+
+      await apiClient.post(url, requestBody);
+      setIsRequestSent(true);
+      Alert.alert("Success", "Connection request sent successfully", [
+        { text: "OK" },
+      ]);
+    } catch (error) {
+      console.error("Error connecting to user:", error);
+    }
+  };
   const goToEvents = (date) => {
     navigation.navigate("TempleEvents", {
       date,
@@ -666,77 +722,122 @@ const TempleDetails = ({ route, navigation }) => {
       }
     }, [layout, coordinates]);
 
+    // const fetchEventDates = async (month, year) => {
+    //   setLoadingDates(true); // Show loading indicator while fetching
+    //   try {
+    //     const response = await fetch(
+    //       `${BASEAPIURL}/templeEvents/eventsByMonth?templeId=${templeDetails._id}&month=${month}&year=${year}`,
+    //       {
+    //         method: "GET",
+    //         headers: {
+    //           "Content-Type": "application/json",
+    //           Authorization: `Bearer ${token}`,
+    //         },
+    //       }
+    //     );
+
+    //     if (response.ok) {
+    //       const data = await response.json();
+    //       const dates = data.dates;
+    //       let updatedMarkedDates = {};
+    //       const today = new Date().toISOString().slice(0, 10);
+    //       if (!dates.includes(today)) {
+    //         updatedMarkedDates[today] = {
+    //           marked: true,
+    //           dotColor: Theme.themeColor,
+    //           dots: [
+    //             { key: "dot1", color: Theme.themeColor },
+    //             { key: "dot2", color: Theme.themeColor },
+    //           ], // Two dots for today
+    //         };
+    //       }
+
+    //       // Process event dates
+    //       dates.forEach((date) => {
+    //         console.log("Processing date:", date); // Log each date being processed
+
+    //         if (date !== today) {
+    //           // Skip today since it's already added
+    //           updatedMarkedDates[date] = {
+    //             marked: true,
+    //             dotColor: Theme.themeColor, // Dot color for event dates
+    //             dots: [{ key: "dot1", color: Theme.themeColor }], // Ensure at least one dot
+    //           };
+    //         }
+    //       });
+
+    //       console.log("Updated marked dates:", updatedMarkedDates);
+
+    //       setMarkedDates((prevDates) => ({
+    //         ...prevDates,
+    //         ...updatedMarkedDates,
+    //       }));
+    //       // dates.forEach((date) => {
+    //       //   updatedMarkedDates[date] = {
+    //       //     marked: true,
+    //       //     dotColor: "#D8AE25",
+    //       //   };
+    //       // });
+
+    //       // setMarkedDates((prevDates) => ({
+    //       //   ...prevDates,
+    //       //   ...updatedMarkedDates,
+    //       // }));
+    //     } else {
+    //       console.error("Failed to fetch temple events");
+    //     }
+    //   } catch (error) {
+    //     console.error("Error fetching event dates:", error);
+    //   } finally {
+    //     setLoadingDates(false);
+    //   }
+    // };
     const fetchEventDates = async (month, year) => {
       setLoadingDates(true); // Show loading indicator while fetching
-      try {
-        const response = await fetch(
-          `${BASEAPIURL}/templeEvents/eventsByMonth?templeId=${templeDetails._id}&month=${month}&year=${year}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
 
-        if (response.ok) {
-          const data = await response.json();
-          const dates = data.dates;
-          let updatedMarkedDates = {};
-          const today = new Date().toISOString().slice(0, 10);
-          if (!dates.includes(today)) {
-            updatedMarkedDates[today] = {
+      try {
+        const response = await apiClient.get(`templeEvents/eventsByMonth?templeId=${templeDetails._id}&month=${month}&year=${year}`, {
+         
+        });
+
+        const dates = response.data.dates || [];
+        let updatedMarkedDates = {};
+        const today = new Date().toISOString().slice(0, 10);
+
+        if (!dates.includes(today)) {
+          updatedMarkedDates[today] = {
+            marked: true,
+            dotColor: Theme.themeColor,
+            dots: [
+              { key: "dot1", color: Theme.themeColor },
+              { key: "dot2", color: Theme.themeColor },
+            ],
+          };
+        }
+
+        // Process event dates
+        dates.forEach((date) => {
+          if (date !== today) {
+            updatedMarkedDates[date] = {
               marked: true,
               dotColor: Theme.themeColor,
-              dots: [
-                { key: "dot1", color: Theme.themeColor },
-                { key: "dot2", color: Theme.themeColor },
-              ], // Two dots for today
+              dots: [{ key: "dot1", color: Theme.themeColor }],
             };
           }
-  
-          // Process event dates
-          dates.forEach((date) => {
-            console.log("Processing date:", date); // Log each date being processed
-  
-            if (date !== today) {
-              // Skip today since it's already added
-              updatedMarkedDates[date] = {
-                marked: true,
-                dotColor: Theme.themeColor, // Dot color for event dates
-                dots: [{ key: "dot1", color: Theme.themeColor }], // Ensure at least one dot
-              };
-            }
-          });
-  
-          console.log("Updated marked dates:", updatedMarkedDates);
-  
-          setMarkedDates((prevDates) => ({
-            ...prevDates,
-            ...updatedMarkedDates,
-          }));
-          // dates.forEach((date) => {
-          //   updatedMarkedDates[date] = {
-          //     marked: true,
-          //     dotColor: "#D8AE25",
-          //   };
-          // });
+        });
 
-          // setMarkedDates((prevDates) => ({
-          //   ...prevDates,
-          //   ...updatedMarkedDates,
-          // }));
-        } else {
-          console.error("Failed to fetch temple events");
-        }
+        console.log("Updated marked dates:", updatedMarkedDates);
+
+        setMarkedDates((prevDates) => ({
+          ...prevDates,
+          ...updatedMarkedDates,
+        }));
       } catch (error) {
         console.error("Error fetching event dates:", error);
       } finally {
         setLoadingDates(false);
       }
     };
-
     console.log("Marked dates: ", markedDates);
 
     // On calendar month change, fetch and mark dates
@@ -1039,17 +1140,15 @@ const TempleDetails = ({ route, navigation }) => {
                 justifyContent: "center",
               }}
             >
-              {((userType === "templeAdmin" &&
-                templeDetails.createdBy === userId) ||
-                userType === "superadmin") && (
+              {(userType === "templeAdmin" &&
+                templeDetails?.createdBy === userId) ||
+              userType === "superadmin" ? (
                 <IconButton
                   icon="plus"
                   style={{ marginRight: 10 }}
-                  onPress={() => {
-                    Navigation.navigate("AddGod", { templeinfo: templeinfo });
-                  }}
-                ></IconButton>
-              )}
+                  onPress={() => navigation.navigate("AddGod", { templeinfo })}
+                />
+              ) : null}
             </View>
           </RowBetween>
         )}
@@ -1506,7 +1605,11 @@ const TempleDetails = ({ route, navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+            style={{
+              color: Theme.themeColor,
+              fontSize: 20,
+              fontWeight: "bold",
+            }}
           >
             Temple Details
           </TopText>
@@ -1545,7 +1648,9 @@ const TempleDetails = ({ route, navigation }) => {
             style={{
               width: 125,
               height: 35,
-              backgroundColor: !isPanditWithTemples ? Theme.themeColor : "#E0E0E0",
+              backgroundColor: !isPanditWithTemples
+                ? Theme.themeColor
+                : "#E0E0E0",
               borderRadius: 8,
               paddingHorizontal: 4,
               justifyContent: "center",
@@ -2025,4 +2130,3 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 });
-

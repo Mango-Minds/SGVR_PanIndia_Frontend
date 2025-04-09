@@ -99,8 +99,7 @@ export const SocialMediaStackNavigator = () => (
     <Stack.Screen name="MyNetwork" component={MyNetwork} />
     <Stack.Screen name="ProfileNewScreen" component={ProfileNewScreen} />
     <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
-  
-    
+    <Stack.Screen name="EditProfile" component={EditUserProfile} />
     <Stack.Screen name="EditUserProfile" component={EditUserProfile} />
     {/* <Stack.Screen name="EditProfileNewScreen" component={EditProfileNewScreen} /> */}
     {/* <Stack.Screen name="ViewNewScreen" component={ViewNewScreen} /> */}

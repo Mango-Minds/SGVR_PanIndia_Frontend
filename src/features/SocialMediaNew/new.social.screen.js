@@ -29,6 +29,8 @@ import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import NewSocialCard from "./NewSocialCard";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 // import { FlatList } from "react-native-gesture-handler";
 
 const SocialHomeScreen = ({ navigation, route }) => {
@@ -42,35 +44,71 @@ const SocialHomeScreen = ({ navigation, route }) => {
   const [allLoaded, setAllLoaded] = useState(false);
   const [loadingAnimation, setLoadingAnimation] = useState(true);
 
+  // const fetchPosts = async (isRefresh = false) => {
+  //   if (allLoaded && !isRefresh) return; // Stop fetching if all data is loaded and not a refresh
+  //   console.log("inside fetch posts");
+  //   try {
+  //     if (!isRefresh) setLoadingAnimation(true);
+
+  //     const pageToFetch = isRefresh ? 1 : page; // Reset page if refreshing
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/social/post/all?page=${pageToFetch}&limit=10`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //       }
+  //     );
+
+  //     if (!response.ok) {
+  //       throw new Error("Network response was not ok");
+  //     }
+
+  //     const data = await response.json();
+  //     console.log("post data", data);
+  //     if (isRefresh) {
+  //       // Clear posts on refresh
+  //       setPosts(data.posts);
+  //       setPage(2); // Reset page to 2 for subsequent requests
+  //       setAllLoaded(data.posts.length < 10); // Mark allLoaded if fewer than 10 posts
+  //     } else {
+  //       if (data.posts.length < 10) setAllLoaded(true);
+  //       setPosts((prevPosts) => [...prevPosts, ...data.posts]);
+  //       setPage((prevPage) => prevPage + 1);
+  //     }
+  //   } catch (err) {
+  //     setError(err.message);
+  //   } finally {
+  //     if (!isRefresh) setLoadingAnimation(false);
+  //   }
+  // };
   const fetchPosts = async (isRefresh = false) => {
-    if (allLoaded && !isRefresh) return; // Stop fetching if all data is loaded and not a refresh
-    console.log("inside fetch posts");
+    if (allLoaded && !isRefresh) return;
+  
     try {
       if (!isRefresh) setLoadingAnimation(true);
-
-      const pageToFetch = isRefresh ? 1 : page; // Reset page if refreshing
-      const response = await fetch(
-        `${BASEAPIURL}/social/post/all?page=${pageToFetch}&limit=10`,
+  
+      const token = await AsyncStorage.getItem("token");
+      const pageToFetch = isRefresh ? 1 : page;
+  
+      const response = await apiClient.get(
+        `/social/post/all?page=${pageToFetch}&limit=10`,
         {
-          method: "GET",
           headers: {
-            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }
       );
-
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
-
-      const data = await response.json();
+  
+      const data = response.data;
       console.log("post data", data);
+  
       if (isRefresh) {
-        // Clear posts on refresh
         setPosts(data.posts);
-        setPage(2); // Reset page to 2 for subsequent requests
-        setAllLoaded(data.posts.length < 10); // Mark allLoaded if fewer than 10 posts
+        setPage(2);
+        setAllLoaded(data.posts.length < 10);
       } else {
         if (data.posts.length < 10) setAllLoaded(true);
         setPosts((prevPosts) => [...prevPosts, ...data.posts]);
@@ -82,7 +120,7 @@ const SocialHomeScreen = ({ navigation, route }) => {
       if (!isRefresh) setLoadingAnimation(false);
     }
   };
-
+  
   useEffect(() => {
     fetchPosts();
   }, []);

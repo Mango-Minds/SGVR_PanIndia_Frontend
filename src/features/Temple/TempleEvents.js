@@ -22,7 +22,7 @@ import { useSelector } from "react-redux";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import SelectDropdown from "react-native-select-dropdown";
-
+import apiClient from "../../store/apiClient";
 const statusOptions = [
   {
     title: "Accepted",
@@ -81,95 +81,135 @@ const TempleEvents = ({ navigation }) => {
   
   const [bookings, setBookings] = useState([]);
   const [loadingAnimation, setLoadingAnimation] = useState(false);
+  // const deleteTempleEvent = async (eventId) => {
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/templeEvents/${eventId}`, {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     console.log("temple event deletion response", response);
+  //     if (!response.ok) {
+  //       throw new Error("Failed to delete temple event");
+  //     } else {
+  //       fetchTempleEvents();
+  //     }
+  //   } catch (error) {
+  //     console.error("Error deleting temple event:", error);
+  //   }
+  // };
+
   const deleteTempleEvent = async (eventId) => {
     try {
-      const response = await fetch(`${BASEAPIURL}/templeEvents/${eventId}`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("temple event deletion response", response);
-      if (!response.ok) {
-        throw new Error("Failed to delete temple event");
-      } else {
+      const response = await apiClient.delete(`/templeEvents/${eventId}`);
+  
+      if (response.status === 200) {
         fetchTempleEvents();
+      } else {
+        throw new Error("Failed to delete temple event");
       }
     } catch (error) {
       console.error("Error deleting temple event:", error);
     }
   };
+  
+  // const fetchTempleEvents = async () => {
+  //   const url = `${BASEAPIURL}/templeEvents/temple/${templeId}?eventDate=${selectedDate}`;
+    
+  //   try {
+  //     setLoadingAnimation(true);
+
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     console.log("responseeee", response);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Temple events data:", data);
+
+  //       setEvents(data);
+  //     } else {
+  //       setEvents([]);
+  //       throw new Error("Failed to fetch temple events");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching temple events", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
+
+  // const fetchMyBookings = async () => {
+  //   const url = `${BASEAPIURL}/eventBooking/bookings?eventDate=${selectedDate}`;
+  //   try {
+  //     setLoadingAnimation(true);
+
+  //     const response = await fetch(url, {
+  //       method: "GET",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
+  //     console.log("responseeee", response);
+  //     if (response.ok) {
+  //       const data = await response.json();
+  //       console.log("Slot bookings data:", data);
+
+  //       setBookings(data);
+  //     } else {
+  //       setBookings([]);
+  //       throw new Error("Failed to fetch temple events");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching temple events", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
 
   const fetchTempleEvents = async () => {
-    const url = `${BASEAPIURL}/templeEvents/temple/${templeId}?eventDate=${selectedDate}`;
-    
+    const url = `/templeEvents/temple/${templeId}?eventDate=${selectedDate}`;
+  
     try {
       setLoadingAnimation(true);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("responseeee", response);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Temple events data:", data);
-
-        setEvents(data);
-      } else {
-        setEvents([]);
-        throw new Error("Failed to fetch temple events");
-      }
+  
+      const response = await apiClient.get(url);
+      console.log("Temple events data:", response.data);
+  
+      setEvents(response.data);
     } catch (error) {
-      console.error("Error fetching temple events", error);
+      console.error("Error fetching temple events:", error);
+      setEvents([]);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
   
-
-
-
-  
- 
-
-
-
-
   const fetchMyBookings = async () => {
-    const url = `${BASEAPIURL}/eventBooking/bookings?eventDate=${selectedDate}`;
+    const url = `/eventBooking/bookings?eventDate=${selectedDate}`;
+  
     try {
       setLoadingAnimation(true);
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      console.log("responseeee", response);
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Slot bookings data:", data);
-
-        setBookings(data);
-      } else {
-        setBookings([]);
-        throw new Error("Failed to fetch temple events");
-      }
+  
+      const response = await apiClient.get(url);
+      console.log("Slot bookings data:", response.data);
+  
+      setBookings(response.data);
     } catch (error) {
-      console.error("Error fetching temple events", error);
+      console.error("Error fetching temple events:", error);
+      setBookings([]);
     } finally {
       setLoadingAnimation(false);
     }
   };
-
+  
   
   useEffect(() => {
     if (isFocused && selectedTab === "All Events") {
@@ -225,59 +265,101 @@ const TempleEvents = ({ navigation }) => {
     }
   };
 
+  // const confirmStatusChange = async (newStatus, bookingId) => {
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/eventBooking/${bookingId}/handle`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({
+  //           action: newStatus.toLowerCase(),
+  //         }),
+  //       }
+  //     );
+  //     console.log(response);
+
+  //     if (!response.ok) {
+  //       throw new Error("Failed to update booking status");
+  //     }
+  //     fetchMyBookings();
+  //   } catch (error) {
+  //     console.error("Failed to update booking status:", error);
+  //   }
+  // };
+
+  // const sendRequest = async (eventId) => {
+  //   if (!selectedSlot) {
+  //     Alert.alert("Error", "Please select a slot before sending a request.");
+  //     return;
+  //   }
+
+  //   try {
+  //     const response = await fetch(
+  //       `${BASEAPIURL}/eventBooking/${eventId}/book`,
+  //       {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //           Authorization: `Bearer ${token}`,
+  //         },
+  //         body: JSON.stringify({ slotId: selectedSlot.slotId }),
+  //       }
+  //     );
+
+  //     if (response.ok) {
+  //       Alert.alert("Success", "Your request has been sent to the Pandit.");
+  //       fetchTempleEvents();
+  //     } else {
+  //       Alert.alert(
+  //         "Error",
+  //         "There was an error sending your request. Please try again."
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error sending request:", error);
+  //     Alert.alert("Error", "An error occurred. Please try again.");
+  //   } finally {
+  //     setModalVisible(false); // Close the modal
+  //     setSelectedSlot(null); // Clear the selected slot
+  //   }
+  // };
+
   const confirmStatusChange = async (newStatus, bookingId) => {
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/eventBooking/${bookingId}/handle`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            action: newStatus.toLowerCase(),
-          }),
-        }
-      );
-      console.log(response);
-
-      if (!response.ok) {
+      const response = await apiClient.post(`/eventBooking/${bookingId}/handle`, {
+        action: newStatus.toLowerCase(),
+      });
+  
+      if (response.status === 200) {
+        fetchMyBookings();
+      } else {
         throw new Error("Failed to update booking status");
       }
-      fetchMyBookings();
     } catch (error) {
       console.error("Failed to update booking status:", error);
     }
   };
-
+  
   const sendRequest = async (eventId) => {
     if (!selectedSlot) {
       Alert.alert("Error", "Please select a slot before sending a request.");
       return;
     }
-
+  
     try {
-      const response = await fetch(
-        `${BASEAPIURL}/eventBooking/${eventId}/book`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ slotId: selectedSlot.slotId }),
-        }
-      );
-
-      if (response.ok) {
+      const response = await apiClient.post(`/eventBooking/${eventId}/book`, {
+        slotId: selectedSlot.slotId,
+      });
+  
+      if (response.status === 200) {
         Alert.alert("Success", "Your request has been sent to the Pandit.");
         fetchTempleEvents();
       } else {
-        Alert.alert(
-          "Error",
-          "There was an error sending your request. Please try again."
-        );
+        Alert.alert("Error", "There was an error sending your request. Please try again.");
       }
     } catch (error) {
       console.error("Error sending request:", error);
@@ -287,7 +369,6 @@ const TempleEvents = ({ navigation }) => {
       setSelectedSlot(null); // Clear the selected slot
     }
   };
-
   const DateList = () => {
     const generateDatesForMonth = (selectedDate) => {
       const dates = [];
@@ -422,65 +503,103 @@ const TempleEvents = ({ navigation }) => {
   userId === templeAdmin || 
   templePandits.some(pandit => pandit.owner === userId);
 
+  // const createChatRoom = async (userId) => {
+  //   console.log("userId: ", userId);
+  //   console.log("panditId: ", chatPanditId);
+
+  //   try {
+  //     const response = await fetch(`${BASEAPIURL}/chat/room/`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //       body: JSON.stringify({ userIds: [userId, chatPanditId] }),
+  //     });
+
+  //     console.log("Response: ", response);
+  //     console.log(response.json());
+
+  //     if (response.ok) {
+  //       try {
+  //         const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
+  //           method: "GET",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${token}`,
+  //           },
+  //         });
+  //         if (roomResponse.ok) {
+  //           const roomData = await roomResponse.json();
+  //           // setUserRooms(data);
+  //           console.log("Room Data: ", roomData);
+  //           const room_with_pandit = roomData.rooms.filter((room) => room.participants[0].id === chatPanditId)[0];
+  //           console.log("Room with pandit",room_with_pandit);
+  //           setRequestModalVisible(false);
+  //           navigation.navigate("ChatScreenNew", {
+  //             user_auth_token: token,
+  //             room: room_with_pandit,
+  //             participant_name:
+  //             room_with_user.pandit[0].firstName +
+  //             " " +
+  //             room_with_user.pandit[0].lastName,
+  //           });
+  //         } else {
+  //           Alert.alert("Failed to fetch Room.");
+  //           throw new Error("Failed to fetch rooms");
+            
+  //         }
+  //       } catch (error) {
+  //         console.error("Error fetching room:", error);
+  //       }
+  //     } else {
+  //       const errorData = await response.json();
+  //       console.error("Error Creating Chat Room:", errorData);
+  //       Alert.alert("Error Creating Chat Room");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error:", error);
+  //   }
+  // };
+
   const createChatRoom = async (userId) => {
     console.log("userId: ", userId);
     console.log("panditId: ", chatPanditId);
-
+  
     try {
-      const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userIds: [userId, chatPanditId] }),
+      // Create Chat Room
+      const response = await apiClient.post("/chat/room/", {
+        userIds: [userId, chatPanditId],
       });
-
-      console.log("Response: ", response);
-      console.log(response.json());
-
-      if (response.ok) {
-        try {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            // setUserRooms(data);
-            console.log("Room Data: ", roomData);
-            const room_with_pandit = roomData.rooms.filter((room) => room.participants[0].id === chatPanditId)[0];
-            console.log("Room with pandit",room_with_pandit);
-            setRequestModalVisible(false);
-            navigation.navigate("ChatScreenNew", {
-              user_auth_token: token,
-              room: room_with_pandit,
-              participant_name:
-              room_with_user.pandit[0].firstName +
-              " " +
-              room_with_user.pandit[0].lastName,
-            });
-          } else {
-            Alert.alert("Failed to fetch Room.");
-            throw new Error("Failed to fetch rooms");
-            
-          }
-        } catch (error) {
-          console.error("Error fetching room:", error);
-        }
+  
+      console.log("Response: ", response.data);
+  
+      // Fetch Chat Rooms
+      const roomResponse = await apiClient.get("/chat/rooms/");
+      console.log("Room Response: ", roomResponse.data);
+  
+      if (roomResponse.data) {
+        const roomWithPandit = roomResponse.data.rooms.find(
+          (room) => room.participants[0].id === chatPanditId
+        );
+  
+        console.log("Room with pandit", roomWithPandit);
+  
+        setRequestModalVisible(false);
+        navigation.navigate("ChatScreenNew", {
+          user_auth_token: token,
+          room: roomWithPandit,
+          participant_name: `${roomWithPandit.pandit[0].firstName} ${roomWithPandit.pandit[0].lastName}`,
+        });
       } else {
-        const errorData = await response.json();
-        console.error("Error Creating Chat Room:", errorData);
-        Alert.alert("Error Creating Chat Room");
+        Alert.alert("Failed to fetch Room.");
+        throw new Error("Failed to fetch rooms");
       }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error Creating Chat Room:", error);
+      Alert.alert("Error Creating Chat Room");
     }
   };
-
   return (
     <ScrollView style={styles.container}>
       <RowBetween style={{ paddingTop: 24 }}>
