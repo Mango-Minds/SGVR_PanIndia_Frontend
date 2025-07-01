@@ -2,6 +2,7 @@ import axios from "axios";
 import { BASEAPIURL } from "../infrastructure/constants";
 import authHeader from "./auth.header";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useSelector } from 'react-redux';
 export const UserLogin = async ({ email, password }) => {
   const res = await axios.post(BASEAPIURL + "/auth/login", {
     email,
@@ -42,40 +43,38 @@ export const UserSignup = async ({
   return res.data;
 };
 
-export const getUserData = async () => {
-  try {
-    const res = await axios.get(`${BASEAPIURL}/auth/logged-in-user`, {
-      headers: await authHeader(),
-    });
-    return res.data;
-  } catch (error) {
-    return;
-  }
-};
-
-// export const getUpdatedTokens = async (refreshToken) => {
+// export const getUserData = async () => {
 //   try {
-//     const res = await axios.post(
-//       `${BASEAPIURL}/user/refresh`,
-//       {
-//         refreshToken
-//       },
-//       {
-//         headers: await authHeader(),
-//       }
-//     );
-//     if (res && res.data && res.data.status === 0) {
-//       console.log("getUpdatedTokens res.data: ", res.data);
-//       return res.data;
-//     } else {
-//       console.log("Invalid response data:", res);
-//       return null;
-//     }
+//     const res = await axios.get(`${BASEAPIURL}user/${userId}`, {
+//       headers: await authHeader(),
+//     });
+//     return res.data;
 //   } catch (error) {
-//     console.error("Error in getUpdatedTokens:", error);
+//     return;
+//   }
+// };
+
+
+// export const getUserData = async (userId) => {
+//   try {
+   
+
+//     if (!userId) {
+//       throw new Error('User not found');
+//     }
+
+//     const res = await axios.get(`${BASEAPIURL}/user/${userId}`, {
+//       headers: await authHeader(),
+//     });
+
+//     return res.data;
+//   } catch (error) {
+//     console.error("Error fetching user data:", error);
 //     return null;
 //   }
 // };
+
+
 
 export const getUpdatedTokens = async (refreshToken) => {
   try {
@@ -102,6 +101,7 @@ export const getUpdatedTokens = async (refreshToken) => {
     return null;
   }
 };
+
 
 
 export const reportIssue = async (issue) => {

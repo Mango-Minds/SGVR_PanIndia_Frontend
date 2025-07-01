@@ -37,13 +37,16 @@ import FilterMenu from "./FilterMenu";
 import UserImg from "../../assets/images/general/user.png";
 const TempleHome = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
+  console.log("user in temple: ", user);
   const token = useSelector((state) => state.user.token);
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   console.log("user", user);
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
+
+  console.log("Usertype in temple: ", userType);
   const [selectedTab, setSelectedTab] = useState("Temples");
 
   const handleTabPress = (tab) => {
@@ -86,7 +89,6 @@ const TempleHome = ({ navigation }) => {
     debouncedFetchTemples(searchTerm, selectedFiltersArray);
   }, [searchTerm, selectedFiltersArray, isFocused]);
 
-  
   const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   const toggleSearch = () => {
@@ -263,7 +265,7 @@ const TempleHome = ({ navigation }) => {
 
   const fetchTemples = async (searchTerm, selectedFiltersArray) => {
     const queryParams = new URLSearchParams();
-  
+
     selectedFiltersArray.forEach((filter) => {
       if (filter["Filter name"] === "Temple Name") {
         filter.Options.forEach((option) =>
@@ -287,20 +289,20 @@ const TempleHome = ({ navigation }) => {
         );
       }
     });
-  
+
     if (searchTerm.trim() !== "") {
       queryParams.append("search", searchTerm);
     }
-  
+
     const queryString = queryParams.toString();
-    
+
     try {
       setLoadingAnimation(true);
       console.log("Fetching temples with query:", queryString);
-  
+
       const response = await apiClient.get(`/temple?${queryString}`);
       console.log("Temples data:", response.data);
-  
+
       setTemples(response.data);
     } catch (error) {
       console.error("Error fetching temples:", error);
@@ -313,10 +315,10 @@ const TempleHome = ({ navigation }) => {
     try {
       setLoadingAnimation(true);
       console.log("Fetching pandits...");
-  
+
       const response = await apiClient.get("/panditcrud/");
       console.log("Pandits data:", response.data);
-  
+
       setPandits(response.data);
     } catch (error) {
       console.error("Error fetching pandits:", error);
@@ -344,9 +346,22 @@ const TempleHome = ({ navigation }) => {
       >
         <RowBetween style={{ paddingTop: 24 }}>
           <View style={{ alignItems: "center", flexDirection: "row" }}>
-            <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
+            <IconButton
+              icon="arrow-left"
+              onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate("Dashboard"); // or some fallback
+                }
+              }}
+            />
             <TopText
-              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
             >
               Temple
             </TopText>
@@ -361,7 +376,7 @@ const TempleHome = ({ navigation }) => {
           >
             {selectedTab === "Temples" && (
               <>
-                {user.userType === "templeAdmin" && (
+                {user.userType[0] === "templeAdmin" && (
                   <IconButton
                     icon="plus"
                     style={{ marginRight: 10 }}
@@ -487,7 +502,9 @@ const TempleHome = ({ navigation }) => {
                               <ImageBackground
                                 source={
                                   item.images.length > 0
-                                    ? { uri: "https://marathaapp.s3.ap-south-1.amazonaws.com/temple/images/1741776370103-image_0.jpg" }
+                                    ? {
+                                        uri: "https://marathaapp.s3.ap-south-1.amazonaws.com/temple/images/1741776370103-image_0.jpg",
+                                      }
                                     : ""
                                 }
                                 resizeMode="cover"
@@ -881,46 +898,43 @@ const TempleHome = ({ navigation }) => {
         </View>
       )}
 
-{selectedTab === "Temples" && (
-  <TouchableOpacity
-    style={{
-      position: "absolute",
-      bottom: 40,
-      right: 20,
-      backgroundColor: "#1B1212",
-      borderRadius: 30,
-      width: 55,
-      height: 55,
-      justifyContent: "center",
-    alignItems: "center",
-      elevation: 10,
-    }}
-    onPress={toggleMenu}
-  >
-    <Ionicons name="square" size={24} color="grey" />
-    <View style={{ position: "absolute", top: 10, left: 10 }}>
-      <Ionicons name="funnel" size={20} color="white" />
-    </View>
-  </TouchableOpacity>
-)}
+      {selectedTab === "Temples" && (
+        <TouchableOpacity
+          style={{
+            position: "absolute",
+            bottom: 40,
+            right: 20,
+            backgroundColor: "#1B1212",
+            borderRadius: 30,
+            width: 55,
+            height: 55,
+            justifyContent: "center",
+            alignItems: "center",
+            elevation: 10,
+          }}
+          onPress={toggleMenu}
+        >
+          <Ionicons name="square" size={24} color="grey" />
+          <View style={{ position: "absolute", top: 10, left: 10 }}>
+            <Ionicons name="funnel" size={20} color="white" />
+          </View>
+        </TouchableOpacity>
+      )}
 
-{menuVisible && (
-  <FilterMenu
-    menuVisible={menuVisible}
-    toggleMenu={toggleMenu}
-    filters={filters}
-    activeFilter={activeFilter}
-    selectedOptions={selectedOptions}
-    handleFilterClick={handleFilterClick}
-    handleOptionClick={handleOptionClick}
-    handleButtonPress={handleButtonPress}
-    selectedFiltersArray={selectedFiltersArray}
-    setSelectedFiltersArray={setSelectedFiltersArray}
-  />
-)}
-
-
-      
+      {menuVisible && (
+        <FilterMenu
+          menuVisible={menuVisible}
+          toggleMenu={toggleMenu}
+          filters={filters}
+          activeFilter={activeFilter}
+          selectedOptions={selectedOptions}
+          handleFilterClick={handleFilterClick}
+          handleOptionClick={handleOptionClick}
+          handleButtonPress={handleButtonPress}
+          selectedFiltersArray={selectedFiltersArray}
+          setSelectedFiltersArray={setSelectedFiltersArray}
+        />
+      )}
 
       {selectedTab === "Pandits" && (
         <View style={{ flex: 1 }}>
@@ -993,7 +1007,6 @@ const TempleHome = ({ navigation }) => {
                             borderRadius: 8,
                             opacity: 1,
                           }}
-                        
                           source={
                             pandit.image && pandit.image.length > 0
                               ? { uri: `${pandit?.owner?.image}` }
@@ -1022,7 +1035,7 @@ const TempleHome = ({ navigation }) => {
                           >
                             {pandit.panditName}
                           </Text>
-                          
+
                           <Text
                             style={{
                               fontWeight: "600",
@@ -1037,7 +1050,6 @@ const TempleHome = ({ navigation }) => {
                             {pandit.owner.city}
                           </Text>
                         </View>
-                        
                       </View>
                     </TouchableOpacity>
                   ))}

@@ -13,6 +13,7 @@ import {
   Pressable,
 } from "react-native";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
@@ -26,7 +27,6 @@ import FilterMenu from "../../components/Jewellery/FilterMenu";
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
 import { debounce } from "lodash";
 import { decode } from "base-64";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import { Video } from "expo-av";
@@ -36,6 +36,7 @@ import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 const { width } = Dimensions.get("window");
 const MyListingScreen = ({ route, navigation }) => {
+   const { t } = useTranslation();
   const { category, items } = route.params;
   const isFocused = useIsFocused();
   const user = useSelector((state) => state.user.user);
@@ -144,14 +145,17 @@ const MyListingScreen = ({ route, navigation }) => {
     { label: "Price: Low to High", value: "low" },
   ];
 
+
+
+
+  //correct one
   // const fetchProducts = async (
   //   searchTerm,
   //   selectedFiltersArray,
   //   sortOption
   // ) => {
-  //   //Construct the query parameters from selectedFiltersArray
   //   const queryParams = new URLSearchParams();
-
+  
   //   selectedFiltersArray.forEach((filter) => {
   //     if (filter["Filter name"] === "Category") {
   //       filter.Options.forEach((option) =>
@@ -177,33 +181,38 @@ const MyListingScreen = ({ route, navigation }) => {
   //       });
   //     }
   //   });
-
+  
   //   if (searchTerm.trim() !== "") {
   //     queryParams.append("search", searchTerm);
   //   }
+  
   //   if (sortOption) {
   //     queryParams.append("priceSort", sortOption);
   //   }
-
+  
   //   const queryString = queryParams.toString();
-  //   const url = `${BASEAPIURL}/listings/all/${user._id}?${queryString}`;
-
+  //   const url = `/listings/all/${user._id}?${queryString}`;
+  
   //   console.log("Fetching products with URL:", url);
-
+  
   //   try {
+  //     const token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Authentication token is missing.");
+  //       Alert.alert("Error", "You are not authorized. Please log in again.");
+  //       return;
+  //     }
   //     setLoadingAnimation(true);
-  //     const response = await fetch(url, {
-  //       method: "GET",
+  //     const response = await apiClient.get(url, {
   //       headers: {
-  //         "Content-Type": "application/json",
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log(" Data:", data);
-
-  //       setProducts(data.listings);
+  
+  //     if (response.status === 200) {
+  //       console.log("Data:", response.data);
+  //       setProducts(response.data.listings);
   //     } else {
   //       throw new Error("Failed to fetch products");
   //     }
@@ -213,80 +222,92 @@ const MyListingScreen = ({ route, navigation }) => {
   //     setLoadingAnimation(false);
   //   }
   // };
-
   const fetchProducts = async (
-    searchTerm,
-    selectedFiltersArray,
-    sortOption
-  ) => {
-    const queryParams = new URLSearchParams();
-  
-    selectedFiltersArray.forEach((filter) => {
-      if (filter["Filter name"] === "Category") {
-        filter.Options.forEach((option) =>
-          queryParams.append("category", option)
-        );
-      } else if (filter["Filter name"] === "Condition") {
-        filter.Options.forEach((option) =>
-          queryParams.append("condition", option)
-        );
-      } else if (filter["Filter name"] === "Price") {
-        filter.Options.forEach((option) => {
-          if (option.includes("Below")) {
-            const maxPrice = option.split(" ")[1];
-            queryParams.append("maxPrice", maxPrice);
-          } else if (option.includes("Above")) {
-            const minPrice = option.split(" ")[1];
-            queryParams.append("minPrice", minPrice);
-          } else {
-            const [minPrice, maxPrice] = option.split("-");
-            queryParams.append("minPrice", minPrice);
-            queryParams.append("maxPrice", maxPrice);
-          }
-        });
-      }
-    });
-  
-    if (searchTerm.trim() !== "") {
-      queryParams.append("search", searchTerm);
-    }
-  
-    if (sortOption) {
-      queryParams.append("priceSort", sortOption);
-    }
-  
-    const queryString = queryParams.toString();
-    const url = `/listings/all/${user._id}?${queryString}`;
-  
-    console.log("Fetching products with URL:", url);
-  
-    try {
-      const token = await AsyncStorage.getItem("token");
-  
-      if (!token) {
-        console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
-        return;
-      }
-      setLoadingAnimation(true);
-      const response = await apiClient.get(url, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+  searchTerm = "",
+  selectedFiltersArray = [],
+  sortOption = ""
+) => {
+  const queryParams = new URLSearchParams();
+
+  selectedFiltersArray.forEach((filter) => {
+    if (filter["Filter name"] === "Category") {
+      filter.Options.forEach((option) => queryParams.append("category", option));
+    } else if (filter["Filter name"] === "Condition") {
+      filter.Options.forEach((option) => queryParams.append("condition", option));
+    } else if (filter["Filter name"] === "Price") {
+      filter.Options.forEach((option) => {
+        if (option.includes("Below")) {
+          const maxPrice = option.split(" ")[1];
+          queryParams.append("maxPrice", maxPrice);
+        } else if (option.includes("Above")) {
+          const minPrice = option.split(" ")[1];
+          queryParams.append("minPrice", minPrice);
+        } else {
+          const [minPrice, maxPrice] = option.split("-");
+          queryParams.append("minPrice", minPrice);
+          queryParams.append("maxPrice", maxPrice);
+        }
       });
-  
-      if (response.status === 200) {
-        console.log("Data:", response.data);
-        setProducts(response.data.listings);
-      } else {
-        throw new Error("Failed to fetch products");
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoadingAnimation(false);
     }
-  };
+  });
+
+  if (searchTerm.trim() !== "") {
+    queryParams.append("search", searchTerm);
+  }
+
+  if (sortOption) {
+    queryParams.append("priceSort", sortOption);
+  }
+
+  const queryString = queryParams.toString();
+  const url = `/listings/all/${user._id}?${queryString}`;
+
+  console.log("Fetching products with URL:", url);
+
+  try {
+    const token = await AsyncStorage.getItem("token");
+    const selectedLanguage = await AsyncStorage.getItem("user-language") || "en";
+
+    if (!token) {
+      console.error("Authentication token is missing.");
+      Alert.alert("Error", "You are not authorized. Please log in again.");
+      return;
+    }
+
+    setLoadingAnimation(true);
+
+    const response = await apiClient.get(url, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (response.status === 200) {
+      let fetchedProducts = response.data.listings;
+
+      // 🌐 Translate the products dynamically
+      if (selectedLanguage !== "en") {
+        const translateResponse = await apiClient.post("/translate", {
+          data: fetchedProducts,
+          targetLang: selectedLanguage,
+        });
+
+        if (translateResponse?.data?.success) {
+          fetchedProducts = translateResponse.data.translatedData;
+        }
+      }
+
+      setProducts(fetchedProducts);
+    } else {
+      throw new Error("Failed to fetch products");
+    }
+  } catch (error) {
+    console.error("Error fetching products:", error);
+  } finally {
+    setLoadingAnimation(false);
+  }
+};
+
   
   useEffect(() => {
     fetchProducts();
@@ -334,6 +355,9 @@ const MyListingScreen = ({ route, navigation }) => {
     }
   }, [products]);
 
+  console.log("Products in my listings page: ", products);
+  
+
   return (
     <Container
       style={{
@@ -353,7 +377,7 @@ const MyListingScreen = ({ route, navigation }) => {
               fontWeight: "bold",
             }}
           >
-            My Lisitings
+          {t("my_listings")}
           </TopText>
         </View>
 
@@ -372,7 +396,7 @@ const MyListingScreen = ({ route, navigation }) => {
         </View>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder="Search" onChangeText={handleSearch} />
+        <SearchField placeholder={t('search_placeholder')} onChangeText={handleSearch} />
 
         <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
           <Icon name="search" size={24} />
@@ -407,10 +431,7 @@ const MyListingScreen = ({ route, navigation }) => {
                       })
                     }
                   >
-                    {/* <Image
-                      style={styles.eachJewelleryCardImg}
-                      source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
-                    /> */}
+                   
                     <View key={product._id}>
                       {product.images?.length > 0 ? (
                         <Image
@@ -456,7 +477,7 @@ const MyListingScreen = ({ route, navigation }) => {
                         </Text>
                       </View>
                       <Text style={{ color: Theme.themeColor, marginTop: 10 }}>
-                        View Details
+                       {t("view_details")}
                       </Text>
                     </View>
                   </Pressable>

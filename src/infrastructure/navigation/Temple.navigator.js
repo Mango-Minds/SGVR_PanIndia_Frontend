@@ -38,7 +38,7 @@ import TemplePanditDetails from "../../features/Temple/PanditDetails";
 const Stack = createStackNavigator();
 
 export const TempleStackNavigator = () => {
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
   
   let initialRouteName = "TempleHome";
 

@@ -19,18 +19,17 @@ import NewSocialCard from "./NewSocialCard";
 import { Ionicons } from "react-native-vector-icons";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import Theme from "../../styles/theme";
-import {
-  BASEIMGURL,
-  BASEAPIURL,
-  RENDERMEDIAURL,
-} from "../../infrastructure/constants";
+
 import { debounce } from "lodash";
 import { useSelector } from "react-redux";
 import { useIsFocused } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+
 const SocialJobs = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState("searchJobs");
+  const { t } = useTranslation();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
   const [selectedPost, setSelectedPost] = useState(null);
@@ -51,103 +50,102 @@ const SocialJobs = ({ navigation }) => {
     navigation.navigate("ViewJobPost", { jobId: job._id });
   };
 
-  // const deleteJob = async (jobId) => {
-  //   Alert.alert(
-  //     "Confirm Deletion", // Title
-  //     `Are you sure you want to delete the entry?`, // Message
-  //     [
-  //       {
-  //         text: "No", // No button
-  //         onPress: () => {
-  //           console.log("Deletion canceled.");
-  //         },
-  //         style: "cancel", // Makes it stand out as a cancel option
-  //       },
-  //       {
-  //         text: "Yes",
-  //         onPress: async () => {
-  //           const apiUrl = `${BASEAPIURL}/social/job/delete/${jobId}`; // Random API for demonstration
-
-  //           try {
-  //             const response = await fetch(apiUrl, {
-  //               method: "DELETE",
-  //               headers: {
-  //                 Authorization: `Bearer ${token}`,
-  //               },
-  //             });
-
-  //             if (response.ok) {
-  //               alert(`Job entry was deleted successfully.`);
-  //               setAllUserJobs((prevJobs) =>
-  //                 prevJobs.filter((job) => job._id !== jobId)
-  //               );
-  //             } else {
-  //               alert(`Failed to delete the entry. Status: ${response.status}`);
-  //               return false; // Indicate failure
-  //             }
-  //           } catch (error) {
-  //             alert(
-  //               `An error occurred while deleting the entry: ${error.message}`
-  //             );
-  //             return false; // Indicate failure
-  //           }
-  //         },
-  //       },
-  //     ],
-  //     { cancelable: false }
-  //   );
-  // };
+  
   const deleteJob = async (jobId) => {
-    Alert.alert(
-      "Confirm Deletion",
-      `Are you sure you want to delete the entry?`,
-      [
-        {
-          text: "No",
-          onPress: () => {
-            console.log("Deletion canceled.");
-          },
-          style: "cancel",
-        },
-        {
-          text: "Yes",
-          onPress: async () => {
-            try {
-              const token = await AsyncStorage.getItem("token");
-              if (!token) {
-                alert("You are not authorized. Please log in again.");
-                return;
-              }
+    // Alert.alert(
+    //   "Confirm Deletion",
+    //   `Are you sure you want to delete the entry?`,
+    //   [
+    //     {
+    //       text: "No",
+    //       onPress: () => {
+    //         console.log("Deletion canceled.");
+    //       },
+    //       style: "cancel",
+    //     },
+    //     {
+    //       text: "Yes",
+    //       onPress: async () => {
+    //         try {
+    //           const token = await AsyncStorage.getItem("token");
+    //           if (!token) {
+    //             alert("You are not authorized. Please log in again.");
+    //             return;
+    //           }
   
-              const apiUrl = `/social/job/delete/${jobId}`;
-              const response = await apiClient.delete(apiUrl, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
+    //           const apiUrl = `/social/job/delete/${jobId}`;
+    //           const response = await apiClient.delete(apiUrl, {
+    //             headers: {
+    //               Authorization: `Bearer ${token}`,
+    //             },
+    //           });
   
-              if (response.status === 200) {
-                alert(`Job entry was deleted successfully.`);
-                setAllUserJobs((prevJobs) =>
-                  prevJobs.filter((job) => job._id !== jobId)
-                );
-              } else {
-                alert(
-                  `Failed to delete the entry. Status: ${response.status}`
-                );
-                return false;
-              }
-            } catch (error) {
-              alert(
-                `An error occurred while deleting the entry: ${error.message}`
-              );
-              return false;
-            }
-          },
-        },
-      ],
-      { cancelable: false }
-    );
+    //           if (response.status === 200) {
+    //             alert(`Job entry was deleted successfully.`);
+    //             setAllUserJobs((prevJobs) =>
+    //               prevJobs.filter((job) => job._id !== jobId)
+    //             );
+    //           } else {
+    //             alert(
+    //               `Failed to delete the entry. Status: ${response.status}`
+    //             );
+    //             return false;
+    //           }
+    //         } catch (error) {
+    //           alert(
+    //             `An error occurred while deleting the entry: ${error.message}`
+    //           );
+    //           return false;
+    //         }
+    //       },
+    //     },
+    //   ],
+    //   { cancelable: false }
+    // );
+  Alert.alert(
+  t("confirm_deletion_title"),
+  t("confirm_deletion_message"),
+  [
+    {
+      text: t("no"),
+      onPress: () => console.log("Deletion canceled."),
+      style: "cancel",
+    },
+    {
+      text: t("yes"),
+      onPress: async () => {
+        try {
+          const token = await AsyncStorage.getItem("token");
+          if (!token) {
+            alert(t("unauthorized_alert"));
+            return;
+          }
+
+          const apiUrl = `/social/job/delete/${jobId}`;
+          const response = await apiClient.delete(apiUrl, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (response.status === 200) {
+            alert(t("job_deleted_success"));
+            setAllUserJobs((prevJobs) =>
+              prevJobs.filter((job) => job._id !== jobId)
+            );
+          } else {
+            alert(t("job_delete_failed", { status: response.status }));
+            return false;
+          }
+        } catch (error) {
+          alert(t("job_delete_error", { error: error.message }));
+          return false;
+        }
+      },
+    },
+  ],
+  { cancelable: false }
+);
   };
   
   const [appliedJobsPage, setAppliedJobsPage] = useState(1);
@@ -164,78 +162,7 @@ const SocialJobs = ({ navigation }) => {
   const [userJobsSearchQuery, setUserJobsSearchQuery] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Debounced fetch logic
- 
-
-  // Fetch Applied Jobs
-  // const fetchAppliedJobs = async (query = "") => {
-  //   if (allAppliedJobsLoaded || loading) return;
-  //   setLoading(true);
-  //   console.log("inside all applied jobs", query, allAppliedJobsLoaded);
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     console.log("response 1 of applied jobs", response)
-
-
-  //     console.log("applied jobs data", response);
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
-  //       setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
-  //       setAppliedJobsPage((prevPage) => prevPage + 1);
-  //     } else {
-  //       throw new Error("Failed to fetch applied jobs");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching applied jobs:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-//   const fetchAppliedJobs = async (query = "") => {
-//   if (allAppliedJobsLoaded || loading) return;
-
-//   setLoading(true);
-//   console.log("Inside all applied jobs fetch:", query, allAppliedJobsLoaded);
-
-//   try {
-//     const token = await AsyncStorage.getItem("token");
-//     if (!token) throw new Error("Unauthorized");
-
-//     console.log("Token:", token);
-//     console.log("User ID:", userId);
-
-//     const response = await apiClient.get(
-//       `/social/job/applied/${userId}?page=${appliedJobsPage}&limit=10&search=${query}`,
-//       {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       }
-//     );
-
-//     const data = response.data;
-//     console.log("Fetched applied jobs:", data);
-
-//     if (data.appliedJobs.length < 10) setAllAppliedJobsLoaded(true);
-//     setAllAppliedJobs((prev) => [...prev, ...data.appliedJobs]);
-//     setAppliedJobsPage((prevPage) => prevPage + 1);
-//   } catch (error) {
-//     console.error("Error fetching applied jobs:", error.response?.data || error.message);
-//   } finally {
-//     setLoading(false);
-//   }
-// };
-
+  
 
 const fetchAppliedJobs = async (query = "") => {
   if (allAppliedJobsLoaded || loading) return;
@@ -275,43 +202,7 @@ const fetchAppliedJobs = async (query = "") => {
 
   
 
-  // Fetch All Jobs
-  // const fetchAllJobs = async (query = "") => {
-  //   console.log("in search ");
-  //   if (allJobsLoaded || loading) return;
-  //   setLoading(true);
-  //   console.log("in search ");
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/job/all?page=${allJobsPage}&limit=10&search=${query}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.jobs.length < 10) setAllJobsLoaded(true);
-  //       console.log("all jobs data", data.jobs);
-  //       const filteredJobs = data.jobs.filter(
-  //         (job) => job.createdBy !== userId
-  //       );
-
-  //       setAllJobs((prev) => [...prev, ...filteredJobs]);
-  //       console.log(data.jobs);
-  //       setAllJobsPage((prevPage) => prevPage + 1);
-  //     } else {
-  //       throw new Error("Failed to fetch all jobs");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching all jobs:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+ 
   const fetchAllJobs = async (query = "") => {
     if (allJobsLoaded || loading) return;
     setLoading(true);
@@ -342,36 +233,7 @@ const fetchAppliedJobs = async (query = "") => {
   };
   
 
-  // Fetch User Jobs
-  // const fetchJobsByUser = async (query = "") => {
-  //   if (allUserJobsLoaded || loading) return;
-  //   setLoading(true);
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/job/all/${userId}?page=${userJobsPage}&limit=10&search=${query}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       if (data.userJobs.length < 10) setAllUserJobsLoaded(true);
-  //       // console.log("your listing data",data.userJobs[4].applicants)
-  //       setAllUserJobs((prev) => [...prev, ...data.userJobs]);
-  //       setUserJobsPage((prevPage) => prevPage + 1);
-  //     } else {
-  //       throw new Error("Failed to fetch user jobs");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching user jobs:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
+  
   const fetchJobsByUser = async (query = "") => {
     if (allUserJobsLoaded || loading) return;
     setLoading(true);
@@ -449,28 +311,28 @@ const fetchAppliedJobs = async (query = "") => {
 
   const getApplicantStatus = (applicants, userId) => {
     const applicant = applicants.find((job) => job.applicantId === userId);
-    return applicant ? applicant.status : "Not Applied"; // Default status if user hasn't applied
+    return applicant ? applicant.status : "Not Applied"; 
   };
 
-  // Effect to handle data fetching on tab change or page focus
+ 
   useEffect(() => {
     fetchAppliedJobs(appliedJobsSearchQuery);
     fetchAllJobs(allJobsSearchQuery);
     fetchJobsByUser(userJobsSearchQuery);
-    setInitialDataFetched(true); // Mark initial data as fetched
+    setInitialDataFetched(true); 
   }, []);
   
-  // Fetch data on focus but only after the initial data has been fetched
+  
   useEffect(() => {
     if (isFocused && initialDataFetched) {
-      fetchDataOnTabFocus(); // Fetch data only for the active tab
+      fetchDataOnTabFocus(); 
     }
   }, [isFocused]);
 
 
   
 
-  // const filteredAllJobs = allJobs.filter((job) => job.createdBy !== userId);
+
 
   return (
     <>
@@ -489,31 +351,24 @@ const fetchAppliedJobs = async (query = "") => {
                 textTransform: "capitalize",
               }}
             >
-              Jobs
+             {t("jobs")}
             </TopText>
           </View>
           <TouchableOpacity onPress={() => navigation.navigate("CreateNewJob")}>
             <Ionicons name="add" size={30} color="#000" />
           </TouchableOpacity>
         </RowBetween>
-        {/* Content */}
+        
         {activeTab === "appliedJobs" && (
           <View style={styles.searchContainer}>
             <View style={styles.searchFilter}>
               <TextInput
                 style={styles.searchInput}
                 value={appliedJobsSearchQuery}
-                placeholder="Search jobs..."
+               placeholder={t("search_jobs_placeholder")}
                 onChangeText={handleSearch}
               />
-              {/* <TouchableOpacity onPress={() => console.log("Filter")}>
-                <IconButton
-                  icon="filter"
-                  size={20}
-                  color="#000"
-                  style={styles.filterIcon}
-                />
-              </TouchableOpacity> */}
+             
             </View>
             <FlatList
               data={allAppliedJobs}
@@ -539,26 +394,16 @@ const fetchAppliedJobs = async (query = "") => {
         )}
         {activeTab === "searchJobs" && (
           <View style={styles.searchContainer}>
-            {/* <RecentSearches
-            searches={recentSearches}
-            onSelectSearch={handleRecentSearchSelect}
-          /> */}
-            {/* Search Input */}
+           
+          
             <View style={styles.searchFilter}>
               <TextInput
                 value={allJobsSearchQuery}
                 style={styles.searchInput}
-                placeholder="Search jobs..."
+               placeholder={t("search_jobs_placeholder")}
                 onChangeText={handleSearch}
               />
-              {/* <TouchableOpacity onPress={() => console.log("Filter")}>
-                <IconButton
-                  icon="filter"
-                  size={20}
-                  color="#000"
-                  style={styles.filterIcon}
-                />
-              </TouchableOpacity> */}
+             
             </View>
             <FlatList
               data={allJobs}
@@ -584,17 +429,10 @@ const fetchAppliedJobs = async (query = "") => {
                 <TextInput
                   value={userJobsSearchQuery}
                   style={styles.searchInput}
-                  placeholder="Search jobs..."
+                 placeholder={t("search_jobs_placeholder")}
                   onChangeText={handleSearch}
                 />
-                {/* <TouchableOpacity onPress={() => console.log("Filter")}>
-                  <IconButton
-                    icon="filter"
-                    size={20}
-                    color="#000"
-                    style={styles.filterIcon}
-                  />
-                </TouchableOpacity> */}
+                
               </View>
               <FlatList
                 data={allUserJobs}
@@ -636,7 +474,7 @@ const fetchAppliedJobs = async (query = "") => {
             </View>
           </>
         )}
-        {/* Bottom Navigation Tabs */}
+      
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[
@@ -645,7 +483,7 @@ const fetchAppliedJobs = async (query = "") => {
             ]}
             onPress={() => handleTabChange("appliedJobs")}
           >
-            <Text style={styles.tabText}>Applied Jobs</Text>
+            <Text style={styles.tabText}>{t("applied_jobs")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -654,7 +492,7 @@ const fetchAppliedJobs = async (query = "") => {
             ]}
             onPress={() => handleTabChange("searchJobs")}
           >
-            <Text style={styles.tabText}>Search Jobs</Text>
+            <Text style={styles.tabText}>{t("search_jobs")}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[
@@ -663,7 +501,7 @@ const fetchAppliedJobs = async (query = "") => {
             ]}
             onPress={() => handleTabChange("yourListings")}
           >
-            <Text style={styles.tabText}>Your Listings</Text>
+            <Text style={styles.tabText}>{t("your_listings")}</Text>
           </TouchableOpacity>
         </View>
       </View>

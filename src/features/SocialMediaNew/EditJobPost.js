@@ -25,12 +25,12 @@ import apiClient from "../../store/apiClient";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
-
+import { useTranslation } from "react-i18next";
 const EditJobPost = ({ route, navigation }) => {
+  const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user);
   const job = route.params;
@@ -136,7 +136,7 @@ const EditJobPost = ({ route, navigation }) => {
                     color: "#000",
                   }}
                 >
-                  Edit Job Posting
+                  {t("editJobPosting")}
                 </Text>
               </View>
             </RowBetween>
@@ -155,7 +155,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Job Title
+                 {t("jobTitle")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -177,7 +177,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Company
+                  {t("company")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -199,7 +199,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Location
+                  {t("location")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -221,7 +221,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Job Description
+                 {t("jobDescription")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -247,7 +247,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Company Description
+                 {t("companyDescription")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -273,7 +273,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  Responsibilities
+                  {t("responsibilities")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -299,7 +299,7 @@ const EditJobPost = ({ route, navigation }) => {
                     fontWeight: "600",
                   }}
                 >
-                  CTC
+                 {t("ctc")}
                 </Text>
                 <LoginInputField
                   selectionColor={Theme.themeColor}
@@ -333,12 +333,13 @@ const EditJobPost = ({ route, navigation }) => {
                         color={"white"}
                       />
                     ) : (
-                      "Submit"
+                      t("submit")
                     )}
                   </Text>
                 </FormButton>
               </FormSection>
             </MainContainer>
+            
           </ScrollView>
         </Provider>
       </SafeArea>

@@ -26,9 +26,6 @@ import { decode } from "base-64";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
-import UserImg from "../../assets/images/general/user.png";
 import { setLoadingInBtn } from "../../store/user";
 import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({

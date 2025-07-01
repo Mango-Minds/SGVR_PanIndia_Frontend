@@ -18,7 +18,7 @@ import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
 import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
 import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
@@ -31,7 +31,7 @@ const MyTempleProfile = ({ route }) => {
   const {pandits, fetchPandits} = route.params;
   console.log("Pandits in profile: ", pandits);
   const navigation = useNavigation();
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
 
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
@@ -40,7 +40,7 @@ const MyTempleProfile = ({ route }) => {
   const tokenPayload = token.split(".")[1];
 
   const decodedPayload = JSON.parse(decode(tokenPayload));
-  const user = useState(useSelector((state) => state.user.user));
+  const user = useState(useSelector((state) => state.user.user[0]));
   console.log("User: ", user);
 
   const userId = decodedPayload.id;
@@ -182,7 +182,7 @@ const MyTempleProfile = ({ route }) => {
   console.log("ShopData: ", shopData);
   const loggedInShop = shopData.find(
     (shop) =>
-      (shop.owner && shop.owner.id?._id === userId) || shop.owner === userId
+      (shop?.owner && shop.owner.id?._id === userId) || shop?.owner === userId
   );
 
   console.log("Loggedinshop data: ", loggedInShop);

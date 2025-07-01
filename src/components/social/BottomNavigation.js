@@ -3,36 +3,45 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
 import { Card, IconButton } from "react-native-paper";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
+
 export default function BottomNavigation({ navigation }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.bottomBarContainer}>
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("MainHome")}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="home-outline" size={24} color={Theme.themeColor}/>
-          <Text style={[styles.iconText, { color: Theme.themeColor }]}>Home</Text>
+          <Ionicons name="home-outline" size={24} color={Theme.themeColor} />
+          <Text style={[styles.iconText, { color: Theme.themeColor }]}>
+           {t("home")}
+          </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}
-        onPress={() => navigation.navigate("MyNetwork")}>
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("MyNetwork")}
+        >
           <Ionicons name="people-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>My Network</Text>
+          <Text style={[styles.iconText, { color: "gray" }]}> {t("myNetwork")}</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}
-        onPress={() => navigation.navigate("NotificationsScreen")}>
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("NotificationsScreen")}
+        >
           <Ionicons name="notifications-outline" size={24} color="gray" />
           <Text style={[styles.iconText, { color: "gray" }]}>
-            Notifications
-            </Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconContainer}
-            onPress={() => navigation.navigate("SocialJobs")}>
-          <Ionicons name="briefcase-outline" size={28} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>Jobs</Text>
+            {t("notifications")}
+          </Text>
         </TouchableOpacity>
-       
-        
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("SocialJobs")}
+        >
+          <Ionicons name="briefcase-outline" size={28} color="gray" />
+          <Text style={[styles.iconText, { color: "gray" }]}>{t("jobs")}</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );

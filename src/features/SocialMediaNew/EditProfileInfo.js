@@ -24,13 +24,14 @@ import TextInput from "react-native-paper";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
 import { FlatList } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -130,6 +131,7 @@ const styles = StyleSheet.create({
 export default function EditProfileInfo({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
+const { t } = useTranslation();
 
   const token = useSelector((state) => state.user.token);
   const { userProfile, fetchUserProfile } = route.params;
@@ -155,105 +157,6 @@ export default function EditProfileInfo({ navigation, route }) {
     setSelectedImage(result.assets[0]);
   };
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     let formData = new FormData();
-
-  //     if (selectedImage && selectedImage.uri) {
-  //       let localUri = selectedImage.uri;
-  //       let filename = localUri.split("/").pop();
-  //       let match = /\.(\w+)$/.exec(filename);
-  //       let type = match ? `image/${match[1]}` : `image`;
-
-  //       formData.append("bannerImage", {
-  //         uri: localUri,
-  //         name: filename,
-  //         type: type,
-  //       });
-  //     }
-
-  //     await dispatch(setLoadingInBtn(true));
-
-  //     const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //         "Content-Type": "multipart/form-data", 
-  //       },
-  //       body: formData,
-  //     });
-
-     
-  //     await dispatch(setLoadingInBtn(false));
-
-  //     if (!response.ok) {
-  //       const errorText = await response.text();
-  //       throw new Error(`Failed to update user: ${errorText}`);
-  //     }
-
-  //     alert("Information Updated Successfully");
-  //     fetchUserProfile();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     alert(`Error: ${error.message}`);
-  //   }
-  // };
-  
-  
-  
-  // const handleSubmit = async () => {
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     if (!token) {
-  //       console.error("Authentication token is missing.");
-  //       Alert.alert("Error", "You are not authorized. Please log in again.");
-  //       return;
-  //     }
-  
-  //     let formData = new FormData();
-  
-  //     if (selectedImage && selectedImage.uri) {
-  //       let localUri = selectedImage.uri;
-  //       let filename = localUri.split("/").pop();
-  //       let match = /\.(\w+)$/.exec(filename);
-  //       let type = match ? `image/${match[1]}` : `image`;
-  
-  //       formData.append("bannerImage", {
-  //         uri: localUri,
-  //         name: filename,
-  //         type: type,
-  //       });
-  //     }
-  
-  //     await dispatch(setLoadingInBtn(true));
-  
-  //     const response = await apiClient.patch(
-  //       `/user/update-follow-data`,
-  //       formData,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //           "Content-Type": "multipart/form-data",
-  //         },
-  //       }
-  //     );
-  
-  //     await dispatch(setLoadingInBtn(false));
-  
-  //     if (response.status !== 200) {
-  //       const errorText = response.data?.message || "Unknown error";
-  //       throw new Error(`Failed to update user: ${errorText}`);
-  //     }
-  
-  //     alert("Information Updated Successfully");
-  //     fetchUserProfile();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     alert(`Error: ${error.message}`);
-  //   }
-  // };
   
   const handleSubmit = async () => {
     try {
@@ -342,7 +245,7 @@ export default function EditProfileInfo({ navigation, route }) {
                   letterSpacing: 0.5,
                 }}
               >
-                Edit User Profile
+               {t("editUserProfile")}
               </Text>
             </View>
           </RowBetween>
@@ -416,7 +319,7 @@ export default function EditProfileInfo({ navigation, route }) {
                       color={"white"}
                     />
                   ) : (
-                    "Update Profile"
+                   t("update_profile")
                   )}
                 </Text>
               </FormButton>

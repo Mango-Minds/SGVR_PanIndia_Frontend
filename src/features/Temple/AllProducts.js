@@ -11,10 +11,7 @@ import {
 import { useSelector } from "react-redux";
 import React, { useCallback, useState, useEffect } from "react";
 import { Row } from "../../styles/dashboard.styles";
-import { Ionicons } from "react-native-vector-icons";
-import { BASEIMGURL } from "../../infrastructure/constants";
-import { debounce } from "lodash";
-import BottomNavigation from "../../features/Temple/BottomNavigation";
+
 import Icon from "react-native-vector-icons/Ionicons";
 import { Divider, IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";

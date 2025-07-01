@@ -15,7 +15,6 @@ import {
   ScrollView,
   Dimensions,
   Pressable,
-
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -24,16 +23,26 @@ import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { Video, ResizeMode } from "expo-av";
-import {
-  BASEIMGURL,
-  BASEAPIURL,
-  RENDERMEDIAURL,
-} from "../../infrastructure/constants";
+import { BASEAPIURL, RENDERMEDIAURL } from "../../infrastructure/constants";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
 import UserImg from "../../assets/images/general/user.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import {
+  sendFollowRequest,
+  unfollowUser,
+  getFollowStatus,
+  deletePost,
+  getLikeStatus,
+  toggleLikeOnPost,
+  getComments,
+  addComment,
+  deleteComment,
+  reportPostApi,
+} from "./SocialMediaAPIs";
+import { useTranslation } from "react-i18next";
+
 const windowWidth = Dimensions.get("window").width;
 
 const NewSocialCard = ({
@@ -60,8 +69,10 @@ const NewSocialCard = ({
   ActivityIndicator,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
-
+  const { t } = useTranslation();
   // Determine if photoUri is an array of images or a single image
+
+  console.log("Posts Data: ", posts);
 
   const images = Array.isArray(postImages) ? postImages : [postImages];
   console.log("images of posts", images);
@@ -87,296 +98,117 @@ const NewSocialCard = ({
   const [loading, setLoading] = useState(false);
 
   const [isRequestSent, setIsRequestSent] = useState(false);
-
-  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/send-request/${toUserId}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //       console.log("response of sending req", response);
-  //     if (response.ok) {
-  //       setIsFollowing(true);
-  //       Alert.alert("Success", "Connection request sent successfully.");
-  //     } else {
-  //       const data = await response.json();
-  //       if (data.message === "You are already following this user.") {
-  //         setIsFollowing(true);
-  //         Alert.alert(
-  //           "Already Following",
-  //           "You are already following this user."
-  //         );
-  //       } else if (
-  //         data.message === "Follow request already sent to this user."
-  //       ) {
-  //         Alert.alert(
-  //           "Request Already Sent",
-  //           "You have already sent a connection request to this user."
-  //         );
-  //       } else {
-  //         Alert.alert("Error", "Failed to send connection request.");
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to user:", error);
-  //     Alert.alert(
-  //       "Error",
-  //       "An error occurred while trying to send the follow request."
-  //     );
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   const fetchFollowStatus = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `${BASEAPIURL}/social/check-follow-status/${userId}`,
-  //         {
-  //           method: "GET",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setIsFollowing(data.isFollowing);
-  //       } else {
-  //         console.error("Failed to fetch follow status");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching follow status:", error);
-  //     }
-  //   };
-
-  //   if (userId) {
-  //     fetchFollowStatus();
-  //   }
-  // }, [userId]);
-
-  // const handleDeletePost = async () => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/post/delete/${post._id}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error("Failed to delete post");
-  //     }
-
-  //     Alert.alert(
-  //       "Success",
-  //       "Post deleted successfully",
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             fetchPosts();
-  //             navigation.goBack();
-  //           },
-  //         },
-  //       ],
-  //       { cancelable: false }
-  //     );
-  //   } catch (error) {
-  //     console.error("Error deleting product:", error);
-  //   }
-  // };
+  const [isFollowing, setIsFollowing] = useState(null);
 
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
     try {
-      const token = await AsyncStorage.getItem("token");
-  
-      const response = await apiClient.post(
-        `${BASEAPIURL}/social/send-request/${toUserId}`,
-        {}, // Empty body if not needed
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
+      const response = await sendFollowRequest(toUserId);
       console.log("response of sending req", response);
-  
-      // Axios throws on non-2xx status, so if you're here, it's successful
+
       if (response.status === 200) {
-        setIsFollowing(true);
+        setIsFollowing("pending");
         Alert.alert("Success", "Connection request sent successfully.");
       }
     } catch (error) {
-      console.error("Error connecting to user:", error);
-  
-      if (error.response) {
-        const message = error.response.data.message;
-        if (message === "You are already following this user.") {
-          setIsFollowing(true);
-          Alert.alert("Already Following", message);
-        } else if (message === "Follow request already sent to this user.") {
-          Alert.alert("Request Already Sent", message);
-        } else {
-          Alert.alert("Error", message || "Failed to send connection request.");
-        }
-      } else {
-        Alert.alert("Error", "An unexpected error occurred.");
-      }
-    }
-  };
-
-  const reportPost = async (postId, reason) => {
-    try {
-      console.log("Reporting post", postId);
-      const response = await fetch(`${BASEAPIURL}/social/post/report-post/${postId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ reason }),
-      });
-  
-      console.log("Report post response", response);
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert("Success", "If this post violates our policies, it will be removed within 24 hours."
+      const data = error.response?.data;
+      if (data?.message === "You are already following this user.") {
+        Alert.alert(
+          "Already Following",
+          "You are already following this user."
+        );
+      } else if (
+        data?.message === "Follow request already sent to this user."
+      ) {
+        Alert.alert(
+          "Request Already Sent",
+          "You have already sent a connection request to this user."
         );
       } else {
-        Alert.alert("Error", "Failed to report post.");
+        console.error("Error connecting to user:", error);
+        Alert.alert(
+          "Error",
+          "An error occurred while trying to send the follow request."
+        );
       }
-    } catch (error) {
-      console.error("Error reporting post:", error);
-      Alert.alert("Error", "An error occurred while trying to report the post.");
     }
   };
-  
-  
+  const unFollowUser = async () => {
+    try {
+      console.log("removing", userId);
+      const response = await unfollowUser(userId);
+      console.log("unfollow res", response);
+
+      if (response.status === 200) {
+        setIsFollowing("none");
+        Alert.alert("Success", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while trying to send the unfollow request."
+      );
+    }
+  };
   useEffect(() => {
     const fetchFollowStatus = async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        const response = await apiClient.get(
+        const response = await fetch(
           `${BASEAPIURL}/social/check-follow-status/${userId}`,
           {
+            method: "GET",
             headers: {
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
           }
         );
-  
-        if (response.status === 200) {
-          setIsFollowing(response.data.isFollowing);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("following status", data);
+          setIsFollowing(data.status);
         } else {
           console.error("Failed to fetch follow status");
         }
       } catch (error) {
-        console.error("Error fetching follow status:", error.message);
+        console.error("Error fetching follow status:", error);
       }
     };
-  
+
     if (userId) {
       fetchFollowStatus();
     }
   }, [userId]);
-  
-  
-  // const handleDeletePost = async () => {
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     const response = await apiClient(
-  //       `${BASEAPIURL}/social/post/delete/${post._id}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  
-  //     if (!response.ok) {
-  //       throw new Error("Failed to delete post");
-  //     }
-  
-  //     Alert.alert(
-  //       "Success",
-  //       "Post deleted successfully",
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             fetchPosts();
-  //             navigation.goBack();
-  //           },
-  //         },
-  //       ],
-  //       { cancelable: false }
-  //     );
-  //   } catch (error) {
-  //     console.error("Error deleting post:", error);
-  //   }
-  // };
-  
   const handleDeletePost = async () => {
     try {
-      const token = await AsyncStorage.getItem("token");
-  
-      const response = await apiClient.delete(
-        `${BASEAPIURL}/social/post/delete/${post._id}`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (!response.ok) {
-              throw new Error("Failed to delete post");
-            }
-      Alert.alert(
-        "Success",
-        "Post deleted successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              fetchPosts();
-              navigation.goBack();
+      const response = await deletePost(post._id);
+      if (response.status === 200) {
+        Alert.alert(
+          "Success",
+          "Post deleted successfully",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                fetchPosts();
+                navigation.goBack();
+              },
             },
-          },
-        ],
-        { cancelable: false }
-      );
+          ],
+          { cancelable: false }
+        );
+      }
     } catch (error) {
       console.error("Error deleting post:", error);
-  
-      if (error.response) {
-        Alert.alert("Error", error.response.data.message || "Failed to delete post.");
-      } else {
-        Alert.alert("Error", "Something went wrong.");
-      }
+      Alert.alert("Error", "Failed to delete post.");
     }
   };
-  
+
   const toggleDescription = () => {
     setShowFullDescription(!showFullDescription);
   };
-  const [isFollowing, setIsFollowing] = useState(false);
 
   function formatImageUrls(urls, prefix) {
     return urls.map((url) => prefix + url.replace(/\\/g, "/"));
@@ -436,6 +268,18 @@ const NewSocialCard = ({
   const [likeCount, setLikeCount] = useState(post.likesCount || 0);
 
   const [isLiked, setIsLiked] = useState(false);
+  const [heartVisible, setHeartVisible] = useState(false); // For heart animation visibility
+  const lastTap = useRef(0); // Store the time of the last tap
+
+  const handleDoubleTap = async () => {
+    const now = Date.now();
+    if (now - lastTap.current <= 300) {
+      toggleLike();
+      setHeartVisible(true);
+      setTimeout(() => setHeartVisible(false), 600);
+    }
+    lastTap.current = now;
+  };
 
   const [isCommentsModalVisible, setCommentsModalVisible] = useState(false);
   const [isShareModalVisible, setShareModalVisible] = useState(false);
@@ -618,146 +462,144 @@ const NewSocialCard = ({
   //   }
   // };
 
-
   useEffect(() => {
     const fetchLikeStatus = async () => {
       try {
-        const token = await AsyncStorage.getItem("token");
-        const response = await apiClient.get(
-          `/social/post/like-status/${post._id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-  
-        if (response.status === 200) {
-          setIsLiked(response.data.isLiked);
-        } else {
-          console.error("Error fetching like status:", response.data.message);
-        }
+        const response = await getLikeStatus(post._id);
+        setIsLiked(response.data.isLiked);
       } catch (error) {
-        console.error("Error fetching like status:", error);
+        console.error(
+          "Error fetching like status:",
+          error?.response?.data?.message || error.message
+        );
       }
     };
-  
+
     fetchLikeStatus();
   }, [post._id]);
-  
   const toggleLike = async () => {
-    const token = await AsyncStorage.getItem("token");
-    const url = `/social/post/${isLiked ? "unlike" : "like"}/${post._id}`;
-    const method = "POST";
-  
     try {
-      const response = await apiClient(url, {
-        method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        data: {
-          userId: fromUserId,
-          postId: post._id,
-        },
+      const response = await toggleLikeOnPost({
+        postId: post._id,
+        userId: fromUserId,
+        isLiked,
       });
-  
-      if (response.status === 200) {
-        setLikeCount(response.data.likesCount);
-        setIsLiked(!isLiked);
-      } else {
-        console.error("Error:", response.data.message);
-      }
+
+      setLikeCount(response.data.likesCount);
+      setIsLiked(!isLiked);
     } catch (error) {
-      console.error("Error toggling like:", error);
+      console.error(
+        "Error toggling like:",
+        error?.response?.data?.message || error.message
+      );
     }
   };
-  
   const fetchComments = async () => {
     setLoading(true);
-  
+
     try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await apiClient.get(
-        `/social/post/comments/${post._id}/10`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (response.status === 200) {
-        setComments(response.data.comments);
-        console.log("Fetched comments data: ", response.data);
-      } else {
-        console.error("Failed to fetch comments:", response.status);
-      }
+      const response = await getComments(post._id);
+      setComments(response.data.comments);
+      console.log("Fetched comments data:", response.data);
     } catch (error) {
-      console.error("Error fetching comments:", error.message);
+      console.error(
+        "Error fetching comments:",
+        error?.response?.data?.message || error.message
+      );
     } finally {
       setLoading(false);
     }
   };
-  
+
   useEffect(() => {
     fetchComments();
   }, [post._id]);
-  
   const handleAddComment = async () => {
     if (!newCommentText.trim()) {
       alert("Comment cannot be empty.");
       return;
     }
-  
+
     try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await apiClient.post(
-        `/social/post/comment/${post._id}`,
-        { content: newCommentText },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (response.status >= 200 && response.status < 300) {
-        setComments([response.data.comment, ...comments]);
-        setNewCommentText("");
-        fetchComments();
-      } else {
-        console.error("Error adding comment:", response.data.message);
-      }
+      const response = await addComment(post._id, newCommentText);
+      setComments([response.data.comment, ...comments]);
+      setNewCommentText("");
+      fetchComments();
     } catch (error) {
-      console.error("Error adding comment:", error.message);
+      console.error(
+        "Error adding comment:",
+        error?.response?.data?.message || error.message
+      );
     }
   };
-  
-  
   const handleDeleteComment = async (commentId) => {
     try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await apiClient.delete(
-        `/social/post/comment/${post._id}/${commentId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
-      if (response.status === 200) {
-        setComments(response.data.comments);
-        fetchComments();
-      } else {
-        console.error("Error deleting comment:", response.data.message);
-      }
+      const response = await deleteComment(post._id, commentId);
+      setComments(response.data.comments);
+      fetchComments();
     } catch (error) {
-      console.error("Error deleting comment:", error.message);
+      console.error(
+        "Error deleting comment:",
+        error?.response?.data?.message || error.message
+      );
     }
   };
-  
+
+  // const reportPost = async (postId, reason) => {
+  //   try {
+  //     console.log("Reporting post id: ", postId);
+  //     const response = await reportPostApi(postId, reason);
+  //     console.log("Report post response", response);
+
+  //     if (response.status === 200) {
+  //       Alert.alert(
+  //         "Success",
+  //         "If this post violates our policies, it will be removed within 24 hours."
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error reporting post:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       "An error occurred while trying to report the post."
+  //     );
+  //   }
+  // };
+  const reportPost = async (postId, reason) => {
+    try {
+      console.log("Reporting post", postId);
+      const token = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${BASEAPIURL}/social/post/report-post/${postId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reason }),
+        }
+      );
+
+      console.log("Report post response", response);
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert(
+          "Success",
+          "If this post violates our policies, it will be removed within 24 hours."
+        );
+      } else {
+        Alert.alert("Error", "Failed to report post.");
+      }
+    } catch (error) {
+      console.error("Error reporting post:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while trying to report the post."
+      );
+    }
+  };
+
   const panResponder = useRef(
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
@@ -845,12 +687,8 @@ const NewSocialCard = ({
     );
   };
 
-
-
   const renderItem = ({ item }) => {
-    const imageUri = item?.userId?.image
-      ? `${item.userId?.image}`
-      : UserImg;
+    const imageUri = item?.userId?.image ? `${item.userId?.image}` : UserImg;
 
     const isCommentOwner = item?.userId?._id === fromUserId;
 
@@ -865,9 +703,9 @@ const NewSocialCard = ({
           <Text style={styles.commentName}>
             {item.userId.firstName} {item.userId.lastName}
           </Text>
-          <Text style={styles.commentRole}>
+          {/* <Text style={styles.commentRole}>
             Sales Enthusiast | Ex-intern at Younity.in
-          </Text>
+          </Text> */}
           <Text style={styles.commentText}>{item.content}</Text>
         </View>
 
@@ -887,7 +725,7 @@ const NewSocialCard = ({
                   style={styles.deleteOption}
                 >
                   <Icon name="trash" size={18} color="red" />
-                  <Text style={styles.menuOptionText}>Delete</Text>
+                  <Text style={styles.menuOptionText}>{t("delete")}</Text>
                 </TouchableOpacity>
               </View>
             )}
@@ -972,7 +810,7 @@ const NewSocialCard = ({
           <View style={styles.headerText}>
             <TouchableOpacity
               onPress={() =>
-                navigation.navigate("EachProfile", { 
+                navigation.navigate("EachProfile", {
                   userId: userId,
                 })
               }
@@ -981,11 +819,11 @@ const NewSocialCard = ({
                 {firstName} {lastName}
               </Text>
             </TouchableOpacity>
-            <Text style={styles.title}>Software Engineer</Text>
+            {/* <Text style={styles.title}>Software Engineer</Text> */}
             {/* <Text style={styles.time}>1w • Edited</Text> */}
           </View>
 
-          {source === "SocialHomeScreen" || source === "EachProfile" ? (
+          {/*     {source === "SocialHomeScreen" || source === "EachProfile" ? (
             <TouchableOpacity
               style={[
                 styles.followContainer,
@@ -1012,6 +850,130 @@ const NewSocialCard = ({
               </View>
             </TouchableOpacity>
           ) : (
+           */}
+
+          {/* {source === "SocialHomeScreen" || source === "EachProfile" ? (
+            <TouchableOpacity
+              style={[
+                styles.followContainer,
+                isFollowing === "approved" && {
+                  backgroundColor: "transparent",
+                },
+              ]}
+              onPress={() => {
+                if (isFollowing === "none" && userId) {
+                  handleSendFollowRequest(fromUserId, userId);
+                } else if (isFollowing === "approved") {
+                  unFollowUser();
+                }
+              }}
+              disabled={isFollowing === "pending"} // Disable button if follow request is pending
+            >
+              <View style={styles.iconContainer}>
+                <Icon
+                  name={
+                    isFollowing === "none"
+                      ? "add"
+                      : isFollowing === "pending"
+                      ? "hourglass"
+                      : "checkmark"
+                  }
+                  size={20}
+                  style={
+                    isFollowing === "none"
+                      ? styles.plusIcon
+                      : isFollowing === "pending"
+                      ? styles.pendingIcon
+                      : styles.checkIcon
+                  }
+                />
+                <Text
+                  style={
+                    isFollowing === "none"
+                      ? styles.followText
+                      : isFollowing === "pending"
+                      ? styles.pendingText
+                      : styles.followingText
+                  }
+                >
+                  {isFollowing === "none"
+                    ? "Follow"
+                    : isFollowing === "pending"
+                    ? "Pending"
+                    : "Following"}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : ( */}
+
+          {source === "SocialHomeScreen" || source === "EachProfile" ? (
+            <TouchableOpacity
+              style={[
+                styles.followContainer,
+                isFollowing === "approved" && {
+                  backgroundColor: "transparent",
+                },
+              ]}
+              onPress={() => {
+                if (isFollowing === "none" && userId) {
+                  handleSendFollowRequest(fromUserId, userId);
+                } else if (isFollowing === "approved") {
+                  unFollowUser();
+                }
+              }}
+              disabled={isFollowing === "pending"} // Disable button if follow request is pending
+            >
+              <View style={styles.iconContainer}>
+                <Icon
+                  name={
+                    isFollowing === "none"
+                      ? "add"
+                      : isFollowing === "pending"
+                      ? "hourglass"
+                      : "checkmark"
+                  }
+                  size={20}
+                  style={
+                    isFollowing === "none"
+                      ? styles.plusIcon
+                      : isFollowing === "pending"
+                      ? styles.pendingIcon
+                      : styles.checkIcon
+                  }
+                />
+                {/* <Text
+                  style={
+                    isFollowing === "none"
+                      ? styles.followText
+                      : isFollowing === "pending"
+                      ? styles.pendingText
+                      : styles.followingText
+                  }
+                >
+                  {isFollowing === "none"
+                    ? "Follow"
+                    : isFollowing === "pending"
+                    ? "Pending"
+                    : "Following"}
+                </Text> */}
+                <Text
+                  style={
+                    isFollowing === "none"
+                      ? styles.followText
+                      : isFollowing === "pending"
+                      ? styles.pendingText
+                      : styles.followingText
+                  }
+                >
+                  {isFollowing === "none"
+                    ? t("Follow")
+                    : isFollowing === "pending"
+                    ? t("Pending")
+                    : t("Following")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ) : (
             <TouchableOpacity
               style={styles.followContainer}
               onPress={openPostModal}
@@ -1019,7 +981,7 @@ const NewSocialCard = ({
               <Text style={styles.moreOptions}>...</Text>
             </TouchableOpacity>
           )}
-       <TouchableOpacity
+          <TouchableOpacity
             onPress={() => setReportModalVisible(true)}
             style={styles.moreOptionsButton}
           >
@@ -1039,23 +1001,25 @@ const NewSocialCard = ({
             >
               <View style={styles.reportModalContainer}>
                 {/* Report Post Option */}
-                <Text style={styles.modalTitle}>Post Options</Text>
+                <Text style={styles.modalTitle}>{t("postOptions")}</Text>
                 <TouchableOpacity
                   style={styles.reportModalOption}
                   onPress={() => {
                     setReportModalVisible(false);
-                    reportPost(postId, "Inappropriate content") // Change reason as needed
+                    reportPost(post._id, "Inappropriate content"); // Change reason as needed
                   }}
                 >
                   <Icon name="flag-outline" size={22} color="red" />
-                  <Text style={styles.reportModalOptionText}>Report Post</Text>
+                  <Text style={styles.reportModalOptionText}>
+                    {t("repostOptions")}
+                  </Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.optionButton, styles.cancelButton]}
                   onPress={() => setReportModalVisible(false)}
                 >
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={styles.cancelText}>{t("cancel")}</Text>
                 </TouchableOpacity>
               </View>
             </Pressable>
@@ -1065,7 +1029,7 @@ const NewSocialCard = ({
         {renderDescription()}
         <TouchableOpacity onPress={toggleDescription}>
           <Text style={styles.readMore}>
-            {showFullDescription ? "Read Less" : "Read More"}
+            {showFullDescription ? t("readLess") : t("readMore")}
           </Text>
         </TouchableOpacity>
 
@@ -1116,7 +1080,6 @@ const NewSocialCard = ({
                   <Video
                     ref={reelRef}
                     source={{ uri: `${video.replace(/\\/g, "/")}` }}
-                    
                     style={styles.reelVideo}
                     resizeMode={ResizeMode.CONTAIN}
                     shouldPlay={isReelPlaying}
@@ -1157,8 +1120,8 @@ const NewSocialCard = ({
                     <Text style={styles.reelUsername}>
                       {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                     </Text>
-                    <TouchableOpacity style={styles.reelFollowButton}>
-                      {/* <Text style={styles.reelFollowButtonText}>Follow</Text> */}
+                    {/* <TouchableOpacity style={styles.reelFollowButton}>
+                      
                       <TouchableOpacity
                         style={[
                           styles.followContainer,
@@ -1183,6 +1146,55 @@ const NewSocialCard = ({
                           </Text>
                         </View>
                       </TouchableOpacity>
+                    </TouchableOpacity> */}
+
+                    {/* Follow Button Logic */}
+                    <TouchableOpacity
+                      style={[
+                        styles.reelFollowButton,
+                        isFollowing === "approved" && {
+                          backgroundColor: "transparent",
+                        },
+                      ]}
+                      onPress={() => {
+                        if (isFollowing === "none") {
+                          handleSendFollowRequest(fromUserId, userId);
+                        } else if (isFollowing === "approved") {
+                          unFollowUser();
+                        }
+                      }}
+                      disabled={isFollowing === "pending"}
+                    >
+                      <View style={styles.buttonContent}>
+                        <Icon
+                          name={
+                            isFollowing === "none"
+                              ? "add"
+                              : isFollowing === "pending"
+                              ? "hourglass"
+                              : "checkmark"
+                          }
+                          size={18}
+                          color="#FF9933"
+                          style={{ marginRight: 8 }}
+                        />
+                        <Text
+                          style={[
+                            styles.reelFollowButtonText,
+                            isFollowing === "approved"
+                              ? { color: "#FF9933" }
+                              : isFollowing === "pending"
+                              ? { color: "#FF9933" }
+                              : { color: "#FF9933" },
+                          ]}
+                        >
+                          {isFollowing === "none"
+                            ? "Follow"
+                            : isFollowing === "pending"
+                            ? "Pending"
+                            : "Following"}
+                        </Text>
+                      </View>
                     </TouchableOpacity>
                   </View>
 
@@ -1197,7 +1209,9 @@ const NewSocialCard = ({
                     {renderReelDescription()}
                     <TouchableOpacity onPress={openDescriptionModal}>
                       <Text style={{ color: "white", marginBottom: 8 }}>
-                        {showReelFullDescription ? "Read Less" : "Read More"}
+                        {showReelFullDescription
+                          ? t("readLess")
+                          : t("readMore")}
                       </Text>
                     </TouchableOpacity>
                     <Modal
@@ -1229,8 +1243,8 @@ const NewSocialCard = ({
                               }}
                             >
                               {showReelFullDescription
-                                ? "Read More"
-                                : "Read Less"}
+                                ? t("readLess")
+                                : t("readMore")}
                             </Text>
                           </TouchableOpacity>
                         </View>
@@ -1284,8 +1298,8 @@ const NewSocialCard = ({
         )}
 
         {/* Post Image */}
-        {/* <Image style={styles.bannerImage} source={photoUri} /> */}
-        {images && images.length > 0 && (
+
+        {/* {images && images.length > 0 && (
           <View style={styles.imageContainer}>
             {images.length > 1 ? (
               <ScrollView
@@ -1320,6 +1334,63 @@ const NewSocialCard = ({
               </View>
             )}
           </View>
+        )} */}
+
+        <View style={styles.imageContainer}>
+          {images && images.length > 0 ? (
+            <>
+              {images.length > 1 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  snapToInterval={windowWidth}
+                  decelerationRate="fast"
+                  snapToAlignment="center"
+                >
+                  {images.map((image, index) => {
+                    const imageUri = `${image}`;
+                    console.log("Rendering image:", imageUri);
+                    return (
+                      <TouchableWithoutFeedback
+                        key={index}
+                        onPress={handleDoubleTap}
+                      >
+                        <Image
+                          style={styles.bannerImage}
+                          source={{ uri: imageUri }}
+                        />
+                      </TouchableWithoutFeedback>
+                    );
+                  })}
+                </ScrollView>
+              ) : (
+                <TouchableWithoutFeedback onPress={handleDoubleTap}>
+                  <Image
+                    style={styles.bannerSingleImage}
+                    source={{ uri: `${images[0]}` }}
+                  />
+                </TouchableWithoutFeedback>
+              )}
+
+              {images.length > 1 && (
+                <View style={styles.indexContainer}>
+                  <Text style={styles.indexText}>
+                    {currentIndex + 1} / {images.length}
+                  </Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <Text>{t("no_images_visible")}</Text> // Fallback message in case there are no images
+          )}
+        </View>
+
+        {heartVisible && (
+          <View style={styles.likeIconContainer}>
+            <Icon name="heart" size={50} color="red" style={styles.likeIcon} />
+          </View>
         )}
 
         {/* Social Info Section */}
@@ -1335,7 +1406,7 @@ const NewSocialCard = ({
             <Text style={styles.socialText}>{likeCount}</Text>
           </View>
           <Text style={styles.socialText}>
-            {post.comments.length} comments • {reposts} reposts
+            {post.comments.length} {t("comments")} • {reposts} {t("reposts")}
           </Text>
         </View>
 
@@ -1352,7 +1423,7 @@ const NewSocialCard = ({
                 textShadowOffset: { width: 1, height: 1 },
               }}
             />
-            <Text style={styles.actionText}>Like</Text>
+            <Text style={styles.actionText}>{t("like")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={openCommentsModal}>
@@ -1362,11 +1433,11 @@ const NewSocialCard = ({
               marginLeft={10}
               color="black"
             />
-            <Text style={styles.actionText}>Comment</Text>
+            <Text style={styles.actionText}>{t("comment")}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openRepostModal}>
             <FontAwesomeIcon name="retweet" size={24} marginLeft={10} />
-            <Text style={styles.actionText}>Repost</Text>
+            <Text style={styles.actionText}>{t("repost")}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openShareModal}>
             <FontAwesomeIcon
@@ -1375,7 +1446,7 @@ const NewSocialCard = ({
               marginLeft={10}
               color="#000"
             />
-            <Text style={styles.actionText}>Send</Text>
+            <Text style={styles.actionText}>{t("send")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -1462,7 +1533,7 @@ const NewSocialCard = ({
                     {" "}
                     {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                   </Text>
-                  <Text style={styles.title}>"Software Engineer"</Text>
+                  {/* <Text style={styles.title}>"Software Engineer"</Text> */}
                   {/* <Text style={styles.time}>1w • Edited</Text> */}
                 </View>
               </View>
@@ -1558,7 +1629,7 @@ const NewSocialCard = ({
                   ListEmptyComponent={
                     !loading && (
                       <Text style={{ textAlign: "center", marginTop: 20 }}>
-                        No comments yet.
+                        {t("no_comments_yet")}.
                       </Text>
                     )
                   }
@@ -1586,7 +1657,7 @@ const NewSocialCard = ({
                 onPress={handleAddComment}
                 style={styles.commentSendButton}
               >
-                <Text style={styles.sendButtonText}>Send</Text>
+                <Text style={styles.sendButtonText}>{t("send")}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -1610,7 +1681,7 @@ const NewSocialCard = ({
                     marginBottom: 10,
                   }}
                 >
-                  <SearchField placeholder="Search" />
+                  <SearchField placeholder={t("search")} />
                 </View>
                 <FlatList
                   data={[
@@ -1659,7 +1730,7 @@ const NewSocialCard = ({
                       Alert.alert("Sent", "Post has been sent successfully.");
                     }}
                   >
-                    <Text style={styles.sendButtonText}>Send</Text>
+                    <Text style={styles.sendButtonText}>{t("send")}</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1701,12 +1772,12 @@ const NewSocialCard = ({
                       style={styles.icon}
                     />
                     <Text style={styles.modalText}>
-                      Repost with your thoughts
+                      {t("repostWithThoughts")}
                     </Text>
                   </View>
 
                   <Text style={styles.modalSubText}>
-                    Create a new post with this post attached
+                    {t("repostWithThoughtsDescription")}
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -1719,11 +1790,11 @@ const NewSocialCard = ({
                       size={24}
                       style={styles.icon}
                     />
-                    <Text style={styles.modalText}>Repost</Text>
+                    <Text style={styles.modalText}> {t("repost")}</Text>
                   </View>
 
                   <Text style={styles.modalSubText}>
-                    Instantly bring this post to other's feed
+                    {t("repostDescription")}
                   </Text>
                 </TouchableOpacity>
               </Animated.View>
@@ -1767,7 +1838,7 @@ const NewSocialCard = ({
                       size={24}
                       style={styles.icon}
                     />
-                    <Text style={styles.modalText}>Edit Post</Text>
+                    <Text style={styles.modalText}>{t("editPost")}</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -1780,7 +1851,7 @@ const NewSocialCard = ({
                       size={24}
                       style={styles.postIcon}
                     />
-                    <Text style={styles.modalPostText}>Delete</Text>
+                    <Text style={styles.modalPostText}>{t("delete")}</Text>
                   </View>
                 </TouchableOpacity>
               </Animated.View>
@@ -2454,6 +2525,17 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
     justifyContent: "center",
     alignItems: "center",
+  },
+  likeIconContainer: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    transform: [{ translateX: -25 }, { translateY: -25 }],
+    zIndex: 10,
+  },
+  likeIcon: {
+    opacity: 0.8,
+    animation: "likeAnim 0.6s ease-in-out",
   },
 });
 

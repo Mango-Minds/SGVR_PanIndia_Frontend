@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -26,12 +27,15 @@ import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
 import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
 import { FlatList } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { updateUserAboutEducationDetails } from "./SocialMediaAPIs";
+import { useTranslation } from "react-i18next";
+
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -132,14 +136,11 @@ const styles = StyleSheet.create({
 export default function EditUserEducationInfo({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
-
+const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
   const { userProfile, fetchUserProfile } = route.params;
 
-
-
   const [about, setAbout] = useState(userProfile?.followData?.about || "");
-
 
   const [education, setEducation] = useState(
     userProfile?.followData?.education?.length > 0
@@ -197,75 +198,20 @@ export default function EditUserEducationInfo({ navigation, route }) {
 
   const { loadingInBtn } = useSelector((state) => state.user);
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     let formData = new FormData();
-  //     formData.append("about", about);
-  //     formData.append("education", JSON.stringify(education));
-  //     formData.append("jobExperience", JSON.stringify(jobExperience));
-
-  //     await dispatch(setLoadingInBtn(true));
-
-  //     const response = await fetch(`${BASEAPIURL}/user/update-follow-data`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: formData,
-  //     });
-
-  //     await dispatch(setLoadingInBtn(false));
-
-  //     if (!response.ok) {
-  //       const errorText = await response.text();
-  //       throw new Error(`Failed to update user: ${errorText}`);
-  //     }
-
-  //     alert("Information Updated Successfully");
-  //     fetchUserProfile();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     alert(`Error: ${error.message}`);
-  //   }
-  // };
+  
   const handleSubmit = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
-        return;
-      }
-  
-      let formData = new FormData();
-      formData.append("about", about);
-      formData.append("education", JSON.stringify(education));
-      formData.append("jobExperience", JSON.stringify(jobExperience));
-  
-      await dispatch(setLoadingInBtn(true));
-  
-      const response = await apiClient.patch("/user/update-follow-data", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      await dispatch(setLoadingInBtn(false));
-  
-      if (response.status !== 200) {
-        throw new Error(`Failed to update user: ${response.statusText}`);
-      }
-  
-      alert("Information Updated Successfully");
-      fetchUserProfile();
-      navigation.goBack();
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert(`Error: ${error.message}`);
-    }
+    updateUserAboutEducationDetails({
+      about,
+      education,
+      jobExperience,
+t,
+      dispatch,
+      setLoadingInBtn,
+      fetchUserProfile,
+      navigation,
+    });
   };
-  
+
   return (
     <SafeArea>
       <Provider>
@@ -285,7 +231,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                   letterSpacing: 0.5,
                 }}
               >
-                Edit User Profile
+                {t("editUserProfile")}
               </Text>
             </View>
           </RowBetween>
@@ -300,7 +246,8 @@ export default function EditUserEducationInfo({ navigation, route }) {
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="About*"
+                placeholder={t("about")}
+
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -327,21 +274,21 @@ export default function EditUserEducationInfo({ navigation, route }) {
               {education.map((edu, index) => (
                 <View key={index} style={{ marginBottom: 16 }}>
                   <LoginInputField
-                    placeholder="Degree"
+                    placeholder={t("degreePlaceholder")}
                     value={edu.degree}
                     onChangeText={(text) =>
                       updateEducation(index, "degree", text)
                     }
                   />
                   <LoginInputField
-                    placeholder="Institution"
+                    placeholder={t("institutionPlaceholder")}
                     value={edu.institution}
                     onChangeText={(text) =>
                       updateEducation(index, "institution", text)
                     }
                   />
                   <LoginInputField
-                    placeholder="Duration"
+                    placeholder={t("durationPlaceholder")}
                     value={edu.duration}
                     onChangeText={(text) =>
                       updateEducation(index, "duration", text)
@@ -352,7 +299,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                     multiline={true}
                     numberOfLines={4}
                     selectionColor={Theme.themeColor}
-                    placeholder="Description*"
+placeholder={t("descriptionPlaceholder")}
                     activeUnderlineColor={Theme.themeColor}
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
@@ -381,32 +328,32 @@ export default function EditUserEducationInfo({ navigation, route }) {
                     style={{ marginTop: 8 }}
                     onPress={() => removeEducation(index)}
                   >
-                    <Text style={{ color: "red" }}>Remove</Text>
+                    <Text style={{ color: "red" }}>{t("remove")}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity onPress={addEducationField}>
-                <Text style={{ color: Theme.themeColor }}>+ Add Education</Text>
+                <Text style={{ color: Theme.themeColor }}>+ {t("addEducation")}</Text>
               </TouchableOpacity>
 
               {jobExperience.map((job, index) => (
                 <View key={index} style={{ marginBottom: 16 }}>
                   <LoginInputField
-                    placeholder="Company"
+                    placeholder={t("companyPlaceholder")}
                     value={job.company}
                     onChangeText={(text) =>
                       updatejobExperience(index, "company", text)
                     }
                   />
                   <LoginInputField
-                    placeholder="Role"
+                    placeholder={t("rolePlaceholder")}
                     value={job.role}
                     onChangeText={(text) =>
                       updatejobExperience(index, "role", text)
                     }
                   />
                   <LoginInputField
-                    placeholder="Duration"
+                    placeholder={t("durationPlaceholder")}
                     value={job.duration}
                     onChangeText={(text) =>
                       updatejobExperience(index, "duration", text)
@@ -417,7 +364,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                     multiline={true}
                     numberOfLines={4}
                     selectionColor={Theme.themeColor}
-                    placeholder="Job Description*"
+                    placeholder={t("jobDescriptionPlaceholder")}
                     activeUnderlineColor={Theme.themeColor}
                     underlineColor="transparent"
                     placeholderTextColor="#9B9B9B"
@@ -446,12 +393,14 @@ export default function EditUserEducationInfo({ navigation, route }) {
                     style={{ marginTop: 8 }}
                     onPress={() => removejobExperience(index)}
                   >
-                    <Text style={{ color: "red" }}>Remove</Text>
+                    <Text style={{ color: "red" }}>{t("remove")}</Text>
                   </TouchableOpacity>
                 </View>
               ))}
               <TouchableOpacity onPress={addJobExperienceField}>
-                <Text style={{ color: Theme.themeColor }}>+ Add Job Experience</Text>
+                <Text style={{ color: Theme.themeColor }}>
+                  + {t("addJobExperience")}
+                </Text>
               </TouchableOpacity>
 
               <FormButton onPress={handleSubmit}>
@@ -470,7 +419,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                       color={"white"}
                     />
                   ) : (
-                    "Update Profile"
+                     t("update_profile")
                   )}
                 </Text>
               </FormButton>

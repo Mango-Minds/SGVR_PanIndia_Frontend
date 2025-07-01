@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+import { BASEAPIURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";

@@ -28,7 +28,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useMutation, useQueryClient } from "react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
 import apiClient from "../../store/apiClient";
 

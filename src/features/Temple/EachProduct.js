@@ -22,7 +22,6 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 //   import AssignForm from "./AssignForm";
 import { useIsFocused } from "@react-navigation/native";
-import { BASEIMGURL } from "../../infrastructure/constants";
 
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;

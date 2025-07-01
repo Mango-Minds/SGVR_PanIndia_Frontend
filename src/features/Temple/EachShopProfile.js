@@ -7,8 +7,6 @@ import {
   Pressable,
   Alert,
 } from "react-native";
-import { Ionicons } from "react-native-vector-icons";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import Theme from "../../styles/theme";
 import { ScrollView } from "react-native-gesture-handler";

@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   TextInput,
   Platform,
-  Alert
+  Alert,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -27,7 +27,7 @@ import SelectDropdown from "react-native-select-dropdown";
 import { useDispatch } from "react-redux";
 import { updateListing } from "./B2CAPI";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
-
+import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 // import DatePicker from "react-native-datepicker";
 import { en, registerTranslation } from "react-native-paper-dates";
@@ -36,7 +36,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useMutation, useQueryClient } from "react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
 import {
   getJewelleryData,
@@ -83,7 +82,7 @@ const styles = StyleSheet.create({
 export default function EditListing({ route, navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
-
+  const { t } = useTranslation();
   const { productId, listing, fetchProduct } = route.params;
   console.log("Listing in edit page: ", listing);
 
@@ -93,21 +92,15 @@ export default function EditListing({ route, navigation }) {
   const { loadingInBtn } = useSelector((state) => state.user);
 
   const initialVideos =
-    listing && listing.videos
-      ? listing.videos.map((video) => `${video}`)
-      : [];
+    listing && listing.videos ? listing.videos.map((video) => `${video}`) : [];
   const [selectedVideos, setSelectedVideos] = useState(initialVideos);
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
   const initialImages =
-    listing && listing.images
-      ? listing.images.map((image) => `${image}`)
-      : [];
+    listing && listing.images ? listing.images.map((image) => `${image}`) : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
-
- 
 
   const _pickDocument = async () => {
     let result = await DocumentPicker.getDocumentAsync({
@@ -162,33 +155,30 @@ export default function EditListing({ route, navigation }) {
   });
   console.log("modified details", modifiedDetails);
 
- 
-  
-  
   // const handleUpdate = async () => {
   //   try {
   //     await dispatch(setLoadingInBtn(true));
-  
+
   //     let token = await AsyncStorage.getItem("token");
-  
+
   //     if (!token) {
   //       console.error("Bearer token not found");
   //       Alert.alert("Error", "Authentication token is missing.");
   //       await dispatch(setLoadingInBtn(false));
   //       return;
   //     }
-  
+
   //     console.log("Product ID:", productId);
-  
+
   //     const formData = new FormData();
-  
+
   //     // Append modified details
   //     Object.keys(modifiedDetails).forEach((key) => {
   //       if (modifiedDetails[key] !== listing[key]) {
   //         formData.append(key, modifiedDetails[key]);
   //       }
   //     });
-  
+
   //     // Append existing images
   //     selectedImages.forEach((image, index) => {
   //       formData.append("images", {
@@ -197,7 +187,7 @@ export default function EditListing({ route, navigation }) {
   //         type: "image/jpeg",
   //       });
   //     });
-  
+
   //     // Append newly uploaded images
   //     uploadedImages.forEach((image, index) => {
   //       formData.append("images", {
@@ -206,7 +196,7 @@ export default function EditListing({ route, navigation }) {
   //         type: "image/jpeg",
   //       });
   //     });
-  
+
   //     // Append selected videos
   //     selectedVideos.forEach((video, index) => {
   //       formData.append("videos", {
@@ -215,7 +205,7 @@ export default function EditListing({ route, navigation }) {
   //         type: "video/mp4",
   //       });
   //     });
-  
+
   //     // Append newly uploaded videos
   //     uploadedVideos.forEach((video, index) => {
   //       if (!video.uri) {
@@ -228,9 +218,9 @@ export default function EditListing({ route, navigation }) {
   //         type: video.type || "video/mp4",
   //       });
   //     });
-  
+
   //     console.log("Final FormData:", formData);
-  
+
   //     // Use apiClient for better error handling
   //     const response = await apiClient.put(`/listings/edit/${listing._id}`, formData, {
   //       headers: {
@@ -238,13 +228,13 @@ export default function EditListing({ route, navigation }) {
   //         "Content-Type": "multipart/form-data",
   //       },
   //     });
-  
+
   //     await dispatch(setLoadingInBtn(false));
-  
+
   //     console.log("API Response:", response.data);
-  
+
   //     Alert.alert("Success", "Listing updated successfully");
-  
+
   //     fetchProduct();
   //     navigation.goBack();
   //   } catch (error) {
@@ -253,7 +243,7 @@ export default function EditListing({ route, navigation }) {
   //     await dispatch(setLoadingInBtn(false));
   //   }
   // };
-  
+
   const handleUpdate = () => {
     updateListing({
       listing,
@@ -268,22 +258,50 @@ export default function EditListing({ route, navigation }) {
       dispatch,
     });
   };
-  
-  const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
-  const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
+
+  // const CategoryData = ["Furniture", "Electronics", "Vehicles", "Other"];
+  // const ConditionData = ["New", "Like New", "Used", "Needs Repair"];
+  // const SubCategoryData = [
+  //   "Sofa",
+  //   "Table",
+  //   "Beds",
+  //   "Dining",
+  //   "Wardrobes",
+  //   "Laptop",
+  //   "Mobile",
+  //   "Television",
+  //   "Washing Machine",
+  //   "Kitchen Appliances",
+  //   "Air Conditioner (A.C.) / Cooler",
+  //   "Other",
+  // ];
+  const CategoryData = [
+    { label: t("furniture"), value: "Furniture" },
+    { label: t("electronics"), value: "Electronics" },
+    { label: t("vehicles"), value: "Vehicles" },
+    { label: t("other"), value: "Other" },
+  ];
+
   const SubCategoryData = [
-    "Sofa",
-    "Table",
-    "Beds",
-    "Dining",
-    "Wardrobes",
-    "Laptop",
-    "Mobile",
-    "Television",
-    "Washing Machine",
-    "Kitchen Appliances",
-    "Air Conditioner (A.C.) / Cooler",
-    "Other",
+    { label: t("sofa"), value: "Sofa" },
+    { label: t("table"), value: "Table" },
+    { label: t("beds"), value: "Beds" },
+    { label: t("dining"), value: "Dining" },
+    { label: t("wardrobes"), value: "Wardrobes" },
+    { label: t("laptop"), value: "Laptop" },
+    { label: t("mobile"), value: "Mobile" },
+    { label: t("television"), value: "Television" },
+    { label: t("washing_machine"), value: "Washing Machine" },
+    { label: t("kitchen_appliances"), value: "Kitchen Appliances" },
+    { label: t("ac_cooler"), value: "Air Conditioner (A.C.) / Cooler" },
+    { label: t("other"), value: "Other" },
+  ];
+
+  const ConditionData = [
+    { label: t("new"), value: "New" },
+    { label: t("like_new"), value: "Like New" },
+    { label: t("used"), value: "Used" },
+    { label: t("needs_repair"), value: "Needs Repair" },
   ];
 
   return (
@@ -304,7 +322,7 @@ export default function EditListing({ route, navigation }) {
                   color: "#000",
                 }}
               >
-                Edit Product
+                {t("edit_product")}
               </Text>
             </View>
           </RowBetween>
@@ -421,10 +439,10 @@ export default function EditListing({ route, navigation }) {
                       resizeMode="cover"
                       shouldPlay={false}
                     /> */}
-                     <Image
-                    style={styles.profileImg}
-                    source={{ uri: video.uri }}
-                  />
+                    <Image
+                      style={styles.profileImg}
+                      source={{ uri: video.uri }}
+                    />
                     <TouchableOpacity
                       onPress={() => removeProfileImage(index, false, "video")}
                     >
@@ -493,13 +511,13 @@ export default function EditListing({ route, navigation }) {
                   // marginTop: 50,
                 }}
               >
-                Product Name
+                {t("product_name")}
               </Text>
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
-                placeholder="Product Name*"
+                placeholder={t("product_name") + "*"}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.name}
@@ -516,13 +534,13 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Product Description
+                {t("product_description")}
               </Text>
               <TextInput
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="Product Description*"
+                placeholder={t("product_description") + "*"}
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -556,13 +574,13 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Address
+                {t("product_address")}
               </Text>
               <TextInput
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="Address"
+                placeholder={t("product_address") + "*"}
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -596,13 +614,13 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Address Link
+                {t("enter_google_maps_link")}
               </Text>
               <TextInput
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="Enter Google Maps Link"
+                placeholder={t("enter_google_maps_link") + "*"}
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -635,13 +653,13 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Price
+                {t("product_price")}
               </Text>
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
-                placeholder="Price*"
+                placeholder={t("product_price") + "*"}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 keyboardType="numeric"
@@ -659,13 +677,13 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Original Price
+                {t("product_original_price")}
               </Text>
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={[styles.input, { marginTop: 5 }]}
-                placeholder="Original Price*"
+                placeholder={t("product_original_price") + "*"}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 keyboardType="numeric"
@@ -686,10 +704,10 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Product Condition
+                {t("product_condition")}
               </Text>
 
-              <SelectDropdown
+              {/* <SelectDropdown
                 buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
                 buttonTextStyle={{
                   textAlign: "left",
@@ -705,7 +723,29 @@ export default function EditListing({ route, navigation }) {
                     condition: selectedItem,
                   });
                 }}
+              /> */}
+              <SelectDropdown
+                data={ConditionData}
+                defaultButtonText={t("select_condition")}
+                defaultValue={ConditionData.find(
+                  (item) => item.value === modifiedDetails.condition
+                )}
+                onSelect={(selectedItem) =>
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    condition: selectedItem.value,
+                  })
+                }
+                buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                buttonTextStyle={{
+                  textAlign: "left",
+                  color: "#9B9B9B",
+                  fontSize: 16,
+                }}
+                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                rowTextForSelection={(item) => item.label}
               />
+
               <Text
                 style={{
                   fontSize: 16,
@@ -715,10 +755,10 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Product Category
+                {t("product_category")}
               </Text>
 
-              <SelectDropdown
+              {/* <SelectDropdown
                 buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
                 buttonTextStyle={{
                   textAlign: "left",
@@ -734,7 +774,29 @@ export default function EditListing({ route, navigation }) {
                     category: selectedItem,
                   });
                 }}
+              /> */}
+              <SelectDropdown
+                data={CategoryData}
+                defaultButtonText={t("select_category")}
+                defaultValue={CategoryData.find(
+                  (item) => item.value === modifiedDetails.category
+                )}
+                onSelect={(selectedItem) =>
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    category: selectedItem.value,
+                  })
+                }
+                buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                buttonTextStyle={{
+                  textAlign: "left",
+                  color: "#9B9B9B",
+                  fontSize: 16,
+                }}
+                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                rowTextForSelection={(item) => item.label}
               />
+
               <Text
                 style={{
                   fontSize: 16,
@@ -744,10 +806,10 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Product Sub Category
+                {t("product_sub_category")}
               </Text>
 
-              <SelectDropdown
+              {/* <SelectDropdown
                 buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
                 buttonTextStyle={{
                   textAlign: "left",
@@ -763,7 +825,29 @@ export default function EditListing({ route, navigation }) {
                     subcategory: selectedItem,
                   });
                 }}
+              /> */}
+              <SelectDropdown
+                data={SubCategoryData}
+                defaultButtonText={t("select_subcategory")}
+                defaultValue={SubCategoryData.find(
+                  (item) => item.value === modifiedDetails.subcategory
+                )}
+                onSelect={(selectedItem) =>
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    subcategory: selectedItem.value,
+                  })
+                }
+                buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                buttonTextStyle={{
+                  textAlign: "left",
+                  color: "#9B9B9B",
+                  fontSize: 16,
+                }}
+                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                rowTextForSelection={(item) => item.label}
               />
+
               <Text
                 style={{
                   fontSize: 16,
@@ -773,7 +857,7 @@ export default function EditListing({ route, navigation }) {
                   marginTop: 20,
                 }}
               >
-                Product Age
+              {t("product_age")}
               </Text>
 
               <LoginInputField
@@ -819,5 +903,3 @@ export default function EditListing({ route, navigation }) {
     </SafeArea>
   );
 }
-
-

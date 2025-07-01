@@ -14,8 +14,10 @@ import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
 const ProfileHeader = ({ title }) => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={{ alignItems: "center", flexDirection: "row" }}>

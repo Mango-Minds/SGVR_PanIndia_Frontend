@@ -19,11 +19,7 @@ import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import { ErrorToggle, setLoadingInBtn } from "../../store/user";
 import { submitNewPost } from "./SocialMediaAPIs";
-import {
-  BASEAPIURL,
-  BASEIMGURL,
-  RENDERMEDIAURL,
-} from "../../infrastructure/constants";
+
 import { useSelector } from "react-redux";
 import { Container, RowBetween } from "../../styles/common.styles";
 import * as DocumentPicker from "expo-document-picker";
@@ -33,7 +29,10 @@ import { useDispatch } from "react-redux";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+
 const CreateNewPost = ({ navigation }) => {
+  const { t } = useTranslation();
   const [description, setDescription] = useState("");
   const [tags, setTags] = useState([]);
   const [media, setMedia] = useState(null);
@@ -292,7 +291,7 @@ const CreateNewPost = ({ navigation }) => {
           <TopText
             style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
-            Create a Post
+            {t("createPost")}
           </TopText>
         </View>
         <View
@@ -345,30 +344,18 @@ const CreateNewPost = ({ navigation }) => {
         {/* Media Picker */}
         <TouchableOpacity style={styles.mediaButton} onPress={pickMedia}>
           <Ionicons name="camera" size={24} color="white" />
-          <Text style={styles.mediaText}>Pick Media (Photo/Video)</Text>
+          <Text style={styles.mediaText}>{t("pickMedia")}</Text>
         </TouchableOpacity>
         {/* Description Field */}
         <TextInput
           style={styles.input}
-          placeholder="Write a description..."
+          placeholder={t("writeDescription")}
           value={description}
           onChangeText={setDescription}
           multiline
         />
 
-        {/* Tag Input */}
-        {/* <View style={styles.tagContainer}>
-          <TextInput
-            style={styles.tagInput}
-            placeholder="Add a tag"
-            value={tagInput}
-            onChangeText={setTagInput}
-          />
-          <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
-            <Text style={styles.addTagText}>Add Tag</Text>
-          </TouchableOpacity>
-        </View> */}
-
+       
         {/* Tag List */}
         <View style={styles.tagList}>
           {tags.map((tag, index) => (
@@ -397,7 +384,7 @@ const CreateNewPost = ({ navigation }) => {
                 color={"white"}
               />
             ) : (
-              "Submit Post"
+             t("submitPost")
             )}
           </Text>
         </TouchableOpacity>

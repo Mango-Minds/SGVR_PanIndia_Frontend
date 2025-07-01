@@ -19,11 +19,7 @@ import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
-import {
-  BASEIMGURL,
-  BASEAPIURL,
-  RENDERMEDIAURL,
-} from "../../infrastructure/constants";
+
 import { useSelector } from "react-redux";
 import { Provider, RadioButton, ActivityIndicator } from "react-native-paper";
 import * as FileSystem from "expo-file-system";

@@ -12,7 +12,7 @@ import { IconButton } from "react-native-paper";
 import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import {
-  BASEIMGURL,
+
   BASEAPIURL,
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
@@ -21,7 +21,9 @@ import Theme from "../../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { submitNewJob } from "./SocialMediaAPIs";
+import { useTranslation } from "react-i18next";
 const CreateNewJob = ({ navigation }) => {
+  const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
   const [jobData, setJobData] = useState({
     jobTitle: "",
@@ -78,21 +80,21 @@ const CreateNewJob = ({ navigation }) => {
               textTransform: "capitalize",
             }}
           >
-            Create Job Posting
+            {t("createJobPosting")}
           </TopText>
         </View>
       </RowBetween>
 
       <View style={styles.formContainer}>
-        <Text style={styles.label}>Job Title</Text>
+        <Text style={styles.label}>{t("jobTitle")}</Text>
         <TextInput
           style={styles.input}
-          placeholder="Enter job title"
+          placeholder={t("enterJobTitle")}
           value={jobData.jobTitle}
           onChangeText={(text) => handleChange("jobTitle", text)}
         />
 
-        <Text style={styles.label}>Company</Text>
+        {/* <Text style={styles.label}>Company</Text>
         <TextInput
           style={styles.input}
           placeholder="Enter company name"
@@ -145,6 +147,59 @@ const CreateNewJob = ({ navigation }) => {
 
         <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
           <Text style={styles.submitButtonText}>Submit</Text>
+        </TouchableOpacity> */}
+         <Text style={styles.label}>{t("company")}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={t("enterCompanyName")}
+          value={jobData.company}
+          onChangeText={(text) => handleChange("company", text)}
+        />
+
+        <Text style={styles.label}>{t("location")}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={t("enterLocation")}
+          value={jobData.location}
+          onChangeText={(text) => handleChange("location", text)}
+        />
+
+        <Text style={styles.label}>{t("jobDescription")}</Text>
+        <TextInput
+          style={[styles.input, styles.multilineInput]}
+          placeholder={t("enterJobDescription")}
+          value={jobData.description}
+          onChangeText={(text) => handleChange("description", text)}
+          multiline
+        />
+
+        <Text style={styles.label}>{t("companyDescription")}</Text>
+        <TextInput
+          style={[styles.input, styles.multilineInput]}
+          placeholder={t("enterCompanyDescription")}
+          value={jobData.companyDescription}
+          onChangeText={(text) => handleChange("companyDescription", text)}
+          multiline
+        />
+
+        <Text style={styles.label}>{t("responsibilities")}</Text>
+        <TextInput
+          style={[styles.input, styles.multilineInput]}
+          placeholder={t("enterResponsibilities")}
+          value={jobData.responsibilities}
+          onChangeText={(text) => handleChange("responsibilities", text)}
+          multiline
+        />
+
+        <Text style={styles.label}>{t("ctc")}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={t("enterCTC")}
+          value={jobData.CTC}
+          onChangeText={(text) => handleChange("CTC", text)}
+        />
+        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+          <Text style={styles.submitButtonText}>{t("submit")}</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>

@@ -23,7 +23,7 @@ import {setLoadingInBtn } from "../../store/user";
 import { en, registerTranslation } from "react-native-paper-dates";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+
 
 const styles = StyleSheet.create({
   logo: {

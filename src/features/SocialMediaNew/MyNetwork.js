@@ -17,14 +17,14 @@ import Icon from "react-native-vector-icons/Ionicons";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import { useSelector } from "react-redux";
-import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
-import { SearchField } from "../../styles/common.styles";
-import SearchResults from "./SearchResults";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+
 import Theme from "../../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+
 const MyNetwork = ({ navigation }) => {
+  const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState("Sent");
   const [selectedFilter, setSelectedFilter] = useState("People");
   const token = useSelector((state) => state.user.token);
@@ -32,154 +32,7 @@ const MyNetwork = ({ navigation }) => {
   const [sentRequests, setSentRequests] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // const fetchRequests = async () => {
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/social/list-requests`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-
-  //     const data = await response.json();
-  //     setRequests(data);
-  //   } catch (err) {
-  //     console.log(err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchRequests();
-  // }, []);
-
-  // const handleDeleteRequest = async (requestId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/update-request/${requestId}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({
-  //           status: "rejected",
-  //         }),
-  //       }
-  //     );
-
-  //     if (response.ok) {
-  //       Alert.alert("Request rejected successfully.");
-  //       fetchRequests();
-  //     } else {
-  //       const responseText = await response.text();
-  //       console.error(
-  //         "Failed to reject request:",
-  //         response.status,
-  //         responseText
-  //       );
-  //       throw new Error("Failed to reject request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error rejecting request:", error);
-  //   }
-  // };
-  // const handleAcceptRequest = async (requestId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/update-request/${requestId}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({
-  //           status: "approved",
-  //         }),
-  //       }
-  //     );
-
-  //     if (response.ok) {
-  //       Alert.alert("Request accepted successfully.");
-  //       fetchRequests();
-  //     } else {
-  //       const responseText = await response.text();
-  //       console.error(
-  //         "Failed to accept request:",
-  //         response.status,
-  //         responseText
-  //       );
-  //       throw new Error("Failed to accept request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error accepting request:", error);
-  //   }
-  // };
-
-  // const fetchSentRequests = async () => {
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/social/sent-requests`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-
-  //     const data = await response.json();
-  //     setSentRequests(data);
-  //   } catch (err) {
-  //     console.log(err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchSentRequests();
-  // }, []);
-
-  // const handleWithdrawRequest = async (toUserId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/cancel-request/${toUserId}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     if (response.ok) {
-  //       Alert.alert("Your invitation to connect is withdrawn successfully");
-  //       fetchSentRequests();
-  //     } else {
-  //       const responseText = await response.text();
-  //       console.error(
-  //         "Failed to delete request:",
-  //         response.status,
-  //         responseText
-  //       );
-  //       throw new Error("Failed to delete request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting request:", error);
-  //   }
-  // };
+  
 
   const fetchRequests = async () => {
     try {
@@ -303,7 +156,7 @@ const MyNetwork = ({ navigation }) => {
         <View style={styles.buttonContainer}>
           {isSentTab ? (
             <Button
-              title="Withdraw"
+              title={t("withdraw")}
               onPress={() => {
                 const toUserId = item.to._id;
 
@@ -314,7 +167,7 @@ const MyNetwork = ({ navigation }) => {
           ) : (
             <View style={styles.confirmDeleteContainer}>
               <Button
-                title="Confirm"
+                title={t("confirm")}
                 onPress={() => {
                   const requestId = item._id;
 
@@ -324,7 +177,7 @@ const MyNetwork = ({ navigation }) => {
               />
               <View style={{ width: 10 }} />
               <Button
-                title="Delete"
+               title={t("delete")}
                 onPress={() => {
                   const requestId = item._id;
 
@@ -364,14 +217,14 @@ const MyNetwork = ({ navigation }) => {
                 selectedTab === "Received" && styles.activeTab,
               ]}
             >
-              Received
+               {t("received")}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedTab("Sent")}>
             <Text
               style={[styles.tab, selectedTab === "Sent" && styles.activeTab]}
             >
-              Sent
+               {t("sent")}
             </Text>
           </TouchableOpacity>
         </View>

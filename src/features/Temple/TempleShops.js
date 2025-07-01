@@ -15,8 +15,7 @@ import { RowBetween, SearchField } from "../../styles/common.styles";
 import SelectDropdown from "react-native-select-dropdown";
 import { IconButton } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";

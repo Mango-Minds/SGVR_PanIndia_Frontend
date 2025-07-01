@@ -5,12 +5,13 @@ import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
 const screenWidth = Dimensions.get("window").width;
 const imageHeight = screenWidth * 0.6;
 
 const ReadMoreComponent = ({ description }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
+const { t } = useTranslation();
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };

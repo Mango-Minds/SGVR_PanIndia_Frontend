@@ -25,7 +25,6 @@ import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
 import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -81,6 +80,10 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
     uri: userData.user.image ? `${userData.user.image}` : null,
   });
 
+  console.log("Userdata: ", userData);
+  console.log("selectedImage: ", selectedImage);
+  
+
   const { loadingInBtn } = useSelector((state) => state.user);
 
   const _pickDocument = async () => {
@@ -130,218 +133,52 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
       ? "Edit Shop Profile"
       : "Edit Profile";
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     let formData = new FormData();
-  //     formData.append("firstName", firstName);
-  //     formData.append("lastName", lastName);
-  //     formData.append("email", email);
-  //     formData.append("phone", phone);
-  //     formData.append("address", address);
-
-  //     if (selectedImage && selectedImage.uri) {
-  //       let localUri = selectedImage.uri;
-  //       let filename = localUri.split("/").pop();
-
-  //       let match = /\.(\w+)$/.exec(filename);
-  //       let type = match ? `image/${match[1]}` : `image`;
-
-  //       formData.append("image", { uri: localUri, name: filename, type });
-  //     }
-  //     await dispatch(setLoadingInBtn(true));
-  //     const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         "Content-Type": "multipart/form-data",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: formData,
-  //     });
-  //     await dispatch(setLoadingInBtn(false));
-
-  //     if (!response.ok) {
-  //       throw new Error("Failed to update user");
-  //     }
-  //     alert("Information Updated Successfully");
-  //     fetchUser();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //   }
-  // };
-  // const handleSubmit = async () => {
-  //   try {
-  //     let token = await AsyncStorage.getItem("token");
-      
-  //         if (!token) {
-  //           console.error("Bearer token not found");
-  //           throw new Error("Bearer token is missing");
-  //         }
-  //     let formData = new FormData();
-  //     formData.append("firstName", firstName);
-  //     formData.append("lastName", lastName);
-  //     formData.append("email", email);
-  //     formData.append("phone", phone);
-  //     formData.append("address", address);
-  
-  //     if (selectedImage && selectedImage.uri) {
-  //       let localUri = selectedImage.uri;
-  //       let filename = localUri.split("/").pop();
-  
-  //       let match = /\.(\w+)$/.exec(filename);
-  //       let type = match ? `image/${match[1]}` : `image`;
-  
-  //       formData.append("image", { uri: localUri, name: filename, type });
-  //     }
-  
-  //     await dispatch(setLoadingInBtn(true));
-  
-  //     await apiClient.patch(`/user/update/${userId}`, formData, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //         "Content-Type": "multipart/form-data", // Required for file uploads
-  //       },
-  //     });
-  
-  //     dispatch(setLoadingInBtn(false));
-  
-  //     alert("Information Updated Successfully");
-  //     fetchUser();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     dispatch(setLoadingInBtn(false));
-  //   }
-  // };
-  
-  // const handleSubmit = async () => {
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  
-  //     if (!token) {
-  //       console.error("Bearer token not found");
-  //       Alert.alert("Error", "Authentication token is missing.");
-  //       return;
-  //     }
-  
-  //     await dispatch(setLoadingInBtn(true));
-  
-  //     const fullUrl = `${BASEAPIURL}/user/update/${userId}`;
-  //     console.log("Hitting URL:", fullUrl);
-  
-  //     let bodyToSend;
-  //     let headers;
-  
-  //     if (selectedImage && selectedImage.uri) {
-  //       // still using FormData if image exists
-  //       let formData = new FormData();
-  //       formData.append("firstName", firstName);
-  //       formData.append("lastName", lastName);
-  //       formData.append("email", email);
-  //       formData.append("phone", phone);
-  //       formData.append("address", address);
-  
-  //       const localUri = selectedImage.uri;
-  //       const filename = localUri.split("/").pop();
-  //       const match = /\.(\w+)$/.exec(filename);
-  //       const type = match ? `image/${match[1]}` : `image/jpeg`;
-  
-  //       formData.append("image", { uri: localUri, name: filename, type });
-  
-  //       bodyToSend = formData;
-  //       headers = {
-  //         Authorization: `Bearer ${token}`,
-  //         "Content-Type": "multipart/form-data",
-  //       };
-  //     } else {
-  //       // send as raw JSON
-  //       bodyToSend = {
-  //         firstName,
-  //         lastName,
-  //         email,
-  //         phone,
-  //         address,
-  //       };
-  //       headers = {
-  //         Authorization: `Bearer ${token}`,
-  //         "Content-Type": "application/json",
-  //       };
-  //     }
-  
-  //     const response = await apiClient.patch(fullUrl, bodyToSend, { headers });
-  
-  //     await dispatch(setLoadingInBtn(false));
-  
-  //     console.log("API Response:", response.data);
-  //     Alert.alert("Success", "Information Updated Successfully");
-  
-  //     fetchUser();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     Alert.alert("Error", "Failed to update user information.");
-  //     await dispatch(setLoadingInBtn(false));
-  //   }
-  // };
-  
 
 
   const handleSubmit = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) throw new Error("Unauthorized");
-  
       let formData = new FormData();
-  
       formData.append("firstName", firstName);
       formData.append("lastName", lastName);
       formData.append("email", email);
       formData.append("phone", phone);
       formData.append("address", address);
-  
-      if (selectedImage && selectedImage.uri && selectedImage.uri.startsWith("file://")) {
+
+      if (selectedImage && selectedImage.uri) {
         let localUri = selectedImage.uri;
         let filename = localUri.split("/").pop();
-  
+
         let match = /\.(\w+)$/.exec(filename);
         let type = match ? `image/${match[1]}` : `image`;
-  
-        formData.append("image", {
-          uri: localUri,
-          name: filename,
-          type: type,
-        });
+
+        formData.append("image", { uri: localUri, name: filename, type });
       }
-  
       await dispatch(setLoadingInBtn(true));
-  
-      const response = await apiClient.patch(
-        `/user/update/${userId}`,
-        formData,
-        {
-          headers: {
-            // DO NOT manually set Content-Type here
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-  
+      const response = await fetch(`${BASEAPIURL}/user/update/${userId}`,{
+        method: "PATCH",
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+     
+
       await dispatch(setLoadingInBtn(false));
-  
-      if (response.status !== 200) {
+
+      if (!response.ok) {
         throw new Error("Failed to update user");
       }
-  
       alert("Information Updated Successfully");
       fetchUser();
       navigation.goBack();
     } catch (error) {
       console.error("Error updating user:", error);
-      alert("Error updating user: " + error.message);
-      await dispatch(setLoadingInBtn(false));
     }
   };
-  
+
   
   return (
     <SafeArea>
@@ -495,9 +332,3 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
     </SafeArea>
   );
 }
-
-
-
-
-
-

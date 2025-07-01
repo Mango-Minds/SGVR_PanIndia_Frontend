@@ -13,6 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import Theme from "../../styles/theme";
+import { useTranslation } from 'react-i18next';
 const { width } = Dimensions.get("window");
 
 const images = [
@@ -22,6 +23,7 @@ const images = [
 ];
 
 const Banner = () => {
+  const { t } = useTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef(null);
   const navigation = useNavigation();
@@ -78,12 +80,13 @@ const Banner = () => {
 
       {/* New Static Banner Below */}
 
-      <View style={styles.bannerTextContainer}>
-        <Text style={styles.bannerTitle}>Introducing B2C</Text>
-        <TouchableOpacity style={styles.bannerButton}>
-          <Text style={styles.bannerButtonText}>Grab it now</Text>
-        </TouchableOpacity>
-      </View>
+     <View style={styles.bannerTextContainer}>
+  <Text style={styles.bannerTitle}>{t('introducing_b2c')}</Text>
+  <TouchableOpacity style={styles.bannerButton}>
+    <Text style={styles.bannerButtonText}>{t('grab_now')}</Text>
+  </TouchableOpacity>
+</View>
+
     </View>
   );
 };

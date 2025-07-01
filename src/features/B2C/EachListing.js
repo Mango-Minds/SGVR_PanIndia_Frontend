@@ -14,6 +14,7 @@ import {
   TouchableWithoutFeedback,
   FlatList,
   ActivityIndicator,
+  Pressable
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
@@ -24,7 +25,7 @@ import { IconButton } from "react-native-paper";
 import { Card, Button } from "react-native-paper";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import UserImg from "../../assets/images/general/user.png";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+import { BASEAPIURL } from "../../infrastructure/constants";
 import { Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { decode } from "base-64";
@@ -42,7 +43,8 @@ import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
 import { fetchSingleProduct, deleteSingleProduct } from "./B2CAPI";
 import { Container } from "../../styles/common.styles";
-import { connectToChat } from "./B2CAPI";
+import { connectToChat, reportPostApi } from "./B2CAPI";
+import { useTranslation } from "react-i18next";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;
 
@@ -50,13 +52,14 @@ const EachListing = ({ route }) => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const videoRef = useRef(null);
-
+const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const { itemId, fetchProducts } = route.params;
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
+console.log("itemId: ", itemId);
 
   const loggedInUserId = decodedPayload.id;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -64,29 +67,25 @@ const EachListing = ({ route }) => {
   const pan = useRef(new Animated.ValueXY()).current;
 
   const [productData, setProductData] = useState({});
-
-
-  
-  
-
+  const [modalVisible, setModalVisible] = useState(false);
   //co
   // const deleteProduct = async () => {
   //   try {
   //     let token = await AsyncStorage.getItem("token");
-  
+
   //     if (!token) {
   //       console.error("Bearer token not found");
   //       Alert.alert("Error", "Authentication token is missing.");
   //       return;
   //     }
-  
+
   //     // Make the DELETE request using apiClient
   //     const response = await apiClient.delete(`/listings/delete/${itemId}`, {
   //       headers: {
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  
+
   //     Alert.alert(
   //       "Success",
   //       "Product deleted successfully",
@@ -111,26 +110,26 @@ const EachListing = ({ route }) => {
   //     );
   //   }
   // };
-  
+
   // const fetchProduct = async () => {
   //   try {
   //     let token = await AsyncStorage.getItem("token");
-  
+
   //     if (!token) {
   //       console.error("Bearer token not found");
   //       Alert.alert("Error", "Authentication token is missing.");
   //       return;
   //     }
-  
+
   //     setLoadingAnimation(true);
-  
+
   //     // Make the GET request using apiClient
   //     const response = await apiClient.get(`/listings/${itemId}`, {
   //       headers: {
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  
+
   //     setProductData(response.data.listing);
   //   } catch (error) {
   //     console.error("Error fetching product:", error);
@@ -148,7 +147,7 @@ const EachListing = ({ route }) => {
     }
     setLoadingAnimation(false);
   };
-  
+
   const deleteProduct = async (id) => {
     const success = await deleteSingleProduct(id);
     if (success) {
@@ -163,8 +162,7 @@ const EachListing = ({ route }) => {
       ]);
     }
   };
-  
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchProduct();
@@ -213,7 +211,6 @@ const EachListing = ({ route }) => {
     })
   ).current;
 
-  
   const extractCoordinates = (url) => {
     if (!url) return null;
 
@@ -284,6 +281,8 @@ const EachListing = ({ route }) => {
     setLocationPermissionGranted(true);
     return true;
   };
+  console.log("ProductData: ", productData);
+  
 
   useEffect(() => {
     requestLocationPermission(); // Request location permissions on component mount
@@ -312,7 +311,7 @@ const EachListing = ({ route }) => {
                   <TouchableOpacity style={styles.modalOption}>
                     <View style={styles.iconTextContainer}>
                       <Text style={styles.modalText}>
-                        Product: {productData.name}
+                        {t("product")}: {productData.name}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -355,8 +354,8 @@ const EachListing = ({ route }) => {
                         <View style={styles.noMapContainer}>
                           <Text style={{ textAlign: "center", padding: 10 }}>
                             {coordinates === null
-                              ? "Map preview not available."
-                              : "Location not available"}
+                               ? t("map_preview_not_available")
+                            : t("location_not_available")}
                           </Text>
                           {url && (
                             <TouchableOpacity
@@ -365,7 +364,7 @@ const EachListing = ({ route }) => {
                               <Text
                                 style={{ textAlign: "center", color: "blue" }}
                               >
-                                Open in Google Maps
+                                {t("open_in_google_maps")}
                               </Text>
                             </TouchableOpacity>
                           )}
@@ -378,7 +377,7 @@ const EachListing = ({ route }) => {
                   <View style={styles.locationText}>
                     <View style={styles.iconTextContainer}>
                       <Text style={styles.modalSubText}>
-                        {productData.address || "Address not available"}
+                        {productData.address || t("address_not_available")}
                       </Text>
 
                       {url && (
@@ -409,30 +408,28 @@ const EachListing = ({ route }) => {
 
   const businessId = productData?.createdBy;
 
- 
-  
   // const connectToChat = async (owner_id, business_id, item) => {
   //   console.log("Owner id: ", owner_id);
   //   console.log("Business id: ", business_id);
   //   console.log("Item: ", item);
-  
+
   //   if (owner_id === business_id) {
   //     console.log("Chat room cannot be created: same ID");
   //     return;
   //   }
-  
+
   //   try {
   //     let token = await AsyncStorage.getItem("token");
-  
+
   //     if (!token) {
   //       console.error("Bearer token not found");
   //       Alert.alert("Error", "Authentication token is missing.");
   //       return;
   //     }
-  
+
   //     console.log("PD in connectToChat: ", productData);
   //     console.log("Authorization Header: ", `Bearer ${token}`);
-  
+
   //     // Create chat room
   //     const response = await apiClient.post(
   //       "/chat/room/",
@@ -443,32 +440,32 @@ const EachListing = ({ route }) => {
   //         },
   //       }
   //     );
-  
+
   //     console.log("Chat room creation response:", response);
-  
+
   //     // Fetch chat rooms
   //     const roomResponse = await apiClient.get("/chat/rooms/", {
   //       headers: {
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  
+
   //     if (roomResponse.data && roomResponse.data.rooms.length > 0) {
   //       const room_with_user = roomResponse.data.rooms.find(
   //         (room) => room?.participants[0]?.id === business_id
   //       );
-  
+
   //       console.log("Room with user: ", room_with_user);
-  
+
   //       if (!room_with_user) {
   //         Alert.alert("Error", "No chat room found for this user.");
   //         return;
   //       }
-  
+
   //       const initialMessage = `Hi, I have a query about this product: ${item?.name}\n Price: Rs. ${item.price} \n\nCan you provide more details?`;
-  
+
   //       console.log("Initial Message: ", initialMessage);
-  
+
   //       Alert.alert("OK", "Chat Room Created", [
   //         {
   //           text: "OK",
@@ -492,7 +489,86 @@ const EachListing = ({ route }) => {
   //     Alert.alert("Error", "Something went wrong while creating the chat room.");
   //   }
   // };
+
+  const blockUser = async (blockedUserId) => {
+    try {
+      console.log("Blocking user", blockedUserId);
+       const token = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${BASEAPIURL}/social/post/block-user/${blockedUserId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("Block user response", response);
+      if (response.ok) {
+        const data = await response.json();
+        Alert.alert("Success", data.message);
+      } else {
+        Alert.alert("Error", "Failed to block user.");
+      }
+    } catch (error) {
+      console.error("Error blocking user:", error);
+      Alert.alert("Error", "An error occurred while trying to block the user.");
+    }
+  };
+
+  //  const reportPost = async (postId, reason) => {
+  //     try {
+         
+  //       console.log("Reporting post", postId);
+  //       const response = await reportPostApi(postId, reason);
+  //       console.log("Report post response", response);
   
+  //       if (response.status === 200) {
+  //         Alert.alert(
+  //           "Success",
+  //           "If this post violates our policies, it will be removed within 24 hours."
+  //         );
+  //       }
+  //     } catch (error) {
+  //       console.error("Error reporting post:", error);
+  //       Alert.alert(
+  //         "Error",
+  //         "An error occurred while trying to report the post."
+  //       );
+  //     }
+  //   };
+  const reportPost = async (postId, reason) => {
+  try {
+    console.log("Reporting post", postId);
+    const response = await reportPostApi(postId, reason);
+    console.log("Report post response", response);
+
+    if (response.status === 200) {
+      Alert.alert(
+        "Success",
+        "If this post violates our policies, it will be removed within 24 hours."
+      );
+    }
+  } catch (error) {
+    // Check if the error is due to already reported
+    if (
+      error.response &&
+      error.response.status === 400 
+    ) {
+      Alert.alert("Already Reported", "You have already reported this post.");
+    } else {
+      console.error("Error reporting post:", error);
+      Alert.alert(
+        "Error",
+        "An error occurred while trying to report the post."
+      );
+    }
+  }
+};
+
+
   return (
     <SafeAreaView
       style={{
@@ -612,7 +688,64 @@ const EachListing = ({ route }) => {
                     <Text style={styles.homeTown}>{productData.address}</Text>
                   </View>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    position: "absolute",
+                    right: -22,
+                    top: -3,
+                    zIndex: 10,
+                  }}
+                  onPress={() => {
+                    setModalVisible(true)
+                  }}
+                >
+                  <Ionicons name="ellipsis-vertical" size={20} color="gray" />
+                </TouchableOpacity>
               </View>
+              <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+              >
+                <Pressable
+                  style={styles.modalOverlay}
+                  onPress={() => setModalVisible(false)}
+                />
+
+                <View style={styles.modalContainer}>
+                  <Text style={styles.modalTitle}>{t("user_options")}</Text>
+                  {/* Report Listing */}
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setModalVisible(false);
+                      reportPost(itemId, "Inappropriate content");
+                     
+                    }}
+                  >
+                    <Text style={styles.optionText}> {t("report_listing")}</Text>
+                  </TouchableOpacity>
+                  {/* Block User */}
+                  <TouchableOpacity
+                    style={styles.optionButton}
+                    onPress={() => {
+                      setModalVisible(false);
+                      blockUser(businessId);
+                    }}
+                  >
+                    <Text style={styles.optionText}>{t("block_user")}</Text>
+                  </TouchableOpacity>
+                  {/* Cancel Button */}
+                  <TouchableOpacity
+                    style={[styles.optionButton, styles.cancelButton]}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.cancelText}>{t("cancel")}</Text>
+                  </TouchableOpacity>
+                </View>
+              </Modal>
               <ScrollView style={{ flex: 1 }}>
                 {renderContentBackground()}
               </ScrollView>
@@ -626,7 +759,7 @@ const EachListing = ({ route }) => {
 
             <View style={styles.eventInfoContainer}>
               <View style={styles.eventDetails}>
-                <Text style={styles.priceText}>Price Details</Text>
+                <Text style={styles.priceText}>{t("price_details")}</Text>
 
                 {productData?.createdBy &&
                 productData?.createdBy === user._id ? (
@@ -646,11 +779,11 @@ const EachListing = ({ route }) => {
                 ) : null}
 
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Price</Text>
+                  <Text style={styles.infoLabel}>{t("price")}</Text>
                   <Text style={styles.infoValue}>Rs. {productData.price}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Original Price</Text>
+                  <Text style={styles.infoLabel}>{t("original_price")}</Text>
                   <Text style={styles.infoValue}>
                     Rs. {productData.originalPrice}
                   </Text>
@@ -659,13 +792,13 @@ const EachListing = ({ route }) => {
             </View>
             <View style={styles.eventInfoContainer}>
               <View style={styles.eventDetails}>
-                <Text style={styles.priceText}>Product Information</Text>
+                <Text style={styles.priceText}>{t("product_info")}</Text>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Condition</Text>
+                  <Text style={styles.infoLabel}>{t("product_condition")}</Text>
                   <Text style={styles.infoValue}>{productData.condition}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>Product age</Text>
+                  <Text style={styles.infoLabel}>{t("product_age")}</Text>
                   <Text style={styles.infoValue}>{productData.productAge}</Text>
                 </View>
               </View>
@@ -673,7 +806,7 @@ const EachListing = ({ route }) => {
 
             <View style={styles.eventInfoContainer}>
               <View style={styles.eventDetails}>
-                <Text style={styles.priceText}>Product Description</Text>
+                <Text style={styles.priceText}>{t("product_description")}</Text>
                 <Text style={styles.bioText}>{productData.description}</Text>
               </View>
             </View>
@@ -683,7 +816,7 @@ const EachListing = ({ route }) => {
               <View style={styles.ticketInfoContainer}>
                 {productData?.createdBy !== user._id ? (
                   <>
-                    <Text style={styles.priceText}>Interested</Text>
+                    <Text style={styles.priceText}>{t("interested")}</Text>
                     <TouchableOpacity
                       style={styles.bookNowButton}
                       // onPress={() => {
@@ -699,19 +832,19 @@ const EachListing = ({ route }) => {
                       }}
                     >
                       <Text style={styles.bookNowButtonText}>
-                        Message Owner
+                       {t("message_owner")}
                       </Text>
                     </TouchableOpacity>
                   </>
                 ) : (
                   <>
-                    <Text style={styles.priceText}>Delete Product</Text>
+                    <Text style={styles.priceText}>{t("delete_product")}</Text>
                     <TouchableOpacity
                       style={styles.bookNowButton}
                       onPress={() => deleteProduct(productData._id)}
                     >
                       <Text s style={styles.bookNowButtonText}>
-                        Delete
+                        {t("delete")}
                       </Text>
                     </TouchableOpacity>
                   </>
@@ -1138,5 +1271,16 @@ const styles = StyleSheet.create({
   navigateIcon: {
     marginTop: 10,
     left: 100,
+  },
+   optionButton: {
+    width: "100%",
+    padding: 15,
+    alignItems: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  optionText: {
+    fontSize: 16,
+    color: "#000",
   },
 });

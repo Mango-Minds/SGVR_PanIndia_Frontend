@@ -44,11 +44,11 @@ export default function EditProfileDetails({ navigation }) {
 
   const dispatch = useDispatch();
 
-  const stateindex = Object.keys(statesData).indexOf(
-    user.state.substring(0, 1).toUpperCase() + user.state.substring(1)
-  );
+  // const stateindex = Object.keys(statesData).indexOf(
+  //   user.state.substring(0, 1).toUpperCase() + user.state.substring(1)
+  // );
 
-  const state = Object.keys(statesData)[stateindex];
+  // const state = Object.keys(statesData)[stateindex];
 
   const [registerDetails, setRegisterDetails] = useState({
     fname: user.fname,
@@ -58,33 +58,33 @@ export default function EditProfileDetails({ navigation }) {
     email: user.email,
     phone: user.phone,
     suggestedBy: user.suggestedBy,
-    dob:
-      new Date(user.dob.split("/").reverse().join("/")).getFullYear() +
-      "-" +
-      (new Date(user.dob.split("/").reverse().join("/")).getMonth() + 1) +
-      "-" +
-      new Date(user.dob.split("/").reverse().join("/")).getDate(),
+    // dob:
+    //   new Date(user.dob.split("/").reverse().join("/")).getFullYear() +
+    //   "-" +
+    //   (new Date(user.dob.split("/").reverse().join("/")).getMonth() + 1) +
+    //   "-" +
+    //   new Date(user.dob.split("/").reverse().join("/")).getDate(),
 
     gender: user.gender,
     address: user.address,
-    state: state,
+    // state: state,
     pincode: user.pincode,
     city: user.city,
   });
 
   const [selectGender, setSelectGender] = useState(user.gender);
-  const [selectDOB, setSelectedDOB] = useState(
-    new Date(user.dob.split("/").reverse().join("/")).getFullYear() +
-      "-" +
-      (new Date(user.dob.split("/").reverse().join("/")).getMonth() + 1) +
-      "-" +
-      new Date(user.dob.split("/").reverse().join("/")).getDate()
-  );
+  // const [selectDOB, setSelectedDOB] = useState(
+  //   new Date(user.dob.split("/").reverse().join("/")).getFullYear() +
+  //     "-" +
+  //     (new Date(user.dob.split("/").reverse().join("/")).getMonth() + 1) +
+  //     "-" +
+  //     new Date(user.dob.split("/").reverse().join("/")).getDate()
+  // );
 
-  const cities = statesData[Object.keys(statesData)[stateindex]];
+  // const cities = statesData[Object.keys(statesData)[stateindex]];
 
-  const cityindex =
-    user.city.substring(0, 1).toUpperCase() + user.city.substring(1);
+  // const cityindex =
+  //   user.city.substring(0, 1).toUpperCase() + user.city.substring(1);
 
   const handleUpdateProfile = async () => {
     let yearInNumber = parseInt(year);
@@ -229,7 +229,7 @@ export default function EditProfileDetails({ navigation }) {
               autoCapitalize="none"
             />
             <Row>
-              <Text style={{ color: "#B98C13", fontSize: 14, marginRight: 8 }}>
+              <Text style={{ color: Theme.themeColor, fontSize: 14, marginRight: 8 }}>
                 I am*
               </Text>
               <RadioButton.Group
@@ -257,7 +257,7 @@ export default function EditProfileDetails({ navigation }) {
                 </Row>
               </RadioButton.Group>
             </Row>
-            <Text
+            {/* <Text
               style={{
                 fontSize: 18,
                 fontWeight: "600",
@@ -339,7 +339,7 @@ export default function EditProfileDetails({ navigation }) {
                   setYear(text);
                 }}
               />
-            </View>
+            </View> */}
             <LoginInputField
               selectionColor={Theme.themeColor}
               activeUnderlineColor={Theme.themeColor}
@@ -353,7 +353,7 @@ export default function EditProfileDetails({ navigation }) {
               }
             />
 
-            <SelectDropdown
+            {/* <SelectDropdown
               buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
               buttonTextStyle={{
                 textAlign: "left",
@@ -388,7 +388,7 @@ export default function EditProfileDetails({ navigation }) {
                 });
               }}
               defaultValueByIndex={cityindex}
-            />
+            /> */}
 
             <LoginInputField
               selectionColor={Theme.themeColor}

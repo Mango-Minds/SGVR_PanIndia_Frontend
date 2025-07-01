@@ -16,7 +16,7 @@ import { Container, RowBetween } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
 import { Ionicons } from "react-native-vector-icons";
 import { TopText } from "../../styles/social.styles";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+import { BASEAPIURL} from "../../infrastructure/constants";
 import axios from "axios";
 import { LinearGradient } from "expo-linear-gradient";
 import {

@@ -19,8 +19,7 @@ import apiClient from "../../store/apiClient";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { useDispatch } from "react-redux";
 import { useSelector } from "react-redux";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
 import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
@@ -28,9 +27,10 @@ import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "./BottomNavigation";
 import { fetchUserDetails } from "./B2CAPI";
+import { useTranslation } from "react-i18next";
 const MyB2CProfile = ({ route }) => {
   const navigation = useNavigation();
-
+  const { t } = useTranslation();
   const isFocused = useIsFocused();
 
   const token = useSelector((state) => state.user.token);
@@ -44,26 +44,24 @@ const MyB2CProfile = ({ route }) => {
 
   const [userData, setUserData] = useState({});
 
-
-  
   // const fetchUser = async () => {
   //   try {
   //     let token = await AsyncStorage.getItem("token");
-  
+
   //     if (!token) {
   //       console.error("Authentication token is missing.");
   //       Alert.alert("Error", "You are not authorized. Please log in again.");
   //       return;
   //     }
-  
+
   //     setLoadingAnimation(true);
-      
+
   //     const response = await apiClient.get(`/user/${userId}`, {
   //       headers: {
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  
+
   //     if (response.status === 200) {
   //       console.log("User Data:", response.data);
   //       setUserData(response.data);
@@ -77,11 +75,11 @@ const MyB2CProfile = ({ route }) => {
   //     setLoadingAnimation(false);
   //   }
   // };
-  
+
   const fetchUser = () => {
     fetchUserDetails({ userId, setUserData, setLoadingAnimation });
   };
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchUser();
@@ -108,7 +106,7 @@ const MyB2CProfile = ({ route }) => {
               fontWeight: "bold",
             }}
           >
-            My Profile
+            {t("my_profile")}
           </TopText>
         </View>
         <View
@@ -134,7 +132,6 @@ const MyB2CProfile = ({ route }) => {
                   }
                 : UserImg
             }
-           
             style={style.backgroundImage}
             resizeMode="contain"
           ></ImageBackground>
@@ -148,7 +145,7 @@ const MyB2CProfile = ({ route }) => {
                 bottom: 30,
               }}
             >
-              Owner Details
+              {t("owner_details")}
             </Text>
           </View>
 
@@ -190,7 +187,7 @@ const MyB2CProfile = ({ route }) => {
                 })
               }
             >
-              <Text style={style.EditButtonText}>Edit My Profile</Text>
+              <Text style={style.EditButtonText}>{t("edit_my_profile")}</Text>
             </TouchableOpacity>
           </View>
         </View>

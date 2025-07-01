@@ -14,14 +14,14 @@ import { SafeArea } from "../../components/utility/safe-area.component";
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { Ionicons } from "@expo/vector-icons";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
 const screenWidth = Dimensions.get("window").width;
 const imageHeight = screenWidth * 0.6;
 
 const ReadMoreComponent = ({ description }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-
+const { t } = useTranslation();
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
@@ -35,12 +35,12 @@ const ReadMoreComponent = ({ description }) => {
         <View>
           {isExpanded ? (
             <Text>
-              <Text style={styles.readMore}>Read less</Text>
+              <Text style={styles.readMore}>{t('readLess')}</Text>
               <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
             </Text>
           ) : (
             <Text>
-              <Text style={styles.readMore}>Read more</Text>
+              <Text style={styles.readMore}>{t('readMore')}</Text>
               <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
             </Text>
           )}
@@ -55,7 +55,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
     showViewer: false,
     currentIndex: 0,
   });
-
+const { t } = useTranslation();
   const vendorData = route.params;
   console.log(vendorData);
   const mainFlatListRef = useRef(null);
@@ -109,7 +109,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
     <SafeArea style={{ flex: 1 }}>
       <View style={styles.header}>
         <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-        <TopText style={styles.headerText}>{vendorData.businessName}</TopText>
+        <TopText style={styles.headerText}>{vendorData?.businessName || " "}</TopText>
       </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.carouselContainer}>
@@ -145,7 +145,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>Address:</Text> {vendorData.address}
+              <Text style={styles.label}>{t('address')}: </Text> {vendorData.address}
             </Text>
           </View>
           <View style={styles.infoItem}>
@@ -156,7 +156,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>City:</Text> {vendorData.address}
+              <Text style={styles.label}>{t('city')}: </Text> {vendorData.address}
             </Text>
           </View>
           <View style={styles.infoItem}>
@@ -167,7 +167,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>Mobile Number:</Text>{" "}
+              <Text style={styles.label}>{t('mobileNumber')}:</Text>{" "}
               {vendorData.contactInfo}
             </Text>
           </View>
@@ -213,7 +213,7 @@ export default function MatrimonyShopProfile({ route, navigation }) {
             style={styles.closeButton}
             onPress={closeImageModal}
           >
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>{t('close')}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.leftButton}

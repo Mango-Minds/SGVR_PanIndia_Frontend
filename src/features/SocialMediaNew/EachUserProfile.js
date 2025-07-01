@@ -11,8 +11,9 @@ import {
   Keyboard,
   Alert,
   Pressable,
-
+  SafeAreaView,
 } from "react-native";
+import { FlatList } from "react-native-gesture-handler";
 import Theme from "../../styles/theme";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Button, TextInput } from "react-native-paper";
@@ -23,10 +24,10 @@ import { IconButton } from "react-native-paper";
 import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import { useSelector } from "react-redux";
-
+import { sendFollowRequest } from "./SocialMediaAPIs";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { SearchField } from "../../styles/common.styles";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+import { BASEAPIURL } from "../../infrastructure/constants";
 import NewSocialCard from "./NewSocialCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
@@ -35,27 +36,29 @@ import {
   fetchPostsAPI,
   fetchProfileAPI,
   sendFollowRequestAPI,
-  unfollowUserAPI } from "./SocialMediaAPIs"
-
+  unfollowUserAPI,
+} from "./SocialMediaAPIs";
+import { useTranslation } from "react-i18next";
 const Tab = createBottomTabNavigator();
 
 export default function EachProfile() {
   const token = useSelector((state) => state.user.token);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const { t } = useTranslation();
   const route = useRoute();
 
   const { userId } = route.params;
 
   const user = useSelector((state) => state.user.user);
+  console.log("user: ", user);
 
   // const {userId} = route.params;
   const [allLoaded, setAllLoaded] = useState(false);
   const [userposts, setUserPosts] = useState([]);
   const [showAllPosts, setShowAllPosts] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(false);
-
+  // const [isFollowing, setIsFollowing] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(null);
   const fromUserId = user?._id;
 
   const handleSeeAllClick = () => {
@@ -63,58 +66,65 @@ export default function EachProfile() {
   };
 
   // useEffect(() => {
-  //   const fetchFollowStatus = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `${BASEAPIURL}/social/check-follow-status/${userId}`,
-  //         {
-  //           method: "GET",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setIsFollowing(data.isFollowing);
-  //       } else {
-  //         console.error("Failed to fetch follow status");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching follow status:", error);
-  //     }
-  //   };
-
   //   if (userId) {
-  //     fetchFollowStatus();
+  //     fetchFollowStatusAPI(userId, setIsFollowing);
   //   }
   // }, [userId]);
+  useEffect(() => {
+    const fetchFollowStatus = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const response = await fetch(
+          `${BASEAPIURL}/social/check-follow-status/${userId}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
-  // const fetchPosts = async () => {
-  //   if (allLoaded) return;
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/social/post/user/${userId}`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
+        if (response.ok) {
+          const data = await response.json();
+          console.log("following status", data);
+          setIsFollowing(data.status);
+        } else {
+          console.error("Failed to fetch follow status");
+        }
+      } catch (error) {
+        console.error("Error fetching follow status:", error);
+      }
+    };
 
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-  //     const data = await response.json();
-  //     setUserPosts(data);
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
+    if (userId) {
+      fetchFollowStatus();
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchPosts = async () => {
+    if (allLoaded) return;
+    fetchPostsAPI(userId, setUserPosts);
+  };
+
+  const fetchProfile = async () => {
+    fetchProfileAPI(userId, setProfile, setLoading);
+  };
+
+  console.log("Profile: ", profile);
+  console.log("UserPosts: ", userposts);
 
   // const handleSendFollowRequest = async (fromUserId, toUserId) => {
   //   try {
+  //      const token = await AsyncStorage.getItem("token");
   //     const response = await fetch(
   //       `${BASEAPIURL}/social/send-request/${toUserId}`,
   //       {
@@ -127,12 +137,11 @@ export default function EachProfile() {
   //     );
   //     console.log("response of sending req", response);
   //     if (response.ok) {
-  //       setIsFollowing(true);
+  //       setIsFollowing("pending");
   //       Alert.alert("Success", "Connection request sent successfully.");
   //     } else {
   //       const data = await response.json();
   //       if (data.message === "You are already following this user.") {
-  //         setIsFollowing(true);
   //         Alert.alert(
   //           "Already Following",
   //           "You are already following this user."
@@ -156,223 +165,37 @@ export default function EachProfile() {
   //     );
   //   }
   // };
-
-  // useEffect(() => {
-  //   fetchPosts();
-  // }, []);
-
-  // const fetchProfile = async () => {
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/user/profile/${userId}`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-
-  //     const data = await response.json();
-  //     console.log("profile data", data);
-  //     setProfile(data);
-  //   } catch (err) {
-  //     console.log(err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // // unfollow a user
-  // const unFollowUser = async ({ fromUserId, userId }) => {
-  //   console.log(`removing ${profile.user._id}`);
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/unfollow/${fromUserId}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setIsFollowing(false);
-  //       Alert.alert("Success", `${data.message}`);
-  //     } else {
-  //       Alert.alert("Error", "Failed to send unfollow request.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to user:", error);
-  //     Alert.alert(
-  //       "Error",
-  //       "An error occurred while trying to send the follow request."
-  //     );
-  //   }
-  // };
-
-
-
-  //correct one
-  // useEffect(() => {
-  //   const fetchFollowStatus = async () => {
-  //     try {
-  //       console.log("userId: ", userId);
-  //       const token = await AsyncStorage.getItem("token");
-  //       const response = await apiClient.get(`/social/check-follow-status/${userId}`, {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       });
-  
-  //       if (response.status === 200) {
-  //         setIsFollowing(response.data.isFollowing);
-  //       } else {
-  //         console.error("Failed to fetch follow status");
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching follow status:", error);
-  //     }
-  //   };
-  
-  //   if (userId) {
-  //     fetchFollowStatus();
-  //   }
-  // }, [userId]);
-  
-  // const fetchPosts = async () => {
-  //   if (allLoaded) return;
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     const response = await apiClient.get(`/social/post/user/${userId}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     if (response.status === 200) {
-  //       setUserPosts(response.data);
-  //     } else {
-  //       throw new Error("Network response was not ok");
-  //     }
-  //   } catch (err) {
-  //     setError(err.message);
-  //   }
-  // };
-  
-  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     const response = await apiClient.post(`/social/send-request/${toUserId}`, null, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     console.log("response of sending req", response);
-  
-  //     if (response.status === 200) {
-  //       setIsFollowing(true);
-  //       Alert.alert("Success", "Connection request sent successfully.");
-  //     } else {
-  //       const data = response.data;
-  //       if (data.message === "You are already following this user.") {
-  //         setIsFollowing(true);
-  //         Alert.alert("Already Following", "You are already following this user.");
-  //       } else if (data.message === "Follow request already sent to this user.") {
-  //         Alert.alert("Request Already Sent", "You have already sent a connection request to this user.");
-  //       } else {
-  //         Alert.alert("Error", "Failed to send connection request.");
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to user:", error);
-  //     Alert.alert("Error", "An error occurred while trying to send the follow request.");
-  //   }
-  // };
-  
-  // useEffect(() => {
-  //   fetchPosts();
-  // }, []);
-  
-  // const fetchProfile = async () => {
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     const response = await apiClient.get(`/user/profile/${userId}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     if (response.status !== 200) {
-  //       throw new Error("Network response was not ok");
-  //     }
-  
-  //     console.log("profile data", response.data);
-  //     setProfile(response.data);
-  //   } catch (err) {
-  //     console.log(err);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-  
-  // // unfollow a user
-  // const unFollowUser = async ({ fromUserId, userId }) => {
-  //   console.log(`removing ${profile.user._id}`);
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  //     const response = await apiClient.patch(`/social/unfollow/${fromUserId}`, null, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     if (response.status === 200) {
-  //       setIsFollowing(false);
-  //       Alert.alert("Success", `${response.data.message}`);
-  //     } else {
-  //       Alert.alert("Error", "Failed to send unfollow request.");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to user:", error);
-  //     Alert.alert("Error", "An error occurred while trying to send the follow request.");
-  //   }
-  // };
-  
-  // useEffect(() => {
-  //   fetchProfile();
-  // }, []);
-
-  useEffect(() => {
-    if (userId) {
-      fetchFollowStatusAPI(userId, setIsFollowing);
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchPosts = async () => {
-    if (allLoaded) return;
-    fetchPostsAPI(userId, setUserPosts);
-  };
-
-  const fetchProfile = async () => {
-    fetchProfileAPI(userId, setProfile, setLoading);
-  };
-
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
-    sendFollowRequestAPI(toUserId, setIsFollowing);
+    try {
+      const response = await sendFollowRequest(toUserId);
+      console.log("response of sending req", response);
+
+      if (response.status === 200) {
+        setIsFollowing("pending");
+        Alert.alert("Success", "Connection request sent successfully.");
+      }
+    } catch (error) {
+      const data = error.response?.data;
+      if (data?.message === "You are already following this user.") {
+        Alert.alert(
+          "Already Following",
+          "You are already following this user."
+        );
+      } else if (
+        data?.message === "Follow request already sent to this user."
+      ) {
+        Alert.alert(
+          "Request Already Sent",
+          "You have already sent a connection request to this user."
+        );
+      } else {
+        console.error("Error connecting to user:", error);
+        Alert.alert(
+          "Error",
+          "An error occurred while trying to send the follow request."
+        );
+      }
+    }
   };
 
   const unFollowUser = async ({ fromUserId, userId }) => {
@@ -382,14 +205,18 @@ export default function EachProfile() {
   const blockUser = async (blockedUserId) => {
     try {
       console.log("Blocking user", blockedUserId);
-      const response = await fetch(`${BASEAPIURL}/social/post/block-user/${blockedUserId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+      const token = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${BASEAPIURL}/social/post/block-user/${blockedUserId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
       console.log("Block user response", response);
       if (response.ok) {
         const data = await response.json();
@@ -409,14 +236,12 @@ export default function EachProfile() {
   const [isShareModalVisible, setShareModalVisible] = useState(false);
   const navigation = useNavigation();
 
-  const [activeTab, setActiveTab] = useState("Posts");
+  const [activeTab, setActiveTab] = useState("posts");
   const bannerImageUri = profile?.followData?.bannerImage
     ? `${profile.followData.bannerImage}`
     : null;
 
-  const profileImageUri = profile?.user?.image
-    ? `${profile.user.image}`
-    : null;
+  const profileImageUri = profile?.user?.image ? `${profile.user.image}` : null;
 
   const postsContent = [
     "This is my first post!",
@@ -478,7 +303,7 @@ export default function EachProfile() {
               userId={userId}
             />
           ) : (
-            <Text>No posts available</Text>
+            <Text>{t("NoPostsAvailable")}</Text>
           );
         }
       // case "Articles":
@@ -515,12 +340,12 @@ export default function EachProfile() {
           />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
-          <SearchField placeholder="Search" style={styles.searchField} />
+          <SearchField placeholder={t("search")} style={styles.searchField} />
         </View>
 
-        <TouchableOpacity style={styles.iconButton}
+        <TouchableOpacity
+          style={styles.iconButton}
           onPress={() => setModalVisible(true)}
-
         >
           <Icon name="settings" size={24} color="#000" />
         </TouchableOpacity>
@@ -542,15 +367,17 @@ export default function EachProfile() {
           <Text style={styles.userName}>
             {profile?.user?.firstName} {profile?.user?.lastName}
           </Text>
-          <Text style={styles.userTitle}>Software Engineer</Text>
+
           <Text style={styles.userLocation}>{profile?.user?.address}</Text>
           <View style={styles.socialContainer}>
-            <Text style={styles.statsText}>{followersCount} followers</Text>
+            <Text style={styles.statsText}>
+              {followersCount} {t("followers")}
+            </Text>
           </View>
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             style={[
               styles.followButton,
               isFollowing && { backgroundColor: "grey" },
@@ -578,6 +405,42 @@ export default function EachProfile() {
                 {isFollowing ? "Unfollow" : "Follow"}
               </Text>
             </View>
+          </TouchableOpacity> */}
+          <TouchableOpacity
+            style={[
+              styles.followButton,
+              isFollowing === "approved" && { backgroundColor: "grey" },
+            ]}
+            onPress={() => {
+              if (isFollowing === "none") {
+                handleSendFollowRequest(fromUserId, userId);
+              } else if (isFollowing === "approved") {
+                unFollowUser();
+              }
+            }}
+          >
+            <View style={styles.buttonContent}>
+              <Icon
+                name={isFollowing === "none" ? "add" : ""}
+                size={18}
+                color="white"
+                style={{ marginRight: isFollowing === "none" ? 10 : 0 }}
+              />
+              {/* <Text style={{ ...styles.followButtonText, color: "white" }}>
+                {isFollowing === "none"
+                  ? "Follow"
+                  : isFollowing === "pending"
+                  ? "Pending"
+                  : "Following"}
+              </Text> */}
+              <Text style={{ ...styles.followButtonText, color: "white" }}>
+                {isFollowing === "none"
+                  ? t("Follow")
+                  : isFollowing === "pending"
+                  ? t("Pending")
+                  : t("Following")}
+              </Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.messageButton}>
@@ -588,42 +451,79 @@ export default function EachProfile() {
                 color={Theme.themeColor}
                 style={{ marginRight: 10 }}
               />
-              <Text style={styles.messageButtonText}>Message</Text>
+              <Text style={styles.messageButtonText}>{t("Message")}</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.aboutMeContainer}>
-        <Text style={styles.aboutMeTitle}>About</Text>
+        <Text style={styles.aboutMeTitle}>{t("about")}</Text>
         <Text style={styles.aboutMeText}>{profile?.followData?.about}</Text>
       </View>
       <View style={styles.activityContainer}>
-        <Text style={styles.activityTitle}>Activity</Text>
+        <Text style={styles.activityTitle}>{t("activity")}</Text>
         <View style={styles.tabContainer}>
           {["Posts"].map((tab) => (
             <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.activeTab]}
-              onPress={() => setActiveTab(tab)}
+              key="posts"
+              style={[styles.tab, activeTab === "posts" && styles.activeTab]}
+              onPress={() => setActiveTab("posts")}
             >
               <Text
                 style={[
                   styles.tabText,
-                  activeTab === tab && styles.activeTabText,
+                  activeTab === "posts" && styles.activeTabText,
                 ]}
               >
-                {tab}
+                {t("posts")}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
+        {activeTab === "posts" && (
+          <View>
+            <SafeAreaView style={styles.socialFeedContainer}>
+              {/* <FlatList
+                data={userposts}
+                renderItem={({ item }) => {
+                  return <NewSocialCard post={item} posts={userposts} />;
+                }}
+                keyExtractor={(item) => item._id.toString()}
+                onEndReached={fetchPosts}
+                onEndReachedThreshold={0.5}
+              /> */}
+              <FlatList
+                data={userposts?.posts || []}
+                renderItem={({ item }) => (
+                  <NewSocialCard
+                    post={item}
+                    profileImageUri={item.createdBy.image}
+                    description={item.content}
+                    video={item.video}
+                    source="EachProfile"
+                    firstName={item.createdBy.firstName}
+                    lastName={item.createdBy.lastName}
+                    postId={item._id}
+                    postImages={item.images}
+                    fetchPosts={fetchPosts}
+                    userId={userId}
+                  />
+                )}
+                keyExtractor={(item) => item._id}
+              />
+            </SafeAreaView>
+          </View>
+        )}
+
         <ScrollView style={styles.contentContainer}>
           {renderContent()}
         </ScrollView>
         <View style={styles.lineDivider} />
         <Text style={styles.seeAllText} onPress={handleSeeAllClick}>
-          {showAllPosts ? "Show Less" : `See All ${activeTab}`}
+          {showAllPosts
+            ? t("showLess")
+            : `${t("seeAll")} ${t(activeTab.toLowerCase())}`}
         </Text>
       </View>
 
@@ -782,7 +682,7 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 15,
-    color:Theme.themeColor,
+    color: Theme.themeColor,
   },
   divider: {
     marginHorizontal: 5,
@@ -987,7 +887,7 @@ const styles = StyleSheet.create({
   messageButton: {
     flex: 1,
     paddingVertical: 10,
-    borderColor:Theme.themeColor,
+    borderColor: Theme.themeColor,
     borderWidth: 1,
     borderRadius: 20,
     alignItems: "center",

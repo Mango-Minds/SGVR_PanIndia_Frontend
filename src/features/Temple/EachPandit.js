@@ -20,7 +20,7 @@ import UserImg from "../../assets/images/general/user.png";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import apiClient from "../../store/apiClient";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;

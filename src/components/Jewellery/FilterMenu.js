@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
+
 const FilterMenu = ({
   menuVisible,
   toggleMenu,
@@ -15,6 +17,7 @@ const FilterMenu = ({
   setSelectedFiltersArray,
 }) => {
   const [selectedFilters, setSelectedFilters] = useState([]);
+const { t } = useTranslation();
 
   const handleApply = () => {
     const selectedFilters = [];
@@ -111,7 +114,7 @@ const FilterMenu = ({
                   top: -130,
                 }}
               >
-                Filters
+                {t("filters")}
               </Text>
             </View>
           </View>
@@ -161,7 +164,7 @@ const FilterMenu = ({
                         marginRight: 20,
                       }}
                     >
-                      {filter.name}
+                      {t(filter.name.toLowerCase())}
                     </Text>
 
                     {selectedOptions.some((option) =>
@@ -196,7 +199,7 @@ const FilterMenu = ({
                 style={{ maxHeight: 170, width: 200 }}
                 showsVerticalScrollIndicator={false}
               >
-                {activeFilter &&
+                {/* {activeFilter &&
                   filters.map((filter) =>
                     filter.name === activeFilter
                       ? filter.options.map((option, index) => (
@@ -237,7 +240,49 @@ const FilterMenu = ({
                           </TouchableOpacity>
                         ))
                       : null
-                  )}
+                  )} */}
+                  {activeFilter &&
+  filters.map((filter) =>
+    filter.name === activeFilter
+      ? filter.options.map((option, index) => (
+          <TouchableOpacity
+            key={index}
+            style={{
+              padding: 10,
+              flexDirection: "row",
+              alignItems: "center",
+              top: 10,
+            }}
+            onPress={() => handleOptionClick(option)}
+          >
+            <Ionicons
+              name={
+                selectedOptions.includes(option)
+                  ? "checkbox"
+                  : "square-outline"
+              }
+              size={25}
+              color={
+                selectedOptions.includes(option)
+                  ? Theme.themeColor
+                  : "grey"
+              }
+            />
+            <Text
+              style={{
+                marginLeft: 10,
+                fontSize: 16,
+                color: selectedOptions.includes(option)
+                  ? Theme.themeColor
+                  : "grey",
+              }}
+            >
+              {t(option.toLowerCase().replace(/\s+/g, "_"))}
+            </Text>
+          </TouchableOpacity>
+        ))
+      : null
+  )}
               </ScrollView>
             </View>
           </View>
@@ -273,7 +318,7 @@ const FilterMenu = ({
             }}
           >
             <Text style={{ color: activeFilter ? "white" : Theme.themeColor }}>
-              Clear Filters
+              {t("clear_filters")}
             </Text>
           </TouchableOpacity>
 
@@ -292,7 +337,7 @@ const FilterMenu = ({
             onPress={handleApply}
           >
             <Text style={{ color: activeFilter ? Theme.themeColor : "white" }}>
-              Apply
+            {t("apply")}
             </Text>
           </TouchableOpacity>
         </View>

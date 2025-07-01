@@ -20,16 +20,14 @@ import * as DocumentPicker from "expo-document-picker";
 import { useNavigation } from "@react-navigation/native";
 import { useIsFocused } from "@react-navigation/native";
 
-import {
-  BASEIMGURL,
-  BASEAPIURL,
-  RENDERMEDIAURL,
-} from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+
 const ViewJobPost = ({ route }) => {
   const navigation = useNavigation();
+  const { t } = useTranslation();
   const { jobId } = route.params; // receives job id details from SocialJobs component
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user.user);
@@ -172,7 +170,7 @@ const ViewJobPost = ({ route }) => {
                 textTransform: "capitalize",
               }}
             >
-              Job Posting
+              {t("jobPosting")}
             </TopText>
           </View>
           <TouchableOpacity>
@@ -192,13 +190,13 @@ const ViewJobPost = ({ route }) => {
           <Text style={styles.jobTitle}>{job.jobTitle}</Text>
           <Text style={styles.jobCompany}>{job.company}</Text>
           <Text style={styles.jobLocation}>{job.location}</Text>
-          <Text style={styles.label}>Job Description:</Text>
+          <Text style={styles.label}>{t("jobDescription")}</Text>
           <Text style={styles.detailText}>{job.description}</Text>
-          <Text style={styles.label}>Company Description:</Text>
+          <Text style={styles.label}>{t("companyDescription")}</Text>
           <Text style={styles.detailText}>{job.companyDescription}</Text>
-          <Text style={styles.label}>Responsibilities:</Text>
+          <Text style={styles.label}>{t("responsibilities")}</Text>
           <Text style={styles.detailText}>{job.responsibilities}</Text>
-          <Text style={styles.label}>CTC:</Text>
+          <Text style={styles.label}>{t("ctc")}</Text>
           <Text style={styles.detailText}>{job.CTC}</Text>
         </View>
       )}
@@ -206,7 +204,7 @@ const ViewJobPost = ({ route }) => {
 
         {job && userId === job.createdBy._id && job.applicants && (
           <>
-            <Text style={styles.headerText}>Applicants:</Text>
+            <Text style={styles.headerText}>{t("applicants")}: </Text>
             <FlatList
               contentContainerStyle={styles.listWrapper}
               data={job.applicants}
@@ -232,7 +230,7 @@ const ViewJobPost = ({ route }) => {
               style={styles.uploadButton}
               onPress={sendApplication}
             >
-              <Text style={styles.uploadButtonText}>Apply</Text>
+              <Text style={styles.uploadButtonText}>{t("apply")}</Text>
             </TouchableOpacity>
           </View>
         )}

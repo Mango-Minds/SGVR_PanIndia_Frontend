@@ -22,8 +22,7 @@ import ViewUserScreen from "../../features/viewuser.screen";
 import CreateTimelineScreen from "../../features/createTimeline.screen";
 import LocationScreen from "../../components/social/LocationScreen";
 import PostCreated from "../../features/SocialMedia/PostCreated.screen";
-import MessageScreenNew from "../../features/SocialMediaNew/MessageScreenNew.jsx"
-
+import MessageScreenNew from "../../features/SocialMediaNew/MessageScreenNew.jsx";
 
 import BottomNavigation from "../../features/SocialMediaNew/new.social.screen.js";
 import { useQueryClient } from "react-query";
@@ -33,9 +32,7 @@ import { TempleStackNavigator } from "./Temple.navigator";
 import DashboardScreen from "../../features/dashboard.screen.js";
 import ProfileNewScreen from "../../features/SocialMediaNew/ProfileScreen.js";
 
-
 // import EditProfileNewScreen from "../../features/SocialMediaNew/EditProfile.js";
-
 
 import SocialHomeScreen from "../../features/SocialMediaNew/new.social.screen.js";
 
@@ -58,19 +55,18 @@ import EditJobPost from "../../features/SocialMediaNew/EditJobPost.js";
 import JobApplicantForRecruiter from "../../features/SocialMediaNew/JobApplicantForRecruiter.js";
 import FollowersFollowing from "../../features/SocialMediaNew/FollowersFollowing.js";
 
-
 const Tab = createBottomTabNavigator();
 
 const Stack = createStackNavigator();
 
-
 export const SocialMediaStackNavigator = () => (
-  <Stack.Navigator screenOptions={{ headerShown: false }}>
-    <Stack.Screen name="MainNew" component={BottomNavigation} />
-    
-    <Stack.Screen name="SocialHomeScreen" component={SocialHomeScreen} />
-    {/* <Stack.Screen name="NewSocialCard" component={NewSocialCard}/> */}
+  <Stack.Navigator   screenOptions={{ headerShown: false, gestureEnabled: true }} >
+    {/* <Stack.Screen name="MainNew" component={BottomNavigation} /> */}
+         <Stack.Screen name="SocialHomeScreen" component={SocialHomeScreen} options={{gestureEnabled: true}} />
+   
     <Stack.Screen name="Main" component={SocialMediaNavigator} />
+    <Stack.Screen name="Dashboard" component={DashboardScreen} />
+
     <Stack.Screen name="SearchResults" component={SearchResults} />
 
     <Stack.Screen name="MessageScreenNew" component={MessageScreenNew} />
@@ -78,49 +74,43 @@ export const SocialMediaStackNavigator = () => (
     <Stack.Screen name="MessageScreen" component={MessageScreen} />
     <Stack.Screen name="NewMessageScreen" component={NewMessageScreen} />
     <Stack.Screen name="ChatScreen" component={ChatScreen} />
-    <Stack.Screen name="EditJob" component={EditJobPost}/>
-
-    {/* <Stack.Screen name="EditProfileScreen" component={EditProfileScreen} /> */}
+    <Stack.Screen name="EditJob" component={EditJobPost} />
     <Stack.Screen name="PhotoPreviewScreen" component={PhotosScreen} />
     <Stack.Screen name="Temple" component={TempleStackNavigator} />
     <Stack.Screen name="LikesScreen" component={LikeScreen} />
     <Stack.Screen name="ReportScreen" component={Reportscreen} />
-    <Stack.Screen name="JobApplicantForRecruiter" component={JobApplicantForRecruiter}/>
-    {/* <Stack.Screen name="SettingsScreen" component={SettingScreen} /> */}
+    <Stack.Screen
+      name="JobApplicantForRecruiter"
+      component={JobApplicantForRecruiter}
+    />
     <Stack.Screen name="ViewUserScreen" component={ViewUserScreen} />
-    <Stack.Screen name = "MainHome" component={DashboardScreen}/>
+    <Stack.Screen name="MainHome" component={DashboardScreen} />
     <Stack.Screen
       name="CreateTimelineScreen"
       component={CreateTimelineScreen}
     />
     <Stack.Screen name="AddLocationScreen" component={LocationScreen} />
-    {/* <Stack.Screen name="EachPostScreen" component={ EachPostScreen} /> */}
     <Stack.Screen name="PostCreated" component={PostCreated} />
     <Stack.Screen name="MyNetwork" component={MyNetwork} />
     <Stack.Screen name="ProfileNewScreen" component={ProfileNewScreen} />
     <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
     <Stack.Screen name="EditProfile" component={EditUserProfile} />
     <Stack.Screen name="EditUserProfile" component={EditUserProfile} />
-    {/* <Stack.Screen name="EditProfileNewScreen" component={EditProfileNewScreen} /> */}
-    {/* <Stack.Screen name="ViewNewScreen" component={ViewNewScreen} /> */}
-    
     <Stack.Screen name="CreateNewPost" component={CreateNewPost} />
-
     <Stack.Screen name="SocialJobs" component={SocialJobs} />
-    <Stack.Screen name="ViewJobPost" component={ViewJobPost}/>
-    <Stack.Screen name="CreateNewJob" component={CreateNewJob}/>
-    <Stack.Screen name="EditPost" component={EditPost}/>
-
-    <Stack.Screen name="EditProfileInfo" component={EditProfileInfo}/>
-    
+    <Stack.Screen name="ViewJobPost" component={ViewJobPost} />
+    <Stack.Screen name="CreateNewJob" component={CreateNewJob} />
+    <Stack.Screen name="EditPost" component={EditPost} />
+    <Stack.Screen name="EditProfileInfo" component={EditProfileInfo} />
     <Stack.Screen name="EachProfile" component={EachProfile} />
     <Stack.Screen name="NewSocialCard" component={NewSocialCard} />
-    
     <Stack.Screen name="NotificationsScreen" component={NotificationsScreen} />
     <Stack.Screen name="RepostWithThoughts" component={RepostWithThoughts} />
-    
-    <Stack.Screen name="EditUserEducationInfo" component={EditUserEducationInfo} />
-    <Stack.Screen name="FollowersFollowing" component={FollowersFollowing}/>
+    <Stack.Screen
+      name="EditUserEducationInfo"
+      component={EditUserEducationInfo}
+    />
+    <Stack.Screen name="FollowersFollowing" component={FollowersFollowing} />
   </Stack.Navigator>
 );
 
@@ -168,13 +158,11 @@ export const SocialMediaNavigator = () => {
             tabBarIcon: ({ color, size }) => (
               <Icon name="home" color={color} size={size} />
             ),
-            
           }}
           listeners={{
-            tabPress:()=>{
+            tabPress: () => {
               console.log("Screen");
-              
-            }
+            },
           }}
         />
         <Tab.Screen

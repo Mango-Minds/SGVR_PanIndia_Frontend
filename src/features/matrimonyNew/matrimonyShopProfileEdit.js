@@ -40,9 +40,9 @@ import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
-
+import { useTranslation } from "react-i18next";
 import {
-  BASEIMGURL,
+
   BASEAPIURL,
   RENDERMEDIAURL,
 } from "../../infrastructure/constants";
@@ -55,15 +55,20 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { updateMatrimonyShopProfile } from "./matrimonyAPIs";
 const MatrimonyShopProfileEdit = ({ navigation, route }) => {
+  const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user);
 
   registerTranslation("en", en);
   const dispatch = useDispatch();
   const user_details = route.params;
+  console.log("user_Details: ", user_details);
+  
   const { loadingInBtn } = useSelector((state) => state.user);
   const ownerId = user_details.user_details._id;
-  ownerRole = user.user.userType;
+  ownerRole = user.user.userType[0];
+  console.log("OR: ", ownerRole);
+  
   const [userRoleData, setUserRoleData] = useState(user_details.user_details);
   const [modifiedDetails, setModifiedDetails] = useState({});
 
@@ -79,7 +84,7 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
   const updateModifiedDetails = () => {
     setModifiedDetails({
       name: userRoleData?.name ?? "",
-      businessName: userRoleData?.businessName ?? "",
+      businessName: userRoleData?.businessName || "",
       address: userRoleData?.address ?? "",
       description: userRoleData?.description ?? "",
       contactInfo: userRoleData?.contactInfo ?? "",

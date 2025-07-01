@@ -26,11 +26,11 @@ import apiClient from "../../store/apiClient";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { RowBetween } from "../../styles/common.styles";
-import { BASEAPIURL } from "../../infrastructure/constants";
-import { BASEIMGURL } from "../../infrastructure/constants";
+
 import { setLoadingInBtn } from "../../store/user";
 import { useDispatch } from "react-redux";
-
+import { updateUserProfile } from "../B2C/B2CAPI";
+import { useTranslation } from "react-i18next";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -64,26 +64,20 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
 });
-
 export default function EditUserProfile({ navigation, route }) {
-  registerTranslation("en", en);
   const dispatch = useDispatch();
-
   const token = useSelector((state) => state.user.token);
-  const { userId, user, userData, fetchUser } = route.params;
-  console.log("User in edit Profile: ", user);
-  console.log("UsrId: ", userId);
-  const [firstName, setFirstName] = useState(userData.user?.firstName);
-  const [lastName, setLastName] = useState(userData.user?.lastName);
-  const [address, setAddress] = useState(userData.user?.address);
-  // const [selectedImage, setSelectedImage] = useState({
-  //   uri: userData.user.image ? `${userData.user.image}` : null,
-  // });
+  const { t } = useTranslation();
+  const { userData, user, fetchUser, userId } = route.params;
+
+  const [firstName, setFirstName] = useState(userData.user.firstName);
+  const [lastName, setLastName] = useState(userData.user.lastName);
+  const [email, setEmail] = useState(userData.user.email);
+  const [phone, setPhone] = useState(userData.user.phone);
+  const [address, setAddress] = useState(userData.user.address);
   const [selectedImage, setSelectedImage] = useState({
-    uri: userData.user.image ? userData.user.image.replace(/\\/g, "/") : null,
+    uri: userData.user.image ? `${userData.user.image}` : null,
   });
-  
-  
 
   const { loadingInBtn } = useSelector((state) => state.user);
 
@@ -99,122 +93,26 @@ export default function EditUserProfile({ navigation, route }) {
     if (result.canceled === true) return;
     setSelectedImage(result.assets[0]);
   };
+
   const userType = useSelector((state) => state.user.user.userType);
+  const heading = t("edit_profile");
 
-  // const handleSubmit = async () => {
-  //   try {
-  //     let formData = new FormData();
-  //     formData.append("firstName", firstName);
-  //     formData.append("lastName", lastName);
-  //     formData.append("address", address);
-
-  //     if (selectedImage && selectedImage.uri) {
-  //       let localUri = selectedImage.uri;
-  //       let filename = localUri.split("/").pop();
-  //       let match = /\.(\w+)$/.exec(filename);
-  //       let type = match ? `image/${match[1]}` : `image`;
-
-  //       formData.append("image", {
-  //         uri: localUri,
-  //         name: filename,
-  //         type: type,
-  //       });
-  //     }
-
-  //     await dispatch(setLoadingInBtn(true));
-
-  //     const response = await fetch(`${BASEAPIURL}/user/update/${userId}`, {
-  //       method: "PATCH",
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: formData,
-  //     });
-
-  //     await dispatch(setLoadingInBtn(false));
-  //     console.log("Formdata: ", formData);
-
-  //     if (!response.ok) {
-  //       const errorText = await response.text();
-  //       throw new Error(`Failed to update user: ${errorText}`);
-  //     }
-
-  //     alert("Information Updated Successfully");
-  //     fetchUser();
-  //     navigation.goBack();
-  //   } catch (error) {
-  //     console.error("Error updating user:", error);
-  //     alert(`Error: ${error.message}`);
-  //   }
-  // };
-
-
-
-
-
-
-  
   const handleSubmit = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
-        return;
-      }
-  
-      let formData = new FormData();
-      formData.append("firstName", firstName);
-      formData.append("lastName", lastName);
-      formData.append("address", address);
-  
-      // ✅ Check and normalize image
-      if (selectedImage && selectedImage.uri) {
-        const localUri = selectedImage.uri;
-        const filename = localUri.split("/").pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
-  
-        const imageUri = Platform.OS === "ios" ? localUri.replace("file://", "") : localUri;
-  
-        formData.append("image", {
-          uri: imageUri,
-          name: filename,
-          type: type,
-        });
-      }
-  
-      await dispatch(setLoadingInBtn(true));
-  
-      const response = await apiClient
-        .patch(`/user/update/${userId}`, formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // ❌ Do NOT set content-type manually – Axios handles it
-          },
-        })
-        .catch((error) => {
-          console.log("AXIOS ERROR:", error?.response || error.message);
-          throw error;
-        });
-  
-      await dispatch(setLoadingInBtn(false));
-  
-      if (response?.status !== 200) {
-        throw new Error(response?.data?.message || "Failed to update user.");
-      }
-  
-      alert("Information Updated Successfully");
-      fetchUser(); // refresh profile
-      navigation.goBack(); // go back to previous screen
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert(`Error: ${error?.message || "Something went wrong."}`);
-      dispatch(setLoadingInBtn(false));
-    }
+    updateUserProfile({
+      firstName,
+      lastName,
+      email,
+      contactInfo: phone,
+      address,
+      selectedImage,
+      userId,
+      dispatch,
+      setLoadingInBtn, 
+      fetchUser,
+      navigation,
+    });
   };
-  
-  
+
   return (
     <SafeArea>
       <Provider>
@@ -234,7 +132,7 @@ export default function EditUserProfile({ navigation, route }) {
                   letterSpacing: 0.5,
                 }}
               >
-                Edit User Profile
+                {heading}
               </Text>
             </View>
           </RowBetween>
@@ -265,13 +163,11 @@ export default function EditUserProfile({ navigation, route }) {
                       position: "absolute",
                       right: 0,
                       bottom: 0,
-
                       backgroundColor: "lightgrey",
                       display: "flex",
                       flex: 1,
                       alignItems: "center",
                       justifyContent: "center",
-
                       borderRadius: 60,
                       padding: 8,
                     }}
@@ -291,6 +187,7 @@ export default function EditUserProfile({ navigation, route }) {
                 <Icon name="plus" size={35} color={Theme.themeColor} />
               </AddProfileBox>
             )}
+
             <FormSection style={{ paddingTop: 0 }}>
               <LoginInputField
                 selectionColor={Theme.themeColor}
@@ -318,12 +215,38 @@ export default function EditUserProfile({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
+                placeholder="Email Id *"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                value={email}
+                onChangeText={setEmail}
+              />
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
                 placeholder="Address *"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 autoCapitalize="none"
                 value={address}
                 onChangeText={setAddress}
+              />
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
+                placeholder="Phone Number*"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                keyboardType="numeric"
+                maxLength={10}
+                value={phone}
+                onChangeText={setPhone}
               />
 
               <FormButton onPress={handleSubmit}>
@@ -342,7 +265,7 @@ export default function EditUserProfile({ navigation, route }) {
                       color={"white"}
                     />
                   ) : (
-                    "Update Profile"
+                   t("update_profile")
                   )}
                 </Text>
               </FormButton>
@@ -353,3 +276,250 @@ export default function EditUserProfile({ navigation, route }) {
     </SafeArea>
   );
 }
+
+// export default function EditUserProfile({ navigation, route }) {
+//   registerTranslation("en", en);
+//   const dispatch = useDispatch();
+
+//   const token = useSelector((state) => state.user.token);
+//   const { userData, user, fetchUser, userId } = route.params;
+// console.log("user: ", userData);
+
+//   const [firstName, setFirstName] = useState(userData.user.firstName);
+//   const [lastName, setLastName] = useState(userData.user.lastName);
+//   const [email, setEmail] = useState(userData.user.email);
+//   const [phone, setPhone] = useState(userData.user.phone);
+//   const [address, setAddress] = useState(userData.user.address);
+//   const [selectedImage, setSelectedImage] = useState({
+//     uri: userData.user.image ? `${userData.user.image}` : null,
+//   });
+
+//   const { loadingInBtn } = useSelector((state) => state.user);
+
+//   const _pickDocument = async () => {
+//     // let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+//     // if (permissions.granted === false) {
+//     //   alert("Permission is required");
+//     //   return;
+//     // }
+
+//     let result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//       allowsEditing: true,
+//       aspect: [4, 3],
+//       quality: 1,
+//       crop: true,
+//     });
+
+//     if (result.canceled === true) return;
+//     setSelectedImage(result.assets[0]);
+//   };
+
+//   const _pickDocumentAlt = async () => {
+//     let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+//     if (permissions.granted === false) {
+//       alert("Permission is required");
+//       return;
+//     }
+//     let result = await ImagePicker.launchImageLibraryAsync({
+//       mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//       allowsEditing: true,
+//       aspect: [4, 3],
+//       quality: 1,
+//       crop: true,
+//     });
+
+//     if (result.canceled === true) return;
+//     setSelectedImage(result);
+//   };
+
+//   const userType = useSelector((state) => state.user.user.userType);
+//   const heading = "Edit Profile";
+
+
+  
+//   const handleSubmit = async () => {
+//     updateUserProfile({
+//       firstName,
+//       lastName,
+//       email,
+//       contactInfo: phone,
+//       address,
+//       selectedImage,
+//       userId,
+//       dispatch,
+//       setLoadingInBtn, 
+//       fetchUser,
+//       navigation,
+//     });
+//   };
+
+//   return (
+//     <SafeArea>
+//       <Provider>
+//         <ScrollView>
+//           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+//             <View style={{ alignItems: "center", flexDirection: "row" }}>
+//               <IconButton
+//                 icon="arrow-left"
+//                 size={28}
+//                 onPress={() => navigation.goBack()}
+//               />
+//               <Text
+//                 style={{
+//                   fontSize: 20,
+//                   fontWeight: "bold",
+//                   color: "#000",
+//                   letterSpacing: 0.5,
+//                 }}
+//               >
+//                 {heading}
+//               </Text>
+//             </View>
+//           </RowBetween>
+//           <MainContainer
+//             style={{ paddingBottom: 56 }}
+//             keyboardDismissMode="on-drag"
+//             keyboardShouldPersistTaps="handled"
+//             contentInsetAdjustmentBehavior="always"
+//           >
+//             {selectedImage.uri ? (
+//               <View
+//                 style={{
+//                   width: 120,
+//                   height: 120,
+//                   borderRadius: 60,
+//                   backgroundColor: "red",
+//                   marginTop: "10%",
+//                   alignSelf: "center",
+//                 }}
+//               >
+//                 <Image
+//                   style={styles.logo}
+//                   source={{ uri: selectedImage.uri }}
+//                 />
+//                 <TouchableOpacity onPress={_pickDocument}>
+//                   <View
+//                     style={{
+//                       position: "absolute",
+//                       right: 0,
+//                       bottom: 0,
+
+//                       backgroundColor: "lightgrey",
+//                       display: "flex",
+//                       flex: 1,
+//                       alignItems: "center",
+//                       justifyContent: "center",
+//                       // width: 20,
+//                       // height: 20,
+//                       borderRadius: 60,
+//                       padding: 8,
+//                     }}
+//                   >
+//                     <Image
+//                       source={require("../../assets/images/matrimony/camera.png")}
+//                       style={{ width: 15, height: 15 }}
+//                     />
+//                   </View>
+//                 </TouchableOpacity>
+//               </View>
+//             ) : (
+//               <AddProfileBox
+//                 onPress={_pickDocument}
+//                 style={{ ...styles.logo, marginTop: "10%" }}
+//               >
+//                 <Icon name="plus" size={35} color={Theme.themeColor} />
+//               </AddProfileBox>
+//             )}
+//             <FormSection style={{ paddingTop: 0 }}>
+//               <LoginInputField
+//                 selectionColor={Theme.themeColor}
+//                 activeUnderlineColor={Theme.themeColor}
+//                 style={styles.input}
+//                 placeholder="First Name *"
+//                 underlineColor="transparent"
+//                 placeholderTextColor="#9B9B9B"
+//                 value={firstName}
+//                 onChangeText={setFirstName}
+//               />
+
+//               <LoginInputField
+//                 selectionColor={Theme.themeColor}
+//                 activeUnderlineColor={Theme.themeColor}
+//                 style={styles.input}
+//                 placeholder="Last Name *"
+//                 underlineColor="transparent"
+//                 placeholderTextColor="#9B9B9B"
+//                 value={lastName}
+//                 onChangeText={setLastName}
+//               />
+
+//               <LoginInputField
+//                 selectionColor={Theme.themeColor}
+//                 activeUnderlineColor={Theme.themeColor}
+//                 style={styles.input}
+//                 placeholder="Email Id *"
+//                 underlineColor="transparent"
+//                 placeholderTextColor="#9B9B9B"
+//                 keyboardType="email-address"
+//                 autoCapitalize="none"
+//                 value={email}
+//                 onChangeText={setEmail}
+//               />
+//               <LoginInputField
+//                 selectionColor={Theme.themeColor}
+//                 activeUnderlineColor={Theme.themeColor}
+//                 style={styles.input}
+//                 placeholder="Address *"
+//                 underlineColor="transparent"
+//                 placeholderTextColor="#9B9B9B"
+//                 autoCapitalize="none"
+//                 value={address}
+//                 onChangeText={setAddress}
+//               />
+//               <LoginInputField
+//                selectionColor={Theme.themeColor}
+
+//                  activeUnderlineColor={Theme.themeColor}
+
+//                 style={styles.input}
+//                 placeholder="Phone Number*"
+//                 underlineColor="transparent"
+//                 placeholderTextColor="#9B9B9B"
+//                 keyboardType="numeric"
+//                 maxLength={10}
+//                 value={phone}
+//                 onChangeText={setPhone}
+//               />
+
+//               <FormButton onPress={handleSubmit}>
+//                 <Text
+//                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+//                 >
+//                   {loadingInBtn === true ? (
+//                     <ActivityIndicator
+//                       style={{
+//                         display: "flex",
+//                         alignSelf: "center",
+//                         justifyContent: "center",
+//                         alignItems: "center",
+//                         flex: 1,
+//                       }}
+//                       // size={"large"}
+//                       color={"white"}
+//                     />
+//                   ) : (
+//                     "Update Profile"
+//                   )}
+//                 </Text>
+//               </FormButton>
+//             </FormSection>
+//           </MainContainer>
+//         </ScrollView>
+//       </Provider>
+//     </SafeArea>
+//   );
+// }
+

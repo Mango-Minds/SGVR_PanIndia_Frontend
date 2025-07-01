@@ -14,7 +14,6 @@ import { RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native-gesture-handler";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";

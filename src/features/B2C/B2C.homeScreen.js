@@ -26,6 +26,7 @@ import PageComingSoon from "./B2c.PageComingSoon";
 import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
 
 const products = [
   // Furniture
@@ -186,6 +187,8 @@ const products = [
 ];
 
 const BuySellScreen = ({ navigation }) => {
+  const { t } = useTranslation();
+
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -201,112 +204,23 @@ const BuySellScreen = ({ navigation }) => {
     setMenuVisible(!menuVisible);
   };
 
+  //   const categories = [
+  //   { name: "Furniture", icon: "chair" },
+  //   { name: "Electronics", icon: "kitchen" },
+  //   { name: "Vehicles", icon: "directions-car" },
+  // ];
   const categories = [
-    { name: "Furniture", icon: "chair" },
+  { name: "Furniture", icon: "chair", label: t("Furniture") },
+  { name: "Electronics", icon: "kitchen", label: t("Electronics") },
+  { name: "Vehicles", icon: "directions-car", label: t("Vehicles") },
+];
 
-    { name: "Electronics", icon: "kitchen" },
-    { name: "Vehicles", icon: "directions-car" },
-  ];
+ 
   const [searchTerm, setSearchTerm] = useState("");
   const handleSearch = (e) => {
     setSearchTerm(e);
   };
 
-  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
-  //   const queryParams = new URLSearchParams();
-  
-  //   selectedFiltersArray.forEach((filter) => {
-  //     if (filter["Filter name"] === "Category") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("category", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "Sub Category") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("subcategory", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "Condition") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("condition", option.toLowerCase())
-  //       );
-  //     }
-  //   });
-  
-  //   if (searchTerm.trim() !== "") {
-  //     queryParams.append("search", searchTerm);
-  //   }
-  
-  //   const queryString = queryParams.toString();
-  
-  //   try {
-  //     setLoadingAnimation(true);
-  //     console.log("Fetching products with query:", queryString);
-  
-  //     const response = await apiClient.get(`/listings?${queryString}`);
-  //     console.log("Products:", response.data);
-  
-  //     setItems(response.data.listings);
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
-  
-  
-  //co
-  // const fetchProducts = async (searchTerm, selectedFiltersArray) => {
-  //   try {
-  //     let token = await AsyncStorage.getItem("token");
-  
-  //     if (!token) {
-  //       console.error("Bearer token not found");
-  //       Alert.alert("Error", "Authentication token missing.");
-  //       return;
-  //     }
-  
-  //     const queryParams = new URLSearchParams();
-  
-  //     selectedFiltersArray.forEach((filter) => {
-  //       if (filter["Filter name"] === "Category") {
-  //         filter.Options.forEach((option) =>
-  //           queryParams.append("category", option.toLowerCase())
-  //         );
-  //       } else if (filter["Filter name"] === "Sub Category") {
-  //         filter.Options.forEach((option) =>
-  //           queryParams.append("subcategory", option.toLowerCase())
-  //         );
-  //       } else if (filter["Filter name"] === "Condition") {
-  //         filter.Options.forEach((option) =>
-  //           queryParams.append("condition", option.toLowerCase())
-  //         );
-  //       }
-  //     });
-  
-  //     if (searchTerm.trim() !== "") {
-  //       queryParams.append("search", searchTerm);
-  //     }
-  
-  //     const queryString = queryParams.toString();
-  
-  //     setLoadingAnimation(true);
-  //     console.log("Fetching products with query:", queryString);
-  
-  //     const response = await apiClient.get(`/listings?${queryString}`, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     console.log("Products:", response.data);
-  
-  //     setItems(response.data.listings);
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //     Alert.alert("Error", "Failed to fetch products.");
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
 
   const fetchProducts = async (searchTerm = "", selectedFiltersArray = []) => {
     setLoadingAnimation(true);
@@ -314,45 +228,57 @@ const BuySellScreen = ({ navigation }) => {
     setItems(data);
     setLoadingAnimation(false);
   };
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchProducts();
     }
   }, [isFocused]);
 
- 
   const filteredItems = selectedCategory
     ? items.filter((item) => item.category === selectedCategory)
     : items;
 
-  const handleCategoryPress = (category) => {
-    console.log(category);
+  // const handleCategoryPress = (category) => {
+  //   console.log(category);
 
-    if (category === "Furniture") {
-      navigation.navigate("FurnitureScreen", {
-        category: category,
-        filteredItems: filteredItems,
-        items: items,
-        fetchProducts: fetchProducts,
-      });
-    } else if (category === "Electronics") {
-      navigation.navigate("FurnitureScreen", {
-        category: category,
-        filteredItems: filteredItems,
-        fetchProducts: fetchProducts,
-        items: items,
-      });
-    } else if (category === "Vehicles") {
-      navigation.navigate("FurnitureScreen", {
-        category: category,
-        filteredItems: filteredItems,
-        fetchProducts: fetchProducts,
-        items: items,
-      });
-    }
-  };
+  //   if (category === "Furniture") {
+  //     navigation.navigate("FurnitureScreen", {
+  //       category: category,
+  //       filteredItems: filteredItems,
+  //       items: items,
+  //       fetchProducts: fetchProducts,
+  //     });
+  //   } else if (category === "Electronics") {
+  //     navigation.navigate("FurnitureScreen", {
+  //       category: category,
+  //       filteredItems: filteredItems,
+  //       fetchProducts: fetchProducts,
+  //       items: items,
+  //     });
+  //   } else if (category === "Vehicles") {
+  //     navigation.navigate("FurnitureScreen", {
+  //       category: category,
+  //       filteredItems: filteredItems,
+  //       fetchProducts: fetchProducts,
+  //       items: items,
+  //     });
+  //   }
+  // };
+const handleCategoryPress = (category) => {
+  if (["Furniture", "Electronics", "Vehicles"].includes(category)) {
+    navigation.navigate("FurnitureScreen", {
+      category,
+      filteredItems,
+      items,
+      fetchProducts,
+    });
+  } else {
+    console.warn("Invalid category selected:", category);
+  }
+};
 
+  
   const debouncedFetchProducts = useCallback(
     debounce((searchTerm, selectedFiltersArray) => {
       fetchProducts(searchTerm, selectedFiltersArray);
@@ -366,17 +292,13 @@ const BuySellScreen = ({ navigation }) => {
     debouncedFetchProducts(searchTerm, selectedFiltersArray);
   }, [searchTerm, selectedFiltersArray, isFocused]);
 
-
-
   return (
     <SafeAreaView
       style={{
         flex: 1,
       }}
     >
-      
       <View style={styles.container}>
-       
         <View
           style={{
             paddingHorizontal: 10,
@@ -386,7 +308,13 @@ const BuySellScreen = ({ navigation }) => {
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
                 icon="arrow-left"
-                onPress={() => navigation.goBack()}
+                onPress={() => {
+                  if (navigation.canGoBack()) {
+                    navigation.goBack();
+                  } else {
+                    navigation.navigate("MainHome");
+                  }
+                }}
               />
               <TopText
                 style={{
@@ -395,7 +323,7 @@ const BuySellScreen = ({ navigation }) => {
                   fontWeight: "bold",
                 }}
               >
-                B2C
+                {t("b2c")}
               </TopText>
             </View>
 
@@ -406,7 +334,6 @@ const BuySellScreen = ({ navigation }) => {
                 justifyContent: "center",
               }}
             >
-             
               <TouchableOpacity
                 onPress={() => navigation.navigate("MyB2CProfile")}
               >
@@ -420,18 +347,15 @@ const BuySellScreen = ({ navigation }) => {
           </RowBetween>
         </View>
 
-       
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="What are you looking for?"
+            placeholder={t("search_placeholder")}
             onChangeText={handleSearch}
-          
           />
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false}>
-         
           <TouchableOpacity
             style={styles.homesSection}
             onPress={() => {
@@ -444,13 +368,12 @@ const BuySellScreen = ({ navigation }) => {
             }}
           >
             <Icon name="home" size={24} color={Theme.themeColor} />
-            <Text style={styles.homesText}>My Listings</Text>
+            <Text style={styles.homesText}>{t("my_listings")}</Text>
             <Icon name="arrow-forward-ios" size={16} color="#000" />
           </TouchableOpacity>
 
           <Banner />
 
-      
           <ScrollView contentContainerStyle={styles.categoryGrid}>
             {categories.map((category) => (
               <TouchableOpacity
@@ -459,9 +382,10 @@ const BuySellScreen = ({ navigation }) => {
                 onPress={() => handleCategoryPress(category.name)}
               >
                 <Icon name={category.icon} size={36} color={Theme.themeColor} />
-                <Text style={styles.categoryText}>{category.name}</Text>
+                <Text style={styles.categoryText}>{category.label}</Text>
               </TouchableOpacity>
             ))}
+            
           </ScrollView>
 
           <RowBetween style={{ paddingTop: 5, marginLeft: 10 }}>
@@ -474,10 +398,10 @@ const BuySellScreen = ({ navigation }) => {
                   marginLeft: "15px",
                 }}
               >
-                All Listings
+                {t("all_listings")}
               </TopText>
             </View>
-           
+
             <TouchableOpacity
               style={{ marginRight: 5 }}
               onPress={() =>
@@ -655,19 +579,17 @@ const styles = StyleSheet.create({
   productCondition: { fontSize: 12, color: "gray" },
   noItemsText: { textAlign: "center", marginTop: 20 },
 
-
-
   page: {
     flex: 1, // Make the page take up the full screen
-    marginTop:20,
+    marginTop: 20,
   },
   coming: {
     flex: 1, // Make the coming view take up the remaining space
-    justifyContent: 'center', // Center vertically
-    alignItems: 'center', // Center horizontally
+    justifyContent: "center", // Center vertically
+    alignItems: "center", // Center horizontally
   },
   text: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
     fontSize: 20,
     color: Theme.themeColor,
   },

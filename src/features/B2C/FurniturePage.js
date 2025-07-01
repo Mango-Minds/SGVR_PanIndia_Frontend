@@ -28,7 +28,6 @@ import FilterMenu from "../../components/Jewellery/FilterMenu";
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
 import { debounce } from "lodash";
 import { decode } from "base-64";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
 import SortMenu from "./SortMenu";
@@ -165,149 +164,168 @@ const FurnitureScreen = ({ route, navigation }) => {
     }
   };
 
-  // const fetchProducts = async (
-  //   searchTerm,
-  //   selectedFiltersArray,
-  //   sortOption
-  // ) => {
-  //   const queryParams = new URLSearchParams();
-
-  //   // Include the category in the API request
-  //   if (category) {
-  //     queryParams.append("category", category);
-  //   }
-
-  //   selectedFiltersArray.forEach((filter) => {
-  //     if (filter["Filter name"] === "Condition") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("condition", option)
-  //       );
-  //     } else if (filter["Filter name"] === "Price") {
-  //       filter.Options.forEach((option) => {
-  //         if (option.includes("Below")) {
-  //           const maxPrice = option.split(" ")[1];
-  //           queryParams.append("maxPrice", maxPrice);
-  //         } else if (option.includes("Above")) {
-  //           const minPrice = option.split(" ")[1];
-  //           queryParams.append("minPrice", minPrice);
-  //         } else {
-  //           const [minPrice, maxPrice] = option.split("-");
-  //           queryParams.append("minPrice", minPrice);
-  //           queryParams.append("maxPrice", maxPrice);
-  //         }
-  //       });
-  //     }
-  //   });
-
-  //   if (searchTerm.trim() !== "") {
-  //     queryParams.append("search", searchTerm);
-  //   }
-  //   if (sortOption) {
-  //     queryParams.append("priceSort", sortOption);
-  //   }
-  //   const queryString = queryParams.toString();
-  //   const url = `${BASEAPIURL}/listings?${queryString}`;
-
-  //   console.log("Fetching products with URL:", url);
-
+  
+  
+  
+  // const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
   //   try {
+  //     let token = await AsyncStorage.getItem("token");
+  
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       Alert.alert("Error", "Authentication token is missing.");
+  //       return;
+  //     }
+  
+  //     const queryParams = new URLSearchParams();
+  
+  //     // Include category if available
+  //     if (category) {
+  //       queryParams.append("category", category.toLowerCase());
+  //     }
+  
+  //     selectedFiltersArray.forEach((filter) => {
+  //       if (filter["Filter name"] === "Condition") {
+  //         filter.Options.forEach((option) =>
+  //           queryParams.append("condition", option.toLowerCase())
+  //         );
+  //       } else if (filter["Filter name"] === "Price") {
+  //         filter.Options.forEach((option) => {
+  //           if (option.includes("Below")) {
+  //             const maxPrice = option.split(" ")[1];
+  //             queryParams.append("maxPrice", maxPrice);
+  //           } else if (option.includes("Above")) {
+  //             const minPrice = option.split(" ")[1];
+  //             queryParams.append("minPrice", minPrice);
+  //           } else {
+  //             const [minPrice, maxPrice] = option.split("-");
+  //             queryParams.append("minPrice", minPrice);
+  //             queryParams.append("maxPrice", maxPrice);
+  //           }
+  //         });
+  //       }
+  //     });
+  
+  //     if (searchTerm.trim() !== "") {
+  //       queryParams.append("search", searchTerm);
+  //     }
+  //     if (sortOption) {
+  //       queryParams.append("priceSort", sortOption);
+  //     }
+  
+  //     const queryString = queryParams.toString();
+  //     console.log("Fetching products with query:", queryString);
+  
   //     setLoadingAnimation(true);
-  //     const response = await fetch(url, {
-  //       method: "GET",
+  
+  //     // Use `apiClient` for better error handling
+  //     const response = await apiClient.get(`/listings?${queryString}`, {
   //       headers: {
-  //         "Content-Type": "application/json",
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log("Data:", data);
-
-  //       setProducts(data.listings);
-  //     } else {
-  //       throw new Error("Failed to fetch products");
-  //     }
+  
+  //     console.log("Products:", response.data);
+  //     setProducts(response.data.listings);
   //   } catch (error) {
   //     console.error("Error fetching products:", error);
+  //     Alert.alert("Error", "Failed to fetch products.");
   //   } finally {
   //     setLoadingAnimation(false);
   //   }
   // };
-
-  //co
+ 
   const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
-    try {
-      let token = await AsyncStorage.getItem("token");
-  
-      if (!token) {
-        console.error("Bearer token not found");
-        Alert.alert("Error", "Authentication token is missing.");
-        return;
+  try {
+    let token = await AsyncStorage.getItem("token");
+
+    if (!token) {
+      console.error("Bearer token not found");
+      Alert.alert("Error", "Authentication token is missing.");
+      return;
+    }
+
+    // Get target language from AsyncStorage (default to 'en' if not set)
+    let targetLang = await AsyncStorage.getItem("user-language") || "en";
+    if (!targetLang) targetLang = "en";
+
+    const queryParams = new URLSearchParams();
+
+    // Include category if available
+    if (category) {
+      queryParams.append("category", category.toLowerCase());
+    }
+
+    selectedFiltersArray.forEach((filter) => {
+      if (filter["Filter name"] === "Condition") {
+        filter.Options.forEach((option) =>
+          queryParams.append("condition", option.toLowerCase())
+        );
+      } else if (filter["Filter name"] === "Price") {
+        filter.Options.forEach((option) => {
+          if (option.includes("Below")) {
+            const maxPrice = option.split(" ")[1];
+            queryParams.append("maxPrice", maxPrice);
+          } else if (option.includes("Above")) {
+            const minPrice = option.split(" ")[1];
+            queryParams.append("minPrice", minPrice);
+          } else {
+            const [minPrice, maxPrice] = option.split("-");
+            queryParams.append("minPrice", minPrice);
+            queryParams.append("maxPrice", maxPrice);
+          }
+        });
       }
-  
-      const queryParams = new URLSearchParams();
-  
-      // Include category if available
-      if (category) {
-        queryParams.append("category", category.toLowerCase());
-      }
-  
-      selectedFiltersArray.forEach((filter) => {
-        if (filter["Filter name"] === "Condition") {
-          filter.Options.forEach((option) =>
-            queryParams.append("condition", option.toLowerCase())
-          );
-        } else if (filter["Filter name"] === "Price") {
-          filter.Options.forEach((option) => {
-            if (option.includes("Below")) {
-              const maxPrice = option.split(" ")[1];
-              queryParams.append("maxPrice", maxPrice);
-            } else if (option.includes("Above")) {
-              const minPrice = option.split(" ")[1];
-              queryParams.append("minPrice", minPrice);
-            } else {
-              const [minPrice, maxPrice] = option.split("-");
-              queryParams.append("minPrice", minPrice);
-              queryParams.append("maxPrice", maxPrice);
-            }
-          });
-        }
-      });
-  
-      if (searchTerm.trim() !== "") {
-        queryParams.append("search", searchTerm);
-      }
-      if (sortOption) {
-        queryParams.append("priceSort", sortOption);
-      }
-  
-      const queryString = queryParams.toString();
-      console.log("Fetching products with query:", queryString);
-  
-      setLoadingAnimation(true);
-  
-      // Use `apiClient` for better error handling
-      const response = await apiClient.get(`/listings?${queryString}`, {
+    });
+
+    if (searchTerm.trim() !== "") {
+      queryParams.append("search", searchTerm);
+    }
+    if (sortOption) {
+      queryParams.append("priceSort", sortOption);
+    }
+
+    const queryString = queryParams.toString();
+    console.log("Fetching products with query:", queryString);
+
+    setLoadingAnimation(true);
+
+    // Fetch products from your API
+    const response = await apiClient.get(`/listings?${queryString}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const products = response.data.listings;
+
+    // Call your translation API route to translate the product fields
+    const translateResponse = await apiClient.post(
+      "/translate",
+      {
+        data: products,
+        targetLang: targetLang,
+      },
+      {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-      });
-  
-      console.log("Products:", response.data);
-      setProducts(response.data.listings);
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      Alert.alert("Error", "Failed to fetch products.");
-    } finally {
-      setLoadingAnimation(false);
-    }
-  };
-  // const fetchProducts = async (searchTerm = "", selectedFiltersArray = []) => {
-  //     setLoadingAnimation(true);
-  //     const data = await apiFetchProducts(searchTerm, selectedFiltersArray);
-  //     setItems(data);
-  //     setLoadingAnimation(false);
-  //   };
+      }
+    );
+
+    const translatedProducts = translateResponse.data.translatedData;
+
+    console.log("Translated Products:", translatedProducts);
+
+    setProducts(translatedProducts);
+  } catch (error) {
+    console.error("Error fetching or translating products:", error);
+    Alert.alert("Error", "Failed to fetch or translate products.");
+  } finally {
+    setLoadingAnimation(false);
+  }
+};
+
     
   
   useEffect(() => {
@@ -435,10 +453,7 @@ const FurnitureScreen = ({ route, navigation }) => {
                       })
                     }
                   >
-                    {/* <Image
-                      style={styles.eachJewelleryCardImg}
-                      source={{ uri: `${BASEIMGURL}${product.images[0]}` }}
-                    /> */}
+                   
                     <View key={product._id}>
                       {product.images?.length > 0 ? (
                         <Image

@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 const SortMenu = ({
   menuVisible,
   toggleMenu,
@@ -16,7 +17,7 @@ const SortMenu = ({
   handleSortSelect,
 }) => {
   console.log("Sort Options: ", sortOptions);
-
+  const { t } = useTranslation();
   const handleApply = () => {
     const selectedFilters = [];
     sortOptions.forEach((filter) => {
@@ -35,6 +36,10 @@ const SortMenu = ({
 
     handleButtonPress("apply");
   };
+  const translatedSortOptions = sortOptions.map((option) => ({
+  label: t(`sort_${option.value}`), // translate dynamically
+  value: option.value,
+}));
 
   return (
     <View>
@@ -120,7 +125,7 @@ const SortMenu = ({
                   top: -100,
                 }}
               >
-                Sort listings by
+                {t("sort_listings_by")}
               </Text>
             </View>
           </View>
@@ -139,7 +144,7 @@ const SortMenu = ({
                 style={{ maxHeight: 170, width: 200 }}
                 showsVerticalScrollIndicator={false}
               >
-                {sortOptions.map((option, index) => (
+                {translatedSortOptions.map((option, index) => (
                   <TouchableOpacity
                     key={index}
                     style={{
@@ -215,7 +220,7 @@ const SortMenu = ({
             <Text
               style={{ color: selectedSortOption ? Theme.themeColor : "white" }}
             >
-              Clear Sort
+           {t("clear_sort")}
             </Text>
           </TouchableOpacity>
 

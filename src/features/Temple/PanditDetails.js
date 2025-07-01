@@ -32,7 +32,7 @@ import { TempleEvents } from "./TempleEvents";
 import { Card, IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import moment from "moment";
-import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
+import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
 import TempleShops from "./TempleShops";
@@ -46,12 +46,13 @@ import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
 import * as Location from "expo-location";
 import apiClient from "../../store/apiClient";
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 const TemplePanditDetails = ({ route, navigation }) => {
   const Navigation = useNavigation();
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
-
+  const { t } = useTranslation();
   const decodedPayload = JSON.parse(decode(tokenPayload));
   console.log(decodedPayload);
   const userId = decodedPayload.id;
@@ -61,8 +62,9 @@ const TemplePanditDetails = ({ route, navigation }) => {
   const isFocused = useIsFocused();
 
   console.log("temple details page usertoken: ", token);
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
   const { panditinfo } = route.params;
+  console.log("Pandit info: ", panditinfo);
   const [loadingDates, setLoadingDates] = useState(true);
   const [markedDates, setMarkedDates] = useState();
   const [year, setYear] = useState(new Date().getFullYear());
@@ -95,6 +97,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   console.log("PanditDetails: ", panditDetails);
   // const fetchPandit = async () => {
   //   try {
+  //      const token = await AsyncStorage.getItem("token");
   //     const response = await fetch(
   //       `${BASEAPIURL}/panditcrud/${panditDetails._id}`,
   //       {
@@ -109,7 +112,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //       throw new Error("Failed to fetch pandit");
   //     }
   //     const data = await response.json();
-  //     console.log("pandit response data", data);
+  //     console.log("pandit response data in pandit home", data);
   //     setPanditDetails(data);
   //   } catch (error) {
   //     console.error("Error fetching pandit:", error);
@@ -118,20 +121,37 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
   const fetchPandit = async () => {
     try {
-      const response = await apiClient.get(`/panditcrud/${panditDetails._id}`);
-  
-      if (response.status === 200) {
-        const data = response.data;
-        console.log("Pandit response data:", data);
-        setPanditDetails(data);
-      } else {
-        throw new Error("Failed to fetch pandit");
+      const token = await AsyncStorage.getItem("token");
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+
+      const response = await apiClient.get(`/panditcrud/${panditDetails._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      let panditData = response.data;
+
+      // Translate if not English
+      if (selectedLanguage !== "en") {
+        const translateResponse = await apiClient.post("/translate", {
+          data: [panditData],
+          targetLang: selectedLanguage,
+        });
+
+        panditData = translateResponse.data.translatedData[0]; // unwrap
       }
+
+      console.log("Translated pandit response data:", panditData);
+      setPanditDetails(panditData);
     } catch (error) {
-      console.error("Error fetching pandit:", error);
+      console.error("Error fetching or translating pandit:", error);
     }
   };
-  
+
+  console.log("PanditDetails: ", panditDetails);
+
   useEffect(() => {
     if (isFocused) {
       fetchPandit();
@@ -140,6 +160,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
   const associatedTemples = panditinfo.temples;
   console.log("AT: ", associatedTemples);
+  console.log("panditInfo: ", panditinfo);
   const [templeDetails, setTempleDetails] = useState(panditinfo.temples);
 
   console.log("TempleDetails: ", templeDetails);
@@ -159,28 +180,18 @@ const TemplePanditDetails = ({ route, navigation }) => {
       },
     });
   };
-  
+
   const [eventsByMonth, setEventsByMonth] = useState([]);
-
-
 
   // const fetchPanditEventDates = async (month, year) => {
   //   setLoadingDates(true); // Show loading indicator while fetching
   //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
+  //     const response = await apiClient.get(`/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`, {
 
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       const dates = data.dates;
+  //     });
+
+  //     if (response.status === 200) {
+  //       const dates = response.data.dates;
   //       let updatedMarkedDates = {};
 
   //       const today = new Date().toISOString().slice(0, 10);
@@ -227,21 +238,27 @@ const TemplePanditDetails = ({ route, navigation }) => {
   //     setLoadingDates(false);
   //   }
   // };
+
   const fetchPanditEventDates = async (month, year) => {
     setLoadingDates(true); // Show loading indicator while fetching
     try {
-      const response = await apiClient.get(`/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`, {
-        
-      });
-  
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+
+      const response = await apiClient.get(
+        `/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`
+      );
+
       if (response.status === 200) {
-        const dates = response.data.dates;
+        let dates = response.data.dates;
+
+        // Optional: translate event-related data if any (not needed here since only dates are returned)
+
         let updatedMarkedDates = {};
-  
+
         const today = new Date().toISOString().slice(0, 10);
         console.log("Today's Date:", today);
-  
-        // Ensure today is included in the marked dates with two dots
+
         if (!dates.includes(today)) {
           updatedMarkedDates[today] = {
             marked: true,
@@ -249,40 +266,34 @@ const TemplePanditDetails = ({ route, navigation }) => {
             dots: [
               { key: "dot1", color: Theme.themeColor },
               { key: "dot2", color: Theme.themeColor },
-            ], // Two dots for today
+            ],
           };
         }
-  
-        // Process event dates
+
         dates.forEach((date) => {
-          console.log("Processing date:", date); // Log each date being processed
-  
           if (date !== today) {
-            // Skip today since it's already added
             updatedMarkedDates[date] = {
               marked: true,
-              dotColor: Theme.themeColor, // Dot color for event dates
-              dots: [{ key: "dot1", color: Theme.themeColor }], // Ensure at least one dot
+              dotColor: Theme.themeColor,
+              dots: [{ key: "dot1", color: Theme.themeColor }],
             };
           }
         });
-  
-        console.log("Updated marked dates:", updatedMarkedDates);
-  
+
         setMarkedDates((prevDates) => ({
           ...prevDates,
           ...updatedMarkedDates,
         }));
       } else {
-        console.error("Failed to fetch pandit events");
+        console.error(t("errors.failedToFetchPanditEvents")); // Use translation key
       }
     } catch (error) {
-      console.error("Error fetching pandit event dates:", error);
+      console.error(t("errors.errorFetchingPanditEventDates"), error); // Use translation key
     } finally {
       setLoadingDates(false);
     }
   };
-  
+
   const handleMonthChange = (data) => {
     const month = parseInt(data.dateString.slice(5, 7));
     const year = parseInt(data.year);
@@ -320,9 +331,9 @@ const TemplePanditDetails = ({ route, navigation }) => {
           <Image
             source={{
               uri: `${
-                Array.isArray(panditDetails?.owner.image)
-                  ? panditDetails?.owner.image[0]
-                  : panditDetails?.owner.image
+                Array.isArray(panditDetails?.owner?.image)
+                  ? panditDetails?.owner?.image[0]
+                  : panditDetails?.owner?.image
               }`,
             }}
             resizeMode="cover"
@@ -335,10 +346,10 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
   const renderContentBackground = (user) => {
     // Ensure panditDetails.image is an array
-    const images = Array.isArray(panditDetails?.owner.image)
-      ? panditDetails?.owner.image
-      : panditDetails?.owner.image
-      ? [panditDetails?.owner.image]
+    const images = Array.isArray(panditDetails?.owner?.image)
+      ? panditDetails?.owner?.image
+      : panditDetails?.owner?.image
+      ? [panditDetails?.owner?.image]
       : [];
 
     return (
@@ -355,7 +366,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
         <Row style={{ paddingTop: 16, paddingBottom: 16 }}>
           <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
-            {images.length > 0 ? (
+            {images?.length > 0 ? (
               images.map((item, index) => (
                 <TouchableOpacity
                   onPress={() => {
@@ -413,7 +424,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
               textTransform: "capitalize",
             }}
           >
-            {panditDetails.owner.city}, {panditDetails.owner.state}
+            {panditDetails?.owner?.address || ""}
           </Text>
         </View>
         <View>
@@ -441,7 +452,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                   width: "90%",
                 }}
               >
-                {panditDetails.owner.email}
+                {panditDetails?.owner?.email || ""}
               </Text>
             </TouchableOpacity>
           </View>
@@ -457,7 +468,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                 justifyContent: "center",
               }}
             >
-              <Icon name="phone" size={20} color={Theme.themeColor}/>
+              <Icon name="phone" size={20} color={Theme.themeColor} />
             </View>
 
             <TouchableOpacity>
@@ -470,7 +481,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                   width: "90%",
                 }}
               >
-                +91-{panditDetails.owner.phone}
+                +91-{panditDetails.owner?.phone || ""}
               </Text>
             </TouchableOpacity>
           </View>
@@ -697,7 +708,11 @@ const TemplePanditDetails = ({ route, navigation }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+            style={{
+              color: Theme.themeColor,
+              fontSize: 20,
+              fontWeight: "bold",
+            }}
           >
             Pandit Details
           </TopText>

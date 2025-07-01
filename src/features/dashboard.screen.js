@@ -13,17 +13,14 @@ import {
 } from "react-native";
 import { Badge, IconButton } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
-import { NewsComponent } from "../components/dashboard/NewsComponent";
+
 import HallCard from "../components/dashboard/HallCard";
-import matrimonyImg from "../assets/images/homepage/matrimony.png";
-import samajImg from "../assets/images/homepage/samaj.png";
-import socialImg from "../assets/images/homepage/social.png";
-import storeImg from "../assets/images/homepage/store.png";
-import b2bImg from "../assets/images/homepage/b2b.png";
-import jobImg from "../assets/images/homepage/job.png";
+
 import Ionicons from "react-native-vector-icons/Ionicons";
-import Temple from "../assets/images/homepage/temple.png";
+
 import Theme from "../styles/theme";
+import { useTranslation } from 'react-i18next';
+
 const windowWidth = Dimensions.get("window").width;
 import {
   BannerContainer,
@@ -72,6 +69,8 @@ import { log } from "react-native-reanimated";
 import { getTempleList } from "../services/Temple.Services";
 import { CommonActions } from "@react-navigation/native";
 import styled from "styled-components/native";
+import { setInitialUser } from "../store/user";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const exploreData = [
   {
     title: "Social",
@@ -91,7 +90,7 @@ const exploreData = [
     status: true,
     icon: "business", // Icon name from Ionicons
   },
-  
+
   {
     title: "Temple",
     path: "Temple",
@@ -99,18 +98,55 @@ const exploreData = [
     icon: "temple-hindu", // Icon name from Ionicons
   },
 ];
+// const exploreData = [
+//   {
+//     title: "social", 
+//     path: "SocialMedia",
+//     status: false,
+//     icon: "people",
+//   },
+//   {
+//     title: "matrimony",
+//     path: "Matrimony",
+//     status: false,
+//     icon: "heart",
+//   },
+//   {
+//     title: "b2c",
+//     path: "B2C",
+//     status: true,
+//     icon: "business",
+//   },
+//   {
+//     title: "temple",
+//     path: "Temple",
+//     status: true,
+//     icon: "temple-hindu",
+//   },
+// ];
+
+
 
 const renderHallItem = (item, index) => {
   return <HallCard key={index} {...item.item} />;
 };
 export default function DashboardScreen({ navigation }) {
   const { user } = useSelector((state) => state.user);
+  const { t } = useTranslation();
+
+  const userType = useSelector((state) => state.user.user.userType[0]);
+  const loggedInUser = useSelector((state) => state.user);
+  console.log("loggedInUser in dashboard: ", loggedInUser);
+  console.log("Usertype: ", userType);
   const { token } = useSelector((state) => state.user);
+  const { loading, notification, temple } = useSelector((state) => state.user);
   const tokenPayload = token.split(".")[1];
+
 
   const decodedPayload = JSON.parse(decode(tokenPayload));
   console.log(decodedPayload);
   const userId = decodedPayload.id;
+  console.log("userId in dashboard: ", userId);
 
   const [notifications, setNotifications] = useState([]);
   const [belliconbadge, setBelliconbadge] = useState(1);
@@ -228,8 +264,6 @@ export default function DashboardScreen({ navigation }) {
     LastNotification();
   }, [lastNotificationResponse]);
 
-  const { loading, notification, temple } = useSelector((state) => state.user);
-
   const dispatch = useDispatch();
 
   const [adsData, setAdsData] = useState([]);
@@ -255,6 +289,93 @@ export default function DashboardScreen({ navigation }) {
     // getDashboardData();
     queryclient.invalidateQueries("homeScreenNotification");
     setRefresh(false);
+  };
+
+
+  const refreshUserData = async () => {
+    try {
+      const response = await axios.get(
+        `${BASEAPIURL}/user/${decodedPayload.id}`
+      );
+      console.log("decodedPayload.id: ", decodedPayload.id);
+      if (response.status === 200) {
+        const user = response.data.user;
+        console.log("Fetched user from API:", user);
+
+        dispatch(
+          setInitialUser({
+            user,
+            token: await AsyncStorage.getItem("token"),
+            refreshToken: await AsyncStorage.getItem("refresh_token"),
+          })
+        );
+        return user;
+      }
+    } catch (err) {
+      console.error("Error fetching user data:", err);
+    }
+    return null;
+  };
+
+ 
+
+
+   const logAsyncStorageData = async () => {
+    try {
+     
+
+      const allKeys = await AsyncStorage.getAllKeys();
+      console.log("All Keys in AsyncStorage: ", allKeys);
+      for (const key of allKeys) {
+        const value = await AsyncStorage.getItem(key);
+        console.log(`Key: ${key}, Value: ${value}`);
+      }
+    } catch (error) {
+      console.error("Error reading AsyncStorage: ", error);
+    }
+  };
+  logAsyncStorageData();
+  const navigateToScreen = (screenName) => {
+    const state = navigation.getState();
+    const currentRoute = state.routes[state.index]?.name;
+    const isSameScreen = currentRoute === screenName;
+
+    if (isSameScreen) {
+      navigation.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: screenName }],
+        })
+      );
+    } else {
+      navigation.navigate(screenName);
+    }
+  };
+
+  const handleModulePress = async (moduleKey, modulePath) => {
+    try {
+      const updatedUser = await refreshUserData();
+      if (!updatedUser) return;
+
+      const onboardFlags = {
+        Matrimony: updatedUser?.isMatrimonyOnboarded,
+        Jewellery: updatedUser?.isJewelleryOnboarded,
+        Temple: updatedUser?.isTempleOnboarded,
+      };
+
+      const isAnyModuleOnboarded = Object.values(onboardFlags).some(Boolean);
+
+      if (isAnyModuleOnboarded) {
+        navigateToScreen(modulePath);
+      } else {
+        navigation.navigate("OnboardModuleForm", {
+          userId,
+          redirectTo: moduleKey,
+        });
+      }
+    } catch (err) {
+      console.error("Onboarding check failed", err);
+    }
   };
 
   const renderItem = ({ item, index }) => {
@@ -299,7 +420,7 @@ export default function DashboardScreen({ navigation }) {
           showsVerticalScrollIndicator={false}
         >
           <TopHeader style={{ marginBottom: 24 }}>
-            <HeaderText>Me Maratha</HeaderText>
+            <HeaderText> {t('me_maratha')}</HeaderText>
             <View
               style={{
                 flexDirection: "row",
@@ -375,70 +496,56 @@ export default function DashboardScreen({ navigation }) {
             )}
 
           <DashboardSection>
-            <SectionTitle>Explore</SectionTitle>
+            <SectionTitle>{t('explore')}</SectionTitle>
 
-            {/* <ExploreContainer>
-              {exploreData.map((item, index) => {
-                return (
-                  index < 2 && (
-                    <ExploreIconContainer
-                      key={index}
-                      onPress={() => {
-                        navigation.navigate(item.path);
-                      }}
-                      // disabled={item.status}
-                    >
-                      <IconWrapper>
-                        <Ionicons name={item.icon} size={40} color="#d4af37" />
-                      </IconWrapper>
-                      <ExploreIconName>{item.title}</ExploreIconName>
-                    </ExploreIconContainer>
-                    
-                  )
-                );
-              })}
-             
-            </ExploreContainer> */}
-
-            {/* Using common actions */}
+            
             <ExploreContainer>
               {exploreData.map((item, index) => {
-                return (
-                  index < 2 && (
+                if (index < 2) {
+                  return (
                     <ExploreIconContainer
                       key={index}
                       onPress={() => {
-                        if (item.path === "SocialMedia") {
-                          
-                          navigation.dispatch(
-                            CommonActions.reset({
-                              index: 0, // The starting screen index
-                              routes: [{ name: "SocialMedia" }],
-                            })
-                          );
+                        if (
+                          item.path === "SocialMedia" ||
+                          item.path === "B2C"
+                        ) {
+                          navigateToScreen(item.path);
                         } else {
-                          navigation.navigate(item.path);
+                          handleModulePress(item.title, item.path);
                         }
                       }}
                       disabled={item.status}
                     >
                       <IconWrapper>
-                        <Ionicons name={item.icon} size={40} color={Theme.themeColor} />
+                        <Ionicons
+                          name={item.icon}
+                          size={40}
+                          color={Theme.themeColor}
+                        />
                       </IconWrapper>
-                      <ExploreIconName>{item.title}</ExploreIconName>
+                      <ExploreIconName>{t(item.title)}</ExploreIconName>
                     </ExploreIconContainer>
-                  )
-                );
+                  );
+                }
+                return null;
               })}
             </ExploreContainer>
 
+            {/* Second row (index >= 2) */}
             <ExploreContainer>
               {exploreData.map((item, index) => {
-                return (
-                  index >= 2 && (
+                if (index >= 2) {
+                  return (
                     <ExploreIconContainer
                       key={index}
-                      onPress={() => navigation.navigate(item.path)}
+                      onPress={() => {
+                        if (item.path === "B2C") {
+                          navigateToScreen(item.path);
+                        } else {
+                          handleModulePress(item.title, item.path);
+                        }
+                      }}
                     >
                       <IconWrapper>
                         <MaterialIcons
@@ -447,10 +554,12 @@ export default function DashboardScreen({ navigation }) {
                           color={Theme.themeColor}
                         />
                       </IconWrapper>
-                      <ExploreIconName>{item.title}</ExploreIconName>
+                     <ExploreIconName>{t(item.title, { defaultValue: item.title })}</ExploreIconName>
+
                     </ExploreIconContainer>
-                  )
-                );
+                  );
+                }
+                return null;
               })}
             </ExploreContainer>
           </DashboardSection>
@@ -545,7 +654,7 @@ export default function DashboardScreen({ navigation }) {
                       textAlign: "center",
                     }}
                   >
-                    Welcome To
+                  {t('welcome_to')}
                   </Text>
                   <Text
                     style={{
@@ -556,7 +665,7 @@ export default function DashboardScreen({ navigation }) {
                       letterSpacing: 1,
                     }}
                   >
-                    Me Maratha
+                   {t('me_maratha')}
                   </Text>
                 </View>
               </View>

@@ -33,7 +33,6 @@ import * as ImagePicker from "expo-image-picker";
 import { useMutation, useQueryClient } from "react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
-import { BASEIMGURL } from "../../infrastructure/constants";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import apiClient from "../../store/apiClient";
 const styles = StyleSheet.create({
