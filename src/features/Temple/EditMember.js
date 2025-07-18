@@ -77,6 +77,8 @@ export default function EditMember({ route, navigation }) {
 
   const { member, templeinfo } = route.params;
   console.log("Mem: ", member);
+  console.log("templeinfo: ", templeinfo);
+  
   const token = useSelector((state) => state.user.token);
 
   const [selectedImage, setSelectedImage] = useState({

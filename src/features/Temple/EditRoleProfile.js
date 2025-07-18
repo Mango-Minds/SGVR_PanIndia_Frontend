@@ -73,7 +73,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   const { loadingInBtn } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
 
   const tokenPayload = token.split(".")[1];
   const user = useSelector((state) => state.user.user);
@@ -215,7 +215,9 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   // };
   const handleSubmit = async () => {
     try {
-      if (userType !== "templeShopOwner") return; // Ensure function is valid for shop owners
+      console.log("shopId: ", shopId);
+      
+      if (userType !== "templeShopOwner") return; 
   
       const apiUrl = `/templeShops/${shopId}`;
   

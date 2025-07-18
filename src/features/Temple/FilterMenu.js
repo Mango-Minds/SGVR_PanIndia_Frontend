@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { View, Text, TouchableOpacity, ScrollView } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
 const FilterMenu = ({
   menuVisible,
   toggleMenu,
@@ -15,7 +16,7 @@ const FilterMenu = ({
   setSelectedFiltersArray,
 }) => {
   const [selectedFilters, setSelectedFilters] = useState([]);
-
+const { t } = useTranslation();
   const handleApply = () => {
     const selectedFilters = [];
 
@@ -76,14 +77,12 @@ const FilterMenu = ({
             alignItems: "center",
           }}
         >
-         
           <View
             style={{
               flexDirection: "row",
               justifyContent: "space-between",
             }}
           >
-            
             <TouchableOpacity
               style={{
                 position: "absolute",
@@ -114,7 +113,7 @@ const FilterMenu = ({
                   top: -130,
                 }}
               >
-                Filters
+             {t("filters")}
               </Text>
             </View>
           </View>
@@ -140,7 +139,6 @@ const FilterMenu = ({
               top: -35,
             }}
           >
-           
             <View style={{ flex: 1 }}>
               <ScrollView
                 style={{ maxHeight: 170, width: 200 }}
@@ -158,12 +156,17 @@ const FilterMenu = ({
                   >
                     <Text
                       style={{
-                        color: activeFilter === filter.name ? Theme.themeColor : "grey",
+                        color:
+                          activeFilter === filter.name
+                            ? Theme.themeColor
+                            : "grey",
                         fontSize: 20,
                         marginRight: 20,
                       }}
                     >
-                      {filter.name}
+                      {/* {filter.name} */}
+                      
+                      {t(filter.name.toLowerCase())}
                     </Text>
 
                     {selectedOptions.some((option) =>
@@ -234,7 +237,9 @@ const FilterMenu = ({
                                   : "grey",
                               }}
                             >
-                              {option}
+                              {/* {option} */}
+                               {/* {t(`filters.${option}`)}  */}
+                               {t(option.toLowerCase().replace(/\s+/g, "_"))}
                             </Text>
                           </TouchableOpacity>
                         ))
@@ -246,12 +251,6 @@ const FilterMenu = ({
         </View>
       )}
 
-
-
-
-
-
-      
       {menuVisible && (
         <View
           style={{
@@ -281,7 +280,7 @@ const FilterMenu = ({
             }}
           >
             <Text style={{ color: activeFilter ? "white" : Theme.themeColor }}>
-              Clear Filters
+              {t("clear_filters")}
             </Text>
           </TouchableOpacity>
 
@@ -300,11 +299,10 @@ const FilterMenu = ({
             onPress={handleApply}
           >
             <Text style={{ color: activeFilter ? Theme.themeColor : "white" }}>
-              Apply
+              {t("apply")}
             </Text>
           </TouchableOpacity>
         </View>
-       
       )}
 
       {menuVisible && (

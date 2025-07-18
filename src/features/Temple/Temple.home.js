@@ -16,7 +16,6 @@ import { TopText } from "../../styles/social.styles";
 import Theme from "../../styles/theme";
 import { Card, IconButton } from "react-native-paper";
 import { TouchableOpacity, ScrollView } from "react-native";
-// import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import Profile from "../../assets/images/B2b/profile.png";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -35,7 +34,10 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import FilterMenu from "./FilterMenu";
 import UserImg from "../../assets/images/general/user.png";
+import { useTranslation } from "react-i18next";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const TempleHome = ({ navigation }) => {
+  const { t } = useTranslation();
   const { user } = useSelector((state) => state.user);
   console.log("user in temple: ", user);
   const token = useSelector((state) => state.user.token);
@@ -95,42 +97,6 @@ const TempleHome = ({ navigation }) => {
     setIsSearchVisible(!isSearchVisible);
   };
 
-  // const temple = {
-  //   templelist: [
-  //     {
-  //       _id: "1",
-  //       name: "Sun Temple",
-  //       city: "Konark",
-  //       country: "India",
-  //       status: "accepted",
-  //       images: ["https://media.istockphoto.com/id/1323524578/photo/crowd-of-tourist-at-konark-sun-temple-indian-tourism-place.jpg?s=612x612&w=0&k=20&c=2pYkIfwco__pd0l_OXRoOGshkSt3QqOg74v1Cz4Xgfo="],
-  //       members: ["Keshav Tayal"],
-  //       description: "A 13th-century temple in Odisha, dedicated to the Sun God.",
-  //     },
-  //     {
-  //       _id: "2",
-  //       name: "Golden Temple",
-  //       city: "Amritsar",
-  //       country: "India",
-  //       status: "accepted",
-  //       images: ["https://media.istockphoto.com/id/478673422/photo/golden-temple-amritsar.jpg?s=612x612&w=0&k=20&c=LvdukkiiqHZmQxOTjf9UPGHcWldxaFLIZc8k2FEFxfM="],
-  //       members: ["Keshav Tayal"],
-
-  //       description: "A famous Sikh Gurdwara located in Punjab, India.",
-  //     },
-  //     {
-  //       _id: "3",
-  //       name: "Meenakshi Temple",
-  //       city: "Madurai",
-  //       country: "India",
-  //       status: "accepted",
-  //       images: ["https://imgs.search.brave.com/juwEikA-Ohd6LMykb7fO5q6nRq0VIpYQd_tAHIRtIuE/rs:fit:500:0:0/g:ce/aHR0cHM6Ly9tZWRp/YS5nZXR0eWltYWdl/cy5jb20vaWQvOTU4/NDYxMzkvcGhvdG8v/bWVlbmFrc2hpLXN1/bmRhcmVzd2FyYXIt/dGVtcGxlLmpwZz9z/PTYxMng2MTImdz0w/Jms9MjAmYz1pb25s/bEJodVJPZ29heUsx/QkZlV1o0ZElkRC1B/cVB5cHRQclRGTUhU/b0E0PQ"],
-  //       members: ["Keshav Tayal"],
-
-  //       description: "A historic Hindu temple located on the southern bank of the Vaigai River.",
-  //     },
-  //   ],
-  // };
   const [activeFilter, setActiveFilter] = useState("State");
   const [selectedOptions, setSelectedOptions] = useState([]);
   const [activeButton, setActiveButton] = useState(null);
@@ -189,80 +155,6 @@ const TempleHome = ({ navigation }) => {
 
   const [temples, setTemples] = useState([]);
 
-  // const fetchTemples = async (searchTerm, selectedFiltersArray) => {
-  //   const queryParams = new URLSearchParams();
-
-  //   selectedFiltersArray.forEach((filter) => {
-  //     if (filter["Filter name"] === "Temple Name") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("templeName", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "State") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("state", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "City") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("city", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "Address") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("address", option.toLowerCase())
-  //       );
-  //     } else if (filter["Filter name"] === "Gods") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("gods", option.toLowerCase())
-  //       );
-  //     }
-  //   });
-
-  //   if (searchTerm.trim() !== "") {
-  //     queryParams.append("search", searchTerm);
-  //   }
-  //   // if (user.userType === "pandit") {
-  //   //   queryParams.append("panditId", user.roleData._id);
-  //   // }
-  //   // if (user.userType === "templeAdmin") {
-  //   //   queryParams.append("templeAdminId", user.roleData._id);
-  //   // }
-  //   // if (user.userType === "templeShop") {
-  //   //   queryParams.append("templeShopId", user.roleData._id);
-  //   // }
-  //   const queryString = queryParams.toString();
-  //   const url = `${BASEAPIURL}/temple?${queryString}`;
-
-  //   console.log("Fetching temples with URL:", url);
-  //   try {
-  //     setLoadingAnimation(true);
-
-  //     const response = await fetch(url, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log("Temples data:", data);
-
-  //       setTemples(data);
-  //     } else {
-  //       throw new Error("Failed to fetch temples");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching temples:", error);
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     fetchTemples(searchTerm, selectedFiltersArray);
-  //   }
-  // }, [isFocused]);
-
   const fetchTemples = async (searchTerm, selectedFiltersArray) => {
     const queryParams = new URLSearchParams();
 
@@ -297,35 +189,90 @@ const TempleHome = ({ navigation }) => {
     const queryString = queryParams.toString();
 
     try {
-      setLoadingAnimation(true);
-      console.log("Fetching temples with query:", queryString);
+      const token = await AsyncStorage.getItem("token");
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
 
       const response = await apiClient.get(`/temple?${queryString}`);
       console.log("Temples data:", response.data);
+      if (response.status === 200) {
+        const templesData = response.data;
+        console.log("templesData: ", templesData);
 
-      setTemples(response.data);
-    } catch (error) {
+        // If language is not English, translate the posts
+        if (selectedLanguage !== "en" && Array.isArray(templesData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: templesData, // Only pass the posts
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setTemples(translationResponse.data.translatedData);
+          } else {
+            setTemples(templesData);
+          }
+        } else {
+          setTemples(templesData);
+        }
+      } else {
+        throw new Error("Network response was not ok");
+      }
+    } 
+    
+    catch (error) {
       console.error("Error fetching temples:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
+  console.log("templeinfo in home: ", temples);
+
   const [pandits, setPandits] = useState([]);
+
   const fetchPandits = async () => {
     try {
       setLoadingAnimation(true);
       console.log("Fetching pandits...");
-
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
       const response = await apiClient.get("/panditcrud/");
-      console.log("Pandits data:", response.data);
+      console.log("Pandits data:", response.data.data);
 
-      setPandits(response.data);
+      console.log("Resp status: ", response.status);
+      if (response.status === 200) {
+        const panditsData = response.data.data;
+        console.log("panditsData: ", panditsData);
+
+        // If language is not English, translate the posts
+        if (selectedLanguage !== "en" && Array.isArray(panditsData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: panditsData, // Only pass the posts
+            targetLang: selectedLanguage,
+          });
+          console.log("Translation API response:", translationResponse.data);
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setPandits(translationResponse.data.translatedData);
+          } else {
+            setPandits(panditsData);
+          }
+        } else {
+          setPandits(panditsData);
+        }
+      } 
+      
+      else {
+        throw new Error("Network response was not ok");
+      }
     } catch (error) {
       console.error("Error fetching pandits:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
+  
+  
+  
   useEffect(() => {
     fetchPandits();
   }, []);
@@ -363,7 +310,7 @@ const TempleHome = ({ navigation }) => {
                 fontWeight: "bold",
               }}
             >
-              Temple
+              {t("temple")}
             </TopText>
           </View>
 
@@ -417,7 +364,10 @@ const TempleHome = ({ navigation }) => {
             marginBottom: 10,
           }}
         >
-          <SearchField placeholder="Search" onChangeText={handleSearch} />
+          <SearchField
+            placeholder={t("search_placeholder")}
+            onChangeText={handleSearch}
+          />
         </View>
       )}
 
@@ -434,7 +384,7 @@ const TempleHome = ({ navigation }) => {
                 selectedTab === tab ? styles.selectedTabText : {},
               ]}
             >
-              {tab}
+              {t(tab)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -453,446 +403,140 @@ const TempleHome = ({ navigation }) => {
             />
           ) : (
             <View style={{ flex: 1 }}>
-              {
-                // userType !== "pandit" ? (
-                //    && userType !== "templeAdmin" && userType !== "templeShopOwner"
-                temples.length > 0 ? (
-                  <View style={{ flex: 1 }}>
-                    <FlatList
-                      style={{
-                        marginTop: 16,
-                        marginLeft: 16,
-                        marginRight: 16,
-                        flex: 1,
-                      }}
-                      showsVerticalScrollIndicator={false}
-                      keyExtractor={(item) => item._id}
-                      data={temples}
-                      refreshControl={
-                        <RefreshControl
-                          refreshing={refreshing}
-                          onRefresh={async () => {
-                            setRefreshing(true); // Start the refreshing animation
-                            try {
-                              await fetchTemples(
-                                searchTerm,
-                                selectedFiltersArray
-                              ); // Wait for the fetch operation to complete
-                            } catch (error) {
-                              console.error("Failed to refresh data:", error);
-                            } finally {
-                              setRefreshing(false); // Stop the refreshing animation
-                            }
-                          }}
-                        />
-                      }
-                      renderItem={({ item, index }) => {
-                        // if (item.status === "accepted") {
-                        return (
-                          <TouchableOpacity
-                            activeOpacity={0.8}
-                            onPress={() =>
-                              navigation.navigate("TempleDetails", {
-                                templeinfo: item,
-                              })
-                            }
-                            key={index}
-                          >
-                            <TempleHomeCard>
-                              <ImageBackground
-                                source={
-                                  item.images.length > 0
-                                    ? {
-                                        uri: "https://marathaapp.s3.ap-south-1.amazonaws.com/temple/images/1741776370103-image_0.jpg",
-                                      }
-                                    : ""
-                                }
-                                resizeMode="cover"
-                                imageStyle={{
-                                  borderRadius: 16,
-                                }}
+              {temples.length > 0 ? (
+                <View style={{ flex: 1 }}>
+                  <FlatList
+                    style={{
+                      marginTop: 16,
+                      marginLeft: 16,
+                      marginRight: 16,
+                      flex: 1,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                    keyExtractor={(item) => item._id}
+                    data={temples}
+                    refreshControl={
+                      <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={async () => {
+                          setRefreshing(true); // Start the refreshing animation
+                          try {
+                            await fetchTemples(
+                              searchTerm,
+                              selectedFiltersArray
+                            ); // Wait for the fetch operation to complete
+                          } catch (error) {
+                            console.error("Failed to refresh data:", error);
+                          } finally {
+                            setRefreshing(false); // Stop the refreshing animation
+                          }
+                        }}
+                      />
+                    }
+                    renderItem={({ item, index }) => {
+                      // if (item.status === "accepted") {
+                      return (
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={() =>
+                            navigation.navigate("TempleDetails", {
+                              templeinfo: item,
+                            })
+                          }
+                          key={index}
+                        >
+                          <TempleHomeCard>
+                            <ImageBackground
+                              source={
+                                item.images.length > 0
+                                  ? {
+                                      uri: `${item.images[0]}`,
+                                    }
+                                  : ""
+                              }
+                              resizeMode="cover"
+                              imageStyle={{
+                                borderRadius: 16,
+                              }}
+                              style={{
+                                height: 400,
+                              }}
+                            >
+                              <LinearGradient
+                                colors={["#00000000", "#545454"]}
                                 style={{
-                                  height: 400,
-                                }}
-                              >
-                                <LinearGradient
-                                  colors={["#00000000", "#545454"]}
-                                  style={{
-                                    height: "100%",
-                                    width: "100%",
-                                    borderBottomLeftRadius: 16,
-                                    borderBottomRightRadius: 16,
-                                  }}
-                                ></LinearGradient>
-                              </ImageBackground>
-
-                              <Card.Content
-                                style={{
-                                  position: "absolute",
-                                  bottom: 10,
-                                  borderRadius: 16,
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                  justifyContent: "space-between",
+                                  height: "100%",
                                   width: "100%",
+                                  borderBottomLeftRadius: 16,
+                                  borderBottomRightRadius: 16,
                                 }}
-                              >
-                                <View>
-                                  <MatrimonyHomeCardTitle>
-                                    {item.templeName}
-                                  </MatrimonyHomeCardTitle>
+                              ></LinearGradient>
+                            </ImageBackground>
 
-                                  <View
+                            <Card.Content
+                              style={{
+                                position: "absolute",
+                                bottom: 10,
+                                borderRadius: 16,
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                width: "100%",
+                              }}
+                            >
+                              <View>
+                                <MatrimonyHomeCardTitle>
+                                  {item.templeName}
+                                </MatrimonyHomeCardTitle>
+
+                                <View
+                                  style={{
+                                    display: "flex",
+                                    flexDirection: "row",
+                                  }}
+                                >
+                                  <Ionicons
+                                    name="location"
+                                    color={Theme.themeColor}
+                                    size={20}
+                                  />
+                                  <Text
                                     style={{
-                                      display: "flex",
-                                      flexDirection: "row",
+                                      fontSize: 16,
+                                      color: "white",
+                                      marginLeft: 10,
+                                      textTransform: "uppercase",
                                     }}
                                   >
-                                    <Ionicons
-                                      name="location"
-                                      color={Theme.themeColor}
-                                      size={20}
-                                    />
-                                    <Text
-                                      style={{
-                                        fontSize: 16,
-                                        color: "white",
-                                        marginLeft: 10,
-                                        textTransform: "uppercase",
-                                      }}
-                                    >
-                                      {item.city}
-                                    </Text>
-                                  </View>
+                                    {item.city}
+                                  </Text>
                                 </View>
-                              </Card.Content>
-                            </TempleHomeCard>
-                          </TouchableOpacity>
-                        );
-                        // }
+                              </View>
+                            </Card.Content>
+                          </TempleHomeCard>
+                        </TouchableOpacity>
+                      );
+                      // }
+                    }}
+                  />
+                </View>
+              ) : (
+                <ScrollView>
+                  <View>
+                    <Text
+                      style={{
+                        fontSize: 18,
+                        fontWeight: "bold",
+                        textAlign: "center",
+                        width: "100%",
+                        marginTop: 50,
                       }}
-                    />
+                    >
+                     {t("NoTempleFound")}
+                    </Text>
                   </View>
-                ) : (
-                  <ScrollView>
-                    <View>
-                      <Text
-                        style={{
-                          fontSize: 18,
-                          fontWeight: "bold",
-                          textAlign: "center",
-                          width: "100%",
-                          marginTop: 50,
-                        }}
-                      >
-                        No Temple Found
-                      </Text>
-                    </View>
-                  </ScrollView>
-                )
-                // )
-                // : (
-                //   <ScrollView style={{ flex: 1 }}>
-                //     {temples.connectedTemples.length > 0 ? (
-                //       <View style={{ flex: 1 }}>
-                //         <Text
-                //           style={{
-                //             fontSize: 18,
-                //             fontWeight: "bold",
-                //             textAlign: "left",
-                //             width: "100%",
-                //             marginTop: 30,
-                //             marginLeft: 20,
-                //           }}
-                //         >
-                //           Your Temples
-                //         </Text>
-                //         <FlatList
-                //           style={{
-                //             marginTop: 16,
-                //             marginLeft: 16,
-                //             marginRight: 16,
-                //             flex: 1,
-                //           }}
-                //           showsVerticalScrollIndicator={false}
-                //           keyExtractor={(item) => item._id}
-                //           data={temples.connectedTemples}
-                //           refreshControl={
-                //             <RefreshControl
-                //               refreshing={refreshing}
-                //               onRefresh={async () => {
-                //                 setRefreshing(true);
-                //                 fetchTemples();
-                //                 setRefreshing(false);
-                //               }}
-                //             />
-                //           }
-                //           renderItem={({ item, index }) => {
-                //             // if (item.status === "accepted") {
-                //             return (
-                //               <TouchableOpacity
-                //                 activeOpacity={0.8}
-                //                 onPress={() =>
-                //                   navigation.navigate("TempleDetails", {
-                //                     templeinfo: item,
-                //                   })
-                //                 }
-                //                 key={index}
-                //               >
-                //                 <TempleHomeCard>
-                //                   <ImageBackground
-                //                     source={
-                //                       item.images.length > 0
-                //                         ? { uri: `${BASEIMGURL}${item.images[0]}` }
-                //                         : ""
-                //                     }
-                //                     resizeMode="cover"
-                //                     imageStyle={{
-                //                       borderRadius: 16,
-                //                     }}
-                //                     style={{
-                //                       height: 400,
-                //                     }}
-                //                   >
-                //                     <LinearGradient
-                //                       colors={["#00000000", "#545454"]}
-                //                       style={{
-                //                         height: "100%",
-                //                         width: "100%",
-                //                         borderBottomLeftRadius: 16,
-                //                         borderBottomRightRadius: 16,
-                //                       }}
-                //                     ></LinearGradient>
-                //                   </ImageBackground>
-
-                //                   <Card.Content
-                //                     style={{
-                //                       position: "absolute",
-                //                       bottom: 10,
-                //                       borderRadius: 16,
-                //                       flexDirection: "row",
-                //                       alignItems: "center",
-                //                       justifyContent: "space-between",
-                //                       width: "100%",
-                //                     }}
-                //                   >
-                //                     <View>
-                //                       <MatrimonyHomeCardTitle>
-                //                         {item.templeName}
-                //                       </MatrimonyHomeCardTitle>
-
-                //                       <View
-                //                         style={{
-                //                           display: "flex",
-                //                           flexDirection: "row",
-                //                         }}
-                //                       >
-                //                         <Ionicons
-                //                           name="location"
-                //                           color="#F9C620"
-                //                           size={20}
-                //                         />
-                //                         <Text
-                //                           style={{
-                //                             fontSize: 16,
-                //                             color: "white",
-                //                             marginLeft: 10,
-                //                             textTransform: "uppercase",
-                //                           }}
-                //                         >
-                //                           {item.city}
-                //                         </Text>
-                //                       </View>
-                //                     </View>
-                //                   </Card.Content>
-                //                 </TempleHomeCard>
-                //               </TouchableOpacity>
-                //             );
-                //             // }
-                //           }}
-                //         />
-                //       </View>
-                //     ) : (
-                //       <ScrollView>
-                //         <Text
-                //           style={{
-                //             fontSize: 18,
-                //             fontWeight: "bold",
-                //             textAlign: "left",
-                //             width: "100%",
-                //             marginTop: 50,
-                //             marginLeft: 20,
-                //           }}
-                //         >
-                //           Your Temples
-                //         </Text>
-                //         <View>
-                //           <Text
-                //             style={{
-                //               fontSize: 18,
-                //               fontWeight: "bold",
-                //               textAlign: "center",
-                //               width: "100%",
-                //               marginTop: 50,
-                //             }}
-                //           >
-                //             You are not Connected To Any Temple
-                //           </Text>
-                //         </View>
-                //       </ScrollView>
-                //     )}
-
-                //     {temples.notConnectedTemples.length > 0 ? (
-                //       <View style={{ flex: 1 }}>
-                //         <Text
-                //           style={{
-                //             fontSize: 18,
-                //             fontWeight: "bold",
-                //             textAlign: "left",
-                //             width: "100%",
-                //             marginTop: 50,
-                //             marginLeft: 20,
-                //           }}
-                //         >
-                //           Other Temples
-                //         </Text>
-                //         <FlatList
-                //           style={{
-                //             marginTop: 16,
-                //             marginLeft: 16,
-                //             marginRight: 16,
-                //             flex: 1,
-                //           }}
-                //           showsVerticalScrollIndicator={false}
-                //           keyExtractor={(item) => item._id}
-                //           data={temples.notConnectedTemples}
-                //           refreshControl={
-                //             <RefreshControl
-                //               refreshing={refreshing}
-                //               onRefresh={async () => {
-                //                 setRefreshing(true);
-                //                 fetchTemples();
-                //                 setRefreshing(false);
-                //               }}
-                //             />
-                //           }
-                //           renderItem={({ item, index }) => {
-                //             // if (item.status === "accepted") {
-                //             return (
-                //               <TouchableOpacity
-                //                 activeOpacity={0.8}
-                //                 onPress={() =>
-                //                   navigation.navigate("TempleDetails", {
-                //                     templeinfo: item,
-                //                   })
-                //                 }
-                //                 key={index}
-                //               >
-                //                 <TempleHomeCard>
-                //                   <ImageBackground
-                //                     source={
-                //                       item.images.length > 0
-                //                         ? { uri: `${BASEIMGURL}${item.images[0]}` }
-                //                         : ""
-                //                     }
-                //                     resizeMode="cover"
-                //                     imageStyle={{
-                //                       borderRadius: 16,
-                //                     }}
-                //                     style={{
-                //                       height: 400,
-                //                     }}
-                //                   >
-                //                     <LinearGradient
-                //                       colors={["#00000000", "#545454"]}
-                //                       style={{
-                //                         height: "100%",
-                //                         width: "100%",
-                //                         borderBottomLeftRadius: 16,
-                //                         borderBottomRightRadius: 16,
-                //                       }}
-                //                     ></LinearGradient>
-                //                   </ImageBackground>
-
-                //                   <Card.Content
-                //                     style={{
-                //                       position: "absolute",
-                //                       bottom: 10,
-                //                       borderRadius: 16,
-                //                       flexDirection: "row",
-                //                       alignItems: "center",
-                //                       justifyContent: "space-between",
-                //                       width: "100%",
-                //                     }}
-                //                   >
-                //                     <View>
-                //                       <MatrimonyHomeCardTitle>
-                //                         {item.templeName}
-                //                       </MatrimonyHomeCardTitle>
-
-                //                       <View
-                //                         style={{
-                //                           display: "flex",
-                //                           flexDirection: "row",
-                //                         }}
-                //                       >
-                //                         <Ionicons
-                //                           name="location"
-                //                           color="#F9C620"
-                //                           size={20}
-                //                         />
-                //                         <Text
-                //                           style={{
-                //                             fontSize: 16,
-                //                             color: "white",
-                //                             marginLeft: 10,
-                //                             textTransform: "uppercase",
-                //                           }}
-                //                         >
-                //                           {item.city}
-                //                         </Text>
-                //                       </View>
-                //                     </View>
-                //                   </Card.Content>
-                //                 </TempleHomeCard>
-                //               </TouchableOpacity>
-                //             );
-                //             // }
-                //           }}
-                //         />
-                //       </View>
-                //     ) : (
-                //       <ScrollView>
-                //         <Text
-                //           style={{
-                //             fontSize: 18,
-                //             fontWeight: "bold",
-                //             textAlign: "left",
-                //             width: "100%",
-                //             marginTop: 50,
-                //             marginLeft: 20,
-                //           }}
-                //         >
-                //           Other Temples
-                //         </Text>
-                //         <View>
-                //           <Text
-                //             style={{
-                //               fontSize: 18,
-                //               fontWeight: "bold",
-                //               textAlign: "center",
-                //               width: "100%",
-                //               marginTop: 50,
-                //             }}
-                //           >
-                //             You are not Connected To Any Temple
-                //           </Text>
-                //         </View>
-                //       </ScrollView>
-                //     )}
-                //   </ScrollView>
-                // )
-              }
+                </ScrollView>
+              )}
             </View>
           )}
         </View>
@@ -951,9 +595,7 @@ const TempleHome = ({ navigation }) => {
           ) : (
             <View
               style={[
-                // styles.shadowProp,
                 {
-                  // backgroundColor: "#e6f9ff",
                   padding: "2%",
                   margin: "2%",
                   display: "flex",

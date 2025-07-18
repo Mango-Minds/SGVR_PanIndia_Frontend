@@ -70,14 +70,13 @@ export default function ProfileNewScreen() {
   //   try {
   //     setLoadingAnimation(true);
   //     const token = await AsyncStorage.getItem("token");
-     
+
   //     const response = await apiClient.get(`/user/profile/${userId}`, {
   //       headers: {
   //         Authorization: `Bearer ${token}`,
   //       },
   //     });
   //     console.log("✅ API response received:", response?.data);
-     
 
   //     setUserProfile(response.data);
   //   } catch (error) {
@@ -87,79 +86,87 @@ export default function ProfileNewScreen() {
   //   }
   // };
 
-const fetchUserProfile = async () => {
-  try {
-    setLoadingAnimation(true);
-    const token = await AsyncStorage.getItem("token");
-    const userLanguage = (await AsyncStorage.getItem("user-language")) || "en";
+  const fetchUserProfile = async () => {
+    try {
+      setLoadingAnimation(true);
+      const token = await AsyncStorage.getItem("token");
+      const userLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
 
-    const response = await apiClient.get(`/user/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const response = await apiClient.get(`/user/profile/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    const profileData = response.data;
+      const profileData = response.data;
 
-    // Only translate if language isn't English
-    if (userLanguage !== "en") {
-      // Helper to translate text via your API
-      const translateText = async (text) => {
-        if (!text) return text;
+      // Only translate if language isn't English
+      if (userLanguage !== "en") {
+        // Helper to translate text via your API
+        const translateText = async (text) => {
+          if (!text) return text;
 
-        const translationRes = await fetch(`${BASEAPIURL}/translate`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ data: [{ text }], targetLang: userLanguage }),
-        });
+          const translationRes = await fetch(`${BASEAPIURL}/translate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              data: [{ text }],
+              targetLang: userLanguage,
+            }),
+          });
 
-        if (!translationRes.ok) return text;
+          if (!translationRes.ok) return text;
 
-        const translationData = await translationRes.json();
+          const translationData = await translationRes.json();
 
-        if (
-          translationData.success &&
-          Array.isArray(translationData.translatedData) &&
-          translationData.translatedData[0]?.text
-        ) {
-          return translationData.translatedData[0].text;
+          if (
+            translationData.success &&
+            Array.isArray(translationData.translatedData) &&
+            translationData.translatedData[0]?.text
+          ) {
+            return translationData.translatedData[0].text;
+          }
+
+          return text;
+        };
+
+        // Translate the 'about' field
+        profileData.followData.about = await translateText(
+          profileData.followData.about
+        );
+
+        // Translate each education description
+        if (Array.isArray(profileData.followData.education)) {
+          for (const edu of profileData.followData.education) {
+            edu.description = await translateText(edu.description);
+            edu.degree = await translateText(edu.degree); // optional if needed
+            edu.institution = await translateText(edu.institution); // optional if needed
+          }
         }
 
-        return text;
-      };
-
-      // Translate the 'about' field
-      profileData.followData.about = await translateText(profileData.followData.about);
-
-      // Translate each education description
-      if (Array.isArray(profileData.followData.education)) {
-        for (const edu of profileData.followData.education) {
-          edu.description = await translateText(edu.description);
-          edu.degree = await translateText(edu.degree); // optional if needed
-          edu.institution = await translateText(edu.institution); // optional if needed
+        // Translate each job experience description
+        if (Array.isArray(profileData.followData.jobExperience)) {
+          for (const job of profileData.followData.jobExperience) {
+            job.description = await translateText(job.description);
+            job.company = await translateText(job.company); // optional if needed
+            job.role = await translateText(job.role); // optional if needed
+          }
         }
       }
 
-      // Translate each job experience description
-      if (Array.isArray(profileData.followData.jobExperience)) {
-        for (const job of profileData.followData.jobExperience) {
-          job.description = await translateText(job.description);
-          job.company = await translateText(job.company); // optional if needed
-          job.role = await translateText(job.role); // optional if needed
-        }
-      }
+      setUserProfile(profileData);
+    } catch (error) {
+      console.error("Error fetching or translating user profile:", error);
+    } finally {
+      setLoadingAnimation(false);
     }
+  };
 
-    setUserProfile(profileData);
-  } catch (error) {
-    console.error("Error fetching or translating user profile:", error);
-  } finally {
-    setLoadingAnimation(false);
-  }
-};
-const fetchUser = async () => {
+  const fetchUser = async () => {
   try {
     setLoadingAnimation(true);
+
     const token = await AsyncStorage.getItem("token");
-    const userLanguage = (await AsyncStorage.getItem("user-language")) || "en";
+    const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
 
     const response = await apiClient.get(`/user/${userId}`, {
       headers: {
@@ -167,42 +174,28 @@ const fetchUser = async () => {
       },
     });
 
-    let userData = response.data;
+    if (response.status === 200) {
+      const userInfo = response.data;
+      console.log("userInfo: ", userInfo.user);
 
-    if (userLanguage !== "en" && userData.user) {
-      // Collect texts to translate
-      const textsToTranslate = [];
-
-      if (userData.user.firstName) textsToTranslate.push(userData.user.firstName);
-      if (userData.user.lastName) textsToTranslate.push(userData.user.lastName);
-      if (userData.user.address) textsToTranslate.push(userData.user.address);
-
-      if (textsToTranslate.length > 0) {
-        const translationRes = await apiClient.post("/translate", {
-          data: textsToTranslate,
-          targetLang: userLanguage,
+      // Translation only if language is not English AND userInfo.user is an array
+      if (selectedLanguage !== "en" && Array.isArray(userInfo.user)) {
+        const translationResponse = await apiClient.post("/translate", {
+          data: userInfo,
+          targetLang: selectedLanguage,
         });
 
-        const translatedData = translationRes.data?.translatedData || [];
-console.log("Translated Data: ", translatedData);
-        // Map translations back, assuming same order
-        let idx = 0;
-        if (userData.user.firstName) {
-          userData.user.firstName = translatedData[idx]?.text || userData.user.firstName;
-          idx++;
+        console.log("translationResponse: ", translationResponse);
+
+        if (translationResponse?.data?.translatedData?.length) {
+          setUserData(translationResponse.data.translatedData);
+        } else {
+          setUserData(userInfo);
         }
-        if (userData.user.lastName) {
-          userData.user.lastName = translatedData[idx]?.text || userData.user.lastName;
-          idx++;
-        }
-        if (userData.user.address) {
-          userData.user.address = translatedData[idx]?.text || userData.user.address;
-          idx++;
-        }
+      } else {
+        setUserData(userInfo);
       }
     }
-
-    setUserData(userData);
   } catch (error) {
     console.error("Error fetching user:", error);
   } finally {
@@ -210,9 +203,66 @@ console.log("Translated Data: ", translatedData);
   }
 };
 
+  // const fetchUser = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const token = await AsyncStorage.getItem("token");
+  //     const userLanguage =
+  //       (await AsyncStorage.getItem("user-language")) || "en";
 
+  //     const response = await apiClient.get(`/user/${userId}`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     });
 
+  //     let userData = response.data;
 
+  //     if (userLanguage !== "en" && userData.user) {
+  //       // Collect texts to translate
+  //       const textsToTranslate = [];
+
+  //       if (userData.user.firstName)
+  //         textsToTranslate.push(userData.user.firstName);
+  //       if (userData.user.lastName)
+  //         textsToTranslate.push(userData.user.lastName);
+  //       if (userData.user.address) textsToTranslate.push(userData.user.address);
+
+  //       if (textsToTranslate.length > 0) {
+  //         const translationRes = await apiClient.post("/translate", {
+  //           data: textsToTranslate,
+  //           targetLang: userLanguage,
+  //         });
+
+  //         const translatedData = translationRes.data?.translatedData || [];
+  //         console.log("Translated Data: ", translatedData);
+  //         // Map translations back, assuming same order
+  //         let idx = 0;
+  //         if (userData.user.firstName) {
+  //           userData.user.firstName =
+  //             translatedData[idx]?.text || userData.user.firstName;
+  //           idx++;
+  //         }
+  //         if (userData.user.lastName) {
+  //           userData.user.lastName =
+  //             translatedData[idx]?.text || userData.user.lastName;
+  //           idx++;
+  //         }
+  //         if (userData.user.address) {
+  //           userData.user.address =
+  //             translatedData[idx]?.text || userData.user.address;
+  //           idx++;
+  //         }
+  //       }
+  //     }
+
+  //     setUserData(userData);
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
 
   // const fetchUser = async () => {
   //   try {
@@ -619,7 +669,7 @@ console.log("Translated Data: ", translatedData);
   const [uploadedDoc, setUploadedDoc] = useState(null);
 
   console.log("UserProfile: ", userProfile);
-console.log("userData: ", userData);
+  console.log("userData: ", userData);
   const pickDoc = async () => {
     try {
       let result = await DocumentPicker.getDocumentAsync({

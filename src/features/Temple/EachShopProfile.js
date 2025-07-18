@@ -21,11 +21,13 @@ import { getEachShopData } from "../../services/jewellery.services";
 import { useIsFocused } from "@react-navigation/native";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
-import BottomNavigation from "../../components/Jewellery/BottomNavigation";
+import BottomNavigation from "./BottomNavigation";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
 const EachShopProfile = ({ route }) => {
   const token = useSelector((state) => state.user.token);
-
+ 
+ const { t } = useTranslation();
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [shopProducts, setShopProducts] = useState([]);
@@ -38,9 +40,9 @@ const EachShopProfile = ({ route }) => {
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const fromVendorId = decodedPayload.id;
 
-  const userType = decodedPayload.userType;
+ const userType = useSelector((state) => state.user.user.userType[0]);
 
-
+  
   
 
   // const fetchShop = async () => {
@@ -198,7 +200,7 @@ const EachShopProfile = ({ route }) => {
           <TopText
             style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
-            Shop Details
+            {t("shopDetails")}
           </TopText>
         </View>
         {userType === "templeAdmin" || userType === "SA" && (
@@ -259,7 +261,7 @@ const EachShopProfile = ({ route }) => {
                   color: Theme.themeColor,
                 }}
               >
-                About Us :
+                {t("aboutUs")} :
               </Text>
               <Text style={style.description}>{shop.description}</Text>
             </View>
@@ -308,7 +310,7 @@ const EachShopProfile = ({ route }) => {
                 color: Theme.themeColor,
               }}
             >
-              Our Catalog
+              {t("ourCatalog")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -403,7 +405,7 @@ const EachShopProfile = ({ route }) => {
                     color: Theme.themeColor,
                   }}
                 >
-                  No products added
+                 {t("noProductsAdded")}
                 </Text>
               </View>
             ) : (
@@ -441,7 +443,7 @@ const EachShopProfile = ({ route }) => {
                         </Text>
                       </View>
                       <Text style={{ color: "#b58904", marginTop: 10 }}>
-                        View Details
+                       {t("view_details")}
                       </Text>
                     </View>
                   </Pressable>
@@ -478,7 +480,7 @@ const EachShopProfile = ({ route }) => {
                   textDecorationLine: "underline",
                 }}
               >
-                View More Products
+                {t("viewMoreProducts")}
               </Text>
             </Pressable>
           </TouchableOpacity>

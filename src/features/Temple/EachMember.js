@@ -22,7 +22,7 @@ import UserImg from "../../assets/images/general/user.png";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import apiClient from "../../store/apiClient";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-
+import { useTranslation } from "react-i18next";
 
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;
@@ -30,6 +30,7 @@ const WINDOW_HEIGHT = Dimensions.get("window").height;
 const EachMember = ({ route }) => {
   const navigation = useNavigation();
   const { member, userType, templeinfo } = route.params;
+   const { t } = useTranslation();
   console.log("Member Detail: ", member);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -117,7 +118,7 @@ const EachMember = ({ route }) => {
           <TopText
             style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
-            Member Details
+            {t("memberDetails")}
           </TopText>
         </View>
         {userType === "templeAdmin" &&
@@ -189,7 +190,7 @@ const EachMember = ({ route }) => {
                   marginBottom: "2%",
                 }}
               >
-                Description
+               {t("memberDescription")}
               </Text>
               <Text>{member.description}</Text>
             </View>
@@ -202,12 +203,12 @@ const EachMember = ({ route }) => {
                 }}
               >
                 <View style={{ flexDirection: "column" }}>
-                  <Text style={{ fontWeight: "bold", opacity: 0.8 }}>Call</Text>
+                  <Text style={{ fontWeight: "bold", opacity: 0.8 }}>{t("memberCall")}</Text>
                   <Text style={{ opacity: 0.7 }}>{member.phone}</Text>
                 </View>
                 <View style={{ flexDirection: "column" }}>
                   <Text style={{ fontWeight: "bold", opacity: 0.8 }}>
-                    Email
+                   { t("memberEmail")}
                   </Text>
                   <Text style={{ opacity: 0.7 }}>{member.email}</Text>
                 </View>
@@ -215,7 +216,7 @@ const EachMember = ({ route }) => {
               <View style={{ marginTop: "8%" }}>
                 <View style={{ flexDirection: "column" }}>
                   <Text style={{ fontWeight: "bold", opacity: 0.7 }}>
-                    Location
+                   { t("memberLocation")}
                   </Text>
 
                   <Text style={{ opacity: 1 }}>{member.location}</Text>

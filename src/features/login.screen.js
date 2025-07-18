@@ -25,6 +25,7 @@ import { ErrorToggle, IsBttnloading, login } from "../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import Theme from "../styles/theme";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASEAPIURL } from "../infrastructure/constants";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -79,6 +80,7 @@ export default function LoginScreen({ navigation }) {
       }
       await dispatch(IsBttnloading(true));
       const data = await dispatch(login({ email, password, isAdmin: "false" }));
+      console.log("BASEAPIURL: ", BASEAPIURL);
       await dispatch(IsBttnloading(false));
       if (data !== true)
         if (data.msgCode === 1) {
@@ -173,6 +175,9 @@ export default function LoginScreen({ navigation }) {
     }
   };
   logAsyncStorageData();
+
+  console.log("BASEAPIURL: ", BASEAPIURL);
+  
 
   return (
     <SafeArea>

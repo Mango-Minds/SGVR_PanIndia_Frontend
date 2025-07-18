@@ -20,6 +20,9 @@ import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
+import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 //   import AssignForm from "./AssignForm";
 import { useIsFocused } from "@react-navigation/native";
 
@@ -29,6 +32,7 @@ const WINDOW_HEIGHT = Dimensions.get("window").height;
 const EachProduct = ({ route }) => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
+  const { t } = useTranslation();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { productId, product } = route.params;
   const [loadingAnimation, setLoadingAnimation] = useState(true);
@@ -43,8 +47,6 @@ const EachProduct = ({ route }) => {
   };
 
   const [productData, setProductData] = useState([]);
-
-  
 
   // const fetchProduct = async () => {
   //   try {
@@ -68,14 +70,52 @@ const EachProduct = ({ route }) => {
   //     }
   //   } catch (error) {
   //     console.error("Error fetching product:", error);
-  //   } 
+  //   }
+  // };
+  // const fetchProduct = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+  //     const { data } = await apiClient.get(`/products/${productId}`);
+  //      const selectedLanguage =
+  //       (await AsyncStorage.getItem("user-language")) || "en";
+  //     console.log("Product Data: ", data);
+  //     setProductData(data);
+  //   } catch (error) {
+  //     console.error("Error fetching product:", error);
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
   // };
   const fetchProduct = async () => {
     try {
       setLoadingAnimation(true);
-      const { data } = await apiClient.get(`/products/${productId}`);
-      console.log("Product Data: ", data);
-      setProductData(data);
+      const response = await apiClient.get(`/products/${productId}`);
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+      if (response.status === 200) {
+        const productData = response.data;
+        console.log("productData: ", productData);
+
+        if (selectedLanguage !== "en" && Array.isArray(productData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: productData,
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setProductData(translationResponse.data.translatedData);
+            console.log(
+              "Translated response productData: ",
+              translationResponse?.data
+            );
+          } else {
+            setProductData(translationResponse.data.translatedData);
+          }
+          console.log("prodcutData 2: ", translationResponse.data.translatedData);
+        } else {
+          setProductData(productData);
+        }
+      }
     } catch (error) {
       console.error("Error fetching product:", error);
     } finally {
@@ -87,8 +127,6 @@ const EachProduct = ({ route }) => {
       fetchProduct();
     }
   }, [isFocused]);
-
-  
 
   const token = useSelector((state) => state.user.token);
 
@@ -126,13 +164,13 @@ const EachProduct = ({ route }) => {
   const deleteProduct = async () => {
     try {
       await apiClient.delete(`/products/${productId}`);
-  
+
       Alert.alert(
-        "Success",
-        "Product deleted successfully",
+       t("successTitle"),
+  t("productDeletedSuccess"),
         [
           {
-            text: "OK",
+            text: t("oK"),
             onPress: () => navigation.goBack(),
           },
         ],
@@ -147,7 +185,7 @@ const EachProduct = ({ route }) => {
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const fromVendorId = decodedPayload.id;
 
-  const userType = decodedPayload.userType;
+  const userType = useSelector((state) => state.user.user.userType[0]);
 
   return (
     <Container
@@ -157,9 +195,13 @@ const EachProduct = ({ route }) => {
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText
-            style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+            style={{
+              color: Theme.themeColor,
+              fontSize: 20,
+              fontWeight: "bold",
+            }}
           >
-            Product Details
+            {t("productDetails")}
           </TopText>
         </View>
 
@@ -201,16 +243,16 @@ const EachProduct = ({ route }) => {
               {productData.name}
             </Text>
             <Image
-                style={{
-                  width: "100%",
-                  height: 240,
-                  marginTop: "4%",
-                  borderRadius: 5,
-                }}
-                source={{
-                  uri: `${productData.pictures[selectedImageIndex]}`,
-                }}
-              ></Image>
+              style={{
+                width: "100%",
+                height: 240,
+                marginTop: "4%",
+                borderRadius: 5,
+              }}
+              source={{
+                uri: `${productData.pictures[selectedImageIndex]}`,
+              }}
+            ></Image>
             <View style={{ marginTop: "4%" }}>
               <Text
                 style={{
@@ -220,44 +262,44 @@ const EachProduct = ({ route }) => {
                   marginBottom: "2%",
                 }}
               >
-                Product Pictures
+                {t("productPictures")}
               </Text>
             </View>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {productData.pictures.map((image, index) => (
-                  <View
-                    style={{
-                      margin: "3%",
-                      marginHorizontal: 6,
-                      borderWidth: 3,
-                      flex: 1,
-                      borderColor:
-                        selectedImageIndex === index
-                          ? "goldenrod"
-                          : "transparent",
-                      borderRadius: 7,
-                      elevation: selectedImageIndex === index ? 5 : 0,
-                    }}
+              {productData.pictures.map((image, index) => (
+                <View
+                  style={{
+                    margin: "3%",
+                    marginHorizontal: 6,
+                    borderWidth: 3,
+                    flex: 1,
+                    borderColor:
+                      selectedImageIndex === index
+                        ? "goldenrod"
+                        : "transparent",
+                    borderRadius: 7,
+                    elevation: selectedImageIndex === index ? 5 : 0,
+                  }}
+                >
+                  <TouchableOpacity
+                    onPress={() => changeSelectedImage(index)}
+                    key={index}
                   >
-                    <TouchableOpacity
-                      onPress={() => changeSelectedImage(index)}
-                      key={index}
-                    >
-                      <Image
-                        style={{ width: 60, height: 60, borderRadius: 5 }}
-                        source={{
-                          uri: `${productData.pictures[index]}`,
-                        }}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-              </ScrollView>
+                    <Image
+                      style={{ width: 60, height: 60, borderRadius: 5 }}
+                      source={{
+                        uri: `${productData.pictures[index]}`,
+                      }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
             <View style={{ flexDirection: "row" }}>
               <View style={styles.qq}>
                 <Text style={styles.qqtxt}>
-                  Quantity: {productData.quantity}
+                  {t("quantity") + ": "} {productData.quantity}
                 </Text>
               </View>
             </View>
@@ -277,7 +319,7 @@ const EachProduct = ({ route }) => {
                   color: "black",
                 }}
               >
-                About Product
+                {t("aboutProduct")}
               </Text>
               <Text>{productData.description}</Text>
             </View>

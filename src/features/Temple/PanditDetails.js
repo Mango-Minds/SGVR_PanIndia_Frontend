@@ -95,29 +95,6 @@ const TemplePanditDetails = ({ route, navigation }) => {
   console.log("PanditInfo in pandit page: ", panditinfo);
   const [panditDetails, setPanditDetails] = useState(panditinfo);
   console.log("PanditDetails: ", panditDetails);
-  // const fetchPandit = async () => {
-  //   try {
-  //      const token = await AsyncStorage.getItem("token");
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/panditcrud/${panditDetails._id}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error("Failed to fetch pandit");
-  //     }
-  //     const data = await response.json();
-  //     console.log("pandit response data in pandit home", data);
-  //     setPanditDetails(data);
-  //   } catch (error) {
-  //     console.error("Error fetching pandit:", error);
-  //   }
-  // };
 
   const fetchPandit = async () => {
     try {
@@ -125,13 +102,20 @@ const TemplePanditDetails = ({ route, navigation }) => {
       const selectedLanguage =
         (await AsyncStorage.getItem("user-language")) || "en";
 
-      const response = await apiClient.get(`/panditcrud/${panditDetails._id}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      // console.log("panditDetails.data._id: ", panditDetails.data._id);
+      // console.log("panditinfo._id: ", panditinfo._id);
 
-      let panditData = response.data;
+      const response = await apiClient.get(
+        `/panditcrud/${panditDetails.data._id || panditinfo._id}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      let panditData = response.data.data;
+      //console.log("panditData: ", panditData);
 
       // Translate if not English
       if (selectedLanguage !== "en") {
@@ -142,6 +126,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
         panditData = translateResponse.data.translatedData[0]; // unwrap
       }
+      //console.log("translateResponse: ",translateResponse.data);
 
       console.log("Translated pandit response data:", panditData);
       setPanditDetails(panditData);
@@ -170,7 +155,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
     console.log("Temple: ", temple);
     Navigation.navigate("TempleEvents", {
       date: date,
-      templeAdmin: temple.createdBy,
+      templeAdmin: temple?.createdBy,
       templeId: temple._id,
       templePandits: temple.pandits,
       panditId: panditDetails._id,
@@ -180,6 +165,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
       },
     });
   };
+
 
   const [eventsByMonth, setEventsByMonth] = useState([]);
 
@@ -361,7 +347,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
         </RowBetween>
 
         <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-          Pandit's Gallery
+          {t("Pandit'sGallery")}
         </Text>
 
         <Row style={{ paddingTop: 16, paddingBottom: 16 }}>
@@ -389,7 +375,9 @@ const TemplePanditDetails = ({ route, navigation }) => {
               ))
             ) : (
               <View>
-                <Text style={{ marginLeft: 140, opacity: 0.4 }}>No Images</Text>
+                <Text style={{ marginLeft: 140, opacity: 0.4 }}>
+                  {t("NoImages")}
+                </Text>
               </View>
             )}
           </ScrollView>
@@ -397,7 +385,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
 
         <View>
           <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-            About Pandit
+            {t("aboutPandit")}
           </Text>
         </View>
         <View style={styles.contentContainer}>
@@ -496,7 +484,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
             }}
           >
             <TopText style={{ fontSize: 14, fontWeight: "bold" }}>
-              Associated Temples
+              {t("associatedTemples")}
             </TopText>
           </View>
         </RowBetween>
@@ -556,7 +544,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                   }}
                 >
                   <Text style={{ fontSize: 15, color: "grey" }}>
-                    No Associated Temple
+                    {t("noAssociatedTemples")}
                   </Text>
                 </View>
               )}
@@ -586,7 +574,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
             }}
           >
             <TopText style={{ fontSize: 14, fontWeight: "bold" }}>
-              Scheduled Events
+              {t("scheduledEvents")}
             </TopText>
           </View>
         </RowBetween>
@@ -714,7 +702,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
               fontWeight: "bold",
             }}
           >
-            Pandit Details
+            {t("panditDetails")}
           </TopText>
         </View>
       </RowBetween>

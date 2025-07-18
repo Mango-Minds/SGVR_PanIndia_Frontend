@@ -657,64 +657,12 @@ export const generateToken = (refreshToken) => async (dispatch) => {
 };
 
 // export const imgHandler
-// export const logout = () => async (dispatch) => {
-//   try {
-//     const headers = await authHeader();
-//     const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
-
-//     if (res.status === 200) {
-//       await dispatch(
-//         setError({
-//           msg: "Logged out Successfully",
-//           toggle: true,
-//           type: "Success",
-//         })
-//       );
-//       await AsyncStorage.clear();
-//       return dispatch(logoutSuccess());
-//     } else if (res.status === 401) {
-//       await dispatch(
-//         setError({
-//           msg: "Logged out Successfully",
-//           toggle: true,
-//           type: "Success",
-//         })
-//       );
-//       await AsyncStorage.clear();
-//       return dispatch(logoutSuccess());
-//     } else {
-//       await dispatch(
-//         setError({
-//           msg: "There was some error. Please try again after some time",
-//           toggle: true,
-//           type: "error",
-//         })
-//       );
-//     }
-//   } catch (error) {
-//     await dispatch(
-//       setError({
-//         msg: "There was some error. Please try again after some time",
-//         toggle: true,
-//         type: "error",
-//       })
-//     );
-//   }
-// };
-
-
-export const logout = (isAdmin = "false") => async (dispatch) => {
+export const logout = () => async (dispatch) => {
   try {
     const headers = await authHeader();
+    const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
 
-    const logoutURL =
-      isAdmin === "false"
-        ? `${BASEAPIURL}/user/logout`
-        : `${BASEAPIURL}/super-admin-auth/logout`;
-
-    const res = await axios.post(logoutURL, {}, { headers });
-
-    if (res.status === 200 || res.status === 401) {
+    if (res.status === 200) {
       await dispatch(
         setError({
           msg: "Logged out Successfully",
@@ -722,11 +670,20 @@ export const logout = (isAdmin = "false") => async (dispatch) => {
           type: "Success",
         })
       );
-
-      dispatch(logoutSuccess());
       await AsyncStorage.clear();
+      return dispatch(logoutSuccess());
+    } else if (res.status === 401) {
+      await dispatch(
+        setError({
+          msg: "Logged out Successfully",
+          toggle: true,
+          type: "Success",
+        })
+      );
+      await AsyncStorage.clear();
+      return dispatch(logoutSuccess());
     } else {
-      dispatch(
+      await dispatch(
         setError({
           msg: "There was some error. Please try again after some time",
           toggle: true,
@@ -735,7 +692,7 @@ export const logout = (isAdmin = "false") => async (dispatch) => {
       );
     }
   } catch (error) {
-    dispatch(
+    await dispatch(
       setError({
         msg: "There was some error. Please try again after some time",
         toggle: true,
@@ -744,6 +701,58 @@ export const logout = (isAdmin = "false") => async (dispatch) => {
     );
   }
 };
+
+
+
+
+
+
+
+
+
+
+
+// export const logout = (isAdmin = "false") => async (dispatch) => {
+//   try {
+//     const headers = await authHeader();
+
+//     const logoutURL =
+//       isAdmin === "false"
+//         ? `${BASEAPIURL}/user/logout`
+//         : `${BASEAPIURL}/super-admin-auth/logout`;
+
+//     const res = await axios.post(logoutURL, {}, { headers });
+
+//     if (res.status === 200 || res.status === 401) {
+//       await dispatch(
+//         setError({
+//           msg: "Logged out Successfully",
+//           toggle: true,
+//           type: "Success",
+//         })
+//       );
+
+//       dispatch(logoutSuccess());
+//       await AsyncStorage.clear();
+//     } else {
+//       dispatch(
+//         setError({
+//           msg: "There was some error. Please try again after some time",
+//           toggle: true,
+//           type: "error",
+//         })
+//       );
+//     }
+//   } catch (error) {
+//     dispatch(
+//       setError({
+//         msg: "There was some error. Please try again after some time",
+//         toggle: true,
+//         type: "error",
+//       })
+//     );
+//   }
+// };
 
 export const deleteAccountHandler = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");

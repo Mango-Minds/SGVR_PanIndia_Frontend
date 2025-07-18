@@ -2,7 +2,9 @@ import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Ionicons } from "react-native-vector-icons";
 import Theme from "../../styles/theme";
+import { useTranslation } from "react-i18next";
 export default function BottomNavigation({ navigation }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.bottomBarContainer}>
       <View style={styles.bottomBar}>
@@ -11,15 +13,15 @@ export default function BottomNavigation({ navigation }) {
           onPress={() => navigation.navigate("Main")}
         >
           <Ionicons name="home-outline" size={24} color={Theme.themeColor} />
-          <Text style={[styles.iconText, { color: Theme.themeColor }]}>Home</Text>
+          <Text style={[styles.iconText, { color: Theme.themeColor }]}> {t("home")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconContainer}>
           <Ionicons name="list-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>Details</Text>
+          <Text style={[styles.iconText, { color: "gray" }]}>{t("details")}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconContainer}>
           <Ionicons name="settings-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>Settings</Text>
+          <Text style={[styles.iconText, { color: "gray" }]}>{t("settings")}</Text>
         </TouchableOpacity>
       </View>
     </View>

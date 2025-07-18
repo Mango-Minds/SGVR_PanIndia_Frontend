@@ -501,6 +501,7 @@ const handleFetchPlannerData = async (queryString) => {
 };
 
 
+console.log("grooms: ", groomsData);
 
   
 

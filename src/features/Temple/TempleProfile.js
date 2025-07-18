@@ -27,8 +27,10 @@ import UserImg from "../../assets/images/general/user.png";
 import BottomNavigation from "./BottomNavigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
 const MyTempleProfile = ({ route }) => {
-  const {pandits, fetchPandits} = route.params;
+  const { pandits, fetchPandits } = route.params;
+const { t } = useTranslation();
   console.log("Pandits in profile: ", pandits);
   const navigation = useNavigation();
   const userType = useSelector((state) => state.user.user.userType[0]);
@@ -114,21 +116,39 @@ const MyTempleProfile = ({ route }) => {
   const fetchUser = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-  if (!token) throw new Error("Unauthorized");
-  
+      if (!token) throw new Error(t("unauthorizedError"));
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+
       setLoadingAnimation(true);
       const response = await apiClient.get(`/user/${userId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (response.status === 200) {
-        const data = response.data;
-        setUserData(data);
-        console.log("data.user", data.user);
-      } else {
-        throw new Error("Failed to fetch user");
+        const userdata = response.data;
+
+        console.log("userdata: ", userdata);
+        console.log("response.data: ", response.data);
+        console.log("response.data.user: ", response.data.user);
+
+        if (selectedLanguage !== "en" && Array.isArray(userdata)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: userdata,
+            targetLang: selectedLanguage,
+          });
+          console.log("Translation API response:", translationResponse.data);
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setUserData(translationResponse.data.translatedData);
+          } else {
+            setUserData(userdata);
+          }
+        } else {
+          setUserData(userdata);
+        }
       }
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -136,26 +156,26 @@ const MyTempleProfile = ({ route }) => {
       setLoadingAnimation(false);
     }
   };
-  
+
   const [shopData, setShopData] = useState([]);
-  
+
   const fetchShops = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-  if (!token) throw new Error("Unauthorized");
-  
+      if (!token) throw new Error(t("unauthorizedError"));
+
       setLoadingAnimation(true);
       const response = await apiClient.get(`/templeShops`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (response.status === 200) {
         const data = response.data;
         console.log("fetch Shop Data: ", data);
         setShopData(data);
-  
+
         const loggedInShopUser = data.find(
           (shop) =>
             (shop.owner && shop.owner.id?._id === userId) ||
@@ -164,7 +184,8 @@ const MyTempleProfile = ({ route }) => {
         const loggedInShopId = loggedInShopUser ? loggedInShopUser._id : null;
         fetchProducts(loggedInShopId);
       } else {
-        throw new Error("Failed to fetch shops");
+        throw new Error(t("failedToFetchShops"));
+        
       }
     } catch (error) {
       console.error("Error fetching shops:", error);
@@ -172,7 +193,7 @@ const MyTempleProfile = ({ route }) => {
       setLoadingAnimation(false);
     }
   };
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchShops();
@@ -189,14 +210,23 @@ const MyTempleProfile = ({ route }) => {
 
   const shopId = loggedInShop ? loggedInShop._id : null;
 
-  const heading =
-    userType === "templeAdmin"
-      ? "Edit Temple Admin Profile"
-      : userType === "templeShopOwner"
-      ? "Edit Shop Profile"
-      : userType === "pandit"
-      ? "Edit Pandit Profile"
-      : "Edit Profile";
+  // const heading =
+  //   userType === "templeAdmin"
+  //     ? "Edit Temple Admin Profile"
+  //     : userType === "templeShopOwner"
+  //     ? "Edit Shop Profile"
+  //     : userType === "pandit"
+  //     ? "Edit Pandit Profile"
+  //     : "Edit Profile";
+  const heading = userType === "templeAdmin"
+  ? t("editTempleAdminProfile")
+  : userType === "templeShopOwner"
+    ? t("editShopProfile")
+    : userType === "pandit"
+      ? t("editPanditProfile")
+      : t("editProfile");
+<Text>{t(heading)}</Text>
+
 
   const [products, setProducts] = useState([]);
 
@@ -230,24 +260,24 @@ const MyTempleProfile = ({ route }) => {
   const fetchProducts = async (loggedInShopId) => {
     try {
       const token = await AsyncStorage.getItem("token");
-  if (!token) throw new Error("Unauthorized");
-  
+      if (!token) throw new Error(t("unauthorizedError"));
+
       const response = await apiClient.get(`/products`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-  
+
       if (response.status === 200) {
         const data = response.data;
-  
+
         const filteredProducts = data.filter(
           (product) => product.shop._id === loggedInShopId
         );
-  
+
         setProducts(filteredProducts);
       } else {
-        throw new Error("Failed to fetch products");
+        throw new Error(t("failedToFetchProducts"));
       }
     } catch (error) {
       console.error("Error fetching products:", error);
@@ -255,7 +285,7 @@ const MyTempleProfile = ({ route }) => {
       setIsloading(false);
     }
   };
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchUser();
@@ -277,10 +307,7 @@ const MyTempleProfile = ({ route }) => {
     (state) => state.user.user && state.user.user.roleData._id
   );
 
-  const loggedInPandit = pandits.find((pandit) => pandit._id === loggedInId);
-  console.log("loggedInPandit: ", loggedInPandit);
-
-
+  const loggedInPandit = pandits?.find((pandit) => pandit?._id === loggedInId);
 
   return (
     <>
@@ -292,28 +319,22 @@ const MyTempleProfile = ({ route }) => {
           }}
         >
           <ImageBackground
-          source={
-            userData.user.image
-              ? {
-                  uri: `${userData.user.image}`,
-                }
-              : UserImg
-          }
+            source={
+              userData.user.image
+                ? {
+                    uri: `${userData.user.image}`,
+                  }
+                : UserImg
+            }
             // source={getProfileImage()}
             style={style.backgroundImage}
             resizeMode="contain"
-
           >
-            {userData.user.role === 'templeShopOwner' && (
-            <View style={style.profileContainer}>
-            
-          <Image
-            source={getProfileImage()}
-            style={style.profileImage}
-          />
-      
-            </View>
-              )}
+            {userData.user.role === "templeShopOwner" && (
+              <View style={style.profileContainer}>
+                <Image source={getProfileImage()} style={style.profileImage} />
+              </View>
+            )}
           </ImageBackground>
           <View style={style.whiteContainer}>
             {userType === "templeShopOwner" && loggedInShop && (
@@ -332,7 +353,7 @@ const MyTempleProfile = ({ route }) => {
                 bottom: -30,
               }}
             >
-              Owner Details
+             {t("ownerDetails")}
             </Text>
           </View>
 
@@ -354,7 +375,11 @@ const MyTempleProfile = ({ route }) => {
           </View>
 
           <View style={style.phoneDetails}>
-            <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
+            <MaterialIcon
+              name="location-on"
+              size={18}
+              color={Theme.themeColor}
+            />
             <Text style={style.contact}>{userData.user.address}</Text>
           </View>
 
@@ -370,7 +395,7 @@ const MyTempleProfile = ({ route }) => {
                 })
               }
             >
-              <Text style={style.EditButtonText}>Edit My Profile</Text>
+              <Text style={style.EditButtonText}>{t("editMyProfile")}</Text>
             </TouchableOpacity>
           </View>
           <View style={style.contactButtonDetails}>
@@ -414,7 +439,7 @@ const MyTempleProfile = ({ route }) => {
                   });
                 }}
               >
-                <Text style={style.EditButtonText}>View Your Temples</Text>
+                <Text style={style.EditButtonText}>{t("viewYourTemples")}</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -450,7 +475,7 @@ const MyTempleProfile = ({ route }) => {
                   color: Theme.themeColor,
                 }}
               >
-                Our Catalog
+               { t("ourCatalog")}
               </Text>
             </TouchableOpacity>
           </View>
@@ -487,7 +512,7 @@ const MyTempleProfile = ({ route }) => {
                         </Text>
                       </View>
                       <Text style={{ color: "#b58904", marginTop: 10 }}>
-                        View Details
+                     	{t("viewDetails")}
                       </Text>
                     </View>
                   </Pressable>
@@ -523,7 +548,7 @@ const MyTempleProfile = ({ route }) => {
                   textDecorationLine: "underline",
                 }}
               >
-                View More Products
+                {t("viewMoreProducts")}
               </Text>
             </Pressable>
           </TouchableOpacity>

@@ -17,7 +17,7 @@ const FilterMenu = ({
   setSelectedFiltersArray,
 }) => {
   const [selectedFilters, setSelectedFilters] = useState([]);
-const { t } = useTranslation();
+  const { t } = useTranslation();
 
   const handleApply = () => {
     const selectedFilters = [];
@@ -241,48 +241,48 @@ const { t } = useTranslation();
                         ))
                       : null
                   )} */}
-                  {activeFilter &&
-  filters.map((filter) =>
-    filter.name === activeFilter
-      ? filter.options.map((option, index) => (
-          <TouchableOpacity
-            key={index}
-            style={{
-              padding: 10,
-              flexDirection: "row",
-              alignItems: "center",
-              top: 10,
-            }}
-            onPress={() => handleOptionClick(option)}
-          >
-            <Ionicons
-              name={
-                selectedOptions.includes(option)
-                  ? "checkbox"
-                  : "square-outline"
-              }
-              size={25}
-              color={
-                selectedOptions.includes(option)
-                  ? Theme.themeColor
-                  : "grey"
-              }
-            />
-            <Text
-              style={{
-                marginLeft: 10,
-                fontSize: 16,
-                color: selectedOptions.includes(option)
-                  ? Theme.themeColor
-                  : "grey",
-              }}
-            >
-              {t(option.toLowerCase().replace(/\s+/g, "_"))}
-            </Text>
-          </TouchableOpacity>
-        ))
-      : null
-  )}
+                {activeFilter &&
+                  filters.map((filter) =>
+                    filter.name === activeFilter
+                      ? filter.options.map((option, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            style={{
+                              padding: 10,
+                              flexDirection: "row",
+                              alignItems: "center",
+                              top: 10,
+                            }}
+                            onPress={() => handleOptionClick(option)}
+                          >
+                            <Ionicons
+                              name={
+                                selectedOptions.includes(option)
+                                  ? "checkbox"
+                                  : "square-outline"
+                              }
+                              size={25}
+                              color={
+                                selectedOptions.includes(option)
+                                  ? Theme.themeColor
+                                  : "grey"
+                              }
+                            />
+                            <Text
+                              style={{
+                                marginLeft: 10,
+                                fontSize: 16,
+                                color: selectedOptions.includes(option)
+                                  ? Theme.themeColor
+                                  : "grey",
+                              }}
+                            >
+                              {t(option.toLowerCase().replace(/\s+/g, "_"))}
+                            </Text>
+                          </TouchableOpacity>
+                        ))
+                      : null
+                  )}
               </ScrollView>
             </View>
           </View>
@@ -337,7 +337,7 @@ const { t } = useTranslation();
             onPress={handleApply}
           >
             <Text style={{ color: activeFilter ? Theme.themeColor : "white" }}>
-            {t("apply")}
+              {t("apply")}
             </Text>
           </TouchableOpacity>
         </View>

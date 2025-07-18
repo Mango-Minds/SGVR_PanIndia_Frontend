@@ -21,9 +21,11 @@ import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import { useIsFocused } from "@react-navigation/native";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const DetailsScreen = ({ route, navigation }) => {
   const { god, userType, templeinfo, godId, setGods } = route.params;
-
+  const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const isFocused = useIsFocused();
@@ -58,13 +60,38 @@ const DetailsScreen = ({ route, navigation }) => {
   const fetchTempleGods = async () => {
     console.log("Temple id: ", templeinfo._id);
     console.log("God id in details: ", godId);
-  
+
     try {
-      const response = await apiClient.get(`/temple/${templeinfo._id}/gods/${godId}`);
-  
+      const response = await apiClient.get(
+        `/temple/${templeinfo._id}/gods/${godId}`
+      );
+
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+
       if (response.status === 200) {
-        console.log("Gods response data", response.data);
-        setGodDetails(response.data);
+        console.log("Gods response data 1", response.data);
+        const godData = response.data;
+
+        if (selectedLanguage !== "en" && Array.isArray(godData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: godData,
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData) {
+            setGodDetails(translationResponse.data.translatedData);
+            console.log(
+              "god Data 2: ",
+              translationResponse.data.translatedData
+            );
+          } else {
+            console.warn("No translated data found");
+            setGodDetails(translationResponse.data.translatedData);
+          }
+        } else {
+          setGodDetails(godData);
+        }
       } else {
         throw new Error("Failed to fetch gods");
       }
@@ -72,7 +99,7 @@ const DetailsScreen = ({ route, navigation }) => {
       console.error("Error fetching gods:", error);
     }
   };
-  
+
   useEffect(() => {
     if (isFocused) {
       fetchTempleGods();
@@ -117,13 +144,15 @@ const DetailsScreen = ({ route, navigation }) => {
   // };
   const deleteGod = async () => {
     try {
-      const response = await apiClient.delete(`/temple/${templeinfo._id}/gods/${godId}`);
-  
+      const response = await apiClient.delete(
+        `/temple/${templeinfo._id}/gods/${godId}`
+      );
+
       console.log("God deletion response", response);
-  
+
       if (response.status === 200) {
         fetchTempleGods();
-  
+
         Alert.alert("Success", "God deleted successfully", [
           {
             text: "OK",
@@ -137,7 +166,7 @@ const DetailsScreen = ({ route, navigation }) => {
       console.error("Error deleting God:", error);
     }
   };
-  
+
   return (
     <SafeAreaView
       style={{
@@ -154,7 +183,11 @@ const DetailsScreen = ({ route, navigation }) => {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
             >
               God Details
             </TopText>
@@ -230,7 +263,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: "bold",
     marginVertical: 10,
-    color:Theme.themeColor,
+    color: Theme.themeColor,
   },
   sectionTitle: {
     fontSize: 18,

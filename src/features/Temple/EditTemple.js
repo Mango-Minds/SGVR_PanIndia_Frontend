@@ -8,7 +8,7 @@ import {
   View,
   TouchableOpacity,
   TextInput,
-  Alert
+  Alert,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
@@ -67,19 +67,17 @@ const styles = StyleSheet.create({
     width: "100%",
     // color:"black"
     fontSize: 18,
-  },  
+  },
 });
 
 export default function EditTemple({ route, navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
 
-  const { temple , fetchTemple} = route.params;
+  const { temple, fetchTemple } = route.params;
   const token = useSelector((state) => state.user.token);
   const initialImages =
-    temple && temple.images
-      ? temple.images.map((image) => `${image}`)
-      : [];
+    temple && temple.images ? temple.images.map((image) => `${image}`) : [];
 
   const [selectedImages, setSelectedImages] = React.useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
@@ -131,11 +129,9 @@ export default function EditTemple({ route, navigation }) {
   //       }
   //     });
 
-      
   //     selectedImages.forEach((image) => {
   //       formData.append("images", image);
   //     });
-      
 
   //     // Append newly uploaded images
   //     uploadedImages.forEach((image, index) => {
@@ -176,21 +172,21 @@ export default function EditTemple({ route, navigation }) {
   //   try {
   //     let token = await AsyncStorage.getItem("token");
   //     await dispatch(setLoadingInBtn(true));
-  
+
   //     const formData = new FormData();
-  
+
   //     // Append only modified details
   //     Object.keys(modifiedDetails).forEach((key) => {
   //       if (modifiedDetails[key] !== temple[key]) {
   //         formData.append(key, modifiedDetails[key]);
   //       }
   //     });
-  
+
   //     // Append existing images
   //     selectedImages.forEach((image) => {
   //       formData.append("images", image);
   //     });
-  
+
   //     // Append newly uploaded images
   //     uploadedImages.forEach((image, index) => {
   //       formData.append("images", {
@@ -199,9 +195,9 @@ export default function EditTemple({ route, navigation }) {
   //         type: "image/jpeg",
   //       });
   //     });
-  
+
   //     console.log("FormData:", formData);
-  
+
   //     const response = await fetch(`${BASEAPIURL}/temple/${temple._id}`, {
   //       method: "PUT",
   //       headers: {
@@ -209,13 +205,13 @@ export default function EditTemple({ route, navigation }) {
   //       },
   //       body: formData,
   //     });
-  
+
   //     await dispatch(setLoadingInBtn(false));
-  
+
   //     if (!response.ok) {
   //       throw new Error("Failed to update temple");
   //     }
-  
+
   //     fetchTemple();
   //     Alert.alert("Success", "Temple updated successfully");
   //     navigation.goBack();
@@ -228,29 +224,29 @@ export default function EditTemple({ route, navigation }) {
   const handleUpdate = async () => {
     try {
       await dispatch(setLoadingInBtn(true));
-  
+
       // Ensure we always use the latest token from AsyncStorage
       let token = await AsyncStorage.getItem("token");
-  
+
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
-  
+
       const formData = new FormData();
-  
+
       // Append only modified details
       Object.keys(modifiedDetails).forEach((key) => {
         if (modifiedDetails[key] !== temple[key]) {
           formData.append(key, modifiedDetails[key]);
         }
       });
-  
+
       // Append existing images
       selectedImages.forEach((image) => {
         formData.append("images", image);
       });
-  
+
       // Append newly uploaded images
       uploadedImages.forEach((image, index) => {
         formData.append("images", {
@@ -259,42 +255,42 @@ export default function EditTemple({ route, navigation }) {
           type: "image/jpeg",
         });
       });
-  
+
       console.log("FormData:", formData);
-  
+
       const response = await apiClient.put(`/temple/${temple._id}`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-  
+
       await dispatch(setLoadingInBtn(false));
-  
+
       console.log("API Response:", response);
-  
+
       fetchTemple(); // Refresh temple data
       Alert.alert("Success", "Temple updated successfully");
       navigation.goBack();
     } catch (error) {
       console.error("Error updating temple:", error);
-  console.log("error.response?.status: ", error.response?.status);
+      console.log("error.response?.status: ", error.response?.status);
       // Handle token expiration and refresh
       if (error.response?.status === 1) {
         console.error("Token expired, trying to refresh...");
         await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
         token = await AsyncStorage.getItem("token");
-  
+
         if (token) {
           return handleUpdate(); // Retry request with new token
         }
       }
-  
+
       Alert.alert("Error", "Failed to update temple");
       await dispatch(setLoadingInBtn(false));
     }
   };
-  
+
   return (
     <SafeArea>
       <Provider>
@@ -468,7 +464,6 @@ export default function EditTemple({ route, navigation }) {
                     marginTop: 5,
                     paddingTop: 15,
                     borderColor: "#e6e6e6",
-                   
                   },
                 ]}
               />
@@ -515,10 +510,13 @@ export default function EditTemple({ route, navigation }) {
                 placeholderTextColor="#9B9B9B"
                 value={modifiedDetails.templeLocationLink}
                 onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, templeLocationLink: text })
+                  setModifiedDetails({
+                    ...modifiedDetails,
+                    templeLocationLink: text,
+                  })
                 }
               />
-                 <Text
+              <Text
                 style={{
                   fontSize: 16,
                   marginLeft: 4,
@@ -567,7 +565,7 @@ export default function EditTemple({ route, navigation }) {
                   setModifiedDetails({ ...modifiedDetails, address: text })
                 }
               />
-                <Text
+              <Text
                 style={{
                   fontSize: 16,
                   marginLeft: 4,
@@ -596,7 +594,7 @@ export default function EditTemple({ route, navigation }) {
                   });
                 }}
               />
-                <Text
+              <Text
                 style={{
                   fontSize: 16,
                   marginLeft: 4,
@@ -651,7 +649,7 @@ export default function EditTemple({ route, navigation }) {
                   setModifiedDetails({ ...modifiedDetails, pincode: text })
                 }
               />
-              
+
               <FormButton onPress={handleUpdate}>
                 <Text
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}

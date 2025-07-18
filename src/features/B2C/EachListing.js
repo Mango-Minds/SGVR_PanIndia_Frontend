@@ -14,7 +14,7 @@ import {
   TouchableWithoutFeedback,
   FlatList,
   ActivityIndicator,
-  Pressable
+  Pressable,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
@@ -52,14 +52,17 @@ const EachListing = ({ route }) => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const videoRef = useRef(null);
-const { t } = useTranslation();
+  const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const { itemId, fetchProducts } = route.params;
   const { user } = useSelector((state) => state.user);
+  const userId = user?._id;
+  console.log("User id: ", userId);
+
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
-console.log("itemId: ", itemId);
+  console.log("itemId: ", itemId);
 
   const loggedInUserId = decodedPayload.id;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -282,7 +285,6 @@ console.log("itemId: ", itemId);
     return true;
   };
   console.log("ProductData: ", productData);
-  
 
   useEffect(() => {
     requestLocationPermission(); // Request location permissions on component mount
@@ -354,8 +356,8 @@ console.log("itemId: ", itemId);
                         <View style={styles.noMapContainer}>
                           <Text style={{ textAlign: "center", padding: 10 }}>
                             {coordinates === null
-                               ? t("map_preview_not_available")
-                            : t("location_not_available")}
+                              ? t("map_preview_not_available")
+                              : t("location_not_available")}
                           </Text>
                           {url && (
                             <TouchableOpacity
@@ -493,7 +495,7 @@ console.log("itemId: ", itemId);
   const blockUser = async (blockedUserId) => {
     try {
       console.log("Blocking user", blockedUserId);
-       const token = await AsyncStorage.getItem("token");
+      const token = await AsyncStorage.getItem("token");
       const response = await fetch(
         `${BASEAPIURL}/social/post/block-user/${blockedUserId}`,
         {
@@ -520,11 +522,11 @@ console.log("itemId: ", itemId);
 
   //  const reportPost = async (postId, reason) => {
   //     try {
-         
+
   //       console.log("Reporting post", postId);
   //       const response = await reportPostApi(postId, reason);
   //       console.log("Report post response", response);
-  
+
   //       if (response.status === 200) {
   //         Alert.alert(
   //           "Success",
@@ -540,35 +542,32 @@ console.log("itemId: ", itemId);
   //     }
   //   };
   const reportPost = async (postId, reason) => {
-  try {
-    console.log("Reporting post", postId);
-    const response = await reportPostApi(postId, reason);
-    console.log("Report post response", response);
+    try {
+      console.log("Reporting post", postId);
+      const response = await reportPostApi(postId, reason);
+      console.log("Report post response", response);
 
-    if (response.status === 200) {
-      Alert.alert(
-        "Success",
-        "If this post violates our policies, it will be removed within 24 hours."
-      );
+      if (response.status === 200) {
+        Alert.alert(
+          "Success",
+          "If this post violates our policies, it will be removed within 24 hours."
+        );
+      }
+    } catch (error) {
+      // Check if the error is due to already reported
+      if (error.response && error.response.status === 400) {
+        Alert.alert("Already Reported", "You have already reported this post.");
+      } else {
+        console.error("Error reporting post:", error);
+        Alert.alert(
+          "Error",
+          "An error occurred while trying to report the post."
+        );
+      }
     }
-  } catch (error) {
-    // Check if the error is due to already reported
-    if (
-      error.response &&
-      error.response.status === 400 
-    ) {
-      Alert.alert("Already Reported", "You have already reported this post.");
-    } else {
-      console.error("Error reporting post:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while trying to report the post."
-      );
-    }
-  }
-};
+  };
 
-
+  const createdBy = productData?.createdBy;
   return (
     <SafeAreaView
       style={{
@@ -689,7 +688,7 @@ console.log("itemId: ", itemId);
                   </View>
                 </TouchableOpacity>
 
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   style={{
                     position: "absolute",
                     right: -22,
@@ -701,7 +700,22 @@ console.log("itemId: ", itemId);
                   }}
                 >
                   <Ionicons name="ellipsis-vertical" size={20} color="gray" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
+                {createdBy !== userId && (
+                  <TouchableOpacity
+                    style={{
+                      position: "absolute",
+                      right: -22,
+                      top: -3,
+                      zIndex: 10,
+                    }}
+                    onPress={() => {
+                      setModalVisible(true);
+                    }}
+                  >
+                    <Ionicons name="ellipsis-vertical" size={20} color="gray" />
+                  </TouchableOpacity>
+                )}
               </View>
               <Modal
                 animationType="slide"
@@ -722,10 +736,12 @@ console.log("itemId: ", itemId);
                     onPress={() => {
                       setModalVisible(false);
                       reportPost(itemId, "Inappropriate content");
-                     
                     }}
                   >
-                    <Text style={styles.optionText}> {t("report_listing")}</Text>
+                    <Text style={styles.optionText}>
+                      {" "}
+                      {t("report_listing")}
+                    </Text>
                   </TouchableOpacity>
                   {/* Block User */}
                   <TouchableOpacity
@@ -832,7 +848,7 @@ console.log("itemId: ", itemId);
                       }}
                     >
                       <Text style={styles.bookNowButtonText}>
-                       {t("message_owner")}
+                        {t("message_owner")}
                       </Text>
                     </TouchableOpacity>
                   </>
@@ -1272,7 +1288,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     left: 100,
   },
-   optionButton: {
+  optionButton: {
     width: "100%",
     padding: 15,
     alignItems: "center",

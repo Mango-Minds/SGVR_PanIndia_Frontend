@@ -141,6 +141,7 @@ export default function AddProduct({ navigation, route }) {
       setLoading: (value) => dispatch(setLoadingInBtn(value)),
       fetchProducts,
       navigation,
+      t,
       resetForm: () =>
         setRegisterDetails({
           productName: "",

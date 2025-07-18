@@ -256,6 +256,7 @@ export default function EditListing({ route, navigation }) {
       fetchProduct,
       navigation,
       dispatch,
+      t,
     });
   };
 

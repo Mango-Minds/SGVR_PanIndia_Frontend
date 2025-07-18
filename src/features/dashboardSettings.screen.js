@@ -1,5 +1,6 @@
 import React from "react";
 import { ScrollView, Text, TouchableOpacity } from "react-native";
+// import { useSelector } from "react-redux";
 import { Divider, IconButton } from "react-native-paper";
 import { Container, RowBetween, View } from "../styles/common.styles";
 import SettingCard from "../components/social/SettingCard";
@@ -11,6 +12,9 @@ import { useTranslation } from "react-i18next";
 export default function DashboardSettingsScreen({ navigation }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  // const userType = useSelector((state) => state.user.user.userType[0]);
+  // console.log("usertype in dasboard");
+  
   // const searchData = [
   //   {
   //     name: "View Profile",

@@ -38,7 +38,7 @@ import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { decode } from "base-64";
-
+import { useTranslation } from "react-i18next";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -78,10 +78,10 @@ export default function AddTemple({ navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
-   const userType = useSelector((state) => state.user.user.userType);
+  const { t } = useTranslation();
+  const userType = useSelector((state) => state.user.user.userType[0]);
   console.log("User Type:", userType);
-console.log("Token:", token);
-
+  console.log("Token:", token);
 
   const { loadingInBtn } = useSelector((state) => state.user);
   const [selectedImages, setSelectedImages] = React.useState([]);
@@ -102,7 +102,6 @@ console.log("Token:", token);
     templeLocationLink: "",
   });
 
-
   const _pickDocument = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -120,18 +119,15 @@ console.log("Token:", token);
     setSelectedImages(newArray);
   };
 
-  // const token = useSelector((state) => state.user.token);
-
-
   const addTemple = async () => {
     try {
       let token = await AsyncStorage.getItem("token");
-  console.log("Async token: ", token);
+      console.log("Async token: ", token);
       if (!token) {
         console.error("Bearer token not found");
         return;
       }
-  
+
       const formData = new FormData();
       formData.append("templeName", registerDetails.templeName);
       formData.append("address", registerDetails.address);
@@ -142,23 +138,23 @@ console.log("Token:", token);
       formData.append("phoneNumber", registerDetails.phoneNumber);
       formData.append("email", registerDetails.email);
       formData.append("templeLocationLink", registerDetails.templeLocationLink);
-  
+
       registerDetails.donation.forEach((donation, index) => {
         formData.append(`donation[${index}]`, donation);
       });
-  
+
       registerDetails.members.forEach((member, index) => {
         formData.append(`members[${index}]`, member);
       });
-  
+
       registerDetails.templeShops.forEach((shop, index) => {
         formData.append(`templeShops[${index}]`, shop);
       });
-  
+
       registerDetails.templeEvents.forEach((event, index) => {
         formData.append(`templeEvents[${index}]`, event);
       });
-  
+
       selectedImages.forEach((image, index) => {
         formData.append("images", {
           uri: image.uri,
@@ -166,50 +162,49 @@ console.log("Token:", token);
           type: "image/jpeg",
         });
       });
-  
+
       await dispatch(setLoadingInBtn(true));
-  
+
       console.log("FormData:", formData);
-  
+
       const response = await apiClient.post("/temple", formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
-  
+
       console.log("API Response:", response);
-  
+
       await dispatch(setLoadingInBtn(false));
-  
+
       Alert.alert(
-        "Success",
-        "Temple Created successfully",
-        [{ text: "OK", onPress: () => navigation.goBack() }],
+        t("success"),
+        t("templeCreated"),
+        [{ text: t("ok"), onPress: () => navigation.goBack() }],
         { cancelable: false }
       );
     } catch (error) {
       console.error("Error adding Temple:", error);
-  
+
       if (error.response?.status === 401) {
         console.error("Token expired, attempting refresh...");
         await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
         token = await AsyncStorage.getItem("token");
-  
+
         if (token) {
           return addTemple(); // Retry the function with the new token
         }
       }
-  
+
       Alert.alert(
-        "Error",
-        "Failed to add temple",
-        [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+        t("error"),
+        t("templeCreationFailed"),
+        [{ text: t("ok"), onPress: () => console.log("OK Pressed") }],
         { cancelable: false }
       );
     }
   };
-  
 
   return (
     <SafeArea>
@@ -229,7 +224,7 @@ console.log("Token:", token);
                   color: "#000",
                 }}
               >
-                Add Temple
+                {t("addTemple")}
               </Text>
             </View>
           </RowBetween>
@@ -248,7 +243,7 @@ console.log("Token:", token);
                 marginTop: 50,
               }}
             >
-              Add Temple Images
+              {t("addTempleImages")}
             </Text>
             <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
               {selectedImages &&
@@ -299,7 +294,7 @@ console.log("Token:", token);
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Temple Name*"
+                placeholder={t("Temple Name")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.templeName}
@@ -311,7 +306,7 @@ console.log("Token:", token);
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="Description*"
+                placeholder={t("description")}
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -335,7 +330,6 @@ console.log("Token:", token);
                     marginTop: 20,
                     paddingTop: 15,
                     borderColor: "#e6e6e6",
-                
                   },
                 ]}
               />
@@ -344,7 +338,7 @@ console.log("Token:", token);
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Phone Number*"
+                placeholder={t("phoneNumber")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 keyboardType="numeric"
@@ -359,7 +353,7 @@ console.log("Token:", token);
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Email*"
+                placeholder={t("email")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.email}
@@ -372,7 +366,7 @@ console.log("Token:", token);
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Address"
+                placeholder={t("taddress")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.address}
@@ -384,16 +378,19 @@ console.log("Token:", token);
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Enter google maps link"
+                placeholder={t("googleMapsLink")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.templeLocationLink}
                 onChangeText={(text) =>
-                  setRegisterDetails({ ...registerDetails, templeLocationLink: text })
+                  setRegisterDetails({
+                    ...registerDetails,
+                    templeLocationLink: text,
+                  })
                 }
               />
 
-              <SelectDropdown
+              {/* <SelectDropdown
                 buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
                 buttonTextStyle={{
                   textAlign: "left",
@@ -401,7 +398,7 @@ console.log("Token:", token);
                   fontSize: 16,
                 }}
                 data={Object.keys(statesData)}
-                defaultButtonText="Select State"
+                defaultButtonText={t("selectState")}
                 value={registerDetails.state}
                 onSelect={(selectedItem) => {
                   setRegisterDetails({
@@ -419,20 +416,59 @@ console.log("Token:", token);
                   fontSize: 16,
                 }}
                 data={statesData[registerDetails.state] || []}
-                defaultButtonText="Select city"
+                defaultButtonText={t("selectCity")}
                 onSelect={(selectedItem) => {
                   setRegisterDetails({
                     ...registerDetails,
                     city: selectedItem,
                   });
                 }}
+              /> */}
+              <SelectDropdown
+               buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
+                buttonTextStyle={{
+                  textAlign: "left",
+                  color: "#9B9B9B",
+                  fontSize: 16,
+                }}
+                data={Object.keys(statesData).map((key) => ({
+                  key,
+                  label: t(`states.${key}`),
+                }))}
+                defaultButtonText={t("selectState")}
+                onSelect={(selected) =>
+                  setRegisterDetails({
+                    ...registerDetails,
+                    state: selected.key,
+                  })
+                }
+                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                rowTextForSelection={(item) => item.label}
+              />
+              <SelectDropdown
+               buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
+                buttonTextStyle={{
+                  textAlign: "left",
+                  color: "#9B9B9B",
+                  fontSize: 16,
+                }}
+                data={(statesData[registerDetails.state] || []).map((key) => ({
+                  key,
+                  label: t(`cities.${key}`),
+                }))}
+                defaultButtonText={t("selectCity")}
+                onSelect={(selected) =>
+                  setRegisterDetails({ ...registerDetails, city: selected.key })
+                }
+                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                rowTextForSelection={(item) => item.label}
               />
 
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Pincode"
+                placeholder={t("pincode")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 keyboardType="numeric"
@@ -459,7 +495,7 @@ console.log("Token:", token);
                       color={"white"}
                     />
                   ) : (
-                    "Submit"
+                    t("submit")
                   )}
                 </Text>
               </FormButton>

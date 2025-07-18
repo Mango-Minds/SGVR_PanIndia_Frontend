@@ -20,6 +20,12 @@
     "production": {}
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "sgvrtechios@gmail.com",
+        "ascAppId": "6744047867",
+        "appleTeamId": "3W2M23K7G4"
+      }
+    }
   }
 }

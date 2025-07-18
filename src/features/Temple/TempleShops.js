@@ -23,6 +23,7 @@ import UserImg from "../../assets/images/general/user.png";
 import Theme from "../../styles/theme";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 const statusOptions = [
   {
     title: "Accepted",
@@ -45,15 +46,16 @@ const statusOptions = [
 ];
 
 export default function TempleShops({ templeinfo }) {
+  const { t } = useTranslation();
   const [selectedStatus, setSelectedStatus] = useState("Pending");
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   // const{templeinfo} = route.params;
   console.log("Temple info in shops: ", templeinfo);
   console.log("Temple id in shops: ", templeinfo._id);
-  const templeId = templeinfo._id;  
+  const templeId = templeinfo._id;
 
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user.userType[0]);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
 
@@ -63,59 +65,90 @@ export default function TempleShops({ templeinfo }) {
   const [shops, setShops] = useState([]);
   const [templeDetails, setTempleDetails] = useState(templeinfo);
 
+  // const fetchShops = async () => {
+  //   try {
+  //     setLoadingAnimation(true);
+
+  //     // Get the latest token
+  //     let token = await AsyncStorage.getItem("token");
+
+  //     if (!token) {
+  //       console.error("Bearer token not found");
+  //       throw new Error("Bearer token is missing");
+  //     }
+
+  //     const response = await apiClient.get("/templeShops", {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`, // Ensure the token is included
+  //       },
+  //     });
+
+  //     console.log("Response Status:", response.status);
+  //     console.log("Response Data:", response.data);
+
+  //     // ✅ Fix: Axios stores response in `response.data`
+  //     setShops(response.data);
+
+  //   } catch (error) {
+  //     console.error("Error fetching shops:", error);
+
+  //     // If the error is a 401 Unauthorized, attempt token refresh
+  //     if (error.response?.status === 401) {
+  //       console.error("Token expired, refreshing...");
+
+  //       const refreshToken = await AsyncStorage.getItem("refresh_token");
+  //       const newTokens = await getUpdatedTokens(refreshToken);
+
+  //       if (newTokens && newTokens.status === 0) {
+  //         await AsyncStorage.setItem("token", newTokens.accessToken);
+  //         await AsyncStorage.setItem("refresh_token", newTokens.refreshToken);
+
+  //         return fetchShops(); // Retry fetching shops with the new token
+  //       } else {
+  //         console.error("Failed to refresh token");
+  //       }
+  //     }
+  //   } finally {
+  //     setLoadingAnimation(false);
+  //   }
+  // };
 
   const fetchShops = async () => {
     try {
-      setLoadingAnimation(true);
-  
-      // Get the latest token
-      let token = await AsyncStorage.getItem("token");
-  
-      if (!token) {
-        console.error("Bearer token not found");
-        throw new Error("Bearer token is missing");
-      }
-  
-      const response = await apiClient.get("/templeShops", {
-        headers: {
-          Authorization: `Bearer ${token}`, // Ensure the token is included
-        },
-      });
-  
-      console.log("Response Status:", response.status);
-      console.log("Response Data:", response.data);
-  
-      // ✅ Fix: Axios stores response in `response.data`
-      setShops(response.data);
-      
-    } catch (error) {
-      console.error("Error fetching shops:", error);
-  
-      // If the error is a 401 Unauthorized, attempt token refresh
-      if (error.response?.status === 401) {
-        console.error("Token expired, refreshing...");
-  
-        const refreshToken = await AsyncStorage.getItem("refresh_token");
-        const newTokens = await getUpdatedTokens(refreshToken);
-  
-        if (newTokens && newTokens.status === 0) {
-          await AsyncStorage.setItem("token", newTokens.accessToken);
-          await AsyncStorage.setItem("refresh_token", newTokens.refreshToken);
-  
-          return fetchShops(); // Retry fetching shops with the new token
+      const response = await apiClient.get("/templeShops");
+      console.log("Shop Data: ", response.data);
+
+      const selectedLanguage =
+        (await AsyncStorage.getItem("user-language")) || "en";
+
+      if (response.status === 200) {
+        const shopsData = response.data;
+        console.log("shopsData in fetchShops Details: ", shopsData);
+
+        if (selectedLanguage !== "en" && Array.isArray(shopsData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: shopsData,
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setShops(translationResponse.data.translatedData);
+            console.log(
+              "Translated response fetchShops: ",
+              translationResponse?.data
+            );
+          } else {
+            setShops(shopsData);
+          }
+         
         } else {
-          console.error("Failed to refresh token");
+          setShops(shopsData);
         }
       }
-    } finally {
-      setLoadingAnimation(false);
+    } catch (error) {
+      console.error("Error fetching shops:", error);
     }
   };
-  
-
-
- 
-
 
   useEffect(() => {
     if (isFocused) {
@@ -159,14 +192,14 @@ export default function TempleShops({ templeinfo }) {
   const handleShopStatus = async (shopId, status) => {
     try {
       setLoadingAnimation(true);
-  
+
       const response = await apiClient.patch(`/templeShops/status/${shopId}`, {
         status,
       });
-  
+
       if (response.status === 200) {
         const data = response.data;
-  
+
         setShops((prevShops) =>
           prevShops.map((shop) =>
             shop._id === shopId ? { ...shop, status: status } : shop
@@ -218,7 +251,9 @@ export default function TempleShops({ templeinfo }) {
               minHeight: 400,
             }}
           >
-            <Text style={{ fontSize: 18, color: "grey" }}>No data found</Text>
+            <Text style={{ fontSize: 18, color: "grey" }}>
+              {t("No data found")}
+            </Text>
           </View>
         ) : (
           shops.map((shop) => (
@@ -246,9 +281,7 @@ export default function TempleShops({ templeinfo }) {
                     borderRadius: 8,
                     marginRight: "10%",
                   }}
-                  source={
-                    shop.image ? { uri: `${shop.image}` } : UserImg
-                  }
+                  source={shop.image ? { uri: `${shop.image}` } : UserImg}
                 />
                 <View style={{ flex: 1 }}>
                   <Text
@@ -271,114 +304,123 @@ export default function TempleShops({ templeinfo }) {
                   </Text>
                 </View>
                 {/* {userType === "templeAdmin" && ( */}
-                {userType === "templeAdmin" && templeDetails.createdBy === userId && (
-                  <View
-                    style={{
-                      flexDirection: "column",
-                      marginLeft: "5%",
-                      marginTop: "2%",
-                    }}
-                  >
-                    <Text
+                {userType === "templeAdmin" &&
+                  templeDetails.createdBy === userId && (
+                    <View
                       style={{
-                        opacity: 0.6,
-                        color: "#d966ff",
+                        flexDirection: "column",
+                        marginLeft: "5%",
                         marginTop: "2%",
-                        marginBottom: "5%",
-                        fontSize: 14,
                       }}
                     >
-                      Status
-                    </Text>
+                      <Text
+                        style={{
+                          opacity: 0.6,
+                          color: "#d966ff",
+                          marginTop: "2%",
+                          marginBottom: "5%",
+                          fontSize: 14,
+                        }}
+                      >
+                        {t("Status")}
+                      </Text>
 
-                    <SelectDropdown
-                      data={statusOptions}
-                      onSelect={(selectedItem) => {
-                        confirmStatusChange(shop, selectedItem.value);
-                      }}
-                      defaultValueByIndex={statusOptions.findIndex(
-                        (status) => status.value === shop.status
-                      )}
-                      renderDropdownIcon={(isOpened) => (
-                        <Icon
-                          name={isOpened ? "chevron-up" : "chevron-down"}
-                          size={16}
-                          color="#000"
-                        />
-                      )}
-                      buttonTextAfterSelection={(selectedItem) =>
-                        selectedItem.title
-                      }
-                      rowTextForSelection={(item) => item.title}
-                      buttonStyle={{
-                        width: 105,
-                        height: 40,
-                        backgroundColor: "#E9ECEF",
-                        borderRadius: 8,
-                        paddingHorizontal: 4,
-                        margin: 0,
-                        marginBottom: 0,
-                        justifyContent: "center",
-                        alignItems: "center",
-                      }}
-                      buttonTextStyle={{
-                        fontSize: 14,
-                        color: "#000",
-                        textAlign: "center",
-                        paddingHorizontal: 0,
-                      }}
-                      dropdownStyle={{
-                        borderRadius: 8,
-                        marginTop: -20,
-                      }}
-                      rowStyle={{
-                        height: 40,
-                        justifyContent: "center",
-                        alignItems: "center",
-                        backgroundColor: "#E9ECEF",
-                        paddingHorizontal: 4,
-                      }}
-                      rowTextStyle={{
-                        fontSize: 14,
-                        color: "#000",
-                        textAlign: "center",
-                        paddingHorizontal: 0,
-                      }}
-                      renderCustomizedRowChild={(item) => (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
+                      <SelectDropdown
+                        data={statusOptions}
+                        onSelect={(selectedItem) => {
+                          confirmStatusChange(shop, selectedItem.value);
+                        }}
+                        defaultValueByIndex={statusOptions.findIndex(
+                          (status) => status.value === shop.status
+                        )}
+                        renderDropdownIcon={(isOpened) => (
                           <Icon
-                            name={item.icon}
+                            name={isOpened ? "chevron-up" : "chevron-down"}
                             size={16}
-                            color={item.color}
-                            style={{ marginRight: 5 }}
+                            color="#000"
                           />
-                          <Text>{item.title}</Text>
-                        </View>
-                      )}
-                      renderCustomizedButtonChild={(selectedItem) => (
-                        <View
-                          style={{ flexDirection: "row", alignItems: "center" }}
-                        >
-                          <Icon
-                            name={
-                              selectedItem ? selectedItem.icon : "time-outline"
-                            }
-                            size={16}
-                            color={
-                              selectedItem ? selectedItem.color : "#ffa500"
-                            }
-                            style={{ marginRight: 5 }}
-                          />
-                          <Text>
-                            {selectedItem ? selectedItem.title : "Pending"}
-                          </Text>
-                        </View>
-                      )}
-                    />
-                  </View>
-                )}
+                        )}
+                        buttonTextAfterSelection={(selectedItem) =>
+                          selectedItem.title
+                        }
+                        rowTextForSelection={(item) => item.title}
+                        buttonStyle={{
+                          width: 105,
+                          height: 40,
+                          backgroundColor: "#E9ECEF",
+                          borderRadius: 8,
+                          paddingHorizontal: 4,
+                          margin: 0,
+                          marginBottom: 0,
+                          justifyContent: "center",
+                          alignItems: "center",
+                        }}
+                        buttonTextStyle={{
+                          fontSize: 14,
+                          color: "#000",
+                          textAlign: "center",
+                          paddingHorizontal: 0,
+                        }}
+                        dropdownStyle={{
+                          borderRadius: 8,
+                          marginTop: -20,
+                        }}
+                        rowStyle={{
+                          height: 40,
+                          justifyContent: "center",
+                          alignItems: "center",
+                          backgroundColor: "#E9ECEF",
+                          paddingHorizontal: 4,
+                        }}
+                        rowTextStyle={{
+                          fontSize: 14,
+                          color: "#000",
+                          textAlign: "center",
+                          paddingHorizontal: 0,
+                        }}
+                        renderCustomizedRowChild={(item) => (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Icon
+                              name={item.icon}
+                              size={16}
+                              color={item.color}
+                              style={{ marginRight: 5 }}
+                            />
+                            <Text>{item.title}</Text>
+                          </View>
+                        )}
+                        renderCustomizedButtonChild={(selectedItem) => (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              alignItems: "center",
+                            }}
+                          >
+                            <Icon
+                              name={
+                                selectedItem
+                                  ? selectedItem.icon
+                                  : "time-outline"
+                              }
+                              size={16}
+                              color={
+                                selectedItem ? selectedItem.color : "#ffa500"
+                              }
+                              style={{ marginRight: 5 }}
+                            />
+                            <Text>
+                              {selectedItem ? selectedItem.title : "Pending"}
+                            </Text>
+                          </View>
+                        )}
+                      />
+                    </View>
+                  )}
               </View>
             </TouchableOpacity>
           ))

@@ -32,8 +32,8 @@ import { useDispatch, useSelector } from "react-redux";
 const PanditSpecificTempleList = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
-  const userType = useSelector((state) => state.user.user.userType);
-  const user_pandit_id = user.roleData._id;
+  const userType = useSelector((state) => state.user.user.userType[0]);
+  const user_pandit_id = user.roleData?.pandit?._id;
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [panditTemples, setPanditTemples] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,7 +73,7 @@ const PanditSpecificTempleList = ({ navigation }) => {
 
   const fetchPanditTemples = async () => {
     const queryParams = new URLSearchParams();
-    queryParams.append("panditId", user.roleData._id);
+    queryParams.append("panditId", user.roleData?.pandit._id);
     const queryString = queryParams.toString();
   
     const url = `/temple?${queryString}`; 
@@ -98,6 +98,8 @@ const PanditSpecificTempleList = ({ navigation }) => {
       fetchPanditTemples();
     }
   }, [isFocused]);
+  console.log("panditTemples: ",panditTemples);
+  
   return (
     <ScrollView>
       <RowBetween style={{ paddingTop: 24 }}>
@@ -138,7 +140,7 @@ const PanditSpecificTempleList = ({ navigation }) => {
           size={"large"}
           color={"#b98c13"}
         />
-      ) : panditTemples.connectedTemples.length > 0 ? (
+      ) : panditTemples.connectedTemples?.length > 0 ? (
         <View style={{ flex: 1 }}>
           <FlatList
             style={{
@@ -173,7 +175,7 @@ const PanditSpecificTempleList = ({ navigation }) => {
                   <TempleHomeCard>
                     <ImageBackground
                       source={
-                        item.images.length > 0
+                        item.images?.length > 0
                           ? { uri: `${item.images[0]}` }
                           : ""
                       }

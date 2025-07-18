@@ -37,6 +37,9 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
+;
+
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -76,7 +79,7 @@ export default function AddShopProduct({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
   const { userId, shopId, loggedInShop } = route.params;
-
+const { t } = useTranslation()
   const { loadingInBtn } = useSelector((state) => state.user);
   const [selectedImages, setSelectedImages] = React.useState([]);
   const [registerDetails, setRegisterDetails] = React.useState({
@@ -219,7 +222,8 @@ export default function AddShopProduct({ navigation, route }) {
       console.log("response", response);
   
       if (!response || (response.status !== 200 && response.status !== 201)) {
-        throw new Error("Failed to add product");
+        throw new Error(t("productCreateFailed"));
+
       }
   
       setRegisterDetails({
@@ -232,12 +236,11 @@ export default function AddShopProduct({ navigation, route }) {
       const data = response.data;
       console.log("Added Product:", data);
   
-      Alert.alert(
-        "Success",
-        "Product Created successfully",
+     Alert.alert(t("successTitle"), t("productCreatedSuccess"),
+
         [
           {
-            text: "OK",
+            text:t("ok"),
             onPress: () => {
               navigation.goBack();
             },
@@ -248,10 +251,8 @@ export default function AddShopProduct({ navigation, route }) {
     } catch (error) {
       console.error("Error adding product:", error);
   
-      Alert.alert(
-        "Error",
-        "Failed to add jewelry product",
-        [{ text: "OK", onPress: () => console.log("OK Pressed") }],
+      Alert.alert(t("errorTitle"), t("productCreateFailed"),
+        [{ text: t("ok"), onPress: () => console.log("OK Pressed") }],
         { cancelable: false }
       );
     }
@@ -276,7 +277,7 @@ export default function AddShopProduct({ navigation, route }) {
                   color: "#000",
                 }}
               >
-                Add Product
+              { t("addProduct")}
               </Text>
             </View>
           </RowBetween>
@@ -295,7 +296,7 @@ export default function AddShopProduct({ navigation, route }) {
                 marginTop: 50,
               }}
             >
-              Add Product Image
+             {t("addProductImage")}
             </Text>
             <Row style={{ marginLeft: 24, flexWrap: "wrap" }}>
               {selectedImages &&
@@ -349,7 +350,7 @@ export default function AddShopProduct({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Product Name*"
+                placeholder={t("productName")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.productName}
@@ -361,7 +362,7 @@ export default function AddShopProduct({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Product Price*"
+                placeholder={t("productPrice")}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.productPrice}
@@ -374,7 +375,7 @@ export default function AddShopProduct({ navigation, route }) {
                 multiline={true}
                 numberOfLines={4}
                 selectionColor={Theme.themeColor}
-                placeholder="Product Description*"
+                placeholder={t("productDescription")}
                 activeUnderlineColor={Theme.themeColor}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
@@ -408,7 +409,7 @@ export default function AddShopProduct({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Product Quantity*"
+                placeholder={t("productQuantity")}
                 underlineColor="transparent"
                 keyboardType="numeric"
                 placeholderTextColor="#9B9B9B"
@@ -437,7 +438,7 @@ export default function AddShopProduct({ navigation, route }) {
                       color={"white"}
                     />
                   ) : (
-                    "Submit"
+                    t("submit")
                   )}
                 </Text>
               </FormButton>

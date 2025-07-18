@@ -77,8 +77,11 @@ export default function MatrimonyProfileNewWithConnection({
   const vendorId = vendorData.owner?._id;
   console.log("vendorId: ", vendorId);
   
-  const ownerId = user?.user?.roleData?.MatrimonyUser?.owner ||user?.user?.roleData?.MatrimonyVendor?.owner || user?.user?.roleData?.templeAdmin?.owner|| user?.user?.roleData?.pandit?.owner || user?.user?.roleData?.templeShopOwner?.owner;
+  const ownerId = user?.user?.roleData?.MatrimonyUser?.owner ||user?.user?.roleData?.MatrimonyVendor?.owner || user?.user?._id|| user?.user?.roleData?.pandit?.owner || user?.user?.roleData?.templeShopOwner?.owner;
   console.log("ownerId: ", ownerId);
+
+
+  
  
   const mainFlatListRef = useRef(null);
   const modalFlatListRef = useRef(null);

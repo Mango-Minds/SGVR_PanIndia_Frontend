@@ -18,16 +18,19 @@ import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "../../components/Jewellery/BottomNavigation";
+import BottomNavigation from "./BottomNavigation";
 import TempleShops from "./TempleShops";
 import SelectDropdown from "react-native-select-dropdown";
 import apiClient from "../../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useTranslation } from "react-i18next";
 function TempleNotifications({ navigation, route }) {
   const [selectedTab, setSelectedTab] = useState("Requests");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const handleTabPress = (tab) => {
     setSelectedTab(tab);
   };
+  const { t } = useTranslation();
   const { templeinfo } = route.params;
   console.log("Notifications temple info: ", templeinfo);
   const templeId = templeinfo._id;
@@ -194,11 +197,37 @@ function TempleNotifications({ navigation, route }) {
     console.log("Temple ID in request:", templeId);
     try {
       setLoadingAnimation(true);
-  
-      const response = await apiClient.get(`/panditToTempleReqList/${templeId}`);
+
+      const response = await apiClient.get(
+        `/panditToTempleReqList/${templeId}`
+      );
+      if (response.status === 200) {
+        const notificationData = response.data.requests;
+        console.log("shopsData in fetchShops Details: ", notificationData);
+        const selectedLanguage =
+          (await AsyncStorage.getItem("user-language")) || "en";
+        if (selectedLanguage !== "en" && Array.isArray(notificationData)) {
+          const translationResponse = await apiClient.post("/translate", {
+            data: notificationData,
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData?.length) {
+            setPandits(translationResponse.data.translatedData);
+            console.log(
+              "Translated response fetchShops: ",
+              translationResponse?.data
+            );
+          } else {
+            setPandits(notificationData);
+          }
+        } else {
+          setPandits(notificationData);
+        }
+      }
       console.log("PanditToTempleRequest List", response.data);
-  
-      setPandits(response.data.requests || []);
+
+      // setPandits(response.data.requests || []);
     } catch (error) {
       console.error("Error fetching PanditToTemple requests:", error);
     } finally {
@@ -212,139 +241,62 @@ function TempleNotifications({ navigation, route }) {
     );
   };
 
-  // const handleAcceptRequest = async (requestId) => {
-  //   try {
-  //     console.log("T req id: ", requestId);
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ action: "accept" }),
-  //       }
-  //     );
-  //     const responseData = await response.json();
-
-  //     if (response.ok) {
-  //       Alert.alert("Request Accept Successfully.");
-  //       removeAcceptedRequest(requestId, setPandits);
-  //     } else {
-  //       console.error("Failed to accept request:", responseData);
-  //       throw new Error("Failed to accept request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error accepting request:", error);
-  //   }
-  // };
-  // const handleDeleteRequest = async (requestId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/panditToTempleRequest/${requestId}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ action: "delete" }),
-  //       }
-  //     );
-  //     const responseData = await response.json();
-
-  //     if (response.ok) {
-  //       Alert.alert("Request Deleted Successfully.");
-  //       fetchPanditToTempleRequest();
-  //     } else {
-  //       console.error("Failed to delete request:", responseData);
-  //       throw new Error("Failed to delete request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting request:", error);
-  //   }
-  // };
-
-  // const fetchShopToTempleRequest = async () => {
-  //   console.log("templeid in req: ", templeId);
-  //   try {
-  //     setLoadingAnimation(true);
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/templeConnections/requests/${templeId}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     console.log("ShopToTempleRequest List", response);
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-
-  //       setShops(data);
-
-  //       console.log("ShopToTemple Req data: ", data);
-  //     } else {
-  //       throw new Error("Failed to fetch ShopToTemple requests");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching ShopToTemple requests:", error);
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
  
   const handleAcceptRequest = async (requestId) => {
     try {
       console.log("T req id: ", requestId);
-  
-      const response = await apiClient.post(`/panditToTempleRequest/${requestId}`, {
-        action: "accept",
-      });
-  
+
+      const response = await apiClient.post(
+        `/panditToTempleRequest/${requestId}`,
+        {
+          action: "accept",
+        }
+      );
+
       if (response.status === 200) {
-        Alert.alert("Request Accepted Successfully.");
+       Alert.alert(t("requestAccepted"));
         removeAcceptedRequest(requestId, setPandits);
       } else {
         console.error("Failed to accept request:", response.data);
-        throw new Error("Failed to accept request");
+         throw new Error(t("failedAcceptRequest"));
       }
     } catch (error) {
       console.error("Error accepting request:", error);
     }
   };
-  
+
   const handleDeleteRequest = async (requestId) => {
     try {
-      const response = await apiClient.post(`/panditToTempleRequest/${requestId}`, {
-        action: "delete",
-      });
-  
+      const response = await apiClient.post(
+        `/panditToTempleRequest/${requestId}`,
+        {
+          action: "delete",
+        }
+      );
+
       if (response.status === 200) {
-        Alert.alert("Request Deleted Successfully.");
+        Alert.alert(t("requestDeleted"));
         fetchPanditToTempleRequest();
       } else {
         console.error("Failed to delete request:", response.data);
-        throw new Error("Failed to delete request");
+          throw new Error(t("failedDeleteRequest"));
       }
     } catch (error) {
       console.error("Error deleting request:", error);
     }
   };
- 
+
   const fetchShopToTempleRequest = async () => {
     console.log("Temple ID in request:", templeId);
     try {
       setLoadingAnimation(true);
-  
-      const response = await apiClient.get(`/templeConnections/requests/${templeId}`);
+
+      const response = await apiClient.get(
+        `/templeConnections/requests/${templeId}`
+      );
       console.log("ShopToTempleRequest List", response.data);
-  
-      setShops(response.data);
+
+      setShops(response.data || []);
     } catch (error) {
       console.error("Error fetching ShopToTemple requests:", error);
     } finally {
@@ -408,41 +360,53 @@ function TempleNotifications({ navigation, route }) {
   const handleShopAcceptRequest = async (requestId) => {
     try {
       console.log("S req id: ", requestId);
-  
-      const response = await apiClient.patch(`/templeConnections/action/${requestId}`, {
-        status: "accepted",
-      });
-  
+
+      const response = await apiClient.patch(
+        `/templeConnections/action/${requestId}`,
+        {
+          status: "accepted",
+        }
+      );
+
       if (response.status === 200) {
-        Alert.alert("Request Accepted Successfully.");
+       Alert.alert(t("requestAccepted"));
         removeAcceptedRequest(requestId, setShops);
       } else {
-        console.error("Failed to accept Shop to temple request:", response.data);
-        throw new Error("Failed to accept Shop to temple request");
+        console.error(
+          "Failed to accept Shop to temple request:",
+          response.data
+        );
+        throw new Error(t("failedShopAcceptRequest"));
       }
     } catch (error) {
       console.error("Error accepting Shop to temple request:", error);
     }
   };
-  
+
   const handleShopDeleteRequest = async (requestId) => {
     try {
-      const response = await apiClient.patch(`/templeConnections/action/${requestId}`, {
-        status: "rejected",
-      });
-  
+      const response = await apiClient.patch(
+        `/templeConnections/action/${requestId}`,
+        {
+          status: "rejected",
+        }
+      );
+
       if (response.status === 200) {
-        Alert.alert("Request Deleted Successfully.");
+       Alert.alert(t("requestDeleted"));
         fetchShopToTempleRequest();
       } else {
-        console.error("Failed to delete Shop to temple request:", response.data);
-        throw new Error("Failed to delete Shop to temple request");
+        console.error(
+          "Failed to delete Shop to temple request:",
+          response.data
+        );
+        throw new Error(t("failedShopDeleteRequest"));
       }
     } catch (error) {
       console.error("Error deleting Shop to temple request:", error);
     }
   };
-  
+
   useEffect(() => {
     fetchPanditToTempleRequest();
     fetchShopToTempleRequest();
@@ -464,9 +428,13 @@ function TempleNotifications({ navigation, route }) {
           <View style={{ alignItems: "center", flexDirection: "row" }}>
             <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
             <TopText
-              style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
             >
-              Temple
+              {t("temple")}
             </TopText>
           </View>
         </RowBetween>
@@ -485,7 +453,7 @@ function TempleNotifications({ navigation, route }) {
                 selectedTab === tab ? styles.selectedTabText : {},
               ]}
             >
-              {tab}
+              {t(tab)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -535,7 +503,7 @@ function TempleNotifications({ navigation, route }) {
                   }}
                 >
                   <Text style={{ fontSize: 18, color: "grey" }}>
-                    No data found
+                    {t("no_data_found")}
                   </Text>
                 </View>
               ) : (
@@ -581,7 +549,6 @@ function TempleNotifications({ navigation, route }) {
                                   fontWeight: "bold",
                                   opacity: 0.7,
                                   fontSize: 17,
-                                  
                                 }}
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
@@ -595,7 +562,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginTop: "2%",
                                 }}
                               >
-                                {"pandit"}
+                                {t("pandit")}
                               </Text>
                             </View>
 
@@ -637,7 +604,7 @@ function TempleNotifications({ navigation, route }) {
                                     color="#7AB163"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>Accept</Text>
+                                  <Text>{t("accept")}</Text>
                                 </View>
                               </TouchableOpacity>
                               <TouchableOpacity
@@ -674,7 +641,7 @@ function TempleNotifications({ navigation, route }) {
                                     color="#ff0000"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>Delete</Text>
+                                  <Text>{t("delete")}</Text>
                                 </View>
                               </TouchableOpacity>
                             </View>
@@ -703,9 +670,7 @@ function TempleNotifications({ navigation, route }) {
                                 marginRight: "6%",
                               }}
                               source={
-                                shop.image
-                                  ? { uri: `${shop.image}` }
-                                  : UserImg
+                                shop.image ? { uri: `${shop.image}` } : UserImg
                               }
                             />
 
@@ -728,7 +693,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginTop: "2%",
                                 }}
                               >
-                                {"shop"}
+                                {t("shop")}
                               </Text>
                             </View>
 
@@ -770,7 +735,7 @@ function TempleNotifications({ navigation, route }) {
                                     color="#7AB163"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>Accept</Text>
+                                  <Text>{t("accept")}</Text>
                                 </View>
                               </TouchableOpacity>
                               <TouchableOpacity
@@ -807,7 +772,7 @@ function TempleNotifications({ navigation, route }) {
                                     color="#ff0000"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>Delete</Text>
+                                  <Text>{t("delete")}</Text>
                                 </View>
                               </TouchableOpacity>
                             </View>

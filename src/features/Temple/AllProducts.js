@@ -24,9 +24,13 @@ import { useIsFocused } from "@react-navigation/native";
 import FilterMenu from "./FilterMenu";
 import Theme from "../../styles/theme";
 import apiClient from "../../store/apiClient";
+import { debounce } from "lodash";
+import BottomNavigation from "./BottomNavigation";
+  import { useTranslation } from "react-i18next";
+
 const AllProductsScreen = ({ route }) => {
   const { userType, ownerId, userId, shopId, loggedInShop } = route.params;
-
+ const { t } = useTranslation();
   const isFocused = useIsFocused();
 
   const user = useSelector((state) => state.user.user);
@@ -187,10 +191,10 @@ const AllProductsScreen = ({ route }) => {
           <TopText
             style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
           >
-            All Products
+            {t("AllProducts")}
           </TopText>
         </View>
-        {user.userType === "templeShopOwner" && (
+        {user.userType[0] === "templeShopOwner" && (
           <IconButton
             icon="plus"
             style={{ marginLeft: "auto", marginRight: "auto" }}
@@ -205,7 +209,7 @@ const AllProductsScreen = ({ route }) => {
         )}
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder="Search" onChangeText={handleSearch} />
+        <SearchField placeholder={t("search")} onChangeText={handleSearch} />
 
         <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
           <Icon name="search" size={24} />
@@ -219,7 +223,7 @@ const AllProductsScreen = ({ route }) => {
             alignItems: "center",
           }}
           size={"large"}
-          color={"#b98c13"}
+          color={Theme.themeColor}
         />
       ) : (
         <ScrollView>
@@ -261,8 +265,8 @@ const AllProductsScreen = ({ route }) => {
                           ₹{product.price}
                         </Text>
                       </View>
-                      <Text style={{ color: "#b58904", marginTop: 10 }}>
-                        View Details
+                      <Text style={{ color: Theme.themeColor, marginTop: 10 }}>
+                        {t("view_details")}
                       </Text>
                     </View>
                   </Pressable>
