@@ -4,14 +4,20 @@ import { InputField } from "../../styles/common.styles";
 import { PostCommentContainer } from "../../styles/social.styles";
 
 export default function PostComment(props) {
-  const { img } = props;
+  const { img, value, onChangeText, onSubmit } = props;
   return (
     <PostCommentContainer>
       <Image
         source={{ uri: img }}
         style={{ width: 36, height: 36, borderRadius: 18 }}
       />
-      <InputField placeholder="Post a comment..." style={{ marginRight: 16 }} />
+      <InputField 
+        placeholder="Post a comment..." 
+        style={{ marginRight: 16 }}
+        value={value}
+        onChangeText={onChangeText}
+        onSubmitEditing={onSubmit}
+      />
     </PostCommentContainer>
   );
 }

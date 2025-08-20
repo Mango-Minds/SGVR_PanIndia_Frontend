@@ -6,13 +6,13 @@ import { TopText } from "../../styles/social.styles";
 import NotificationCard from "../../components/notification/NotificationCard";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
-import { QueryClient } from "react-query";
+import { QueryClient } from "@tanstack/react-query";
 import {
   getNotification,
   readNotification,
 } from "../../services/notification.services";
 import { UpdateNotification } from "../../store/Handlers/Reducer.Handler";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 // import LikeCard from './LikeCard';
 
 export default function CommunityNotifications({ navigation }) {
@@ -30,7 +30,7 @@ export default function CommunityNotifications({ navigation }) {
     for (let i = 0; i < notification.community.length; i++) {
       const item = notification.community[i];
       if (item.isRead === false) {
-        const newItem = update(item, { $set: { ...item, isRead: true } });
+        const newItem = { ...item, isRead: true };
         newnot.push(newItem);
       } else {
         newnot.push(item);

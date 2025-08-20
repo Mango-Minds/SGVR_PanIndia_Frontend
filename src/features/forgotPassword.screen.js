@@ -33,8 +33,8 @@ export default function ForgotPasswordScreen({ navigation }) {
   const forgotPassword = async () => {
     dispatch(setLoadingInBtn(true));
     axios
-      .post(BASEAPIURL + "/auth/send-otp", {
-        userid: phone,
+      .post(BASEAPIURL + "/user/forgot-password/request-otp", {
+        phone: phone,
       })
       .then((res) => {
         if (res.data.status === 0) {

@@ -2,7 +2,7 @@
   "expo": {
     "name": "Me Maratha",
     "slug": "mimaratha",
-    "version": "1.0.0",
+    "version": "1.3.3",
     "orientation": "portrait",
     "icon": "./assets/icon.jpg",
     "userInterfaceStyle": "light",
@@ -14,18 +14,22 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mimaratha.app",
-      "buildNumber": "1",
+      "buildNumber": "6",
+
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
+      },
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.jpg",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.mimaratha.app",
-      "versionCode": 1,
+      "versionCode": 35,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
@@ -33,12 +37,16 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.jpg"
+      "favicon": "./assets/favicon2.png"
     },
     "extra": {
       "eas": {
         "projectId": "4ccd9861-35c9-4d00-95d7-d8fcece82a80"
       }
-    }
+    },
+    "plugins": [
+      "expo-audio",
+      "expo-video"
+    ]
   }
 }

@@ -24,7 +24,7 @@ import {
   GetAllFriends,
   getImageUrl,
 } from "../services/socialMedia.services";
-import { useMutation, useQuery } from "react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import { useRef } from "react";
 import TagPeople from "../components/modals/TagPeopleModal";

@@ -13,64 +13,81 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Icons from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
+import { generateEventShareUrl, generateShareMessage } from "../../utils/shareUtils";
 
 const EventsStackNavigator = ({ route }) => {
-  const navigation = useNavigation()
-  // const {
-  //   // imgUrl,
-  //   // images,
-    // navigation,
-  //   // eventName,
-  //   // description,
-  //   // startdate,
-  //   // starttime,
-  //   // endtime,
-  //   // enddate,
-  //   // location,
-  //   // organizer,
-  //   // organizerPhone,
-  //   // createdAt,
-  // } = route.params;
-  // const [imgUrl2, setImgUrl2] = useState();
+  const navigation = useNavigation();
+  const {
+    imgUrl,
+    images,
+    eventName,
+    description,
+    startdate,
+    starttime,
+    endtime,
+    enddate,
+    location,
+    organizer,
+    organizerPhone,
+    createdAt,
+  } = route.params;
+  const [imgUrl2, setImgUrl2] = useState();
 
-  // useEffect(async () => {
-  //   if (imgUrl === undefined) {
-  //     const res = await getImageUrl(images[0]);
-  //     setImgUrl2(res.url);
-  //   }
-  // }, []);
-  // const shareOptions = {
-  //   title: "Namaste",
-  //   url: "",
-  //   message:
-  //     "Namaste,\n" +
-  //     "This is your Invitaion for " +
-  //     upperCase(eventName) +
-  //     ",\n" +
-  //     description +
-  //     "\nThe Details of event are mentioned below,\n" +
-  //     "Timing: " +
-  //     starttime +
-  //     " " +
-  //     startdate.slice(0, 10) +
-  //     " - " +
-  //     endtime +
-  //     " " +
-  //     enddate.slice(0, 10) +
-  //     " \nVenue: " +
-  //     location +
-  //     " \norganized by " +
-  //     organizer +
-  //     "\nPhone no" + " " +
-  //     organizerPhone +
-  //     "\n" +
-  //     "", // Note that according to the documentation at least one of "message" or "url" fields is required
-  //   subject: "Invitation for" + eventName,
-  // };
-  // const eventName = eventName;
+  useEffect(() => {
+    if (imgUrl === undefined && images && images.length > 0) {
+      // Handle image URL if needed
+      setImgUrl2(images[0]);
+    }
+  }, [imgUrl, images]);
 
-  const onSharePress = () => {
-    Share.share(shareOptions);
+  const getEventShareUrl = () => {
+    return generateEventShareUrl({
+      eventName,
+      eventId: eventName?.replace(/\s+/g, '-').toLowerCase(),
+      location,
+      organizer
+    });
+  };
+
+  const shareOptions = {
+    title: "Namaste",
+    url: getEventShareUrl(),
+    message: generateShareMessage(
+      "Namaste,\n" +
+      "This is your Invitation for " +
+      eventName +
+      ",\n" +
+      description +
+      "\nThe Details of event are mentioned below,\n" +
+      "Timing: " +
+      starttime +
+      " " +
+      startdate.slice(0, 10) +
+      " - " +
+      endtime +
+      " " +
+      enddate.slice(0, 10) +
+      " \nVenue: " +
+      location +
+      " \norganized by " +
+      organizer +
+      "\nPhone no" + " " +
+      organizerPhone,
+      getEventShareUrl()
+    ),
+    subject: "Invitation for " + eventName,
+  };
+
+  const onSharePress = async () => {
+    try {
+      const result = await Share.share(shareOptions);
+      if (result.action === Share.sharedAction) {
+        console.log("Content shared successfully");
+      }
+    } catch (error) {
+      console.error("Error sharing content:", error);
+      // You can show an alert or toast message here
+    }
   };
   return (
     <SafeAreaView>
@@ -79,6 +96,9 @@ const EventsStackNavigator = ({ route }) => {
           <Icon name="chevron-left" size={34} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTxt}>Events</Text>
+        <TouchableOpacity onPress={onSharePress}>
+          <Icons name="share-outline" size={24} color="#b98c13" />
+        </TouchableOpacity>
       </View>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ padding: 10 }}>

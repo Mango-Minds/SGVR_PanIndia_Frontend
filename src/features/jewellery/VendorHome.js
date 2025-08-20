@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TopText } from "../../styles/social.styles";
 import Profile from "../../assets/images/B2b/profile.png";
 import UserImg from "../../assets/images/general/user.png";

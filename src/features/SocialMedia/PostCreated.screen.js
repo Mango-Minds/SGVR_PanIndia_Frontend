@@ -19,7 +19,8 @@ const PostCreated = ({ navigation }) => {
       </Text>
       <TouchableOpacity
         onPress={() => {
-          navigation.navigate("Home");
+          // Navigate to SocialHomeScreen with refresh parameter
+          navigation.navigate("SocialHomeScreen", { refresh: true });
         }}
       >
         <Text

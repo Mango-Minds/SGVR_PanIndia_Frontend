@@ -12,9 +12,9 @@ import { Container, RowBetween, View } from "../styles/common.styles";
 import { TopText } from "../styles/social.styles";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
-import { QueryClient, useQueryClient } from "react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import Theme from "../styles/theme";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 import { UpdateNotification } from "../store/Handlers/Reducer.Handler";
 import { readNotification } from "../services/notification.services";
 import { ScrollView } from "react-native-gesture-handler";
@@ -45,7 +45,7 @@ export default function DashboardNotificationScreen({ navigation, route }) {
   //   for (let i = 0; i < notification.homescreen.length; i++) {
   //     const item = notification.homescreen[i];
   //     if (item.isRead === false) {
-  //       const newItem = update(item, { $set: { ...item, isRead: true } });
+  //       const newItem = { ...item, isRead: true };
   //       newNotification.push(newItem);
   //     } else {
   //       newNotification.push(item);

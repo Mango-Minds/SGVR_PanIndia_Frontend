@@ -19,7 +19,7 @@ import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import BottomNavigation from "../../components/social/BottomNavigation";
 
 import { useSelector } from "react-redux";
@@ -402,7 +402,7 @@ export default FollowersFollowing;
 // import messageIcon from "../../assets/images/social/message.png";
 // import AsyncStorage from "@react-native-async-storage/async-storage";
 // import apiClient from "../../store/apiClient";
-// import { Ionicons } from "react-native-vector-icons";
+// import Ionicons from 'react-native-vector-icons/Ionicons';
 // import BottomNavigation from "../../components/social/BottomNavigation";
 
 // import { useSelector } from "react-redux";

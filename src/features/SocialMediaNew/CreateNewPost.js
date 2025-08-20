@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
@@ -272,7 +272,8 @@ const CreateNewPost = ({ navigation }) => {
   
       if (response.status === 200 || response.status === 201) {
         Alert.alert("Success", "Post created successfully!");
-        navigation.goBack();
+        // Navigate back and trigger refresh by setting a flag
+        navigation.navigate("SocialHomeScreen", { refresh: true });
       } else {
         Alert.alert("Error", response.data?.message || "Something went wrong.");
       }

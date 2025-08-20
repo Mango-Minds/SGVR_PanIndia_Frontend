@@ -18,7 +18,7 @@ import WestsideImage from "../../assets/images/B2b/westside.png";
 import LifestyleImage from "../../assets/images/B2b/lifestyle.png";
 import { Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getProductCategories } from "../../services/B2B.services";
 
 const ProductHome = () => {

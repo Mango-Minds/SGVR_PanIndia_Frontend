@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import { debounce } from "lodash";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { decode } from "base-64";
 import Theme from "../../styles/theme";
 import {
@@ -27,7 +27,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
@@ -36,6 +36,7 @@ import {
   BASEAPIURL,
   BASEIMGURL,
   RENDERMEDIAURL,
+  SOCKETURL,
 } from "../../infrastructure/constants";
 import { io } from "socket.io-client";
 import * as DocumentPicker from "expo-document-picker";
@@ -84,7 +85,7 @@ const ChatScreenNew = ({ route }) => {
   const isFocused = useIsFocused();
   const navigation = useNavigation();
   const socket = useMemo(() => {
-    return io(`${BASEIMGURL}`, {
+    return io(`${SOCKETURL}`, {
       query: { auth_token },
       transports: ["websocket"],
     });

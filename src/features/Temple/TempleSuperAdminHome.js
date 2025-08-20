@@ -14,7 +14,7 @@ import {
 import Theme from "../../styles/theme";
 import { Container, RowBetween } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TopText } from "../../styles/social.styles";
 import { BASEAPIURL} from "../../infrastructure/constants";
 import axios from "axios";

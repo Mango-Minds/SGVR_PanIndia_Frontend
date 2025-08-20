@@ -11,7 +11,7 @@ import {
 import { useSelector } from "react-redux";
 import React, { useCallback, useState, useEffect } from "react";
 import { Row } from "../../styles/dashboard.styles";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { debounce } from "lodash";
 import Icon from "react-native-vector-icons/Ionicons";

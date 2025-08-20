@@ -15,7 +15,7 @@ import { useIsFocused } from "@react-navigation/native";
 import Checkbox from "expo-checkbox";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { IconButton } from "react-native-paper";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { TopText } from "../../styles/social.styles";
 import Profile from "../../assets/images/B2b/profile.png";
 import { Row } from "../../styles/dashboard.styles";

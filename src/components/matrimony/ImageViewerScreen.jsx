@@ -5,7 +5,7 @@ const windowWidth = Dimensions.get("window").width;
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 
 export default function ImageViewerScreen({ images, setShowViewer, index }) {
-  console.log("images", images)
+  console.log("images", images);
   if (images.length === 0) {
     return (
       <>
@@ -35,7 +35,7 @@ export default function ImageViewerScreen({ images, setShowViewer, index }) {
         </View>
       </>
     );
-  } else
+  } else 
     return (
       <ImageViewer
         onCancel={() => setShowViewer(false)}

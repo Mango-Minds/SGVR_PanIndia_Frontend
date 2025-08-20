@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import Theme from "../styles/theme";
 import { IconButton, Text } from "react-native-paper";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import OptionsModal from "../components/modals/OptionsModal";
 import ShareModal from "../components/modals/ShareModal";
 import SocialCard from "../components/social/SocialCard";
@@ -325,7 +325,10 @@ export default function SocialScreen({ navigation }) {
         </ScrollView>
       )}
 
-      <ShareModal slideUpRef={shareRef} />
+      <ShareModal 
+        slideUpRef={shareRef} 
+        friends={socialData?.searchList || []}
+      />
       <OptionsModal
         slideUpRef={slideUpRef}
         options={options}

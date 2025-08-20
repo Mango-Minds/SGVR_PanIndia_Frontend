@@ -9,7 +9,7 @@ import {
   } from "react-native";
   import React from "react";
   import { Row } from "../../styles/dashboard.styles";
-  import { Ionicons } from "react-native-vector-icons";
+  import Ionicons from 'react-native-vector-icons/Ionicons';
   import Icon from "react-native-vector-icons/Ionicons";
   import { Divider, IconButton } from "react-native-paper";
   import { TopText } from "../../styles/social.styles";

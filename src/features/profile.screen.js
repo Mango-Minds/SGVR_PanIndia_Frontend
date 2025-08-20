@@ -19,7 +19,7 @@ import { Container, RowBetween, View } from "../styles/common.styles";
 import { useSelector, useDispatch } from "react-redux";
 import { ProfileContainer, ProfileStats } from "../styles/profile.styles";
 import { TopText } from "../styles/social.styles";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { capitalize } from "../components/utility/capitalize";
 import { logout, ErrorToggle, IsBttnloading, initialUser } from "../store/user";
 import { ProfilePosts } from "../components/profile/Posts";
@@ -54,6 +54,14 @@ export default function ProfileScreen({ navigation }) {
       function: () => {
         navigation.navigate("SettingsScreen");
       },
+    },
+    {
+      title: "Delete Account",
+      function: () => {
+        slideUpRef.current.close();
+        navigation.navigate("DeleteAccount");
+      },
+      isDestructive: true,
     },
     {
       title: "Logout",

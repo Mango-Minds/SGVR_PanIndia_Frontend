@@ -3,7 +3,7 @@ import { Card, Divider, IconButton } from "react-native-paper";
 import { TouchableOpacity } from "react-native";
 
 export default function SettingCard(props) {
-  const { name, callback } = props;
+  const { name, callback, isDestructive } = props;
   return (
     <TouchableOpacity
       onPress={callback}
@@ -16,12 +16,15 @@ export default function SettingCard(props) {
           // backgroundColor: 'white',
         }}
       >
-        <Card.Title
-          title={name}
-          titleStyle={{ fontSize: 16 }}
-          subtitleStyle={{ fontSize: 12, color: "#454F63" }}
-          right={(props) => <IconButton icon="chevron-right" />}
-        />
+                        <Card.Title
+                  title={name}
+                  titleStyle={{
+                    fontSize: 16,
+                    color: isDestructive ? '#DC3545' : '#000000'
+                  }}
+                  subtitleStyle={{ fontSize: 12, color: "#454F63" }}
+                  right={(props) => <IconButton icon="chevron-right" />}
+                />
         <Divider />
       </Card>
     </TouchableOpacity>

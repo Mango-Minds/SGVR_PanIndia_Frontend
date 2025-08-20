@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Card, IconButton } from "react-native-paper";
 import Theme from "../../styles/theme";
 import { useTranslation } from "react-i18next";

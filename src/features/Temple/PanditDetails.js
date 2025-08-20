@@ -16,14 +16,13 @@ import {
   Dimensions,
 } from "react-native";
 import Theme from "../../styles/theme";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import Temp1 from "../../assets/images/Temple/temp1.jpg";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getShceduledDates } from "../../services/matrimony.services";
 import CommunityMemberCard from "../../components/community/communityMemberCard";
 import { useNavigation } from "@react-navigation/native";
@@ -61,7 +60,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   const outeruser = useSelector((state) => state.user);
   const isFocused = useIsFocused();
 
-  console.log("temple details page usertoken: ", token);
+
   const userType = useSelector((state) => state.user.user.userType[0]);
   const { panditinfo } = route.params;
   console.log("Pandit info: ", panditinfo);
@@ -144,15 +143,14 @@ const TemplePanditDetails = ({ route, navigation }) => {
   }, [isFocused]);
 
   const associatedTemples = panditinfo.temples;
-  console.log("AT: ", associatedTemples);
-  console.log("panditInfo: ", panditinfo);
+
   const [templeDetails, setTempleDetails] = useState(panditinfo.temples);
 
-  console.log("TempleDetails: ", templeDetails);
+
 
   const goToEvents = (date) => {
     const temple = templeDetails[0];
-    console.log("Temple: ", temple);
+
     Navigation.navigate("TempleEvents", {
       date: date,
       templeAdmin: temple?.createdBy,

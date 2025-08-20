@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ActivityIndicator,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
 } from "react-native";
 import { IconButton } from "react-native-paper";
-import { useMutation, useQuery, useQueryClient } from "react-query";
 import { useDispatch, useSelector } from "react-redux";
 import {
   commentOnPost,
@@ -16,68 +19,83 @@ import { setLoadingInBtn } from "../../store/user";
 import { Container, RowBetween, View } from "../../styles/common.styles";
 import { ChatTextInput, TopText } from "../../styles/social.styles";
 import CommentCard from "./CommentCard";
-import PostComment from "./PostComment";
 import { ErrorToggle } from "../../store/user";
-
-// import LikeCard from './LikeCard';
 
 export default function CommentScreen({ navigation, route }) {
   const { loadingInBtn } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const { postId } = route.params;
-  const queryClient = useQueryClient();
   const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const { data, isError, error, isLoading } = useQuery(
-    ["post-comments", postId],
-    () => getAllComments({ postId }),
-    {
-      onSuccess: (data) => {
-        // console.log(data.data,'comments------------------------------------------');
-        dispatch(
-          ErrorToggle({
-            msg: "Comment Added",
-            type: "success",
-            toggle: false,
-          })
-        );
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            msg: err.response.data.message,
-            type: "error",
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
-
-  const commentMutation = useMutation(commentOnPost, {
-    onSuccess: async (data) => {
-      await queryClient.invalidateQueries("post-comments");
-      // await queryClient.invalidateQueries("social-timeline");
-    },
-    onError: (err) => {
+  const fetchComments = async () => {
+    try {
+      setLoading(true);
+      const response = await getAllComments({ postId });
+      console.log('Comments fetched:', response);
+      if (response && response.comments) {
+        setComments(response.comments);
+      } else {
+        setComments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+      setComments([]);
       dispatch(
         ErrorToggle({
-          msg: err.response.data.message,
+          msg: "Failed to load comments",
           type: "error",
           toggle: true,
         })
       );
-    },
-  });
-
-  const handleComment = async () => {
-    dispatch(setLoadingInBtn(true));
-    await commentMutation.mutateAsync({ postId: postId, content: commentText });
-    dispatch(setLoadingInBtn(false));
-    setCommentText("");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (loadingInBtn)
+  useEffect(() => {
+    fetchComments();
+  }, [postId]);
+
+  const handleComment = async () => {
+    if (!commentText.trim()) {
+      Alert.alert("Error", "Please enter a comment");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const response = await commentOnPost({ postId, content: commentText });
+      console.log('Comment added:', response);
+      
+      // Refresh comments after adding new one
+      await fetchComments();
+      
+      setCommentText("");
+      dispatch(
+        ErrorToggle({
+          msg: "Comment added successfully",
+          type: "success",
+          toggle: true,
+        })
+      );
+    } catch (error) {
+      console.error('Error adding comment:', error);
+      dispatch(
+        ErrorToggle({
+          msg: error.response?.data?.message || "Failed to add comment",
+          type: "error",
+          toggle: true,
+        })
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loadingInBtn || loading) {
     return (
       <ActivityIndicator
         style={{
@@ -87,112 +105,110 @@ export default function CommentScreen({ navigation, route }) {
         }}
       />
     );
-  else
-    return (
-      <Container
+  }
+
+  return (
+    <Container
+      style={{
+        margin: 0,
+        paddingLeft: 0,
+        paddingRight: 0,
+        backgroundColor: "#FFFFFF",
+      }}
+    >
+      <RowBetween
         style={{
-          margin: 0,
-          paddingLeft: 0,
-          paddingRight: 0,
-          backgroundColor: "#FFFFFF",
+          paddingTop: 24,
+          borderBottomWidth: 1,
+          borderColor: "lightgrey",
+          paddingBottom: 14,
         }}
       >
-        <RowBetween
-          style={{
-            paddingTop: 24,
-            borderBottomWidth: 1,
-            borderColor: "lightgrey",
-            paddingBottom: 14,
-          }}
-        >
-          <View style={{ alignItems: "center" }}>
-            <IconButton
-              icon="arrow-left"
-              onPress={() => {
-                navigation.goBack();
-              }}
-            />
+        <View style={{ alignItems: "center" }}>
+          <IconButton
+            icon="arrow-left"
+            onPress={() => {
+              navigation.goBack();
+            }}
+          />
+          <TopText
+            style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
+          >
+            Comments
+          </TopText>
+        </View>
+      </RowBetween>
+
+      <ScrollView
+        style={{ paddingVertical: 16, flex: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Debug section */}
+        <View style={{ padding: 16, backgroundColor: '#f0f0f0', margin: 16 }}>
+          <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Debug Info:</Text>
+          <Text>Comments length: {comments?.length || 0}</Text>
+          <Text>PostId: {postId}</Text>
+          <Text>Loading: {loading ? 'Yes' : 'No'}</Text>
+          <Text>Submitting: {submitting ? 'Yes' : 'No'}</Text>
+        </View>
+        
+        {comments && comments.length > 0 ? (
+          comments.map((item, index) => (
+            <CommentCard comment={item} key={index} />
+          ))
+        ) : (
+          <View style={{ paddingVertical: 16 }}>
             <TopText
-              style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
+              style={{ color: "#000000", fontSize: 22, paddingLeft: 16 }}
             >
-              Comments
+              No Comments
             </TopText>
           </View>
-        </RowBetween>
-        {isLoading ? (
-          <ActivityIndicator
-            size="large"
-            color="#D4AF37"
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              flex: 1,
-            }}
-          />
-        ) : (
-          <ScrollView
-            style={{ paddingVertical: 16 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {data.data &&
-              data.data.length > 0 &&
-              data.data.map((item, index) => {
-                return <CommentCard {...item} key={index} />;
-              })}
-            {data.data && data.data.length === 0 && (
-              <View style={{ paddingVertical: 16 }}>
-                <TopText
-                  style={{ color: "#000000", fontSize: 22, paddingLeft: 16 }}
-                >
-                  No Comments
-                </TopText>
-              </View>
-            )}
-          </ScrollView>
         )}
+      </ScrollView>
 
-        {/* <PostComment
-      img={
-        'https://images.unsplash.com/photo-1502823403499-6ccfcf4fb453?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8Mnx8cHJvZmlsZSUyMGltYWdlc3xlbnwwfHwwfHw%3D&auto=format&fit=crop&w=500&q=60'
-      }
-    /> */}
-
-        <KeyboardAvoidingView
-          // style={{ flex: 1 }}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          enabled={true}
-        >
-          <ChatTextInput
-            placeholder="Post a comment ..."
-            placeholderTextColor="#78849E"
-            selectionColor="#B98C13"
-            // left={<ChatTextInput.Icon name="camera" />}
-            right={
-              <ChatTextInput.Icon
-                style={{
-                  // backgroundColor: "red",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  marginTop: 16,
-                }}
-                name="send"
-                onPress={handleComment}
-              />
-            }
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        enabled={true}
+      >
+        <View style={{ 
+          flexDirection: 'row', 
+          padding: 16, 
+          borderTopWidth: 1, 
+          borderTopColor: '#eee',
+          alignItems: 'center'
+        }}>
+          <TextInput
             style={{
-              marginHorizontal: 16,
-              // display: "flex",
-              // justifyContent: "center",
-              // alignItems: "center",
+              flex: 1,
+              borderWidth: 1,
+              borderColor: '#ddd',
+              borderRadius: 20,
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              marginRight: 8,
             }}
-            activeUnderlineColor="transparent"
-            underlineColor="transparent"
+            placeholder="Add a comment..."
             value={commentText}
-            onChangeText={(e) => setCommentText(e)}
+            onChangeText={setCommentText}
+            multiline
           />
-        </KeyboardAvoidingView>
-      </Container>
-    );
+          <TouchableOpacity
+            onPress={handleComment}
+            disabled={submitting || !commentText.trim()}
+            style={{
+              backgroundColor: submitting || !commentText.trim() ? '#ccc' : '#007AFF',
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+              borderRadius: 20,
+            }}
+          >
+            <Text style={{ color: 'white', fontWeight: 'bold' }}>
+              {submitting ? 'Sending...' : 'Send'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </Container>
+  );
 }

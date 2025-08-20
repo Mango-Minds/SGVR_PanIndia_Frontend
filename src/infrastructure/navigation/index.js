@@ -28,9 +28,30 @@ import {
 } from "../../store/Handlers/Reducer.Handler";
 import { logoutSuccess } from "../../store/user";
 export const Navigation = () => {
-const { token, loading, error, user } = useSelector((state) => state.user);
+  // Use Redux hooks at the top level - hooks must be called consistently
+  let userState, dispatch;
+  
+  try {
+    userState = useSelector((state) => state?.user) || {
+      token: null,
+      loading: false,
+      error: { toggle: false, msg: '', type: '' },
+      user: null
+    };
+    dispatch = useDispatch();
+  } catch (error) {
+    console.error("Redux store access error:", error);
+    // Fallback state if Redux fails
+    userState = {
+      token: null,
+      loading: false,
+      error: { toggle: false, msg: '', type: '' },
+      user: null
+    };
+    dispatch = () => console.warn("Dispatch not available");
+  }
 
-  const dispatch = useDispatch();
+  const { token, loading, error, user } = userState;
 
   const errorsize = Platform.OS === "ios" ? 16 : 12;
   const errorVerticalPadding = Platform.OS === "ios" ? 5 : 0;

@@ -16,10 +16,10 @@ import {
 import Icon from "react-native-vector-icons/MaterialIcons";
 import ProfileCard from "./ProfileCard";
 import { unfollowSocialMediaProfile } from "../../services/socialMedia.services";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { ErrorToggle, updateSocialDataFriendsCount } from "../../store/user";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 import { UpdateSocialData } from "../../store/Handlers/Reducer.Handler";
 
 export default function Friends({ navigation }) {
@@ -51,7 +51,7 @@ export default function Friends({ navigation }) {
     for (let i = 0; i < friends.length; i++) {
       const item = friends[i];
       if (item._id === username) {
-        const newData = update(friends, { $splice: [[i, 1]] });
+        const newData = [...friends.slice(0, i), ...friends.slice(i + 1)];
         unfollowMutation.mutateAsync({ username });
         await dispatch(UpdateSocialData({ ...socialData, friends: newData }));
       }

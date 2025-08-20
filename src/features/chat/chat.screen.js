@@ -32,7 +32,7 @@ import {
   updateLocalChats,
 } from "../../store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 import CHatBackground from "../../assets/images/general/chatback.png";
 import { SOCKETURL } from "../../infrastructure/constants";
 import BlockModal from "../../components/modals/Blockuser";
@@ -91,12 +91,8 @@ const ChatScreen = ({ navigation, route }) => {
         for (let i = 0; i < localChats.length; i++) {
           const item = localChats[i];
           if (item.userid.includes(user._id) && item.userid.includes(toid)) {
-            const newChats = update(item, {
-              chats: { $set: allChats },
-            });
-            const updatedData = update(localChats, {
-              $splice: [[i, 1, newChats]],
-            });
+            const newChats = { ...item, chats: allChats };
+            const updatedData = [...localChats.slice(0, i), newChats, ...localChats.slice(i + 1)];
             dispatch(updateLocalChats(updatedData));
             setCindex(i);
             updatechatflag = true;
@@ -118,9 +114,7 @@ const ChatScreen = ({ navigation, route }) => {
         setChattings([]);
         if (chatindex.current) {
           for (let i = 0; i < localChats.length; i++) {
-            const updatedData = update(localChats, {
-              $splice: [[chatindex.current, 1]],
-            });
+            const updatedData = [...localChats.slice(0, chatindex.current), ...localChats.slice(chatindex.current + 1)];
             dispatch(updateLocalChats(updatedData));
           }
         }
@@ -151,14 +145,14 @@ const ChatScreen = ({ navigation, route }) => {
         if (item.userid.includes(user._id) && item.userid.includes(toid)) {
           flag = true;
 
-          const newdata = update(item, { chats: { $push: [obj] } });
-          const ddata = update(localChats, { $splice: [[i, 1]] });
-          updatedData = update(ddata, { $splice: [[0, 0, newdata]] });
+          const newdata = { ...item, chats: [...item.chats, obj] };
+          const ddata = [...localChats.slice(0, i), ...localChats.slice(i + 1)];
+          updatedData = [newdata, ...ddata];
 
           if (item.chats.length > 100) {
             item.chats.splice(0, 1);
-            const newdata = update(item, { chats: { $splice: [[i, 1]] } });
-            updatedData = update(updatedData, { $splice: [[0, 0, newdata]] });
+            const newdata = { ...item, chats: [...item.chats.slice(1)] };
+            updatedData = [newdata, ...updatedData.slice(1)];
           }
         }
       }
@@ -174,11 +168,9 @@ const ChatScreen = ({ navigation, route }) => {
         }
 
         if (ucount === 2) {
-          const newdata = update(item, { lastmsg: { $set: obj } });
-          const removeData = update(conversations, { $splice: [[i, 1]] });
-          updatedconversation = update(removeData, {
-            $splice: [[0, 0, newdata]],
-          });
+          const newdata = { ...item, lastmsg: obj };
+          const removeData = [...conversations.slice(0, i), ...conversations.slice(i + 1)];
+          updatedconversation = [newdata, ...removeData];
         }
       }
 
@@ -235,33 +227,23 @@ const ChatScreen = ({ navigation, route }) => {
 
     if (cindex !== undefined) {
       if (localChats[chatindex.current].chats.length + 1 > 100) {
-        const newdata = update([chatindex.current], {
-          chats: { $splice: [[0, 1]] },
-        });
-        updatedData = update(localChats, {
-          $splice: [[chatindex.current, 1, newdata]],
-        });
+        const currentChat = localChats[chatindex.current];
+        const newdata = { ...currentChat, chats: currentChat.chats.slice(1) };
+        updatedData = [...localChats.slice(0, chatindex.current), newdata, ...localChats.slice(chatindex.current + 1)];
       } else {
-        const newdata = update(localChats[chatindex.current], {
-          chats: { $push: [obj] },
-        });
-        updatedData = update(localChats, {
-          $splice: [[chatindex.current, 1, newdata]],
-        });
+        const currentChat = localChats[chatindex.current];
+        const newdata = { ...currentChat, chats: [...currentChat.chats, obj] };
+        updatedData = [...localChats.slice(0, chatindex.current), newdata, ...localChats.slice(chatindex.current + 1)];
       }
 
-      const newdata = update(conversations[cindex], { lastmsg: { $set: obj } });
+      const newdata = { ...conversations[cindex], lastmsg: obj };
       if (cindex !== 0) {
-        const removeData = update(conversations, { $splice: [[cindex, 1]] });
-        updatedconversation = update(removeData, {
-          $splice: [[0, 0, newdata]],
-        });
+        const removeData = [...conversations.slice(0, cindex), ...conversations.slice(cindex + 1)];
+        updatedconversation = [newdata, ...removeData];
         setCindex(0);
         chatindex.current = 0;
       } else {
-        updatedconversation = update(conversations, {
-          $splice: [[0, 1, newdata]],
-        });
+        updatedconversation = [newdata, ...conversations.slice(1)];
       }
     }
 

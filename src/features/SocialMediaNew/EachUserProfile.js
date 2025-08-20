@@ -267,44 +267,50 @@ export default function EachProfile() {
       case "Posts":
         if (showAllPosts) {
           // Show all posts
-          return userposts?.posts?.map((post) => (
-            <NewSocialCard
-              key={post._id}
-              post={post}
-              profileImageUri={`${post.createdBy.image}`}
-              description={post.content}
-              video={post.video}
-              source="EachProfile"
-              firstName={post.createdBy.firstName}
-              lastName={post.createdBy.lastName}
-              postId={post._id}
-              postImages={post.images}
-              fetchPosts={fetchPosts}
-              userId={userId}
-            />
-          ));
+          return userposts?.posts?.map((post) => {
+            const createdBy = post.createdBy || {};
+            return (
+              <NewSocialCard
+                key={post._id}
+                post={post}
+                profileImageUri={createdBy.image ? `${createdBy.image}` : ""}
+                description={post.content}
+                video={post.video}
+                source="EachProfile"
+                firstName={createdBy.firstName || "Deleted"}
+                lastName={createdBy.lastName || "User"}
+                postId={post._id}
+                postImages={post.images}
+                fetchPosts={fetchPosts}
+                userId={userId}
+              />
+            );
+          });
         } else {
           // Show only the first post
           const firstPost = userposts?.posts?.[0];
 
-          return firstPost ? (
-            <NewSocialCard
-              key={firstPost._id}
-              post={firstPost}
-              profileImageUri={`${firstPost.createdBy.image}`}
-              description={firstPost.content}
-              video={firstPost.video}
-              source="EachProfile"
-              firstName={firstPost.createdBy.firstName}
-              lastName={firstPost.createdBy.lastName}
-              postId={firstPost._id}
-              postImages={firstPost.images}
-              fetchPosts={fetchPosts}
-              userId={userId}
-            />
-          ) : (
-            <Text>{t("NoPostsAvailable")}</Text>
-          );
+          if (firstPost) {
+            const createdBy = firstPost.createdBy || {};
+            return (
+              <NewSocialCard
+                key={firstPost._id}
+                post={firstPost}
+                profileImageUri={createdBy.image ? `${createdBy.image}` : ""}
+                description={firstPost.content}
+                video={firstPost.video}
+                source="EachProfile"
+                firstName={createdBy.firstName || "Deleted"}
+                lastName={createdBy.lastName || "User"}
+                postId={firstPost._id}
+                postImages={firstPost.images}
+                fetchPosts={fetchPosts}
+                userId={userId}
+              />
+            );
+          } else {
+            return <Text>{t("NoPostsAvailable")}</Text>;
+          }
         }
       // case "Articles":
       //   return articlesContent.map((article, index) => (

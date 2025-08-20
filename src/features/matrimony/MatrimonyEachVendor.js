@@ -19,13 +19,12 @@ import {
   Linking,
 } from "react-native";
 import { IconButton } from "react-native-paper";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import { Container, RowBetween } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getShceduledDates } from "../../services/matrimony.services";
 
 const MatrimonyEachVendor = ({ route }) => {
@@ -466,7 +465,7 @@ const MatrimonyEachVendor = ({ route }) => {
         </Modal>
       ) : null}
 
-      <ParallaxScrollView
+      <ScrollView
         renderBackground={renderBackground}
         renderContentBackground={() => renderContentBackground(data)}
         parallaxHeaderHeight={400}
@@ -477,7 +476,7 @@ const MatrimonyEachVendor = ({ route }) => {
             style={{ height: "100%" }}
           ></TouchableOpacity>
         )}
-      ></ParallaxScrollView>
+      ></ScrollView>
     </SafeArea>
   );
 };

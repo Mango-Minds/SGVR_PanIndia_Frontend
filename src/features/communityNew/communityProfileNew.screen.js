@@ -4,7 +4,6 @@ import { ScrollView } from "react-native-gesture-handler";
 import { IconButton } from "react-native-paper";
 import { RowBetween} from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
 
@@ -95,7 +94,7 @@ export default function CommunityProfileScreenNew({ route, navigation }) {
             </TopText>
           </View>
         </RowBetween>
-      <ParallaxScrollView
+      <ScrollView
         renderBackground={renderBackground}
         renderContentBackground={renderContentBackground}
         parallaxHeaderHeight={200}

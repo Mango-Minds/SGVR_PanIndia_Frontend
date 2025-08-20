@@ -34,7 +34,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { en, registerTranslation } from "react-native-paper-dates";
 import { statesData } from "../../assets/data/statesAndCities";
 import * as ImagePicker from "expo-image-picker";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import { BASEAPIURL } from "../../infrastructure/constants";
@@ -101,6 +101,7 @@ export default function AddProduct({ navigation, route }) {
     productAge: "",
     address: "",
     address_link: "",
+    phone: "",
   });
 
   console.log(registerDetails, "registerDetails");
@@ -124,17 +125,87 @@ export default function AddProduct({ navigation, route }) {
     setSelectedImages(newArray);
   };
 
-  const query = new useQueryClient();
+  const queryClient = useQueryClient();
 
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user.user);
-  console.log("user of add product", user);
-  console.log("token of add product", token);
+
   const tokenPayload = token.split(".")[1];
 
   const decodedPayload = JSON.parse(decode(tokenPayload));
 
   const addProduct = () => {
+    // Validate required fields
+    if (!registerDetails.productName.trim()) {
+      Alert.alert(t("error"), t("productNameRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productPrice.trim()) {
+      Alert.alert(t("error"), t("productPriceRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productOriginalPrice.trim()) {
+      Alert.alert(t("error"), t("productOriginalPriceRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productDescription.trim()) {
+      Alert.alert(t("error"), t("productDescriptionRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productCategory) {
+      Alert.alert(t("error"), t("productCategoryRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productSubCategory) {
+      Alert.alert(t("error"), t("productSubCategoryRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productCondition) {
+      Alert.alert(t("error"), t("productConditionRequired"));
+      return;
+    }
+    
+    if (!registerDetails.productAge.trim()) {
+      Alert.alert(t("error"), t("productAgeRequired"));
+      return;
+    }
+    
+    if (!registerDetails.address.trim()) {
+      Alert.alert(t("error"), t("addressRequired"));
+      return;
+    }
+    
+    if (!registerDetails.phone.trim()) {
+      Alert.alert(t("error"), "Phone number is required");
+      return;
+    }
+    
+    // Validate phone number format (basic validation)
+    if (!registerDetails.phone.match(/^\d{10}$/)) {
+      Alert.alert(t("error"), "Please enter a valid 10-digit phone number");
+      return;
+    }
+    
+    // Validate address_link if provided
+    if (registerDetails.address_link.trim() && !registerDetails.address_link.match(/^https?:\/\/.+\..+/)) {
+      Alert.alert(t("error"), t("invalidAddressLink"));
+      return;
+    }
+    
+    // Validate that at least one image is selected
+    if (selectedImages.length === 0) {
+      Alert.alert(t("error"), t("atLeastOneImageRequired"));
+      return;
+    }
+
+
+
     addProductAPI({
       registerDetails,
       selectedImages,
@@ -154,6 +225,7 @@ export default function AddProduct({ navigation, route }) {
           productOriginalPrice: "",
           address: "",
           address_link: "",
+          phone: "",
         }),
     });
   };
@@ -533,6 +605,24 @@ const ConditionData = [
                 value={registerDetails.productAge}
               />
 
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
+                placeholder="Phone Number*"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                keyboardType="numeric"
+                maxLength={10}
+                value={registerDetails.phone}
+                onChangeText={(text) =>
+                  setRegisterDetails({
+                    ...registerDetails,
+                    phone: text,
+                  })
+                }
+              />
+
               <FormButton onPress={addProduct}>
                 <Text
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
@@ -596,7 +686,7 @@ const ConditionData = [
 // import { en, registerTranslation } from "react-native-paper-dates";
 // import { statesData } from "../../assets/data/statesAndCities";
 // import * as ImagePicker from "expo-image-picker";
-// import { useMutation, useQueryClient } from "react-query";
+// import { useMutation, useQueryClient } from "@tanstack/react-query";
 // import { RowBetween } from "../../styles/common.styles";
 // import FormData from "form-data";
 // import { BASEAPIURL } from "../../infrastructure/constants";

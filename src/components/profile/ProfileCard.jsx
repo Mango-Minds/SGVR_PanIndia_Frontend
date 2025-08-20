@@ -9,7 +9,7 @@ import {
   SendFriendRequest,
 } from "../../services/socialMedia.services";
 import { useSelector } from "react-redux";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { ErrorToggle } from "../../store/user";
 import { useDispatch } from "react-redux";
 

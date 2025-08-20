@@ -24,7 +24,7 @@ import {
   searchCommunity,
   viewCommunity,
 } from "../../services/community.services";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { debounce } from "lodash";
 import InfiniteScroll from "react-native-infinite-scrolling";
 import CommunityCard from "../../components/dashboard/CommunityCard";

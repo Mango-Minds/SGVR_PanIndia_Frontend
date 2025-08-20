@@ -25,16 +25,20 @@ export default function PopularHallCard(props) {
     address,
     about,
     contactNo,
-  } = props;
+  } = props || {};
 
   // const [image, setImage] = React.useState();
   // const image = React.useRef(null);
   useEffect(() => {
     (async () => {
       // // console.log(images[0],'popular card');
-      if (images[0] !== undefined) {
-        const res = await getImageUrl(images[0]);
-        setImg(res.url);
+      try {
+        if (images && images[0] !== undefined) {
+          const res = await getImageUrl(images[0]);
+          setImg(res.url);
+        }
+      } catch (error) {
+        console.warn("Error loading image:", error);
       }
     })();
   }, []);

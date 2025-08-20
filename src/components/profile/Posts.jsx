@@ -1,6 +1,6 @@
 import React from "react";
 import { IconButton } from "react-native-paper";
-import { Video, AVPlaybackStatus } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import Hyperlink from "react-native-hyperlink";
 
 import {
@@ -15,7 +15,7 @@ import {
   Platform,
   Modal,
 } from "react-native";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   likePost,
   unlikePost,

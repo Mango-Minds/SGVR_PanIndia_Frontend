@@ -37,7 +37,7 @@ import { RowBetween } from "../../styles/common.styles";
 import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
 import * as Location from "expo-location";
-import { Video } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";

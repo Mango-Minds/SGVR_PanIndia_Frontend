@@ -6,18 +6,29 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
     },
     "preview": {
       "ios": {
-        "simulator":false,
+        "simulator": false,
         "distribution": "store"
       },
       "android": {
         "buildType": "app-bundle"
       }
     },
-    "production": {}
+    "production": {
+      "ios": {
+        "distribution": "store"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "gradleCommand": ":app:bundleRelease"
+      }
+    }
   },
   "submit": {
     "production": {
@@ -25,6 +36,10 @@
         "appleId": "sgvrtechios@gmail.com",
         "ascAppId": "6744047867",
         "appleTeamId": "3W2M23K7G4"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./pc-api-7553193548006689581-481-401636bdf666.json",
+        "track": "production"
       }
     }
   }

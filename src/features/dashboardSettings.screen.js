@@ -109,6 +109,13 @@ export default function DashboardSettingsScreen({ navigation }) {
         dispatch(logout());
       },
     },
+    {
+      name: t("delete_account"),
+      callback: () => {
+        navigation.navigate("DeleteAccount");
+      },
+      isDestructive: true,
+    },
   ];
   return (
     <Container

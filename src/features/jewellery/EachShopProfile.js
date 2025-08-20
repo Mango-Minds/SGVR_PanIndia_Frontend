@@ -8,7 +8,7 @@ import {
   ImageBackground,
   Modal,
 } from "react-native";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import BannerImg from "../../assets/images/general/golden_banner.png";

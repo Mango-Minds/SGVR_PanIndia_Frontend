@@ -18,7 +18,7 @@ import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import Theme from "../../styles/theme";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import BottomNavigation from "../../components/social/BottomNavigation";
 
 import { useSelector } from "react-redux";
@@ -94,14 +94,24 @@ const { t } = useTranslation();
     );
 
     const translatedPosts = translateResponse.data.translatedData;
+    
+    // Ensure images are preserved after translation
+    const postsWithImages = translatedPosts.map((translatedPost, index) => {
+      const originalPost = data.posts[index];
+      return {
+        ...translatedPost,
+        images: originalPost?.images || translatedPost?.images || [],
+        video: originalPost?.video || translatedPost?.video || null
+      };
+    });
 
     if (isRefresh) {
-      setPosts(translatedPosts);
+      setPosts(postsWithImages);
       setPage(2);
-      setAllLoaded(translatedPosts.length < 10);
+      setAllLoaded(postsWithImages.length < 10);
     } else {
-      if (translatedPosts.length < 10) setAllLoaded(true);
-      setPosts((prevPosts) => [...prevPosts, ...translatedPosts]);
+      if (postsWithImages.length < 10) setAllLoaded(true);
+      setPosts((prevPosts) => [...prevPosts, ...postsWithImages]);
       setPage((prevPage) => prevPage + 1);
     }
   } catch (err) {
@@ -116,6 +126,25 @@ const { t } = useTranslation();
     fetchPosts();
   }, []);
 
+  // Handle refresh when returning from CreateNewPost
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchPosts(true);
+      // Clear the refresh parameter
+      navigation.setParams({ refresh: undefined });
+    }
+  }, [route.params?.refresh]);
+
+  // Handle focus events to refresh posts when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Refresh posts when screen comes into focus
+      fetchPosts(true);
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const user = useSelector((state) => state.user.user);
   console.log("User: ", user);
 
@@ -123,9 +152,11 @@ const { t } = useTranslation();
 
   const filterUserId = user?._id;
 
-  const filteredPosts = posts.filter(
-    (post) => post.createdBy?._id !== filterUserId
-  );
+  // Temporarily comment out the filter to show all posts including user's own posts
+  // const filteredPosts = posts.filter(
+  //   (post) => post.createdBy?._id !== filterUserId
+  // );
+  const filteredPosts = posts; // Show all posts for now
 
   const [refreshing, setRefreshing] = useState(false); // State to manage refreshing
 
@@ -202,20 +233,21 @@ const { t } = useTranslation();
             <FlatList
               data={filteredPosts}
               renderItem={({ item }) => {
-                const profileImageUri = item.createdBy.image
-                  ? `${item.createdBy.image}`
+                // Handle deleted users by providing fallback values
+                const createdBy = item.createdBy || {};
+                const profileImageUri = createdBy.image
+                  ? `${createdBy.image}`
                   : "";
 
-                const postImages =
-                  item.type === "text+image" ? item.images : [];
+                const postImages = item.images || [];
 
                 return (
                   <NewSocialCard
                     post={item}
-                    userId={item.createdBy?._id}
+                    userId={createdBy._id}
                     posts={posts}
-                    firstName={item.createdBy.firstName}
-                    lastName={item.createdBy.lastName}
+                    firstName={createdBy.firstName || "Deleted"}
+                    lastName={createdBy.lastName || "User"}
                     profileImageUri={profileImageUri}
                     description={item.content}
                     video={item.video}
@@ -392,7 +424,7 @@ export default SocialHomeScreen;
 // import { TopText } from "../../styles/social.styles";
 // import messageIcon from "../../assets/images/social/message.png";
 // import Theme from "../../styles/theme";
-// import { Ionicons } from "react-native-vector-icons";
+// import Ionicons from 'react-native-vector-icons/Ionicons';
 // import BottomNavigation from "../../components/social/BottomNavigation";
 
 // import { useSelector } from "react-redux";

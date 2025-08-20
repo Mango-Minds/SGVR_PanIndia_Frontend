@@ -109,12 +109,8 @@ export default function RegisterScreen({ navigation }) {
 
         password: "",
       });
-      navigation.navigate("Verify", {
-        phone: registerDetails.phone,
-        password: registerDetails.password,
-        id: data.data.id,
-        type: "register",
-      });
+      // Navigate to login page instead of OTP verification
+      navigation.navigate("Login");
     }
     await dispatch(setLoadingInBtn(false));
   };

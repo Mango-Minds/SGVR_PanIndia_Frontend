@@ -418,7 +418,34 @@
   "quantity": "प्रमाण",
   "aboutProduct": "उत्पादनाबद्दल",
   
-  "productDeletedSuccess": "उत्पादन यशस्वीपणे हटवले गेले"
+  "productDeletedSuccess": "उत्पादन यशस्वीपणे हटवले गेले",
+
+  "delete_account": "खाते हटवा",
+  "delete_account_confirmation_title": "खाते हटवा",
+  "delete_account_confirmation_message": "ही कृती परत मिळवता येणार नाही. तुमचा सर्व डेटा कायमस्वरूपी हटवला जाईल.",
+  "delete_permanently": "कायमस्वरूपी हटवा",
+  "warning": "सावधान",
+  "delete_account_warning": "तुमचे खाते हटवल्याने तुमचा सर्व डेटा आमच्या सर्व्हर्सवरून कायमस्वरूपी हटवला जाईल. ही कृती परत मिळवता येणार नाही.",
+  "data_that_will_be_deleted": "हटवला जाणारा डेटा:",
+  "profile_information": "प्रोफाइल माहिती",
+  "posts_and_comments": "पोस्ट आणि टिप्पण्या",
+  "chat_history": "चॅट इतिहास",
+  "matrimony_profile": "विवाह जुळणी प्रोफाइल",
+  "temple_connections": "मंदिर कनेक्शन्स",
+  "b2c_listings": "बी2सी यादी",
+  "uploaded_media": "अपलोड केलेले मीडिया आणि फायली",
+  "delete_my_account": "माझे खाते हटवा",
+  "deleting_account": "खाते हटवत आहे...",
+  "important_note": "महत्वाची टीप",
+  "deletion_permanent_note": "एकदा तुम्ही तुमचे खाते हटवल्यानंतर, तुमचा सर्व डेटा कायमस्वरूपी हटवला जाईल आणि परत मिळवता येणार नाही. यामध्ये तुमचे प्रोफाइल, पोस्ट, संदेश आणि तुमच्या खात्याशी संबंधित इतर सर्व माहिती समाविष्ट आहे.",
+  
+  "deleteComment": "टिप्पणी हटवा",
+  "deleteCommentConfirmation": "तुम्हाला खात्री आहे की तुम्ही ही टिप्पणी हटवू इच्छिता? ही कृती परत मिळवता येणार नाही.",
+  "commentDeletedSuccessfully": "टिप्पणी यशस्वीपणे हटवली गेली",
+  "failedToDeleteComment": "टिप्पणी हटवण्यात अयशस्वी",
+  
+  "post_deleted_successfully": "पोस्ट यशस्वीपणे हटवला गेला",
+  "failed_to_delete_post": "पोस्ट हटवण्यात अयशस्वी"
 
 
 

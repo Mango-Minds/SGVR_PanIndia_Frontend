@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { editProfileHandler } from "../../services/matrimony.services";
 import { getCurrentUserMatrimonyprofile } from "../../services/matrimony.services";
 import { setLoadingInBtn } from "../../store/user";
@@ -32,10 +32,10 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { ErrorToggle } from "../../store/user";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import DatePicker from "react-native-datepicker";
+// import DatePicker from "react-native-datepicker"; // Removed - using @react-native-community/datetimepicker instead
 import * as ImagePicker from "expo-image-picker";
 import { createMatrimonyAccount } from "../../services/matrimony.services";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 

@@ -18,7 +18,7 @@ import {
 import { Row } from "../../styles/dashboard.styles";
 import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   getImageUrl,
   getSearchUsers,

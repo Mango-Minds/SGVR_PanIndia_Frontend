@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";

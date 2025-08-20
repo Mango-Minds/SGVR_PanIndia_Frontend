@@ -16,7 +16,7 @@ import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import NewSocialCard from "./NewSocialCard";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import BottomNavigation from "../../components/social/BottomNavigation";
 import Theme from "../../styles/theme";
 
@@ -27,7 +27,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
 
-const SocialJobs = ({ navigation }) => {
+const SocialJobs = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState("searchJobs");
   const { t } = useTranslation();
   const [modalVisible, setModalVisible] = useState(false);
@@ -328,6 +328,15 @@ const fetchAppliedJobs = async (query = "") => {
       fetchDataOnTabFocus(); 
     }
   }, [isFocused]);
+
+  // Handle refresh parameter from navigation
+  useEffect(() => {
+    if (route.params?.refresh) {
+      fetchDataOnTabFocus();
+      // Clear the refresh parameter to prevent infinite refresh
+      navigation.setParams({ refresh: undefined });
+    }
+  }, [route.params?.refresh]);
 
 
   

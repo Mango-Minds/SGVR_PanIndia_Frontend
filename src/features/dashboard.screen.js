@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
-import { useDispatch, useSelector, StyleSheet } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { StyleSheet } from "react-native";
 import {
   Dimensions,
   Linking,
@@ -54,14 +55,14 @@ import {
   getNotification,
   getSocialScreenNotification,
 } from "../services/notification.services";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "../services/socialMedia.services";
 import {
   UpdateNotification,
   UpdateTemple,
 } from "../store/Handlers/Reducer.Handler";
 import { registerForPushNotificationsAsync } from "../Utility/PushNotificationNavigation";
-import { BASEIMGURL } from "../infrastructure/constants";
+import { BASEIMGURL, SOCKETURL } from "../infrastructure/constants";
 import { io } from "socket.io-client";
 import { decode } from "base-64";
 import MaterialIcons from "react-native-vector-icons/MaterialIcons";
@@ -152,7 +153,7 @@ export default function DashboardScreen({ navigation }) {
   const [belliconbadge, setBelliconbadge] = useState(1);
 
   const socket = useMemo(() => {
-    const socketConnection = io(BASEIMGURL, {
+    const socketConnection = io(SOCKETURL, {
       query: { token },
       transports: ["websocket"],
     });

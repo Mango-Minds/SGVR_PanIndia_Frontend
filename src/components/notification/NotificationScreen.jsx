@@ -6,9 +6,9 @@ import { TopText } from "../../styles/social.styles";
 import NotificationCard from "./NotificationCard";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { readNotification } from "../../services/notification.services";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 import { UpdateNotification } from "../../store/Handlers/Reducer.Handler";
 
 export default function NotificationScreen({ navigation }) {
@@ -31,7 +31,7 @@ export default function NotificationScreen({ navigation }) {
       for (let i = 0; i < notifications.length; i++) {
         const item = notifications[i];
         if (item.isRead === false) {
-          const newItem = update(item, { $set: { ...item, isRead: true } });
+          const newItem = { ...item, isRead: true };
           console.log(newItem);
           newNotification.push(newItem);
         } else {

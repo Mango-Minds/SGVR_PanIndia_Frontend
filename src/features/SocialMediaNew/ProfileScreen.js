@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   Image,
-  ScrollView,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
@@ -374,6 +373,16 @@ export default function ProfileNewScreen() {
     fetchPosts();
   }, []);
 
+  // Handle focus events to refresh posts when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Refresh posts when screen comes into focus
+      fetchPosts();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
   const userName = "yukta.chopra";
   const firstName = "Yukta";
   const lastName = "Chopra";
@@ -458,9 +467,15 @@ export default function ProfileNewScreen() {
         [
           {
             text: "OK",
-            onPress: () => {
-              fetchPosts();
-              navigation.goBack();
+            onPress: async () => {
+              // Ensure fetchPosts completes before navigation
+              if (fetchPosts) {
+                await fetchPosts();
+              }
+              // Navigate to SocialHomeScreen to ensure user stays in social section
+              setTimeout(() => {
+                navigation.navigate("SocialHomeScreen");
+              }, 100);
             },
           },
         ],
@@ -487,7 +502,7 @@ export default function ProfileNewScreen() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case "Posts":
+      case "posts":
         if (showAllPosts) {
           return userposts?.posts?.map((post) => (
             <NewSocialCard
@@ -770,7 +785,7 @@ export default function ProfileNewScreen() {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.headerContainer}>
         <TouchableOpacity style={styles.iconButton}>
           <Icon
@@ -792,277 +807,143 @@ export default function ProfileNewScreen() {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.generalInfoContainer}>
-        <View style={styles.bannerProfileContainer}>
-          <TouchableOpacity
-            style={styles.editIconContainer}
-            onPress={() => {
-              navigation.navigate("EditProfileInfo", {
-                userId: userId,
-                userProfile: userProfile,
-                fetchUserProfile: fetchUserProfile,
-              });
-            }}
-          >
-            <Icon name="pencil" size={24} color="#fff" />
-          </TouchableOpacity>
-          <Image source={{ uri: bannerImageUri }} style={styles.bannerImage} />
-
-          <View style={styles.profileImageContainer}>
-            <Image
-              source={profileImageUri ? { uri: profileImageUri } : UserImg}
-              style={styles.profileImage}
-            />
-          </View>
-        </View>
-
-        {/* User Info */}
-        <View style={styles.userInfoContainer}>
-          <Text style={styles.userName}>
-            {userData.user?.firstName} {userData.user?.lastName}
-          </Text>
-          <TouchableOpacity
-            style={styles.editPencilIconContainer}
-            onPress={() => {
-              navigation.navigate("EditUserProfile", {
-                userId: userId,
-                userProfile: userProfile,
-                fetchUserProfile: fetchUserProfile,
-                user: user,
-                userData: userData,
-                fetchUser: fetchUser,
-              });
-            }}
-          >
-            <Icon name="pencil" size={24} color="black" />
-          </TouchableOpacity>
-          <Text style={styles.userLocation}>{userData.user?.address}</Text>
-          <View style={styles.socialContainer}>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("FollowersFollowing", { type: "Followers" })
-              }
-            >
-              <Text style={styles.linkText}>
-                {" "}
-                {followersCount} {t("followers")}
-              </Text>
-            </TouchableOpacity>
-            <Text> </Text>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("FollowersFollowing", { type: "Following" })
-              }
-            >
-              <Text style={styles.linkText}>
-                {followingCount} {t("following")}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-      <View style={styles.aboutMeContainer}>
-        <Text style={styles.aboutMeTitle}>{t("about")}</Text>
-        <TouchableOpacity
-          style={styles.editPencilIconContainer}
-          onPress={() => {
-            navigation.navigate("EditUserEducationInfo", {
-              userId: userId,
-              userProfile: userProfile,
-              fetchUserProfile: fetchUserProfile,
-              educationData: educationData,
-              jobExperienceData: jobExperienceData,
-            });
-          }}
-        >
-          <Icon name="pencil" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.aboutMeText}>{userProfile?.followData?.about}</Text>
-      </View>
-
-      {educationData && educationData.length > 0 ? (
-        educationData.map((education, index) => (
-          <View key={index} style={styles.educationSection}>
-            <Text style={styles.educationTitle}>{t("education")}</Text>
-            <Text style={styles.educationTitle}>{education?.degree}</Text>
-            <Text style={styles.institution}>{education?.institution}</Text>
-            <Text style={styles.duration}>{education?.duration}</Text>
-            <Text style={styles.description}>{education?.description}</Text>
-          </View>
-        ))
-      ) : (
-        <View style={styles.aboutMeContainer}>
-          <Text style={styles.aboutMeTitle}>{t("addEducation")}</Text>
-        </View>
-      )}
-
-      {jobExperienceData && jobExperienceData.length > 0 ? (
-        jobExperienceData.map((jobExperience, index) => (
-          <View key={index} style={styles.educationSection}>
-            <Text style={styles.educationTitle}>{t("jobExperience")}</Text>
-            <Text style={styles.educationTitle}>{jobExperience?.company}</Text>
-            <Text style={styles.institution}>{jobExperience?.role}</Text>
-            <Text style={styles.duration}>{jobExperience?.duration}</Text>
-            <Text style={styles.description}>{jobExperience?.description}</Text>
-          </View>
-        ))
-      ) : (
-        <View style={styles.aboutMeContainer}>
-          <Text style={styles.aboutMeTitle}>{t("addJobExperience")}</Text>
-        </View>
-      )}
-
-      <View style={styles.aboutMeContainer}>
-        <Text style={styles.aboutMeTitle}>{t("resume")}</Text>
-        <TouchableOpacity
-          style={styles.editPencilIconContainer}
-          onPress={() => setDocModalVisible(true)}
-        >
-          {resumeUri ? (
-            <Icon name="pencil" size={24} color="black" />
-          ) : (
-            <Icon name="add" size={24} color="black" />
-          )}
-        </TouchableOpacity>
-
-        {resumeUri ? (
-          <TouchableOpacity>
-            <View style={styles.documentContainer}>
-              <TouchableOpacity onPress={() => downloadPDF(resumeUri)}>
-                <View style={styles.card}>
-                  <View style={styles.documentRow}>
-                    <Ionicons
-                      name="document-text-outline"
-                      size={24}
-                      color="red"
-                    />
-                    <Text style={styles.fileNameText}>
-                      {getFileNameFromUrl(resumeUri)}
-                    </Text>
-                  </View>
-
-                  <View style={styles.downloadIconContainer}>
-                    <Ionicons name="download-outline" size={20} color="white" />
-                  </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ) : (
-          <Text style={styles.uploadButtonText}>{t("addResume")}</Text>
+      <FlatList
+        data={activeTab === "posts" ? (userposts?.posts || []) : []}
+        renderItem={({ item }) => (
+          <NewSocialCard
+            post={item}
+            profileImageUri={item.createdBy.image}
+            description={item.content}
+            video={item.video}
+            source="EachProfile"
+            firstName={item.createdBy.firstName}
+            lastName={item.createdBy.lastName}
+            postId={item._id}
+            postImages={item.images}
+            fetchPosts={fetchPosts}
+            userId={userId}
+          />
         )}
-      </View>
+        keyExtractor={(item) => item._id}
+        ListHeaderComponent={() => (
+          <>
+            <View style={styles.generalInfoContainer}>
+              <View style={styles.bannerProfileContainer}>
+                <TouchableOpacity
+                  style={styles.editIconContainer}
+                  onPress={() => {
+                    navigation.navigate("EditProfileInfo", {
+                      userId: userId,
+                      userProfile: userProfile,
+                      fetchUserProfile: fetchUserProfile,
+                    });
+                  }}
+                >
+                  <Icon name="pencil" size={24} color="#fff" />
+                </TouchableOpacity>
+                <Image source={{ uri: bannerImageUri }} style={styles.bannerImage} />
 
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={docModalVisible}
-        onRequestClose={() => setDocModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setDocModalVisible(false)}>
-          <View style={styles.modalResumeOverlay}>
-            <View style={styles.modalResumeContainer}>
-              <View style={styles.modalResumeContent}>
-                {uploadedDoc ? (
-                  <>
-                    <View style={styles.centeredContent}>
-                      <Text style={styles.fileNameText}>
-                        {uploadedDoc.name}
-                      </Text>
-                      <TouchableOpacity
-                        style={styles.submitResumeButton}
-                        onPress={submitDoc}
-                      >
-                        <Text style={styles.submitResumeButtonText}>
-                          {t("submit")}
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </>
-                ) : (
+                <View style={styles.profileImageContainer}>
+                  <Image
+                    source={profileImageUri ? { uri: profileImageUri } : UserImg}
+                    style={styles.profileImage}
+                  />
+                </View>
+              </View>
+
+              {/* User Info */}
+              <View style={styles.userInfoContainer}>
+                <Text style={styles.userName}>
+                  {userData.user?.firstName} {userData.user?.lastName}
+                </Text>
+                <TouchableOpacity
+                  style={styles.editPencilIconContainer}
+                  onPress={() => {
+                    navigation.navigate("EditUserProfile", {
+                      userId: userId,
+                      userProfile: userProfile,
+                      fetchUserProfile: fetchUserProfile,
+                      user: user,
+                      userData: userData,
+                      fetchUser: fetchUser,
+                    });
+                  }}
+                >
+                  <Icon name="pencil" size={24} color="black" />
+                </TouchableOpacity>
+                <Text style={styles.userLocation}>{userData.user?.address}</Text>
+                <View style={styles.socialContainer}>
                   <TouchableOpacity
-                    style={styles.resumeOption}
-                    onPress={pickDoc}
+                    onPress={() =>
+                      navigation.navigate("FollowersFollowing", { type: "Followers" })
+                    }
                   >
-                    <View style={styles.resumeIconCircle}>
-                      <Ionicons name="document" size={24} color="red" />
-                    </View>
-                    <Text style={styles.resumeOptionText}>{t("document")}</Text>
+                    <Text style={styles.linkText}>
+                      {" "}
+                      {followersCount} {t("followers")}
+                    </Text>
                   </TouchableOpacity>
-                )}
+                  <Text> </Text>
+                  <TouchableOpacity
+                    onPress={() =>
+                      navigation.navigate("FollowersFollowing", { type: "Following" })
+                    }
+                  >
+                    <Text style={styles.linkText}>
+                      {followingCount} {t("following")}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-
-      <View style={styles.activityContainer}>
-        <Text style={styles.activityTitle}>{t("activity")}</Text>
-        <View style={styles.tabContainer}>
-          {["Posts"].map((tab) => (
-            <TouchableOpacity
-              key="posts"
-              style={[styles.tab, activeTab === "posts" && styles.activeTab]}
-              onPress={() => setActiveTab("posts")}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  activeTab === "posts" && styles.activeTabText,
-                ]}
-              >
-                {t("posts")}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {activeTab === "posts" && (
-          <View>
-            <SafeAreaView style={styles.socialFeedContainer}>
-              {/* <FlatList
-                data={userposts} 
-                renderItem={({ item }) => {
-                  return <NewSocialCard post={item} posts={userposts} />;
+            <View style={styles.aboutMeContainer}>
+              <Text style={styles.aboutMeTitle}>{t("about")}</Text>
+              <TouchableOpacity
+                style={styles.editPencilIconContainer}
+                onPress={() => {
+                  navigation.navigate("EditUserEducationInfo", {
+                    userId: userId,
+                    userProfile: userProfile,
+                    fetchUserProfile: fetchUserProfile,
+                  });
                 }}
-                keyExtractor={(item) => item._id.toString()}
-                onEndReached={fetchPosts}
-                onEndReachedThreshold={0.5}
-              /> */}
-              <FlatList
-                data={userposts?.posts || []}
-                renderItem={({ item }) => (
-                  <NewSocialCard
-                    post={item}
-                    profileImageUri={item.createdBy.image}
-                    description={item.content}
-                    video={item.video}
-                    source="EachProfile"
-                    firstName={item.createdBy.firstName}
-                    lastName={item.createdBy.lastName}
-                    postId={item._id}
-                    postImages={item.images}
-                    fetchPosts={fetchPosts}
-                    userId={userId}
-                  />
-                )}
-                keyExtractor={(item) => item._id}
-              />
-            </SafeAreaView>
-          </View>
+              >
+                <Icon name="pencil" size={24} color="black" />
+              </TouchableOpacity>
+              <Text style={styles.aboutMeText}>
+                {userProfile?.followData?.about || t("noAboutMe")}
+              </Text>
+            </View>
+            <View style={styles.tabContainer}>
+              {["posts", "about", "photos", "friends"].map((tab) => (
+                <TouchableOpacity
+                  key={tab}
+                  style={[
+                    styles.tabButton,
+                    activeTab === tab && styles.activeTabButton,
+                  ]}
+                  onPress={() => setActiveTab(tab)}
+                >
+                  <Text
+                    style={[
+                      styles.tabButtonText,
+                      activeTab === tab && styles.activeTabButtonText,
+                    ]}
+                  >
+                    {t(tab)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {activeTab !== "posts" && (
+              <View style={styles.contentContainer}>
+                {renderContent()}
+              </View>
+            )}
+          </>
         )}
-
-        <ScrollView style={styles.contentContainer}>
-          {renderContent()}
-        </ScrollView>
-        <View style={styles.lineDivider} />
-        <Text style={styles.seeAllText} onPress={handleSeeAllClick}>
-          {showAllPosts
-            ? t("showLess")
-            : `${t("seeAll")} ${t(activeTab.toLowerCase())}`}
-        </Text>
-      </View>
-    </ScrollView>
+      />
+    </View>
   );
 }
 
@@ -1191,9 +1072,35 @@ const styles = StyleSheet.create({
 
   tabContainer: {
     flexDirection: "row",
-    borderRadius: 8,
-    overflow: "hidden",
+    justifyContent: "space-around",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    backgroundColor: "white",
     marginBottom: 10,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 4,
+    borderRadius: 8,
+    backgroundColor: "#f5f5f5",
+  },
+  activeTabButton: {
+    backgroundColor: Theme.themeColor,
+  },
+  tabButtonText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#666",
+    textAlign: "center",
+  },
+  activeTabButtonText: {
+    color: "white",
+    fontWeight: "bold",
   },
   tab: {
     paddingVertical: 6,

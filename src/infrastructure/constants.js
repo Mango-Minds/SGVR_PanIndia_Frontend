@@ -11,13 +11,18 @@
 
 // export const BASEIMGURL = "https://api.eygds.in/";
 // export const BASEAPIURL = "https://api.eygds.in/api";
-// export const BASEAPIURL = "http://192.168.1.44:5000/api";
-// export const BASEIMGURL = "http://192.168.1.44:5000/";
-// export const RENDERMEDIAURL = "http://192.168.1.44:5000";
+
+// Production URLs for deployed backend (active - server confirmed working)
 export const BASEAPIURL = "https://api.mimaratha.co.in/api";
 export const BASEIMGURL = "https://api.mimaratha.co.in/";
 export const RENDERMEDIAURL = "https://api.mimaratha.co.in";
-// export const SOCKETURL = "https://server.one.daivajnyabrahmin.com";
+export const SOCKETURL = "https://api.mimaratha.co.in";
+
+// Development URLs (commented out - using production server)
+// export const BASEAPIURL = "http://localhost:5050/api";
+// export const BASEIMGURL = "http://localhost:5050/";
+// export const RENDERMEDIAURL = "http://localhost:5050";
+// export const SOCKETURL = "http://localhost:5050";
 
 
 // export const BASEAPIURL = "http://192.168.0.159:2311/api";

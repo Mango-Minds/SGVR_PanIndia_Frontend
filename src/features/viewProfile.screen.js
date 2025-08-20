@@ -20,7 +20,7 @@ import { LoginInputField, MainContainer } from "../styles/prelogin.styles";
 import { View } from "../styles/common.styles";
 import { IconButton, Subheading } from "react-native-paper";
 import { TopText } from "../styles/social.styles";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getMyCommunities } from "../services/community.services";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/FontAwesome5";
@@ -31,11 +31,13 @@ import { stylesPostCard } from "../components/profile/Posts";
 import SelectDropdown from "react-native-select-dropdown";
 import { ErrorToggle, deleteAccountHandler } from "../store/user";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 
 export default function ViewProfileScreen() {
   const navigation = useNavigation();
   const { user } = useSelector((state) => state.user);
   const { width } = Dimensions.get("window");
+  const { t } = useTranslation();
   const [dp, setDp] = React.useState();
   const [modalVisible, setModalVisible] = React.useState(false);
   const [password, setPassword] = React.useState("");
@@ -448,7 +450,7 @@ export default function ViewProfileScreen() {
                   letterSpacing: 0.3,
                 }}
               >
-                Delete account
+                {t("delete_account")}
               </Text>
             </View>
           </TouchableOpacity>

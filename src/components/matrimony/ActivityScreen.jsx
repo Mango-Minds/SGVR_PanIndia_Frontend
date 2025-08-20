@@ -18,7 +18,7 @@ import { Row } from "../../styles/dashboard.styles";
 import { TopText } from "../../styles/social.styles";
 import ActivityCard from "./ActivityCard";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentUserMatrimonyprofile } from "../../services/matrimony.services";
 import { useNavigation } from "@react-navigation/native";
 

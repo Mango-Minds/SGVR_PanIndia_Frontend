@@ -1,6 +1,6 @@
 import React from "react";
 import { IconButton } from "react-native-paper";
-import { Video, AVPlaybackStatus } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import Hyperlink from "react-native-hyperlink";
 // import Autolink from 'react-native-autolink';
 
@@ -18,7 +18,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import Icons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import {
   getImageUrl,
   likePost,
@@ -624,10 +624,26 @@ export default function SocialCard({
           </View>
           <TouchableOpacity
             onPress={() => {
+              // Pass the current post data to the share modal
+              const shareData = {
+                type: 'post',
+                postId: item._id,
+                userId: item.createdBy._id,
+                content: item.caption,
+                title: 'Me Maratha Post',
+                message: `Check out this post by ${item.createdBy.fname} ${item.createdBy.lname} on Me Maratha!`
+              };
+              
+              console.log("Setting share data:", shareData);
+              console.log("Share ref:", shareRef.current);
+              
+              if (shareRef.current && shareRef.current.setShareData) {
+                shareRef.current.setShareData(shareData);
+              }
               shareRef.current.open();
             }}
           >
-            {/* <Icons name="share-outline" size={30} color="gray" /> */}
+            <Icons name="share-outline" size={25} color="gray" />
           </TouchableOpacity>
         </View>
       </View>

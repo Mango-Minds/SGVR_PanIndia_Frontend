@@ -37,6 +37,7 @@ import ChatScreenNew from "../../features/chat/chat.screen.new";
 import { B2CStackNavigator } from "./B2C.navigator";
 
 import OnboardModuleForm from "../../features/OnBoardModuleForm";
+import DeleteAccountScreen from "../../features/deleteAccount.screen";
 
 const Stack = createStackNavigator();
 
@@ -91,8 +92,9 @@ export const DashboardNavigator = () => (
     <Stack.Screen name="MatrimonyViewUser" component={MatrimonyViewUser} />
      <Stack.Screen name="ChangeLanguage" component={ChangeLanguage} />
 
-    <Stack.Screen name="ViewSinglePost" component={SinglePostScreen} />
-    <Stack.Screen name="CommentScreen" component={CommentScreen} />
-    <Stack.Screen name="LikesScreen" component={LikeScreen} />
-  </Stack.Navigator>
+            <Stack.Screen name="ViewSinglePost" component={SinglePostScreen} />
+        <Stack.Screen name="CommentScreen" component={CommentScreen} />
+        <Stack.Screen name="LikesScreen" component={LikeScreen} />
+        <Stack.Screen name="DeleteAccount" component={DeleteAccountScreen} />
+      </Stack.Navigator>
 );

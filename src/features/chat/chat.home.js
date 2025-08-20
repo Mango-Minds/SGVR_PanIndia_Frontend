@@ -24,7 +24,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";

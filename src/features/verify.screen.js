@@ -157,8 +157,8 @@ export default function VerifyScreen({ route, navigation }) {
     try {
       setTime(60);
       axios
-        .post(BASEAPIURL + "/auth/send-otp", {
-          userid: phone,
+        .post(BASEAPIURL + "/user/forgot-password/request-otp", {
+          phone: phone,
         })
         .then((res) => {
           if (res.data.status === 0) {

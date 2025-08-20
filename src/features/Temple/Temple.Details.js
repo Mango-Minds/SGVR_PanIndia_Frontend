@@ -16,14 +16,13 @@ import {
   Dimensions,
 } from "react-native";
 import Theme from "../../styles/theme";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import Temp1 from "../../assets/images/Temple/temp1.jpg";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getShceduledDates } from "../../services/matrimony.services";
 import CommunityMemberCard from "../../components/community/communityMemberCard";
 import { useNavigation } from "@react-navigation/native";

@@ -32,7 +32,7 @@ import {
 } from "react-native-paper-dates";
 import { statesData } from "../../assets/data/statesAndCities";
 import * as ImagePicker from "expo-image-picker";
-import {  useQueryClient } from "react-query";
+import {  useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 

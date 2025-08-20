@@ -12,7 +12,6 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { IconButton } from "react-native-paper";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import { getMyProfile } from "../../services/matrimony.services";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import { Container, RowBetween } from "../../styles/common.styles";
@@ -24,7 +23,7 @@ import {
   fullProfileRequest,
   getMatrimonyOneUser,
 } from "../../services/matrimony.services";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import moment from "moment";
 import { getImageUrl } from "../../services/socialMedia.services";
 import { useDispatch } from "react-redux";
@@ -791,7 +790,7 @@ export default function MatrimonyViewUser({ navigation, route }) {
       <Modal visible={showViewer} transparent={true}>
         <ImageViewerScreen images={images} setShowViewer={setShowViewer} />
       </Modal>
-      <ParallaxScrollView
+      <ScrollView
         renderBackground={renderBackground}
         renderContentBackground={() => renderContentBackground(data)}
         parallaxHeaderHeight={400}
@@ -802,7 +801,7 @@ export default function MatrimonyViewUser({ navigation, route }) {
             style={{ height: "100%" }}
           ></TouchableOpacity>
         )}
-      ></ParallaxScrollView>
+      ></ScrollView>
     </SafeArea>
   );
 }

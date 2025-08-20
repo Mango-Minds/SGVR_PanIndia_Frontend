@@ -17,7 +17,7 @@ import { Row } from "../../styles/dashboard.styles";
 import { TopText } from "../../styles/social.styles";
 import SearchResult from "../../components/matrimony/SeachResultCard";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { getSearchUsersMatrimony } from "../../services/socialMedia.services";
 import { debounce } from "lodash";
 import { useDispatch } from "react-redux";

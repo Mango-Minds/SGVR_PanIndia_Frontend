@@ -9,19 +9,57 @@ import { useNavigation } from "@react-navigation/native";
 export default function CommentCard(props) {
   const { user } = useSelector((state) => state.user);
 
-  const { username, content, userid, fname } = props;
+  const { comment } = props;
+  
+  // Add safety checks
+  if (!comment) {
+    console.warn("CommentCard: No comment data provided");
+    return null;
+  }
 
-  console.log(props);
+  const { userId, content, createdAt } = comment;
+
+  console.log("Comment data:", comment);
   const navigation = useNavigation();
 
   const [dp, setDp] = React.useState();
 
-  React.useEffect(async () => {
-    const res = await getImageUrl(props.userid.dp);
-    if (res.status === 0 && props.userid.dp) {
-      setDp(res.url);
+  React.useEffect(() => {
+    const fetchUserImage = async () => {
+      if (userId && userId.image) {
+        try {
+          const res = await getImageUrl(userId.image);
+          if (res.status === 0 && userId.image) {
+            setDp(res.url);
+          }
+        } catch (error) {
+          console.error("Error fetching user image:", error);
+        }
+      }
+    };
+    
+    fetchUserImage();
+  }, [userId]);
+
+  const handleUserPress = () => {
+    if (userId && userId._id) {
+      navigation.navigate(
+        user._id === userId._id ? "Profile" : "ViewUserScreen",
+        user._id !== userId._id && {
+          username: userId.firstName,
+          userid: userId._id,
+          userprofile: userId,
+          userdp: dp,
+        }
+      );
     }
-  }, []);
+  };
+
+  // Safety check for required data
+  if (!userId || !content) {
+    console.warn("CommentCard: Missing required data", { userId, content });
+    return null;
+  }
 
   return (
     <Card
@@ -31,20 +69,9 @@ export default function CommentCard(props) {
         backgroundColor: "transparent",
         borderBottomWidth: 0.5,
         borderBottomColor: "#EFEFEF",
-        opacity: userid !== null ? 1 : 0.5,
+        opacity: userId !== null ? 1 : 0.5,
       }}
-      onPress={() => {
-        userid !== null &&
-          navigation.navigate(
-            user._id === props.userid._id ? "Profile" : "ViewUserScreen",
-            user._id !== props.userid._id && {
-              username: props.username,
-              userid: props.userid._id,
-              userprofile: props.userid,
-              userdp: dp,
-            }
-          );
-      }}
+      onPress={handleUserPress}
     >
       <Card.Content>
         <RowBetween>
@@ -72,10 +99,10 @@ export default function CommentCard(props) {
                   marginRight: 16,
                 }}
               >
-                {userid !== null
-                  ? username === user.username
+                {userId !== null
+                  ? userId.firstName === user?.firstName
                     ? "You"
-                    : "@" + username
+                    : (userId.firstName || "Unknown") + " " + (userId.lastName || "")
                   : "@user_not_found"}
                 {"  "}
               </Text>
@@ -92,17 +119,8 @@ export default function CommentCard(props) {
               </Text>
             </View>
           </View>
-          {/* <Image
-            source={require("../../assets/images/social/heart-filled.png")}
-            style={{ width: 17, height: 14, marginRight: 8 }}
-          /> */}
-          {/* <Image
-            source={require('../../assets/images/social/heart-transparent.png')}
-            style={{ width: 17, height: 14, marginRight: 8 }}
-          /> */}
         </RowBetween>
       </Card.Content>
-      {/* <Divider /> */}
     </Card>
   );
 }

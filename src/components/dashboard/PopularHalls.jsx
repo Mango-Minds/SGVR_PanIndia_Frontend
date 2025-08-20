@@ -1,7 +1,6 @@
 import React from "react";
 import PopularHallCard from "./PopularHallCard";
-import Carousel from "react-native-snap-carousel";
-import { Dimensions } from "react-native";
+import { Dimensions, ScrollView, View } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -13,14 +12,17 @@ export default function PopularHalls(props) {
   // const navigation = props.navigation
   return (
     <>
-      <Carousel
-        layout={"default"}
-        data={props.data}
-        renderItem={_renderItem}
-        itemWidth={windowWidth * 0.65}
-        sliderWidth={windowWidth}
-        activeSlideAlignment={"start"}
-      />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
+        {props.data && props.data.map((item, index) => (
+          <View key={index} style={{ marginRight: 16, width: windowWidth * 0.65 }}>
+            <PopularHallCard {...item} />
+          </View>
+        ))}
+      </ScrollView>
     </>
   );
 }

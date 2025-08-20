@@ -31,7 +31,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { en, registerTranslation } from "react-native-paper-dates";
 import { statesData } from "../../assets/data/statesAndCities";
 import * as ImagePicker from "expo-image-picker";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../../styles/common.styles";
 import FormData from "form-data";
 import apiClient from "../../store/apiClient";

@@ -29,9 +29,8 @@ import {
   MatrimonyHomeSwitch,
 } from "../../styles/matrimony.styles";
 import MatrimonyVendorsScreen from "./matrimonyVendors";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAllMatrimonyProfiles } from "../../services/matrimony.services";
-import styles from "react-native-parallax-scroll-view/src/styles";
 import { getImageUrl } from "../../services/socialMedia.services";
 import { LinearGradient } from "expo-linear-gradient";
 import { loadmatrimonyprofileImages, ErrorToggle } from "../../store/user";

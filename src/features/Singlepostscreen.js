@@ -14,7 +14,7 @@ import {
 import Theme from "../styles/theme";
 import { ChatTextInput } from "../styles/social.styles";
 import { IconButton, Text } from "react-native-paper";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import OptionsModal from "../components/modals/OptionsModal";
 import ShareModal from "../components/modals/ShareModal";
 import SinglePostCard from "../components/social/SignlePostcard";

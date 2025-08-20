@@ -109,20 +109,24 @@ export const getAllLikes = async ({ postId }) => {
 };
 
 export const getAllComments = async ({ postId }) => {
-  const res = await axios.get(
-    `${BASEAPIURL}/meetup/comments?postId=${postId}`,
-    {
-      headers: await authHeader(),
-    }
-  );
-  return res.data;
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/social/post/comments/${postId}/10`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('getAllComments API error:', error.response?.data || error.message);
+    throw error;
+  }
 };
 
 export const commentOnPost = async ({ postId, content }) => {
-  const res = await axios.patch(
-    `${BASEAPIURL}/meetup/comment`,
+  const res = await axios.post(
+    `${BASEAPIURL}/social/post/comment/${postId}`,
     {
-      postId: postId,
       content: content,
     },
     {

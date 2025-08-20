@@ -3,75 +3,187 @@ import {
   View,
   Text,
   TextInput,
-  Image,
   TouchableOpacity,
-  StyleSheet,
+  Image,
+  Alert,
   ScrollView,
+  StyleSheet,
 } from "react-native";
+import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/Ionicons";
-const RepostWithThoughts = ({ route, navigation }) => {
-  const { post, userId } = route.params;
- 
-  const user = post.find((item) => item.id === userId);
- 
-  const [thoughts, setThoughts] = useState("");
+import apiClient from "../../store/apiClient";
 
+const RepostWithThoughts = ({ route, navigation }) => {
+  const { post, userId, fetchPosts } = route.params;
+  const token = useSelector((state) => state.user.token);
+  const currentUser = useSelector((state) => state.user.user);
+
+  const originalPost = post;
+
+  const [thoughts, setThoughts] = useState("");
+  const [isPosting, setIsPosting] = useState(false);
+
+  const handleRepost = async () => {
+    if (!originalPost || !originalPost._id) {
+      Alert.alert("Error", "Invalid post data");
+      return;
+    }
+
+    // Allow reposts with or without thoughts
+    setIsPosting(true);
+    try {
+      const repostData = {
+        originalPostId: originalPost._id,
+        thoughts: thoughts.trim()
+      };
+
+      const response = await apiClient.post("/social/post/create-repost", repostData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.data.success) {
+        Alert.alert("Success", "Post reposted successfully!", [
+          {
+            text: "OK",
+            onPress: async () => {
+              // Refresh posts if fetchPosts function is available
+              if (fetchPosts) {
+                await fetchPosts(true); // Pass true for refresh
+              }
+              // Navigate to SocialHomeScreen to ensure user stays in social section
+              navigation.navigate("SocialHomeScreen");
+            },
+          },
+        ]);
+      } else {
+        Alert.alert("Error", response.data.message || "Failed to repost");
+      }
+    } catch (error) {
+      console.error("Repost error:", error);
+      console.error("Error response:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+
+      if (error.response?.status === 401) {
+        Alert.alert("Error", "Authentication failed. Please login again.");
+      } else if (error.response?.status === 404) {
+        Alert.alert("Error", "Original post not found.");
+      } else if (error.response?.status === 400) {
+        Alert.alert("Error", error.response.data?.message || "Invalid request data.");
+      } else {
+        Alert.alert("Error", error.response?.data?.message || "Failed to repost. Please try again.");
+      }
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
+  if (!originalPost) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon
+              name="arrow-back"
+              size={24}
+              color="#000"
+            />
+          </TouchableOpacity>
+        </View>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>No post data available</Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container}>
-     
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => navigation.goBack()}
+        >
           <Icon
             name="arrow-back"
             size={24}
             color="#000"
-            onPress={() => navigation.goBack()}
           />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.postButton}>
-          <Text style={styles.postButtonText}>Post</Text>
+        <TouchableOpacity
+          style={[styles.postButton, isPosting && styles.postButtonDisabled]}
+          onPress={handleRepost}
+          disabled={isPosting}
+        >
+          <Text style={styles.postButtonText}>
+            {isPosting ? "Posting..." : "Post"}
+          </Text>
         </TouchableOpacity>
       </View>
+
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
           placeholder="What do you want to talk about?"
           value={thoughts}
           onChangeText={setThoughts}
+          multiline
+          numberOfLines={4}
         />
       </View>
 
       <View style={styles.repostContainer}>
-        {/* Header */}
+        <View style={styles.originalPost}>
+          <View style={styles.postHeader}>
+            <Image
+              source={
+                originalPost.createdBy?.image
+                  ? { uri: originalPost.createdBy.image }
+                  : require("../../assets/images/general/user.png")
+              }
+              style={styles.profileImage}
+            />
 
-        {/* Original Post Preview */}
-        <View >
-          <Image source={user.profileImageUri} style={styles.profileImage} />
-          
-          <View style={styles.headerText}>
-          <Text style={styles.username}>{user.name}</Text>
-            <Text style={styles.jobTitle}>{user.jobTitle}</Text>
-            <Text style={styles.time}>1w • Edited</Text>
-            <Text style={styles.description}>{user.description}</Text>
+            <View style={styles.headerText}>
+              <Text style={styles.username}>
+                {originalPost.createdBy?.firstName} {originalPost.createdBy?.lastName}
+              </Text>
+              <Text style={styles.time}>
+                {originalPost.createdAt
+                  ? new Date(originalPost.createdAt).toLocaleDateString()
+                  : "Recently"
+                }
+              </Text>
+            </View>
           </View>
-          <Image style={styles.bannerImage} source={user.photoUri} />
+
+          <Text style={styles.description}>
+            {originalPost.content || "No content available"}
+          </Text>
+
+          {(originalPost.images && originalPost.images.length > 0) || originalPost.image ? (
+            <Image
+              style={styles.bannerImage}
+              source={{ uri: originalPost.images?.[0] || originalPost.image }}
+            />
+          ) : null}
         </View>
-        </View>
+      </View>
     </ScrollView>
   );
 };
 
 export default RepostWithThoughts;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
     marginTop: 30,
-  },
-  generalInfoContainer: {
-    backgroundColor: "white",
-    paddingBottom: 10,
   },
   headerContainer: {
     flexDirection: "row",
@@ -81,90 +193,76 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f8f8",
     justifyContent: 'space-between',
   },
+  iconButton: {
+    padding: 8,
+  },
   postButton: {
-    color: "#fff",
     backgroundColor: "blue",
     borderRadius: 20,
+    paddingVertical: 10,
     paddingHorizontal: 20,
     marginRight: 10,
-    paddingVertical: 10,            
-    paddingHorizontal: 20, 
-    
+  },
+  postButtonDisabled: {
+    backgroundColor: "#ccc",
   },
   postButtonText: {
-    color: "white", // White text color
-    fontSize: 16, // Font size
-    fontWeight: "bold", // Bold text
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
   },
-
   inputContainer: {
-    flex: 1,
     backgroundColor: "#fff",
     padding: 16,
   },
   input: {
-    marginTop: 10,
     fontSize: 18,
     paddingVertical: 10,
+    textAlignVertical: 'top',
+    minHeight: 100,
   },
-  
   repostContainer: {
-    flex: 1,
     backgroundColor: "#fff",
-    borderRadius: 20, // Apply rounded edges to the container
-    padding: 20, // Add padding inside the container
-    margin: 10, // Optional: margin around the container for spacing
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    // elevation: 5,              // For Android shadow effect
-    borderWidth: 1, // Border width
-    borderColor: "#ccc",
-  },
-
-  input: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 10,
-    marginBottom: 20, // Space between input and content
-    paddingHorizontal: 15,
-    fontSize: 16,
+    padding: 10,
   },
   originalPost: {
-    borderRadius: 20, // Rounded edges for the post preview
-    overflow: "hidden", // Ensures child elements do not overflow
-    backgroundColor: "#f9f9f9", // Light gray background for post preview
-    padding: 15, // Padding inside the post container
+    borderRadius: 20,
+    overflow: "hidden",
+    backgroundColor: "#f9f9f9",
+    padding: 15,
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
   postHeader: {
-    flexDirection: "row", // Horizontal layout for profile image and text
+    flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10, // Space between profile and description
+    marginBottom: 10,
   },
   profileImage: {
     width: 50,
     height: 50,
-    borderRadius: 25, // Rounded profile image
-    marginRight: 10, // Space between image and text
+    borderRadius: 25,
+    marginRight: 10,
+  },
+  headerText: {
+    flex: 1,
   },
   username: {
     fontSize: 18,
     fontWeight: "bold",
   },
-  jobTitle: {
+  time: {
     fontSize: 14,
     color: "#888",
   },
   description: {
     fontSize: 14,
     color: "#555",
-    marginBottom: 15, // Space between description and banner image
+    marginBottom: 15,
   },
   bannerImage: {
     width: "100%",
-    height: 500,
-    borderRadius: 10, // Rounded edges for the banner image
+    height: 200,
+    borderRadius: 10,
   },
 });

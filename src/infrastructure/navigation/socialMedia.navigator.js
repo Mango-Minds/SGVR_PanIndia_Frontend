@@ -25,7 +25,7 @@ import PostCreated from "../../features/SocialMedia/PostCreated.screen";
 import MessageScreenNew from "../../features/SocialMediaNew/MessageScreenNew.jsx";
 
 import BottomNavigation from "../../features/SocialMediaNew/new.social.screen.js";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Badge } from "react-native-paper";
 import { TempleStackNavigator } from "./Temple.navigator";

@@ -23,9 +23,9 @@ import {
 } from "../../services/socialMedia.services";
 import Icon from "react-native-vector-icons/Ionicons";
 
-import { Video, AVPlaybackStatus } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { stylesPostCard } from "../profile/Posts";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import { useDispatch } from "react-redux";
 import { ErrorToggle } from "../../store/user";
 

@@ -3,6 +3,7 @@ import { Alert } from "react-native";
 import apiClient from "../../store/apiClient";
 import { setLoadingInBtn } from "../../store/user";
 import { BASEAPIURL } from "../../infrastructure/constants";
+import { decode } from "base-64";
 export const addProductAPI = async ({
   registerDetails,
   selectedImages,
@@ -21,6 +22,8 @@ export const addProductAPI = async ({
       return;
     }
 
+
+
     const formData = new FormData();
     formData.append("name", registerDetails.productName);
     formData.append("price", parseFloat(registerDetails.productPrice));
@@ -34,7 +37,13 @@ export const addProductAPI = async ({
     formData.append("condition", registerDetails.productCondition);
     formData.append("productAge", registerDetails.productAge);
     formData.append("address", registerDetails.address);
-    formData.append("address_link", registerDetails.address_link);
+    formData.append("phone", registerDetails.phone);
+    // Only append address_link if it's not empty
+    if (registerDetails.address_link && registerDetails.address_link.trim()) {
+      formData.append("address_link", registerDetails.address_link);
+    }
+
+
 
     selectedImages.forEach((media, index) => {
       let mimeType = "";
@@ -42,22 +51,29 @@ export const addProductAPI = async ({
       let fieldName = "";
 
       if (media.uri) {
-        if (media.type === "image") {
-          mimeType = "image/jpeg";
+        // Determine media type based on file extension or mimeType
+        const uri = media.uri.toLowerCase();
+        if (uri.includes('.jpg') || uri.includes('.jpeg') || uri.includes('.png') || uri.includes('.gif') || media.mimeType?.includes('image')) {
+          mimeType = media.mimeType || "image/jpeg";
           fileName = `image_${index}.jpg`;
           fieldName = "images";
-        } else if (media.type === "video") {
-          mimeType = "video/mp4";
+        } else if (uri.includes('.mp4') || uri.includes('.mov') || uri.includes('.avi') || media.mimeType?.includes('video')) {
+          mimeType = media.mimeType || "video/mp4";
           fileName = `video_${index}.mp4`;
           fieldName = "videos";
-        } else if (media.type === "application") {
-          mimeType = "application/pdf";
+        } else if (uri.includes('.pdf') || uri.includes('.doc') || uri.includes('.docx') || media.mimeType?.includes('application')) {
+          mimeType = media.mimeType || "application/pdf";
           fileName = `document_${index}.pdf`;
           fieldName = "documents";
         } else {
-          console.log(`Unsupported media type: ${media.type}`);
-          return;
+          // Default to image if type cannot be determined
+          console.log(`Unknown media type, defaulting to image: ${media.uri}`);
+          mimeType = "image/jpeg";
+          fileName = `image_${index}.jpg`;
+          fieldName = "images";
         }
+
+    
 
         formData.append(fieldName, {
           uri: media.uri,
@@ -69,6 +85,8 @@ export const addProductAPI = async ({
 
     setLoading(true);
 
+
+
     const response = await apiClient.post("/listings/create", formData, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -79,6 +97,7 @@ export const addProductAPI = async ({
     setLoading(false);
 
     if (!response.data || response.status !== 201) {
+      console.error("API Response:", response);
       throw new Error("Failed to add product");
     }
 
@@ -90,7 +109,49 @@ export const addProductAPI = async ({
 ]);
   } catch (error) {
     console.error("Error adding product:", error);
-    Alert.alert(t("error"), t("addProductFailed"), [{ text: t("ok") }]);
+
+    
+    // Try to get more specific error message from the response
+    let errorMessage = t("addProductFailed");
+    
+    if (error.code === 'NETWORK_ERROR' || error.message.includes('Network Error')) {
+      errorMessage = "Network error. Please check your internet connection.";
+    } else if (error.response?.status === 401) {
+      errorMessage = "Authentication failed. Please login again.";
+    } else if (error.response?.status === 400) {
+      errorMessage = error.response.data?.message || "Invalid data provided.";
+    } else if (error.response?.status === 500) {
+      // Check if it's a phone number validation error
+      if (error.response.data?.error && error.response.data.error.includes('phone')) {
+        errorMessage = "Phone number is required. Please update your profile with a phone number and try again.";
+      } else {
+        errorMessage = "Server error. Please try again later.";
+      }
+    } else if (error.response && error.response.data && error.response.data.message) {
+      errorMessage = error.response.data.message;
+    } else if (error.message) {
+      errorMessage = error.message;
+    }
+    
+    // Check if it's a phone number error and provide navigation option
+    if (error.response?.status === 500 && error.response.data?.error && error.response.data.error.includes('phone')) {
+      Alert.alert(
+        t("error"), 
+        "Phone number is required. Please update your profile with a phone number and try again.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Update Profile", 
+            onPress: () => {
+              // Navigate to profile update page
+              navigation.navigate('Profile'); // Adjust the route name as needed
+            }
+          }
+        ]
+      );
+    } else {
+      Alert.alert(t("error"), errorMessage, [{ text: t("ok") }]);
+    }
     setLoading(false);
   }
 };
@@ -787,8 +848,10 @@ export const updateUserProfile = async ({
     formData.append("firstName", firstName);
     formData.append("lastName", lastName);
     formData.append("email", email);
-    formData.append("phone", phone); // <-- change here!
+    formData.append("phone", phone);
     formData.append("address", address);
+
+
 
     if (selectedImage && selectedImage.uri) {
       let localUri = selectedImage.uri;

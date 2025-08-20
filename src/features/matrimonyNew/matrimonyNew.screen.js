@@ -14,7 +14,7 @@ import { IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import Profile from "../../assets/images/B2b/profile.png";
 import { useSelector } from "react-redux";
 import { useIsFocused } from "@react-navigation/native";
@@ -880,7 +880,7 @@ console.log("grooms: ", groomsData);
                   borderBottomWidth: 1,
                   borderBottomColor: "#ccc",
                   backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the ScrollView
+                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
                 }}
               >
                 <HallImageContainer>
@@ -1065,7 +1065,7 @@ console.log("grooms: ", groomsData);
                   borderBottomWidth: 1,
                   borderBottomColor: "#ccc",
                   backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the ScrollView
+                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
                 }}
               >
                 <HallImageContainer>
@@ -1157,7 +1157,7 @@ console.log("grooms: ", groomsData);
                   borderBottomWidth: 1,
                   borderBottomColor: "#ccc",
                   backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the ScrollView
+                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
                 }}
               >
                 <HallImageContainer>
@@ -1246,7 +1246,7 @@ console.log("grooms: ", groomsData);
                   borderBottomWidth: 1,
                   borderBottomColor: "#ccc",
                   backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the ScrollView
+                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
                 }}
               >
                 <HallImageContainer>
@@ -1495,7 +1495,7 @@ const styles = StyleSheet.create({
 // import Icon from "react-native-vector-icons/Ionicons";
 // import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 // import { TopText } from "../../styles/social.styles";
-// import { Ionicons } from "react-native-vector-icons";
+// import Ionicons from 'react-native-vector-icons/Ionicons';
 // import Profile from "../../assets/images/B2b/profile.png";
 // import { useSelector } from "react-redux";
 // import { useIsFocused } from "@react-navigation/native";
@@ -2506,7 +2506,7 @@ const styles = StyleSheet.create({
 //                   borderBottomWidth: 1,
 //                   borderBottomColor: "#ccc",
 //                   backgroundColor: "#fff",
-//                   width: "100%", // Ensuring each item takes the full width of the ScrollView
+//                   width: "100%", // Ensuring each item takes the full width of the, ScrollView,
 //                 }}
 //               >
 //                 <HallImageContainer>
@@ -2619,7 +2619,7 @@ const styles = StyleSheet.create({
 //                   borderBottomWidth: 1,
 //                   borderBottomColor: "#ccc",
 //                   backgroundColor: "#fff",
-//                   width: "100%", // Ensuring each item takes the full width of the ScrollView
+//                   width: "100%", // Ensuring each item takes the full width of the, ScrollView,
 //                 }}
 //               >
 //                 <HallImageContainer>
@@ -2729,7 +2729,7 @@ const styles = StyleSheet.create({
 //                   borderBottomWidth: 1,
 //                   borderBottomColor: "#ccc",
 //                   backgroundColor: "#fff",
-//                   width: "100%", // Ensuring each item takes the full width of the ScrollView
+//                   width: "100%", // Ensuring each item takes the full width of the, ScrollView,
 //                 }}
 //               >
 //                 <HallImageContainer>
@@ -2839,7 +2839,7 @@ const styles = StyleSheet.create({
 //                   borderBottomWidth: 1,
 //                   borderBottomColor: "#ccc",
 //                   backgroundColor: "#fff",
-//                   width: "100%", // Ensuring each item takes the full width of the ScrollView
+//                   width: "100%", // Ensuring each item takes the full width of the, ScrollView,
 //                 }}
 //               >
 //                 <HallImageContainer>
@@ -2946,7 +2946,7 @@ const styles = StyleSheet.create({
 //                   borderBottomWidth: 1,
 //                   borderBottomColor: "#ccc",
 //                   backgroundColor: "#fff",
-//                   width: "100%", // Ensuring each item takes the full width of the ScrollView
+//                   width: "100%", // Ensuring each item takes the full width of the, ScrollView,
 //                 }}
 //               >
 //                 <HallImageContainer>

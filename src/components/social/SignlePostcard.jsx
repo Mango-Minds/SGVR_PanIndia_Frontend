@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import Icons from "react-native-vector-icons/MaterialCommunityIcons";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import Hyperlink from "react-native-hyperlink";
 import {
   getImageUrl,

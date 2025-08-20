@@ -1,7 +1,7 @@
 import React from "react";
 import { ActivityIndicator, ScrollView, Platform } from "react-native";
 import { Divider, IconButton } from "react-native-paper";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getAllLikes } from "../../services/socialMedia.services";
 import { Container, RowBetween, View } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";

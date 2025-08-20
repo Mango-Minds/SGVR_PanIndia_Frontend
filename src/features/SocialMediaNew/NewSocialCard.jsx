@@ -15,6 +15,7 @@ import {
   ScrollView,
   Dimensions,
   Pressable,
+  ActivityIndicator,
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -22,7 +23,7 @@ import { useSelector } from "react-redux";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { Video, ResizeMode } from "expo-av";
+import { VideoView, useVideoPlayer } from "expo-video";
 import { BASEAPIURL, RENDERMEDIAURL } from "../../infrastructure/constants";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -40,8 +41,11 @@ import {
   addComment,
   deleteComment,
   reportPostApi,
-} from "./SocialMediaAPIs";
-import { useTranslation } from "react-i18next";
+  getUsers,
+  } from "./SocialMediaAPIs";
+  import { useTranslation } from "react-i18next";
+  import { generateShareUrl, generateShareMessage } from "../../utils/shareUtils";
+  import * as Clipboard from 'expo-clipboard';
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -66,16 +70,12 @@ const NewSocialCard = ({
   fetchPosts,
   postImages,
   profileImageUrl,
-  ActivityIndicator,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { t } = useTranslation();
   // Determine if photoUri is an array of images or a single image
 
-  console.log("Posts Data: ", posts);
-
   const images = Array.isArray(postImages) ? postImages : [postImages];
-  console.log("images of posts", images);
 
   // Handle scrolling to update current index
   const handleScroll = (event) => {
@@ -89,18 +89,65 @@ const NewSocialCard = ({
   const route = useRoute();
   const token = useSelector((state) => state.user.token);
   const user = useSelector((state) => state.user.user);
-  const fromUserId = user?.roleData?.owner;
+  const fromUserId = user?._id;
   const [newCommentText, setNewCommentText] = useState("");
   const [commentsToShow, setCommentsToShow] = useState(10);
 
   const [loadingAnimation, setLoadingAnimation] = useState(false);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [commentCount, setCommentCount] = useState(post.comments?.length || 0);
 
   const [isRequestSent, setIsRequestSent] = useState(false);
   const [isFollowing, setIsFollowing] = useState(null);
 
+  // Share modal state
+  const [shareUsers, setShareUsers] = useState([]);
+  const [shareSearchTerm, setShareSearchTerm] = useState("");
+  const [shareLoading, setShareLoading] = useState(false);
+
+  // Function to fetch users for sharing
+  const fetchShareUsers = async () => {
+    try {
+      setShareLoading(true);
+      const response = await getUsers();
+      
+      // The unfollowed-users endpoint returns { unfollowedUsers: [...] }
+      const users = response.data.unfollowedUsers || [];
+      
+      // Filter out the current user from the list (though it should already be filtered)
+      const filteredUsers = users.filter(user => user._id !== fromUserId);
+      setShareUsers(filteredUsers);
+    } catch (error) {
+      console.error("Error fetching share users:", error);
+    } finally {
+      setShareLoading(false);
+    }
+  };
+
+  // Fetch users when share modal opens
+  useEffect(() => {
+    if (isShareModalVisible && shareUsers.length === 0) {
+      fetchShareUsers();
+    }
+  }, [isShareModalVisible]);
+
+  // Handle search functionality - now using client-side filtering
+  // No need to make API calls on search change since we filter client-side
+
+  // Filter users based on search term (client-side filtering)
+  const filteredShareUsers = shareUsers.filter(user => 
+    user.firstName?.toLowerCase().includes(shareSearchTerm.toLowerCase()) ||
+    user.lastName?.toLowerCase().includes(shareSearchTerm.toLowerCase())
+  );
+
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
+    // Check if both users exist before attempting to send follow request
+    if (!fromUserId || !toUserId) {
+      console.warn("Cannot send follow request: missing user IDs");
+      return;
+    }
+    
     try {
       const response = await sendFollowRequest(toUserId);
       console.log("response of sending req", response);
@@ -182,28 +229,55 @@ const NewSocialCard = ({
     }
   }, [userId]);
   const handleDeletePost = async () => {
-    try {
-      const response = await deletePost(post._id);
-      if (response.status === 200) {
-        Alert.alert(
-          "Success",
-          "Post deleted successfully",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                fetchPosts();
-                navigation.goBack();
-              },
-            },
-          ],
-          { cancelable: false }
-        );
-      }
-    } catch (error) {
-      console.error("Error deleting post:", error);
-      Alert.alert("Error", "Failed to delete post.");
-    }
+    // Show confirmation dialog first
+    Alert.alert(
+      t("confirm_deletion_title") || "Confirm Deletion",
+      "Are you sure you want to delete this post? This action cannot be undone.",
+      [
+        {
+          text: t("cancel") || "Cancel",
+          style: "cancel",
+        },
+        {
+          text: t("delete") || "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await deletePost(post._id);
+              if (response.status === 200) {
+                Alert.alert(
+                  "Success",
+                  t("post_deleted_successfully") || "Post deleted successfully",
+                  [
+                    {
+                                              text: "OK",
+                        onPress: async () => {
+                          // Ensure fetchPosts completes before navigation
+                          if (fetchPosts) {
+                            await fetchPosts(true); // Pass true for refresh
+                          }
+                          // Navigate to SocialHomeScreen to ensure user stays in social section
+                          setTimeout(() => {
+                            navigation.navigate("SocialHomeScreen");
+                          }, 100);
+                        },
+                    },
+                  ],
+                  { cancelable: false }
+                );
+              }
+            } catch (error) {
+              console.error("Error deleting post:", error);
+              Alert.alert(
+                "Error", 
+                t("failed_to_delete_post") || "Failed to delete post."
+              );
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   const toggleDescription = () => {
@@ -250,7 +324,7 @@ const NewSocialCard = ({
       id: "2",
       name: "Sejal Tayal",
       role: "Management Trainee at Younity.in",
-      text: "Well said Prafful Garg! In today’s fast-paced world, prioritizing relationships and health is more crucial...",
+      text: "Well said Prafful Garg! In today's fast-paced world, prioritizing relationships and health is more crucial...",
       profileImageUrl:
         "https://plus.unsplash.com/premium_photo-1689551670902-19b441a6afde?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8d29tYW58ZW58MHx8MHx8fDA%3D",
     },
@@ -286,12 +360,16 @@ const NewSocialCard = ({
   const [editingCommentId, setEditingCommentId] = useState(null);
   const [menuVisibleId, setMenuVisibleId] = useState(null);
   const [isRepostModalVisible, setRepostModalVisible] = useState(false);
-  const [isPostModalVisible, setPostModalVisible] = useState(false);
+
   const [reportModalVisible, setReportModalVisible] = useState(false);
   const pan = useRef(new Animated.ValueXY()).current;
 
   const toggleMenu = (id) => {
     setMenuVisibleId(menuVisibleId === id ? null : id);
+  };
+
+  const closeMenu = () => {
+    setMenuVisibleId(null);
   };
 
   const handleMenuPress = () => {
@@ -308,159 +386,7 @@ const NewSocialCard = ({
     pan.setValue({ x: 0, y: 0 });
   };
 
-  const closePostModal = () => {
-    setPostModalVisible(false);
-    pan.setValue({ x: 0, y: 0 });
-  };
 
-  // useEffect(() => {
-  //   const fetchLikeStatus = async () => {
-  //     try {
-  //       const response = await fetch(
-  //         `${BASEAPIURL}/social/post/like-status/${post._id}`,
-  //         {
-  //           method: "GET",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${token}`,
-  //           },
-  //         }
-  //       );
-
-  //       if (response.ok) {
-  //         const data = await response.json();
-  //         setIsLiked(data.isLiked);
-  //       } else {
-  //         const errorData = await response.json();
-  //         console.error("Error fetching like status:", errorData.message);
-  //       }
-  //     } catch (error) {
-  //       console.error("Error fetching like status:", error);
-  //     }
-  //   };
-
-  //   fetchLikeStatus();
-  // }, [post._id]);
-
-  // const toggleLike = async () => {
-  //   const url = `${BASEAPIURL}/social/post/${isLiked ? "unlike" : "like"}/${
-  //     post._id
-  //   }`;
-  //   const method = "POST";
-
-  //   try {
-  //     const response = await fetch(url, {
-  //       method,
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //       body: JSON.stringify({
-  //         userId: fromUserId,
-  //         postId: post._id,
-  //       }),
-  //     });
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setLikeCount(data.likesCount);
-  //       setIsLiked(!isLiked);
-  //     } else {
-  //       const errorData = await response.json();
-  //       console.error("Error:", errorData.message);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error toggling like:", error);
-  //   }
-  // };
-
-  // const fetchComments = async () => {
-  //   setLoading(true);
-
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/post/comments/${post._id}/10`,
-  //       {
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setComments(data.comments);
-  //       console.log("Fetched comments data: ", data);
-  //     } else {
-  //       console.error("Failed to fetch comments:", response.status);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching comments:", error.message);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // useEffect(() => {
-  //   fetchComments();
-  // }, [post._id]);
-
-  // const handleAddComment = async () => {
-  //   if (!newCommentText.trim()) {
-  //     alert("Comment cannot be empty.");
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/post/comment/${post._id}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ content: newCommentText }),
-  //       }
-  //     );
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setComments([data.comment, ...comments]);
-  //       setNewCommentText("");
-  //       fetchComments();
-  //     } else {
-  //       const errorData = await response.json();
-  //       console.error("Error adding comment:", errorData.message);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error adding comment:", error.message);
-  //   }
-  // };
-
-  // const handleDeleteComment = async (commentId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/post/comment/${post._id}/${commentId}`,
-  //       {
-  //         method: "DELETE",
-  //         headers: {
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setComments(data.comments);
-  //       fetchComments();
-  //     } else {
-  //       const errorData = await response.json();
-  //       console.error("Error deleting comment:", errorData.message);
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting comment:", error.message);
-  //   }
-  // };
 
   useEffect(() => {
     const fetchLikeStatus = async () => {
@@ -499,13 +425,18 @@ const NewSocialCard = ({
 
     try {
       const response = await getComments(post._id);
-      setComments(response.data.comments);
+      // Add safety check for response data
+      const commentsData = response?.data?.comments || [];
+      setComments(commentsData);
+      setCommentCount(commentsData.length);
       console.log("Fetched comments data:", response.data);
     } catch (error) {
       console.error(
         "Error fetching comments:",
         error?.response?.data?.message || error.message
       );
+      // Set empty array on error to prevent crashes
+      setComments([]);
     } finally {
       setLoading(false);
     }
@@ -514,6 +445,16 @@ const NewSocialCard = ({
   useEffect(() => {
     fetchComments();
   }, [post._id]);
+
+  // Initialize comment count when post changes
+  useEffect(() => {
+    setCommentCount(post.comments?.length || 0);
+  }, [post.comments?.length]);
+
+  // Update comment count when post prop changes
+  useEffect(() => {
+    setCommentCount(post.comments?.length || 0);
+  }, [post]);
   const handleAddComment = async () => {
     if (!newCommentText.trim()) {
       alert("Comment cannot be empty.");
@@ -522,49 +463,58 @@ const NewSocialCard = ({
 
     try {
       const response = await addComment(post._id, newCommentText);
-      setComments([response.data.comment, ...comments]);
-      setNewCommentText("");
-      fetchComments();
+      
+      console.log('Comment added successfully:', response.data.comment);
+      console.log('Comment has _id:', !!response.data.comment._id);
+      console.log('Comment _id value:', response.data.comment._id);
+      
+      // Add safety check for response data
+      if (response?.data?.comment) {
+        setComments([response.data.comment, ...(comments || [])]);
+        setCommentCount(commentCount + 1);
+        setNewCommentText("");
+      } else {
+        console.error("Invalid response from addComment API");
+        Alert.alert(t("error"), "Failed to add comment. Please try again.");
+      }
     } catch (error) {
       console.error(
         "Error adding comment:",
         error?.response?.data?.message || error.message
       );
+      Alert.alert(t("error"), "Failed to add comment. Please try again.");
     }
   };
   const handleDeleteComment = async (commentId) => {
+    if (!commentId) {
+      console.error('Cannot delete comment: Comment ID is undefined');
+      Alert.alert("Error", "Cannot delete comment: Comment ID not found. Please refresh the page and try again.");
+      return;
+    }
+
+    console.log('Attempting to delete comment:', { postId: post._id, commentId });
+
     try {
+      setLoading(true);
       const response = await deleteComment(post._id, commentId);
-      setComments(response.data.comments);
-      fetchComments();
+      
+      console.log('Delete comment response:', response.data);
+      
+      if (response.status === 200) {
+        setComments(response.data.comments);
+        setCommentCount(response.data.comments.length);
+        setMenuVisibleId(null); // Close the menu
+      } else {
+        Alert.alert("Error", "Failed to delete comment. Please try again.");
+      }
     } catch (error) {
-      console.error(
-        "Error deleting comment:",
-        error?.response?.data?.message || error.message
-      );
+      console.error("Error deleting comment:", error?.response?.data?.message || error.message);
+      Alert.alert("Error", error?.response?.data?.message || "Failed to delete comment. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  // const reportPost = async (postId, reason) => {
-  //   try {
-  //     console.log("Reporting post id: ", postId);
-  //     const response = await reportPostApi(postId, reason);
-  //     console.log("Report post response", response);
-
-  //     if (response.status === 200) {
-  //       Alert.alert(
-  //         "Success",
-  //         "If this post violates our policies, it will be removed within 24 hours."
-  //       );
-  //     }
-  //   } catch (error) {
-  //     console.error("Error reporting post:", error);
-  //     Alert.alert(
-  //       "Error",
-  //       "An error occurred while trying to report the post."
-  //     );
-  //   }
-  // };
   const reportPost = async (postId, reason) => {
     try {
       console.log("Reporting post", postId);
@@ -627,13 +577,7 @@ const NewSocialCard = ({
     setRepostModalVisible(true);
   };
 
-  const openPostModal = () => {
-    setPostModalVisible(true);
-  };
 
-  const PostModal = () => {
-    setPostModalVisible(true);
-  };
 
   const closeCommentsModal = () => {
     setCommentsModalVisible(false);
@@ -643,24 +587,32 @@ const NewSocialCard = ({
 
   const openShareModal = () => {
     setShareModalVisible(true);
+    // Reset search and fetch users when opening modal
+    setShareSearchTerm("");
+    if (shareUsers.length === 0) {
+      fetchShareUsers();
+    }
   };
 
   const closeShareModal = () => {
     setShareModalVisible(false);
+    setSelectedUsers([]);
   };
 
   const [selectedUsers, setSelectedUsers] = useState([]);
 
   const toggleSelection = (user) => {
-    if (selectedUsers.includes(user.name)) {
-      setSelectedUsers(selectedUsers.filter((name) => name !== user.name));
+    const userId = user._id;
+    if (selectedUsers.includes(userId)) {
+      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
     } else {
-      setSelectedUsers([...selectedUsers, user.name]);
+      setSelectedUsers([...selectedUsers, userId]);
     }
   };
 
   const renderShareOption = ({ item }) => {
-    const isSelected = selectedUsers.includes(item.name);
+    const isSelected = selectedUsers.includes(item._id);
+    const imageUri = item.image || UserImg;
 
     return (
       <TouchableOpacity
@@ -668,7 +620,7 @@ const NewSocialCard = ({
         onPress={() => toggleSelection(item)}
       >
         <Image
-          source={{ uri: item.imageUri }}
+          source={typeof imageUri === "string" ? { uri: imageUri } : imageUri}
           style={[
             styles.shareImage,
             {
@@ -682,35 +634,50 @@ const NewSocialCard = ({
             <Text style={styles.tickText}>✔</Text>
           </View>
         )}
-        <Text style={styles.shareText}>{item.name}</Text>
+        <Text style={styles.shareText}>
+          {item.firstName} {item.lastName}
+        </Text>
       </TouchableOpacity>
     );
   };
 
   const renderItem = ({ item }) => {
+    // Add null checks to prevent rendering errors
+    if (!item || !item.userId) {
+      console.warn("Invalid comment item:", item);
+      return null;
+    }
+
     const imageUri = item?.userId?.image ? `${item.userId?.image}` : UserImg;
 
     const isCommentOwner = item?.userId?._id === fromUserId;
+    const isPostOwner = post?.createdBy?._id === fromUserId;
+    const canDeleteComment = isCommentOwner || isPostOwner;
+
+    console.log("Comment owner check:", { 
+      commentUserId: item?.userId?._id, 
+      fromUserId: fromUserId, 
+      commentId: item?._id, 
+      isCommentOwner: isCommentOwner, 
+      isPostOwner: isPostOwner, 
+      canDeleteComment: canDeleteComment 
+    });
 
     return (
       <View style={styles.commentItem}>
-        {/* <Image source={{ uri: imageUri }} style={styles.commentProfileImage} /> */}
         <Image
           source={typeof imageUri === "string" ? { uri: imageUri } : imageUri}
           style={styles.commentProfileImage}
         />
         <View style={styles.commentContent}>
           <Text style={styles.commentName}>
-            {item.userId.firstName} {item.userId.lastName}
+            {item.userId.firstName || "Unknown"} {item.userId.lastName || "User"}
           </Text>
-          {/* <Text style={styles.commentRole}>
-            Sales Enthusiast | Ex-intern at Younity.in
-          </Text> */}
-          <Text style={styles.commentText}>{item.content}</Text>
+          <Text style={styles.commentText}>{item.content || ""}</Text>
         </View>
 
-        {isCommentOwner && (
-          <>
+        {canDeleteComment && (
+          <View style={styles.menuContainer}>
             <TouchableOpacity
               style={styles.menuButton}
               onPress={() => toggleMenu(item?._id)}
@@ -721,15 +688,26 @@ const NewSocialCard = ({
             {menuVisibleId === item._id && (
               <View style={styles.menuOptions}>
                 <TouchableOpacity
-                  onPress={() => handleDeleteComment(item._id)}
+                  onPress={() => {
+                    Alert.alert(
+                      t("deleteComment"),
+                      t("deleteCommentConfirmation"),
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Delete", style: "destructive", onPress: () => handleDeleteComment(item._id) }
+                      ]
+                    );
+                  }}
                   style={styles.deleteOption}
                 >
                   <Icon name="trash" size={18} color="red" />
-                  <Text style={styles.menuOptionText}>{t("delete")}</Text>
+                  <Text style={styles.menuOptionText}>
+                    {isCommentOwner ? t("delete") : t("deleteComment")}
+                  </Text>
                 </TouchableOpacity>
               </View>
             )}
-          </>
+          </View>
         )}
       </View>
     );
@@ -809,18 +787,19 @@ const NewSocialCard = ({
 
           <View style={styles.headerText}>
             <TouchableOpacity
-              onPress={() =>
-                navigation.navigate("EachProfile", {
-                  userId: userId,
-                })
-              }
+              onPress={() => {
+                // Only navigate if user exists and has a valid ID
+                if (userId) {
+                  navigation.navigate("EachProfile", {
+                    userId: userId,
+                  });
+                }
+              }}
             >
               <Text style={styles.name}>
                 {firstName} {lastName}
               </Text>
             </TouchableOpacity>
-            {/* <Text style={styles.title}>Software Engineer</Text> */}
-            {/* <Text style={styles.time}>1w • Edited</Text> */}
           </View>
 
           {/*     {source === "SocialHomeScreen" || source === "EachProfile" ? (
@@ -907,83 +886,71 @@ const NewSocialCard = ({
           ) : ( */}
 
           {source === "SocialHomeScreen" || source === "EachProfile" ? (
-            <TouchableOpacity
-              style={[
-                styles.followContainer,
-                isFollowing === "approved" && {
-                  backgroundColor: "transparent",
-                },
-              ]}
-              onPress={() => {
-                if (isFollowing === "none" && userId) {
-                  handleSendFollowRequest(fromUserId, userId);
-                } else if (isFollowing === "approved") {
-                  unFollowUser();
-                }
-              }}
-              disabled={isFollowing === "pending"} // Disable button if follow request is pending
-            >
-              <View style={styles.iconContainer}>
-                <Icon
-                  name={
-                    isFollowing === "none"
-                      ? "add"
-                      : isFollowing === "pending"
-                      ? "hourglass"
-                      : "checkmark"
+            userId && userId !== fromUserId ? (
+              <TouchableOpacity
+                style={[
+                  styles.followContainer,
+                  isFollowing === "approved" && {
+                    backgroundColor: "transparent",
+                  },
+                ]}
+                onPress={() => {
+                  if (isFollowing === "none" && userId) {
+                    handleSendFollowRequest(fromUserId, userId);
+                  } else if (isFollowing === "approved") {
+                    unFollowUser();
                   }
-                  size={20}
-                  style={
-                    isFollowing === "none"
-                      ? styles.plusIcon
+                }}
+                disabled={isFollowing === "pending"} // Disable button if follow request is pending
+              >
+                <View style={styles.iconContainer}>
+                  <Icon
+                    name={
+                      isFollowing === "none"
+                        ? "add"
+                        : isFollowing === "pending"
+                        ? "hourglass"
+                        : "checkmark"
+                    }
+                    size={20}
+                    style={
+                      isFollowing === "none"
+                        ? styles.plusIcon
+                        : isFollowing === "pending"
+                        ? styles.pendingIcon
+                        : styles.checkIcon
+                    }
+                  />
+                  <Text
+                    style={
+                      isFollowing === "none"
+                        ? styles.followText
+                        : isFollowing === "pending"
+                        ? styles.pendingText
+                        : styles.followingText
+                    }
+                  >
+                    {isFollowing === "none"
+                      ? t("Follow")
                       : isFollowing === "pending"
-                      ? styles.pendingIcon
-                      : styles.checkIcon
-                  }
-                />
-                {/* <Text
-                  style={
-                    isFollowing === "none"
-                      ? styles.followText
-                      : isFollowing === "pending"
-                      ? styles.pendingText
-                      : styles.followingText
-                  }
-                >
-                  {isFollowing === "none"
-                    ? "Follow"
-                    : isFollowing === "pending"
-                    ? "Pending"
-                    : "Following"}
-                </Text> */}
-                <Text
-                  style={
-                    isFollowing === "none"
-                      ? styles.followText
-                      : isFollowing === "pending"
-                      ? styles.pendingText
-                      : styles.followingText
-                  }
-                >
-                  {isFollowing === "none"
-                    ? t("Follow")
-                    : isFollowing === "pending"
-                    ? t("Pending")
-                    : t("Following")}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.followContainer}
-              onPress={openPostModal}
-            >
-              <Text style={styles.moreOptions}>...</Text>
-            </TouchableOpacity>
-          )}
+                      ? t("Pending")
+                      : t("Following")}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ) : null
+          ) : null}
+          {/* Single unified menu button for all users */}
           <TouchableOpacity
             onPress={() => setReportModalVisible(true)}
-            style={styles.moreOptionsButton}
+            style={[
+              styles.moreOptionsButton,
+              // Push menu button to the right when there's no follow button
+              // This includes: own posts, deleted users (no userId), or screens where follow button isn't shown
+              ((source === "SocialHomeScreen" || source === "EachProfile") && 
+               (!userId || userId === fromUserId)) ||
+              (source !== "SocialHomeScreen" && source !== "EachProfile") ? { marginLeft: "auto" } : {}
+            ]}
           >
             <Icon name="ellipsis-vertical" size={22} color="grey" />
           </TouchableOpacity>
@@ -1000,20 +967,60 @@ const NewSocialCard = ({
               onPress={() => setReportModalVisible(false)}
             >
               <View style={styles.reportModalContainer}>
-                {/* Report Post Option */}
                 <Text style={styles.modalTitle}>{t("postOptions")}</Text>
-                <TouchableOpacity
-                  style={styles.reportModalOption}
-                  onPress={() => {
-                    setReportModalVisible(false);
-                    reportPost(post._id, "Inappropriate content"); // Change reason as needed
-                  }}
-                >
-                  <Icon name="flag-outline" size={22} color="red" />
-                  <Text style={styles.reportModalOptionText}>
-                    {t("repostOptions")}
-                  </Text>
-                </TouchableOpacity>
+                
+                {/* Show edit and delete options only for post owner */}
+                {userId === fromUserId && (
+                  <>
+                    <TouchableOpacity
+                      style={styles.reportModalOption}
+                      onPress={() => {
+                        setReportModalVisible(false);
+                        navigation.navigate("EditPost", {
+                          postId: postId,
+                          fetchPosts: fetchPosts,
+                          posts: posts,
+                          post: post,
+                          description: description,
+                        });
+                      }}
+                    >
+                      <Icon name="pencil-outline" size={22} color="#007AFF" />
+                      <Text style={styles.reportModalOptionText}>
+                        {t("editPost")}
+                      </Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity
+                      style={styles.reportModalOption}
+                      onPress={() => {
+                        setReportModalVisible(false);
+                        handleDeletePost();
+                      }}
+                    >
+                      <Icon name="trash-outline" size={22} color="red" />
+                      <Text style={[styles.reportModalOptionText, { color: "red" }]}>
+                        {t("delete")}
+                      </Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+                
+                {/* Report option for all users */}
+                {userId !== fromUserId && (
+                  <TouchableOpacity
+                    style={styles.reportModalOption}
+                    onPress={() => {
+                      setReportModalVisible(false);
+                      reportPost(post._id, "Inappropriate content"); // Change reason as needed
+                    }}
+                  >
+                    <Icon name="flag-outline" size={22} color="red" />
+                    <Text style={styles.reportModalOptionText}>
+                      {t("report")}
+                    </Text>
+                  </TouchableOpacity>
+                )}
 
                 <TouchableOpacity
                   style={[styles.optionButton, styles.cancelButton]}
@@ -1120,82 +1127,55 @@ const NewSocialCard = ({
                     <Text style={styles.reelUsername}>
                       {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                     </Text>
-                    {/* <TouchableOpacity style={styles.reelFollowButton}>
-                      
+                    {userId !== fromUserId && (
                       <TouchableOpacity
                         style={[
-                          styles.followContainer,
-                          isFollowing && { backgroundColor: "transparent" },
+                          styles.reelFollowButton,
+                          isFollowing === "approved" && {
+                            backgroundColor: "transparent",
+                          },
                         ]}
                         onPress={() => {
-                          if (!isFollowing && userId) {
+                          if (isFollowing === "none") {
                             handleSendFollowRequest(fromUserId, userId);
+                          } else if (isFollowing === "approved") {
+                            unFollowUser();
                           }
                         }}
-                        disabled={isFollowing}
+                        disabled={isFollowing === "pending"}
                       >
-                        <View style={styles.iconContainer}>
-                          <Text
-                            style={
-                              isFollowing
-                                ? styles.reelFollowButtonText
-                                : styles.reelFollowButtonText
+                        <View style={styles.buttonContent}>
+                          <Icon
+                            name={
+                              isFollowing === "none"
+                                ? "add"
+                                : isFollowing === "pending"
+                                ? "hourglass"
+                                : "checkmark"
                             }
+                            size={18}
+                            color="#FF9933"
+                            style={{ marginRight: 8 }}
+                          />
+                          <Text
+                            style={[
+                              styles.reelFollowButtonText,
+                              isFollowing === "approved"
+                                ? { color: "#FF9933" }
+                                : isFollowing === "pending"
+                                ? { color: "#FF9933" }
+                                : { color: "#FF9933" },
+                            ]}
                           >
-                            {isFollowing ? "Following" : "Follow"}
+                            {isFollowing === "none"
+                              ? "Follow"
+                              : isFollowing === "pending"
+                              ? "Pending"
+                              : "Following"}
                           </Text>
                         </View>
                       </TouchableOpacity>
-                    </TouchableOpacity> */}
-
-                    {/* Follow Button Logic */}
-                    <TouchableOpacity
-                      style={[
-                        styles.reelFollowButton,
-                        isFollowing === "approved" && {
-                          backgroundColor: "transparent",
-                        },
-                      ]}
-                      onPress={() => {
-                        if (isFollowing === "none") {
-                          handleSendFollowRequest(fromUserId, userId);
-                        } else if (isFollowing === "approved") {
-                          unFollowUser();
-                        }
-                      }}
-                      disabled={isFollowing === "pending"}
-                    >
-                      <View style={styles.buttonContent}>
-                        <Icon
-                          name={
-                            isFollowing === "none"
-                              ? "add"
-                              : isFollowing === "pending"
-                              ? "hourglass"
-                              : "checkmark"
-                          }
-                          size={18}
-                          color="#FF9933"
-                          style={{ marginRight: 8 }}
-                        />
-                        <Text
-                          style={[
-                            styles.reelFollowButtonText,
-                            isFollowing === "approved"
-                              ? { color: "#FF9933" }
-                              : isFollowing === "pending"
-                              ? { color: "#FF9933" }
-                              : { color: "#FF9933" },
-                          ]}
-                        >
-                          {isFollowing === "none"
-                            ? "Follow"
-                            : isFollowing === "pending"
-                            ? "Pending"
-                            : "Following"}
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
+                    )}
                   </View>
 
                   {/* Description in 'reel' */}
@@ -1280,9 +1260,9 @@ const NewSocialCard = ({
                     >
                       <FontAwesome name="comment" size={28} color="white" />
                     </TouchableOpacity>
-                    <Text style={{ color: "white" }}>
-                      {post.comments.length}
-                    </Text>
+                                          <Text style={{ color: "white" }}>
+                        {commentCount}
+                      </Text>
                     <TouchableOpacity style={styles.reelIconButton}>
                       <Ionicons name="repeat" size={28} color="white" />
                     </TouchableOpacity>
@@ -1405,9 +1385,9 @@ const NewSocialCard = ({
             </View>
             <Text style={styles.socialText}>{likeCount}</Text>
           </View>
-          <Text style={styles.socialText}>
-            {post.comments.length} {t("comments")} • {reposts} {t("reposts")}
-          </Text>
+                      <Text style={styles.socialText}>
+              {commentCount} {t("comments")} • {reposts} {t("reposts")}
+            </Text>
         </View>
 
         {/* Action Buttons */}
@@ -1514,128 +1494,122 @@ const NewSocialCard = ({
             </TouchableOpacity>
           </View>
           <View style={styles.commentModalContainer}>
-            <ScrollView
-              contentContainerStyle={styles.scrollViewContent}
-              showsVerticalScrollIndicator={false}
-              style={styles.scrollView}
-            >
-              <View style={styles.header}>
-                <Image
-                  style={styles.profileImage}
-                  source={
-                    profileImageUri && profileImageUri.trim() !== ""
-                      ? { uri: profileImageUri }
-                      : UserImg
-                  }
-                />
-                <View style={styles.headerText}>
-                  <Text style={styles.name}>
-                    {" "}
-                    {post?.createdBy?.firstName} {post?.createdBy?.lastName}
-                  </Text>
-                  {/* <Text style={styles.title}>"Software Engineer"</Text> */}
-                  {/* <Text style={styles.time}>1w • Edited</Text> */}
-                </View>
-              </View>
-
-              {video && (
-                <>
-                  <View>
-                    <Video
-                      source={{
-                        uri: `${video.replace(/\\/g, "/")}`,
-                      }}
-                      style={styles.chatVideoThumbnail}
-                      resizeMode="cover"
-                      usePoster
-                      shouldPlay={false}
-                      isLooping
-                      isMuted={isMuted}
-                    />
-                    <TouchableOpacity
-                      style={styles.muteButton}
-                      onPress={toggleMute}
-                    >
-                      {isMuted ? (
-                        <Ionicons name="volume-mute" size={15} color="white" />
-                      ) : (
-                        <Ionicons name="volume-high" size={15} color="white" />
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                </>
-              )}
-
-              {images && images.length > 0 && (
-                <View style={styles.imageContainer}>
-                  {images.length > 1 ? (
-                    <ScrollView
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                      onScroll={handleScroll}
-                      scrollEventThrottle={16}
-                      snapToInterval={windowWidth} // Snap to the width of each image
-                      decelerationRate="fast" // Makes the scrolling smoother
-                      snapToAlignment="center" // Ensures the image is centered after scroll
-                    >
-                      {images.map((image, index) => (
-                        <Image
-                          key={index}
-                          style={styles.bannerImage}
-                          source={{ uri: `${image}` }}
-                        />
-                      ))}
-                    </ScrollView>
-                  ) : (
+            <FlatList
+              ref={flatListRef}
+              data={comments || []}
+              keyExtractor={(item) => item?._id || Math.random().toString()}
+              renderItem={renderItem}
+              style={{ flex: 1 }}
+              contentContainerStyle={{ paddingBottom: 60 }}
+              onScrollBeginDrag={closeMenu}
+              ListHeaderComponent={() => (
+                <View>
+                  <View style={styles.header}>
                     <Image
-                      style={styles.bannerSingleImage}
-                      source={{ uri: `${images}` }}
+                      style={styles.profileImage}
+                      source={
+                        profileImageUri && profileImageUri.trim() !== ""
+                          ? { uri: profileImageUri }
+                          : UserImg
+                      }
                     />
-                  )}
-
-                  {images.length > 1 && (
-                    <View style={styles.indexContainer}>
-                      <Text style={styles.indexText}>
-                        {currentIndex + 1} / {images.length}
+                    <View style={styles.headerText}>
+                      <Text style={styles.name}>
+                        {" "}
+                        {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                       </Text>
                     </View>
+                  </View>
+
+                  {video && (
+                    <>
+                      <View>
+                        <Video
+                          source={{
+                            uri: `${video.replace(/\\/g, "/")}`,
+                          }}
+                          style={styles.chatVideoThumbnail}
+                          resizeMode="cover"
+                          usePoster
+                          shouldPlay={false}
+                          isLooping
+                          isMuted={isMuted}
+                        />
+                        <TouchableOpacity
+                          style={styles.muteButton}
+                          onPress={toggleMute}
+                        >
+                          {isMuted ? (
+                            <Ionicons name="volume-mute" size={15} color="white" />
+                          ) : (
+                            <Ionicons name="volume-high" size={15} color="white" />
+                          )}
+                        </TouchableOpacity>
+                      </View>
+                    </>
                   )}
+
+                  {images && images.length > 0 && (
+                    <View style={styles.imageContainer}>
+                      {images.length > 1 ? (
+                        <ScrollView
+                          horizontal
+                          showsHorizontalScrollIndicator={false}
+                          onScroll={handleScroll}
+                          scrollEventThrottle={16}
+                          snapToInterval={windowWidth}
+                          decelerationRate="fast"
+                          snapToAlignment="center"
+                        >
+                          {images.map((image, index) => (
+                            <Image
+                              key={index}
+                              style={styles.bannerImage}
+                              source={{ uri: `${image}` }}
+                            />
+                          ))}
+                        </ScrollView>
+                      ) : (
+                        <Image
+                          style={styles.bannerSingleImage}
+                          source={{ uri: `${images}` }}
+                        />
+                      )}
+
+                      {images.length > 1 && (
+                        <View style={styles.indexContainer}>
+                          <Text style={styles.indexText}>
+                            {currentIndex + 1} / {images.length}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                  <View style={styles.commentPostContent}>
+                    <Text style={styles.commentModalDescription}>
+                      {description}
+                    </Text>
+                  </View>
                 </View>
               )}
-              <View style={styles.commentPostContent}>
-                <Text style={styles.commentModalDescription}>
-                  {description}
-                </Text>
-              </View>
-
-              {loadingAnimation === true ? (
-                <ActivityIndicator
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                  size={"large"}
-                  color={"#b98c13"}
-                />
-              ) : (
-                <FlatList
-                  ref={flatListRef}
-                  data={comments}
-                  keyExtractor={(item) => item._id}
-                  renderItem={renderItem}
-                  style={{ flex: 1 }}
-                  contentContainerStyle={{ paddingBottom: 60 }}
-                  ListEmptyComponent={
-                    !loading && (
-                      <Text style={{ textAlign: "center", marginTop: 20 }}>
-                        {t("no_comments_yet")}.
-                      </Text>
-                    )
-                  }
-                />
-              )}
-            </ScrollView>
+              ListEmptyComponent={
+                !loading ? (
+                  <Text style={{ textAlign: "center", marginTop: 20 }}>
+                    {t("no_comments_yet")}.
+                  </Text>
+                ) : (
+                  <ActivityIndicator
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                    }}
+                    size={"large"}
+                    color={"#b98c13"}
+                  />
+                )
+              }
+            />
 
             <View style={styles.commentInputContainer}>
               <Image
@@ -1681,56 +1655,54 @@ const NewSocialCard = ({
                     marginBottom: 10,
                   }}
                 >
-                  <SearchField placeholder={t("search")} />
+                  <TextInput
+                    style={{
+                      width: "100%",
+                      height: 40,
+                      borderWidth: 1,
+                      borderColor: "#ddd",
+                      borderRadius: 8,
+                      paddingHorizontal: 12,
+                      backgroundColor: "#f8f8f8",
+                    }}
+                    placeholder={t("search")}
+                    value={shareSearchTerm}
+                    onChangeText={setShareSearchTerm}
+                  />
                 </View>
                 <FlatList
-                  data={[
-                    {
-                      imageUri:
-                        "https://media.istockphoto.com/id/2026162051/photo/portrait-of-a-young-latin-female-student-using-laptop-on-the-bench-on-campus.webp?a=1&b=1&s=612x612&w=0&k=20&c=DPqe5WZ7zuP7ndh-WwnVjNRBXP50Bgptn_wvGUP8zjE=",
-                      name: "Pragya",
-                    },
-                    {
-                      imageUri:
-                        "https://images.unsplash.com/photo-1632923946112-637c9167403f?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8bWFsZSUyMGZlbWFsZXxlbnwwfHwwfHx8MA%3D%3D",
-                      name: "Abhi",
-                    },
-                    {
-                      imageUri:
-                        "https://media.istockphoto.com/id/1352888268/photo/close-up-portrait-of-japanese-mature-businessman-in-the-office.webp?a=1&b=1&s=612x612&w=0&k=20&c=kOUOoguCfhNuSwcUUc77oX5L0LzbjP87lGes2Txrw8k=",
-                      name: "Yukta Chopra",
-                    },
-                    {
-                      imageUri:
-                        "https://plus.unsplash.com/premium_photo-1708271595672-57b4a6a2d3cd?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTd8fHdvbWFufGVufDB8fDB8fHww",
-                      name: "Tisha",
-                    },
-                    {
-                      imageUri:
-                        "https://media.istockphoto.com/id/1413765604/photo/successful-mid-adult-business-man-looking-away.jpg?s=612x612&w=0&k=20&c=XClX9oiRN6gcqOQLIgcqkcdLzhhqPW1uSSMjUB3hc7Q=",
-                      name: "Karan Nanda",
-                    },
-                    {
-                      imageUri:
-                        "https://media.istockphoto.com/id/2029600847/photo/confident-indian-businessman-smiling-in-modern-office-environment.jpg?s=612x612&w=0&k=20&c=2zze6qilDV8yw4-neMq_ksh94yAFm_j1ISBnW--WmMg=",
-                      name: "Sumit Tiwari",
-                    },
-                  ]}
+                  data={filteredShareUsers}
                   renderItem={renderShareOption}
-                  keyExtractor={(item, index) => index.toString()}
+                  keyExtractor={(item) => item._id}
                   numColumns={3}
                   contentContainerStyle={styles.flatListContent}
+                  ListEmptyComponent={
+                    shareLoading ? (
+                      <ActivityIndicator size="large" color="#007AFF" />
+                    ) : (
+                      <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
+                        {shareSearchTerm ? "No users found" : "No users available"}
+                      </Text>
+                    )
+                  }
                 />
 
                 {selectedUsers.length > 0 && (
                   <TouchableOpacity
                     style={styles.sendButton}
                     onPress={() => {
+                      // Here you can implement the actual sharing logic
+                      // For now, just show a success message
                       closeShareModal();
-                      Alert.alert("Sent", "Post has been sent successfully.");
+                      Alert.alert(
+                        "Success", 
+                        `Post shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''} successfully.`
+                      );
                     }}
                   >
-                    <Text style={styles.sendButtonText}>{t("send")}</Text>
+                    <Text style={styles.sendButtonText}>
+                      {t("send")} to {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}
+                    </Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -1760,8 +1732,9 @@ const NewSocialCard = ({
                   style={styles.modalOption}
                   onPress={() => {
                     navigation.navigate("RepostWithThoughts", {
-                      post: sampleData,
+                      post: post,
                       userId: userId,
+                      fetchPosts: fetchPosts,
                     });
                   }}
                 >
@@ -1782,7 +1755,37 @@ const NewSocialCard = ({
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.modalOption}
-                  onPress={closeRepostModal}
+                  onPress={async () => {
+                    try {
+                      console.log("Creating normal repost for post:", post._id);
+                      const repostData = {
+                        originalPostId: post._id,
+                        thoughts: ""
+                      };
+
+                      const response = await apiClient.post("/social/post/create-repost", repostData, {
+                        headers: {
+                          Authorization: `Bearer ${token}`,
+                        },
+                      });
+
+                      console.log("Normal repost response:", response.data);
+                      if (response.data.success) {
+                        Alert.alert("Success", "Post reposted successfully!");
+                        closeRepostModal();
+                        // Refresh posts if needed
+                        if (fetchPosts) {
+                          fetchPosts(true); // Refresh
+                        }
+                      } else {
+                        Alert.alert("Error", response.data.message || "Failed to repost");
+                      }
+                    } catch (error) {
+                      console.error("Repost error:", error);
+                      console.error("Error response:", error.response?.data);
+                      Alert.alert("Error", error.response?.data?.message || "Failed to repost. Please try again.");
+                    }
+                  }}
                 >
                   <View style={styles.iconTextContainer}>
                     <FontAwesomeIcon
@@ -1802,62 +1805,7 @@ const NewSocialCard = ({
           </TouchableWithoutFeedback>
         </Modal>
 
-        <Modal
-          transparent={true}
-          visible={isPostModalVisible}
-          animationType="slide"
-          onRequestClose={closePostModal}
-        >
-          <TouchableWithoutFeedback onPress={closePostModal}>
-            <View style={styles.modalOverlay}>
-              <Animated.View
-                style={[
-                  styles.modalContainer,
-                  { transform: [{ translateY: pan.y }] },
-                ]}
-                {...panResponder.panHandlers}
-              >
-                <View style={styles.swipeBar}>
-                  <View style={styles.bar} />
-                </View>
-                <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={() => {
-                    navigation.navigate("EditPost", {
-                      postId: postId,
-                      fetchPosts: fetchPosts,
-                      posts: posts,
-                      post: post,
-                      description: description,
-                    });
-                  }}
-                >
-                  <View style={styles.iconTextContainer}>
-                    <FontAwesomeIcon
-                      name="pencil-square-o"
-                      size={24}
-                      style={styles.icon}
-                    />
-                    <Text style={styles.modalText}>{t("editPost")}</Text>
-                  </View>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.modalOption}
-                  onPress={handleDeletePost}
-                >
-                  <View style={styles.iconTextContainer}>
-                    <FontAwesomeIcon
-                      name="trash"
-                      size={24}
-                      style={styles.postIcon}
-                    />
-                    <Text style={styles.modalPostText}>{t("delete")}</Text>
-                  </View>
-                </TouchableOpacity>
-              </Animated.View>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
+
       </View>
     </View>
   );
@@ -1899,6 +1847,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 2 },
+  },
+
+  backButton: {
+    padding: 10,
+    marginRight: 10,
   },
 
   name: {
@@ -1944,6 +1897,17 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
+  pendingIcon: {
+    fontSize: 20,
+    color: "#FFA500", // Orange color for pending state
+    marginRight: 4,
+    fontWeight: "bold",
+  },
+  pendingText: {
+    color: "#FFA500", // Orange color for pending state
+    fontSize: 18,
+    fontWeight: "bold",
+  },
   checkIcon: {
     fontSize: 20,
     color: "grey",
@@ -1960,6 +1924,10 @@ const styles = StyleSheet.create({
     height: 400,
     padding: 0,
     marginHorizontal: 0,
+    marginVertical: 10,
+  },
+  imageContainer: {
+    width: "100%",
     marginVertical: 10,
   },
   bannerSingleImage: {
@@ -2188,46 +2156,12 @@ const styles = StyleSheet.create({
   },
   commentItem: {
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 8,
+    marginBottom: 10,
   },
   commentProfileImage: {
     width: 30,
     height: 30,
     borderRadius: 15,
-    // marginRight: 10,
-  },
-  commentText: {
-    fontSize: 14,
-  },
-  commentInputContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    borderTopWidth: 1,
-    // borderColor: "#ddd",
-    paddingVertical: 10,
-    borderColor: "#ccc",
-    backgroundColor: "white",
-    marginRight: 10,
-  },
-  commentInput: {
-    flex: 1,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    backgroundColor: "#fff",
-  },
-
-  commentItem: {
-    flexDirection: "row",
-    marginBottom: 10,
-  },
-  commentProfileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
   commentContent: {
     flex: 1,
@@ -2242,6 +2176,7 @@ const styles = StyleSheet.create({
   },
   commentText: {
     marginVertical: 5,
+    fontSize: 16,
   },
   reactionButtons: {
     flexDirection: "row",
@@ -2261,42 +2196,54 @@ const styles = StyleSheet.create({
     borderColor: "#ccc",
     backgroundColor: "#fff",
   },
-  menuButton: { padding: 5, marginLeft: 10 },
-  menuText: { fontSize: 20 },
-  // menuOptions: {
-  //   position: "absolute",
-  //   top: 30,
-  //   right: 10,
-  //   backgroundColor: "white",
-  //   borderRadius: 5,
-  //   padding: 5,
-  //   shadowColor: "#000",
-  //   shadowOpacity: 0.2,
-  //   shadowOffset: { width: 1, height: 1 },
-  // },
-  // menuOptionText: { padding: 5 },
+  menuContainer: {
+    position: "relative",
+    zIndex: 1,
+  },
+  menuButton: { 
+    padding: 8, 
+    marginLeft: 10,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 15,
+    minWidth: 30,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuText: { 
+    fontSize: 18,
+    color: "#666",
+    fontWeight: "bold",
+  },
   menuOptions: {
-    backgroundColor: "#f9f9f9",
+    backgroundColor: "white",
     padding: 8,
     borderRadius: 8,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 5,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 5,
     position: "absolute",
-    top: 30,
-    right: 10,
-    zIndex: 1,
+    top: 35,
+    right: 0,
+    zIndex: 1000,
+    minWidth: 120,
   },
   deleteOption: {
-    flexDirection: "row", // Align icon and text in a row
-    alignItems: "center", // Center vertically
-    paddingVertical: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 8,
   },
   menuOptionText: {
-    marginLeft: 5, // Add space between icon and text
+    marginLeft: 8,
     fontSize: 14,
     color: "red",
+    fontWeight: "500",
+  },
+  menuContainer: {
+    position: "relative",
+    zIndex: 1,
   },
 
   indexContainer: {
@@ -2512,14 +2459,20 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 15,
   },
+  optionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
   cancelButton: {
-    backgroundColor: "#f2f2f2",
     marginTop: 10,
     borderBottomWidth: 0,
   },
   cancelText: {
     fontSize: 16,
-    color: "red",
+    color: "#666",
   },
   moreOptionsButton: {
     paddingLeft: 4,

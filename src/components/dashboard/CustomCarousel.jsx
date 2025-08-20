@@ -1,22 +1,22 @@
 import React from "react";
-import Carousel from "react-native-snap-carousel";
-import { Dimensions } from "react-native";
+import { Dimensions, ScrollView, View } from "react-native";
 
 const windowWidth = Dimensions.get("window").width;
 
 export default function CustomCarousel(props) {
  return (
     <>
-      <Carousel
-        layout={"default"}
-        data={props.data}
-        renderItem={props.renderItem}
-        itemWidth={props.itemWidth ?? windowWidth * 0.65}
-        sliderWidth={props.sliderWidth ?? windowWidth}
-        activeSlideAlignment={"start"}
-        // autoplay={true}
-        // loop={true}
-       />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
+      >
+        {props.data && props.data.map((item, index) => (
+          <View key={index} style={{ marginRight: 16, width: props.itemWidth ?? windowWidth * 0.65 }}>
+            {props.renderItem({ item, index })}
+          </View>
+        ))}
+      </ScrollView>
     </>
   );
 }

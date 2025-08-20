@@ -26,7 +26,7 @@ export default function ChangePassword({ navigation }) {
 
   const onHandlesubmit = async () => {
     const res = await axios
-      .post(`${BASEAPIURL}/auth/reset-expired-password`, changepassword, {
+      .post(`${BASEAPIURL}/user/forgot-password/reset`, changepassword, {
         headers: await authHeader(),
       })
       .then((res) => {

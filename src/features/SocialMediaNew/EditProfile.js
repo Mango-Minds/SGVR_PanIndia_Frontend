@@ -102,7 +102,7 @@ export default function EditUserProfile({ navigation, route }) {
       firstName,
       lastName,
       email,
-      contactInfo: phone,
+      phone: phone,
       address,
       selectedImage,
       userId,

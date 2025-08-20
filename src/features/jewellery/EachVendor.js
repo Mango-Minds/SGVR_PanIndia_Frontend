@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Container, RowBetween } from "../../styles/common.styles";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import { IconButton, Divider } from "react-native-paper";

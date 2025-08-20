@@ -14,7 +14,14 @@ import Contactus from "../../features/contactus.screen";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Reportscreen from "../../features/reportissue.screen";
 import { useDispatch } from "react-redux";
-import { DashboardNavigator } from "./dashboard.navigator";
+// Add error handling for DashboardNavigator import
+let DashboardNavigator;
+try {
+  DashboardNavigator = require("./dashboard.navigator").DashboardNavigator;
+} catch (error) {
+  console.warn("DashboardNavigator import failed, using DashboardScreen as fallback:", error);
+  DashboardNavigator = require("../../features/dashboard.screen").default;
+}
 
 const Stack = createStackNavigator();
 
@@ -22,7 +29,14 @@ export const PreLoginNavigator = () => {
   const [firstTime, setFirstTime] = React.useState(null);
   const [subs, setSubs] = React.useState(true);
 
-  const dispatch = useDispatch();
+  // Add error handling for useDispatch
+  let dispatch;
+  try {
+    dispatch = useDispatch();
+  } catch (error) {
+    console.warn("useDispatch not available:", error);
+    dispatch = () => console.warn("Dispatch not available");
+  }
 
   React.useEffect(() => {
     let subs = true;

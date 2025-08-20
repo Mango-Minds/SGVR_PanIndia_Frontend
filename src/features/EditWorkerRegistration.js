@@ -38,7 +38,7 @@ import {
 } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
 import { createMatrimonyAccount } from "../services/matrimony.services";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../styles/common.styles";
 import FormData from "form-data";
 import { TouchableWithoutFeedback } from "react-native-gesture-handler";

@@ -6,7 +6,7 @@ import profileImage from "../../assets/images/general/user.png";
 import { View } from "../../styles/common.styles";
 import { ActivityIndicator, IconButton, Subheading } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import { getMyCommunities } from "../../services/community.services";
 import CommunityCard from "../../components/dashboard/CommunityCard";
 import { useDispatch } from "react-redux";

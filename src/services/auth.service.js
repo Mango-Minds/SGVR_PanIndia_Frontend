@@ -4,7 +4,7 @@ import authHeader from "./auth.header";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSelector } from 'react-redux';
 export const UserLogin = async ({ email, password }) => {
-  const res = await axios.post(BASEAPIURL + "/auth/login", {
+  const res = await axios.post(BASEAPIURL + "/user/login", {
     email,
     password,
     userType: "U",
@@ -26,7 +26,7 @@ export const UserSignup = async ({
   // state,
   // pincode,
 }) => {
-  const res = await axios.post(BASEAPIURL + "/register", {
+  const res = await axios.post(BASEAPIURL + "/user/register", {
     firstName,
     // midname,
     lastName,
@@ -127,7 +127,7 @@ export const reportIssue = async (issue) => {
 export const changeForgotPassword = async (data) => {
   try {
     const res = await axios.post(
-      `${BASEAPIURL}/auth/forgot-password-reset`,
+      `${BASEAPIURL}/user/forgot-password/reset`,
       data,
       {
         headers: await authHeader(),
@@ -142,7 +142,7 @@ export const changeForgotPassword = async (data) => {
 export const verifyPassword = async (password) => {
   try {
     const res = await axios.post(
-      `${BASEAPIURL}/auth/verify-password`,
+      `${BASEAPIURL}/user/verify-password`,
       {
         cpassword: password,
       },
@@ -158,11 +158,9 @@ export const verifyPassword = async (password) => {
 
 export const deleteAccount = async (id) => {
   try {
-    const res = await axios.delete(
+    const res = await axios.post(
       `${BASEAPIURL}/auth/delete-user`,
-      {
-        cpassword: password,
-      },
+      {},
       {
         headers: await authHeader(),
       }

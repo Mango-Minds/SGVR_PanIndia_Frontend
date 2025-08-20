@@ -159,8 +159,14 @@ const handleUpdate = async () => {
 
     if (data?.post?.content === modifiedDetails.description) {
       alert("Post updated successfully");
-      fetchPosts();
-      navigation.goBack();
+      // Ensure fetchPosts completes before navigation
+      if (fetchPosts) {
+        await fetchPosts(true); // Pass true for refresh
+      }
+      // Navigate to SocialHomeScreen to ensure user stays in social section
+      setTimeout(() => {
+        navigation.navigate("SocialHomeScreen");
+      }, 100);
     } else {
       alert("Failed to update post description");
     }

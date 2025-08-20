@@ -25,7 +25,7 @@ import { SafeArea } from "../../components/utility/safe-area.component";
 import SelectDropdown from "react-native-select-dropdown";
 import { en, registerTranslation } from "react-native-paper-dates";
 import * as ImagePicker from "expo-image-picker";
-import {useQueryClient } from "react-query";
+import {useQueryClient } from "@tanstack/react-query";
 import { RowBetween } from "../../styles/common.styles";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";

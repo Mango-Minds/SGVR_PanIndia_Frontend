@@ -12,14 +12,13 @@ import {
   Alert,
   Linking,
 } from "react-native";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
 import { useNavigation } from "@react-navigation/native";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import { RowBetween } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
-import { useQueryClient } from "react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import moment from "moment";
 import { Button, IconButton } from "react-native-paper";
 import {
@@ -661,7 +660,7 @@ export default function MatrimonyViewUser({ route }) {
           <ImageViewerScreen images={images} setShowViewer={setShowViewer} />
         </Modal>
       )}
-      <ParallaxScrollView
+      <ScrollView
         renderBackground={renderBackground}
         renderContentBackground={() =>
           renderContentBackground(myMatrimonyProfile)
@@ -674,7 +673,7 @@ export default function MatrimonyViewUser({ route }) {
             style={{ height: "100%" }}
           ></TouchableOpacity>
         )}
-      ></ParallaxScrollView>
+      ></ScrollView>
     </SafeArea>
   );
 }

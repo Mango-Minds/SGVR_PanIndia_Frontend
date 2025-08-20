@@ -18,13 +18,13 @@ import {
   getSocialMediaProfile,
   SendFriendRequest,
 } from "../services/socialMedia.services";
-import { useQuery, useQueryClient } from "react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelector, useDispatch } from "react-redux";
 import FriendPosts from "../components/social/FriendPosts";
 import CoverImage from "../assets/images/general/cover.jpg";
 import { LinearGradient } from "expo-linear-gradient";
 import { ErrorToggle, logout } from "../store/user";
-import { useMutation } from "react-query";
+import { useMutation } from "@tanstack/react-query";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
 const ViewUserScreen = ({ navigation, route }) => {

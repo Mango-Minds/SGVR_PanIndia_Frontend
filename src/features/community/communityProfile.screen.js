@@ -10,14 +10,13 @@ import {
   Dimensions,
   Linking,
   ActivityIndicator,
-} from "react-native";
-import { ScrollView } from "react-native-gesture-handler";
-import ParallaxScrollView from "react-native-parallax-scroll-view";
-import { SafeArea } from "../../components/utility/safe-area.component";
+  ScrollView} from "react-native";
+import { ScrollView as GestureScrollView } from "react-native-gesture-handler";
+// import { SafeArea } from "../../components/utility/safe-area.component";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
-import { useQuery } from "react-query";
+import { useQuery } from "@tanstack/react-query";
 import CommunityMemberCard from "../../components/community/communityMemberCard";
 import {
   viewCommunityById,
@@ -541,7 +540,7 @@ export default function CommunityProfileScreen({ route, navigation }) {
         />
       </Modal>
 
-      <ParallaxScrollView
+      <ScrollView
         renderBackground={renderBackground}
         renderContentBackground={() => renderContentBackground(data)}
         parallaxHeaderHeight={200}

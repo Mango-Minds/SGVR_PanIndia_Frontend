@@ -6,7 +6,7 @@ import {
   View,
   TouchableOpacity,
 } from "react-native";
-import { useMutation, useQueryClient } from "react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   AcceptFriendRequest,
   DeleteFriendRequest,
@@ -16,7 +16,7 @@ import ConfirmCard from "./ConfirmCard";
 import Icon from "react-native-vector-icons/FontAwesome5";
 import { useDispatch, useSelector } from "react-redux";
 import { ErrorToggle } from "../../store/user";
-import update from "react-addons-update";
+import { cloneDeep } from "lodash";
 import { UpdateSocialData } from "../../store/Handlers/Reducer.Handler";
 
 export default function Requests() {
@@ -64,7 +64,7 @@ export default function Requests() {
       if (item._id === userid) {
         deleteRequestMutation.mutateAsync({ userid });
 
-        const newData = update(friendRequest, { $splice: [[i, 1]] });
+        const newData = [...friendRequest.slice(0, i), ...friendRequest.slice(i + 1)];
         await dispatch(
           UpdateSocialData({ ...socialData, friendRequest: newData })
         );
@@ -80,7 +80,7 @@ export default function Requests() {
       if (item._id === userid) {
         acceptRequestMutation.mutateAsync({ userid });
 
-        const newData = update(friendRequest, { $splice: [[i, 1]] });
+        const newData = [...friendRequest.slice(0, i), ...friendRequest.slice(i + 1)];
 
         await dispatch(
           UpdateSocialData({

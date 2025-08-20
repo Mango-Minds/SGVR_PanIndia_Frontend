@@ -13,7 +13,7 @@ import { Row } from "../../../styles/dashboard.styles";
 import { Divider, IconButton } from "react-native-paper";
 import { TopText } from "../../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
-import { Ionicons } from "react-native-vector-icons";
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Container, RowBetween, SearchField } from "../../../styles/common.styles";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;

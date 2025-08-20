@@ -52,7 +52,8 @@ const CreateNewJob = ({ navigation }) => {
       const response = await submitNewJob(jobData); // ✅ call central API
       if (response.status === 200 || response.status === 201) {
         Alert.alert("Success", "Job created successfully!");
-        navigation.goBack();
+        // Navigate back to SocialJobs screen with refresh parameter
+        navigation.navigate("SocialJobs", { refresh: true });
       } else {
         Alert.alert("Error", response.data?.error || "Something went wrong.");
       }
