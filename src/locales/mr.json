@@ -445,15 +445,20 @@
   "failedToDeleteComment": "टिप्पणी हटवण्यात अयशस्वी",
   
   "post_deleted_successfully": "पोस्ट यशस्वीपणे हटवला गेला",
-  "failed_to_delete_post": "पोस्ट हटवण्यात अयशस्वी"
-
-
-
-
-
-
-
-
+  "failed_to_delete_post": "पोस्ट हटवण्यात अयशस्वी",
+  
+  "productNameRequired": "उत्पादनाचे नाव आवश्यक आहे",
+  "productPriceRequired": "उत्पादनाची किंमत आवश्यक आहे",
+  "productOriginalPriceRequired": "उत्पादनाची मूळ किंमत आवश्यक आहे",
+  "productDescriptionRequired": "उत्पादनाचे वर्णन आवश्यक आहे",
+  "productCategoryRequired": "उत्पादनाची श्रेणी आवश्यक आहे",
+  "productSubCategoryRequired": "उत्पादनाची उप-श्रेणी आवश्यक आहे",
+  "productConditionRequired": "उत्पादनाची स्थिती आवश्यक आहे",
+  "productAgeRequired": "उत्पादनाचे वय आवश्यक आहे",
+  "addressRequired": "पत्ता आवश्यक आहे",
+  "invalidAddressLink": "कृपया एक वैध URL प्रविष्ट करा (उदा., https://maps.google.com किंवा https://goo.gl/maps/...)",
+  "atLeastOneImageRequired": "किमान एक प्रतिमा आवश्यक आहे",
+  "authTokenMissing": "प्रमाणीकरण टोकन अनुपलब्ध आहे"
 
 }
 

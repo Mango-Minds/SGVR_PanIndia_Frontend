@@ -483,8 +483,20 @@
   "failedToDeleteComment": "Failed to delete comment",
   
   "post_deleted_successfully": "Post deleted successfully",
-  "failed_to_delete_post": "Failed to delete post"
+  "failed_to_delete_post": "Failed to delete post",
   
+  "productNameRequired": "Product name is required",
+  "productPriceRequired": "Product price is required",
+  "productOriginalPriceRequired": "Product original price is required",
+  "productDescriptionRequired": "Product description is required",
+  "productCategoryRequired": "Product category is required",
+  "productSubCategoryRequired": "Product sub-category is required",
+  "productConditionRequired": "Product condition is required",
+  "productAgeRequired": "Product age is required",
+  "addressRequired": "Address is required",
+  "invalidAddressLink": "Please enter a valid URL (e.g., https://maps.google.com or https://goo.gl/maps/...)",
+  "atLeastOneImageRequired": "At least one image is required",
+  "authTokenMissing": "Authentication token is missing"
 
 }
 

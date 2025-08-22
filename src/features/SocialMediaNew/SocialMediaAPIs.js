@@ -54,7 +54,7 @@ export const submitNewPost = async (description, list) => {
 };
 
 // Fetch follow status
-export const fetchFollowStatusAPI = async (userId, setIsFollowing) => {
+export const fetchFollowStatusAPI = async (userId) => {
   try {
     const token = await getToken();
     const response = await apiClient.get(
@@ -67,13 +67,15 @@ export const fetchFollowStatusAPI = async (userId, setIsFollowing) => {
     );
 
     if (response.status === 200) {
-      setIsFollowing(response.data.isFollowing);
-      console.log("response.data.isFollowing: ", response.data.isFollowing);
+      console.log("response.data: ", response.data);
+      return response;
     } else {
       console.error("Failed to fetch follow status");
+      throw new Error("Failed to fetch follow status");
     }
   } catch (error) {
     console.error("Error fetching follow status:", error);
+    throw error;
   }
 };
 
@@ -135,6 +137,8 @@ export const fetchPostsAPI = async (userId, setUserPosts) => {
     }
   } catch (err) {
     console.error("Error fetching posts:", err);
+    // Set empty posts array to prevent UI errors
+    setUserPosts({ posts: [], message: 'No posts found' });
   }
 };
 
@@ -292,12 +296,12 @@ export const sendFollowRequestAPI = async (
 };
 
 // Unfollow user
-export const unfollowUserAPI = async (fromUserId, setIsFollowing) => {
+export const unfollowUserAPI = async (toUserId) => {
   try {
     const token = await getToken();
     const response = await apiClient.patch(
-      `/social/unfollow/${fromUserId}`,
-      null,
+      `/social/unfollow/${toUserId}`,
+      {},
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -305,15 +309,10 @@ export const unfollowUserAPI = async (fromUserId, setIsFollowing) => {
       }
     );
 
-    if (response.status === 200) {
-      setIsFollowing(false);
-      Alert.alert("Success", response.data.message);
-    } else {
-      Alert.alert("Error", "Failed to send unfollow request.");
-    }
+    return response;
   } catch (error) {
     console.error("Error unfollowing user:", error);
-    Alert.alert("Error", "An error occurred while trying to unfollow.");
+    throw error;
   }
 };
 
@@ -323,10 +322,6 @@ export const fetchAllPosts = (page = 1, limit = 10) => {
 
 export const sendFollowRequest = (toUserId) => {
   return apiClient.post(`/social/send-request/${toUserId}`);
-};
-
-export const unfollowUser = (userId) => {
-  return apiClient.patch(`/social/unfollow/${userId}`);
 };
 
 export const getFollowStatus = (userId) => {
@@ -446,9 +441,84 @@ export const getFollowing = (userId, page = 1, query = "") => {
   );
 };
 
-// Fetch users with optional search term
-export const getUsers = (searchTerm = "") => {
+// Fetch users (unfollowed users only)
+export const getUsers = () => {
   return apiClient.get(`/social/unfollowed-users`);
+};
+
+// Mark notification as read
+export const markNotificationAsRead = (notificationId) => {
+  return apiClient.patch(`/notifications/${notificationId}/markAsRead`);
+};
+
+// Mark all notifications as read
+export const markAllNotificationsAsRead = () => {
+  return apiClient.patch("/notifications/markAllAsRead");
+};
+
+// Delete a notification
+export const deleteNotification = (notificationId) => {
+  return apiClient.delete(`/notifications/${notificationId}`);
+};
+
+// Delete all notifications
+export const deleteAllNotifications = () => {
+  return apiClient.delete("/notifications/deleteAll");
+};
+
+// Get notification count
+export const getNotificationCount = () => {
+  return apiClient.get("/notifications/count");
+};
+
+// Follow user directly (without request)
+export const followUser = (userId) => {
+  return apiClient.post(`/social/follow/${userId}`);
+};
+
+// Unfollow user (renamed to avoid conflict)
+export const unfollowUserSimple = (userId) => {
+  return apiClient.patch(`/social/unfollow/${userId}`);
+};
+
+// Check if user is following another user
+export const checkFollowStatus = (userId) => {
+  return apiClient.get(`/social/check-follow-status/${userId}`);
+};
+
+// Get user's follow statistics
+export const getFollowStats = (userId) => {
+  return apiClient.get(`/social/follow-stats/${userId}`);
+};
+
+// Get mutual connections
+export const getMutualConnections = (userId) => {
+  return apiClient.get(`/social/mutual-connections/${userId}`);
+};
+
+// Block user
+export const blockUser = (userId) => {
+  return apiClient.post(`/social/block/${userId}`);
+};
+
+// Unblock user
+export const unblockUser = (userId) => {
+  return apiClient.patch(`/social/unblock/${userId}`);
+};
+
+// Get blocked users
+export const getBlockedUsers = () => {
+  return apiClient.get("/social/blocked-users");
+};
+
+// Report user
+export const reportUser = (userId, reason) => {
+  return apiClient.post(`/social/report/${userId}`, { reason });
+};
+
+// Get user suggestions (people you may know)
+export const getUserSuggestions = (page = 1, limit = 10) => {
+  return apiClient.get(`/social/suggestions?page=${page}&limit=${limit}`);
 };
 
 // export const updateUserAboutEducationDetails = async ({

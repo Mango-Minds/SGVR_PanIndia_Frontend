@@ -61,9 +61,8 @@ export default function ResetPasswordScreen({ route, navigation }) {
         );
       } else {
         const data = {
-          password: password,
-          cpassword: confirmPassword,
-          token: userid,
+          phone: route.params.phone,
+          newPassword: password,
         };
         dispatch(setLoadingInBtn(true));
         const res = await changeForgotPassword(data);
@@ -77,6 +76,14 @@ export default function ResetPasswordScreen({ route, navigation }) {
             })
           );
           navigation.navigate("Login");
+        } else {
+          dispatch(
+            ErrorToggle({
+              toggle: true,
+              msg: res.message || "Failed to change password",
+              type: "error",
+            })
+          );
         }
       }
     } else {

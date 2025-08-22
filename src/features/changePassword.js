@@ -25,11 +25,35 @@ export default function ChangePassword({ navigation }) {
   };
 
   const onHandlesubmit = async () => {
-    const res = await axios
-      .post(`${BASEAPIURL}/user/forgot-password/reset`, changepassword, {
-        headers: await authHeader(),
-      })
-      .then((res) => {
+    if (!changepassword.oldpassword || !changepassword.password || !changepassword.cpassword) {
+      dispatch(
+        ErrorToggle({
+          toggle: true,
+          msg: "Please fill all fields",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    if (changepassword.password !== changepassword.cpassword) {
+      dispatch(
+        ErrorToggle({
+          toggle: true,
+          msg: "New password and confirm password do not match",
+          type: "error",
+        })
+      );
+      return;
+    }
+
+    try {
+      const res = await changePassword({
+        oldPassword: changepassword.oldpassword,
+        newPassword: changepassword.password
+      });
+      
+      if (res.status === 0) {
         dispatch(
           ErrorToggle({
             toggle: true,
@@ -38,16 +62,24 @@ export default function ChangePassword({ navigation }) {
           })
         );
         navigation.navigate("Dashboard");
-      })
-      .catch((err) => {
+      } else {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: "Something went wrong",
+            msg: res.message || "Failed to change password",
             type: "error",
           })
         );
-      });
+      }
+    } catch (err) {
+      dispatch(
+        ErrorToggle({
+          toggle: true,
+          msg: err.response?.data?.message || "Something went wrong",
+          type: "error",
+        })
+      );
+    }
   };
   return (
     <View

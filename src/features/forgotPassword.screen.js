@@ -31,58 +31,69 @@ export default function ForgotPasswordScreen({ navigation }) {
   const [phone, setPhone] = useState("");
 
   const forgotPassword = async () => {
+    if (!phone) {
+      dispatch(
+        ErrorToggle({
+          toggle: true,
+          msg: "Please enter your phone number or email",
+          type: "error",
+        })
+      );
+      return;
+    }
+    
     dispatch(setLoadingInBtn(true));
-    axios
-      .post(BASEAPIURL + "/user/forgot-password/request-otp", {
+    try {
+      // Skip OTP verification and go directly to reset password
+      const res = await axios.post(BASEAPIURL + "/user/forgot-password/verify-user", {
         phone: phone,
-      })
-      .then((res) => {
-        if (res.data.status === 0) {
-          dispatch(
-            ErrorToggle({
-              toggle: true,
-              msg: "OTP sent to your number",
-              type: "success",
-            })
-          );
-          dispatch(setLoadingInBtn(false));
-          navigation.navigate("Verify", {
-            phone: res.data.data.phone,
-            id: res.data.data.id,
-            type: "forgot",
-          });
-        } else {
-          dispatch(setLoadingInBtn(false));
-          dispatch(
-            ErrorToggle({
-              toggle: true,
-              msg: res.data.msg,
-              type: "error",
-            })
-          );
-        }
-      })
-      .catch((err) => {
-        const status = err.response.data.status;
-        const msg = err.response.data.message;
-        if (status === 1) {
-          dispatch(
-            ErrorToggle({
-              toggle: true,
-              msg: msg,
-              type: "error",
-            })
-          );
-        } else {
-          dispatch(
-            ErrorToggle({
-              toggle: true,
-              msg: "There was some error while sending OTP. Please Try Again!",
-              type: "error",
-            })
-          );
-        }
       });
+      
+      if (res.data.status === 0) {
+        dispatch(
+          ErrorToggle({
+            toggle: true,
+            msg: "User verified successfully. Please set your new password.",
+            type: "success",
+          })
+        );
+        dispatch(setLoadingInBtn(false));
+        navigation.navigate("ResetPassword", {
+          userid: res.data.userId,
+          phone: phone,
+        });
+      } else {
+        dispatch(setLoadingInBtn(false));
+        dispatch(
+          ErrorToggle({
+            toggle: true,
+            msg: res.data.message || "User not found",
+            type: "error",
+          })
+        );
+      }
+    } catch (err) {
+      dispatch(setLoadingInBtn(false));
+      const status = err.response?.data?.status;
+      const msg = err.response?.data?.message;
+      if (status === 1) {
+        dispatch(
+          ErrorToggle({
+            toggle: true,
+            msg: msg || "User not found",
+            type: "error",
+          })
+        );
+      } else {
+        dispatch(
+          ErrorToggle({
+            toggle: true,
+            msg: "There was some error. Please try again!",
+            type: "error",
+          })
+        );
+      }
+    }
   };
   return (
     <SafeArea>
@@ -95,7 +106,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         <FormSection>
           <FormSectionTitle>Forgot Password</FormSectionTitle>
           <FormSectionSubtitle>
-            Please Enter Details to get OTP
+            Please Enter Your Phone Number or Email
           </FormSectionSubtitle>
           <LoginInputField
             placeholderTextColor="#9B9B9B"
@@ -125,7 +136,7 @@ export default function ForgotPasswordScreen({ navigation }) {
                   color={"white"}
                 />
               ) : (
-                "Send OTP"
+                "Continue"
               )}
             </Text>
           </FormButton>

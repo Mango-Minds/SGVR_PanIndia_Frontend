@@ -128,6 +128,18 @@ export const changeForgotPassword = async (data) => {
   try {
     const res = await axios.post(
       `${BASEAPIURL}/user/forgot-password/reset`,
+      data
+    );
+    return res.data;
+  } catch (error) {
+    return { status: 1, message: "Network error occurred" };
+  }
+};
+
+export const changePassword = async (data) => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/user/change-password`,
       data,
       {
         headers: await authHeader(),
@@ -135,7 +147,7 @@ export const changeForgotPassword = async (data) => {
     );
     return res.data;
   } catch (error) {
-    return;
+    return { status: 1, message: "Network error occurred" };
   }
 };
 

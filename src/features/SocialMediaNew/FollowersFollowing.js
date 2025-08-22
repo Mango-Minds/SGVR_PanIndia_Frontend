@@ -10,6 +10,7 @@ import {
   RefreshControl,
   TextInput,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
@@ -33,12 +34,13 @@ import { getFollowing, getFollowers } from "./SocialMediaAPIs";
 const FollowersFollowing = ({ navigation, route }) => {
   const { type } = route.params; // 'Followers' or 'Following'
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [error, setError] = useState(null);
 
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
   };
 
-  const [searchTerm, setSearchTerm] = useState("");
   const handleSearch = (e) => {
     setSearchTerm(e);
     console.log("Search term: ", e);
@@ -84,228 +86,249 @@ const FollowersFollowing = ({ navigation, route }) => {
 
   // variables for user followers
   const [followers, setFollowers] = useState([]);
-  const [followersPage, setFollowersPage] = useState(1); // Track the current page
+  const [followersPage, setFollowersPage] = useState(1);
   const [allFollowersLoaded, setAllFollowersLoaded] = useState(false);
-  const [loadingFollowersAnimation, setLoadingFollowersAnimation] =
-    useState(true);
+  const [loadingFollowersAnimation, setLoadingFollowersAnimation] = useState(true);
   const [followersRefreshing, setFollowersRefreshing] = useState(false);
 
-  // const fetchFollowers = async (querystring) => {
-  //   if (allFollowersLoaded) return;
-  //   try {
-  //     setLoadingFollowersAnimation(true);
-  //     console.log(
-  //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`
-  //     );
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-  //     const data = await response.json();
-  //     // console.log("Followers:", data);
-  //     console.log(data.followers);
-  //     if (data.followers.length < 10) setAllFollowersLoaded(true);
-  //     setFollowers((prevPosts) => [...prevPosts, ...data.followers]);
-  //     setFollowersPage((prevPage) => prevPage + 1);
-  //   } catch (err) {
-  //     console.log(err.message);
-  //   } finally {
-  //     setLoadingFollowersAnimation(false);
-  //   }
-  // };
+  // variables for user following data
+  const [following, setFollowing] = useState([]);
+  const [followingPage, setFollowingPage] = useState(1);
+  const [allFollowingLoaded, setAllFollowingLoaded] = useState(false);
+  const [loadingFollowingAnimation, setLoadingFollowingAnimation] = useState(true);
+  const [followingRefreshing, setFollowingRefreshing] = useState(false);
 
-  //variables for user following data
-  
-
-  const fetchFollowers = async (querystring = "") => {
-    if (allFollowersLoaded) return;
+  const fetchFollowers = async (querystring = "", isRefresh = false) => {
+    if (allFollowersLoaded && !isRefresh) return;
+    
     try {
       setLoadingFollowersAnimation(true);
-      const { data } = await getFollowers(userId, followersPage, querystring);
-      if (data.followers.length < 10) setAllFollowersLoaded(true);
-      setFollowers((prev) => [...prev, ...data.followers]);
-      setFollowersPage((prevPage) => prevPage + 1);
+      setError(null);
+      
+      const page = isRefresh ? 1 : followersPage;
+      const { data } = await getFollowers(userId, page, querystring);
+      
+      if (data.followers.length < 10) {
+        setAllFollowersLoaded(true);
+      }
+      
+      if (isRefresh) {
+        setFollowers(data.followers);
+        setFollowersPage(2);
+        setAllFollowersLoaded(false);
+      } else {
+        setFollowers((prev) => [...prev, ...data.followers]);
+        setFollowersPage((prevPage) => prevPage + 1);
+      }
     } catch (err) {
       console.log("Error fetching followers:", err.message);
+      setError("Failed to fetch followers");
     } finally {
       setLoadingFollowersAnimation(false);
     }
   };
-  
-  const [following, setFollowing] = useState([]);
-  const [followingPage, setFollowingPage] = useState(1);
-  const [allFollowingLoaded, setAllFollowingLoaded] = useState(false);
-  const [loadingFollowingAnimation, setLoadingFollowingAnimation] =
-    useState(true);
-  const [followingRefreshing, setFollowingRefreshing] = useState(false);
 
-  // const fetchFollowing = async (querystring) => {
-  //   if (allFollowingLoaded) return;
-  //   try {
-  //     setLoadingFollowingAnimation(true);
-  //     console.log(
-  //       `${BASEAPIURL}/social/${userId}/following?page=${followingPage}&limit=10?${querystring}`,
-  //     );
-  //     const response = await fetch(
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error("Network response was not ok");
-  //     }
-  //     const data = await response.json();
-  //     console.log("Following:", data);
-
-  //     if (data.following.length < 10) setAllFollowingLoaded(true);
-  //     setFollowing((prevPosts) => [...prevPosts, ...data.following]);
-  //     setFollowingPage((prevPage) => prevPage + 1);
-  //   } catch (err) {
-  //     console.log(err.message);
-  //   } finally {
-  //     setLoadingFollowingAnimation(false);
-  //   }
-  // };
-  const fetchFollowing = async (querystring = "") => {
-    if (allFollowingLoaded) return;
+  const fetchFollowing = async (querystring = "", isRefresh = false) => {
+    if (allFollowingLoaded && !isRefresh) return;
+    
     try {
       setLoadingFollowingAnimation(true);
-      const { data } = await getFollowing(userId, followingPage, querystring);
-      if (data.following.length < 10) setAllFollowingLoaded(true);
-      setFollowing((prev) => [...prev, ...data.following]);
-      setFollowingPage((prevPage) => prevPage + 1);
+      setError(null);
+      
+      const page = isRefresh ? 1 : followingPage;
+      const { data } = await getFollowing(userId, page, querystring);
+      
+      if (data.following.length < 10) {
+        setAllFollowingLoaded(true);
+      }
+      
+      if (isRefresh) {
+        setFollowing(data.following);
+        setFollowingPage(2);
+        setAllFollowingLoaded(false);
+      } else {
+        setFollowing((prev) => [...prev, ...data.following]);
+        setFollowingPage((prevPage) => prevPage + 1);
+      }
     } catch (err) {
       console.log("Error fetching following:", err.message);
+      setError("Failed to fetch following");
     } finally {
       setLoadingFollowingAnimation(false);
     }
   };
-  
+
+  const handleRefresh = async () => {
+    if (type === "Followers") {
+      setFollowersRefreshing(true);
+      await fetchFollowers("", true);
+      setFollowersRefreshing(false);
+    } else {
+      setFollowingRefreshing(true);
+      await fetchFollowing("", true);
+      setFollowingRefreshing(false);
+    }
+  };
+
   const followersFollowingdata = type === "Followers" ? followers : following;
-  console.log("followers:", following);
+  const isLoading = type === "Followers" ? loadingFollowersAnimation : loadingFollowingAnimation;
+  const isRefreshing = type === "Followers" ? followersRefreshing : followingRefreshing;
 
   const renderItem = ({ item }) => (
     <TouchableOpacity
-    onPress={() =>
-      navigation.navigate("EachProfile", { 
-        userId: item._id,  // Use the userId from the item object
-      })
-    }
-  >
-    <View style={styles.itemContainer}>
+      onPress={() =>
+        navigation.navigate("EachProfile", { 
+          userId: item._id,
+        })
+      }
+      style={styles.itemContainer}
+    >
       <Image
         source={
-          item.image === ""
-            ?  UserImg 
+          item.image === "" || !item.image
+            ? UserImg 
             : { uri: `${item.image}` }
         }
         style={styles.image}
       />
-      <Text style={styles.name}>
-        {item.firstName} {item.lastName}
-      </Text>
-    </View>
+      <View style={styles.userInfo}>
+        <Text style={styles.name}>
+          {item.firstName} {item.lastName}
+        </Text>
+        <Text style={styles.role}>{item.role || "User"}</Text>
+      </View>
+      <TouchableOpacity style={styles.messageButton}>
+        <Icon name="chatbubble-outline" size={20} color={Theme.themeColor} />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
-  //debounce
+  const renderEmptyState = () => (
+    <View style={styles.emptyContainer}>
+      <Icon name="people-outline" size={64} color="#ccc" />
+      <Text style={styles.emptyText}>
+        {type === "Followers"
+          ? "You have no followers yet"
+          : "You are not following anyone yet"}
+      </Text>
+    </View>
+  );
+
+  const renderErrorState = () => (
+    <View style={styles.errorContainer}>
+      <Icon name="alert-circle" size={64} color="#ff6b6b" />
+      <Text style={styles.errorText}>{error}</Text>
+      <TouchableOpacity 
+        style={styles.retryButton} 
+        onPress={() => {
+          if (type === "Followers") {
+            fetchFollowers("", true);
+          } else {
+            fetchFollowing("", true);
+          }
+        }}
+      >
+        <Text style={styles.retryButtonText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
   // Debounced fetch function to avoid unnecessary API calls
   const debouncedFetchData = useCallback(
     debounce((searchTerm) => {
-      console.log("Fetching data for tab:", "with searchTerm:", searchTerm);
-      type === "Followers"
-        ? setLoadingFollowersAnimation(false)
-        : setLoadingFollowingAnimation(false);
+      console.log("Fetching data for tab:", type, "with searchTerm:", searchTerm);
+      
       const queryParams = new URLSearchParams();
       if (searchTerm.trim()) {
         queryParams.append("search", searchTerm);
       }
-
       const queryString = queryParams.toString();
 
-      type === "Followers"
-        ? fetchFollowers(queryString)
-        : fetchFollowing(queryString);
-    }, 1200), // Adjust debounce delay as needed
-    []
+      if (type === "Followers") {
+        setFollowers([]);
+        setFollowersPage(1);
+        setAllFollowersLoaded(false);
+        fetchFollowers(queryString, true);
+      } else {
+        setFollowing([]);
+        setFollowingPage(1);
+        setAllFollowingLoaded(false);
+        fetchFollowing(queryString, true);
+      }
+    }, 800),
+    [type]
   );
 
   useEffect(() => {
     debouncedFetchData(searchTerm);
-  }, [searchTerm]);
+  }, [searchTerm, type]);
+
+  useEffect(() => {
+    if (type === "Followers") {
+      fetchFollowers();
+    } else {
+      fetchFollowing();
+    }
+  }, [type]);
+
+  const handleLoadMore = () => {
+    if (type === "Followers") {
+      fetchFollowers();
+    } else {
+      fetchFollowing();
+    }
+  };
+
+  if (error && followersFollowingdata.length === 0) {
+    return (
+      <View style={styles.container}>
+        <Header />
+        {renderErrorState()}
+      </View>
+    );
+  }
 
   return (
     <>
       <View style={styles.container}>
         <Header />
         {isSearchVisible && (
-          <View
-            style={{
-              alignItems: "center",
-              marginLeft: 16,
-              marginRight: 16,
-              marginBottom: 10,
-            }}
-          >
-            <SearchField placeholder="Search" onChangeText={handleSearch} />
+          <View style={styles.searchContainer}>
+            <SearchField 
+              placeholder="Search" 
+              onChangeText={handleSearch}
+              value={searchTerm}
+            />
           </View>
         )}
-        {loadingFollowersAnimation && loadingFollowingAnimation ? (
-          <ActivityIndicator
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-            size="large"
-            color="#b98c13"
-          />
-        ) : followersFollowingdata.length === 0 ? (
-          <View
-            style={{
-              flex: 1, // Takes up the full screen
-              justifyContent: "center", // Centers vertically
-              alignItems: "center", // Centers horizontally
-            }}
-          >
-            <Text
-              style={{
-                textAlign: "center",
-                fontWeight: "bold", // Makes the text bold
-                color: "black", // Sets the text color to black
-                fontSize: 16, // Optional: Adjust font size
-              }}
-            >
-              {type === "Followers"
-                ? "You have no Followers"
-                : "You have no users Following you"}
-            </Text>
+        
+        {isLoading && followersFollowingdata.length === 0 ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={Theme.themeColor} />
+            <Text style={styles.loadingText}>Loading {type.toLowerCase()}...</Text>
           </View>
         ) : (
           <FlatList
-            data={followersFollowingdata} // Use followersFollowingdata here
+            data={followersFollowingdata}
             renderItem={renderItem}
-            keyExtractor={(item) => item._id} // Ensure keyExtractor uses a unique string
-            showsVerticalScrollIndicator={false}
-            onEndReached={() =>
-              type === "Followers" && !allFollowersLoaded
-                ? setFollowersPage((prev) => prev + 1)
-                : !allFollowingLoaded && setFollowingPage((prev) => prev + 1)
+            keyExtractor={(item) => item._id}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                colors={[Theme.themeColor]}
+              />
             }
-            onEndReachedThreshold={0.5}
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.1}
+            ListEmptyComponent={renderEmptyState}
+            ListFooterComponent={
+              isLoading && followersFollowingdata.length > 0 ? (
+                <ActivityIndicator size="small" color={Theme.themeColor} style={styles.footerLoader} />
+              ) : null
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
           />
         )}
       </View>
@@ -316,28 +339,100 @@ const FollowersFollowing = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f9f9f9",
-    padding: 16,
+    backgroundColor: "#f0f0f0",
   },
-  header: {
-    fontSize: 24,
+  headerContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  headerLeftIcon: {
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 16,
-    textAlign: "center",
     color: "#333",
+  },
+  headerRightContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerRightIcon: {
+    padding: 4,
+  },
+  searchContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: "#fff",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: "#666",
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: "#666",
+    textAlign: "center",
+    marginTop: 16,
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: Theme.themeColor,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 50,
+  },
+  emptyText: {
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#666",
+    fontSize: 16,
+    marginTop: 16,
+  },
+  listContainer: {
+    flexGrow: 1,
   },
   itemContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
-    padding: 12,
-    marginBottom: 8,
+    padding: 16,
+    marginHorizontal: 16,
+    marginVertical: 4,
     borderRadius: 8,
     shadowColor: "#000",
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   image: {
     width: 50,
@@ -345,458 +440,25 @@ const styles = StyleSheet.create({
     borderRadius: 25,
     marginRight: 12,
   },
+  userInfo: {
+    flex: 1,
+  },
   name: {
     fontSize: 16,
-    fontWeight: "500",
-    color: "#333",
-  },
-  headerContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 10,
-    marginVertical: 15,
-    height: 60,
-    backgroundColor: "#f9f9f9",
-  },
-  headerLeftIcon: {
-    flex: 1,
-  },
-  headerTitle: {
-    flex: 2,
-    textAlign: "center",
-    color: Theme.themeColor,
-    fontSize: 20,
     fontWeight: "bold",
+    color: "#333",
+    marginBottom: 2,
   },
-  headerRightContainer: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    flex: 1,
+  role: {
+    fontSize: 14,
+    color: "#666",
   },
-  headerRightIcon: {
-    marginLeft: 15,
+  messageButton: {
+    padding: 8,
+  },
+  footerLoader: {
+    paddingVertical: 16,
   },
 });
 
 export default FollowersFollowing;
-
-// import React, { useEffect, useState, useCallback } from "react";
-// import {
-//   View,
-//   Text,
-//   SafeAreaView,
-//   StyleSheet,
-//   ScrollView,
-//   TouchableOpacity,
-//   Image,
-//   RefreshControl,
-//   TextInput,
-//   ActivityIndicator,
-// } from "react-native";
-// import Theme from "../../styles/theme";
-// import { IconButton } from "react-native-paper";
-// import Icon from "react-native-vector-icons/Ionicons";
-// import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-// import { TopText } from "../../styles/social.styles";
-// import messageIcon from "../../assets/images/social/message.png";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import apiClient from "../../store/apiClient";
-// import Ionicons from 'react-native-vector-icons/Ionicons';
-// import BottomNavigation from "../../components/social/BottomNavigation";
-
-// import { useSelector } from "react-redux";
-// import UserImg from "../../assets/images/general/user.png";
-// import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
-// import NewSocialCard from "./NewSocialCard";
-// import { FlatList } from "react-native-gesture-handler";
-// import { debounce } from "lodash";
-
-// const FollowersFollowing = ({ navigation, route }) => {
-//   const { type } = route.params; // 'Followers' or 'Following'
-//   const [isSearchVisible, setIsSearchVisible] = useState(false);
-
-//   const toggleSearch = () => {
-//     setIsSearchVisible(!isSearchVisible);
-//   };
-
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const handleSearch = (e) => {
-//     setSearchTerm(e);
-//     console.log("Search term: ", e);
-//   };
-
-//   const token = useSelector((state) => state.user.token);
-//   const user = useSelector((state) => state.user.user);
-//   const userId = user._id;
-
-//   const Header = () => {
-//     return (
-//       <View style={styles.headerContainer}>
-//         <TouchableOpacity
-//           onPress={() => navigation.goBack()}
-//           style={styles.headerLeftIcon}
-//         >
-//           <IconButton
-//             icon="arrow-left"
-//             style={{ color: "grey" }}
-//             onPress={() => navigation.goBack()}
-//           />
-//         </TouchableOpacity>
-//         <Text style={styles.headerTitle}>{type}</Text>
-//         <View style={styles.headerRightContainer}>
-//           <TouchableOpacity
-//             onPress={toggleSearch}
-//             style={styles.headerRightIcon}
-//           >
-//             <Icon
-//               name="search"
-//               size={24}
-//               style={{ marginRight: 15, color: "grey" }}
-//               onPress={toggleSearch}
-//             />
-//           </TouchableOpacity>
-//           <TouchableOpacity style={styles.headerRightIcon}>
-//             <Ionicons name="person" size={24} color="grey" />
-//           </TouchableOpacity>
-//         </View>
-//       </View>
-//     );
-//   };
-
-//   // variables for user followers
-//   const [followers, setFollowers] = useState([]);
-//   const [followersPage, setFollowersPage] = useState(1); // Track the current page
-//   const [allFollowersLoaded, setAllFollowersLoaded] = useState(false);
-//   const [loadingFollowersAnimation, setLoadingFollowersAnimation] =
-//     useState(true);
-//   const [followersRefreshing, setFollowersRefreshing] = useState(false);
-
-//   // const fetchFollowers = async (querystring) => {
-//   //   if (allFollowersLoaded) return;
-//   //   try {
-//   //     setLoadingFollowersAnimation(true);
-//   //     console.log(
-//   //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`
-//   //     );
-//   //     const response = await fetch(
-//   //       `${BASEAPIURL}/social/${userId}/followers?page=${followersPage}&limit=10?${querystring}`,
-//   //       {
-//   //         method: "GET",
-//   //         headers: {
-//   //           "Content-Type": "application/json",
-//   //           Authorization: `Bearer ${token}`,
-//   //         },
-//   //       }
-//   //     );
-//   //     if (!response.ok) {
-//   //       throw new Error("Network response was not ok");
-//   //     }
-//   //     const data = await response.json();
-//   //     // console.log("Followers:", data);
-//   //     console.log(data.followers);
-//   //     if (data.followers.length < 10) setAllFollowersLoaded(true);
-//   //     setFollowers((prevPosts) => [...prevPosts, ...data.followers]);
-//   //     setFollowersPage((prevPage) => prevPage + 1);
-//   //   } catch (err) {
-//   //     console.log(err.message);
-//   //   } finally {
-//   //     setLoadingFollowersAnimation(false);
-//   //   }
-//   // };
-
-//   //variables for user following data
-//   const fetchFollowers = async (querystring) => {
-//     if (allFollowersLoaded) return;
-  
-//     try {
-//       setLoadingFollowersAnimation(true);
-  
-//       const token = await AsyncStorage.getItem("token");
-//       if (!token) {
-//         console.error("Authentication token is missing.");
-//         Alert.alert("Error", "You are not authorized. Please log in again.");
-//         return;
-//       }
-  
-//       const url = `/social/${userId}/followers?page=${followersPage}&limit=10&${querystring}`;
-//       console.log(`${BASEAPIURL}${url}`);
-  
-//       const response = await apiClient.get(url, {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-  
-//       const data = response.data;
-//       console.log(data.followers);
-  
-//       if (data.followers.length < 10) setAllFollowersLoaded(true);
-//       setFollowers((prevPosts) => [...prevPosts, ...data.followers]);
-//       setFollowersPage((prevPage) => prevPage + 1);
-//     } catch (err) {
-//       console.log(err.message);
-//     } finally {
-//       setLoadingFollowersAnimation(false);
-//     }
-//   };
-  
-//   const [following, setFollowing] = useState([]);
-//   const [followingPage, setFollowingPage] = useState(1);
-//   const [allFollowingLoaded, setAllFollowingLoaded] = useState(false);
-//   const [loadingFollowingAnimation, setLoadingFollowingAnimation] =
-//     useState(true);
-//   const [followingRefreshing, setFollowingRefreshing] = useState(false);
-
-//   // const fetchFollowing = async (querystring) => {
-//   //   if (allFollowingLoaded) return;
-//   //   try {
-//   //     setLoadingFollowingAnimation(true);
-//   //     console.log(
-//   //       `${BASEAPIURL}/social/${userId}/following?page=${followingPage}&limit=10?${querystring}`,
-//   //     );
-//   //     const response = await fetch(
-//   //       {
-//   //         method: "GET",
-//   //         headers: {
-//   //           "Content-Type": "application/json",
-//   //           Authorization: `Bearer ${token}`,
-//   //         },
-//   //       }
-//   //     );
-//   //     if (!response.ok) {
-//   //       throw new Error("Network response was not ok");
-//   //     }
-//   //     const data = await response.json();
-//   //     console.log("Following:", data);
-
-//   //     if (data.following.length < 10) setAllFollowingLoaded(true);
-//   //     setFollowing((prevPosts) => [...prevPosts, ...data.following]);
-//   //     setFollowingPage((prevPage) => prevPage + 1);
-//   //   } catch (err) {
-//   //     console.log(err.message);
-//   //   } finally {
-//   //     setLoadingFollowingAnimation(false);
-//   //   }
-//   // };
-//   const fetchFollowing = async (querystring) => {
-//     if (allFollowingLoaded) return;
-  
-//     try {
-//       setLoadingFollowingAnimation(true);
-  
-//       const token = await AsyncStorage.getItem("token");
-//       if (!token) {
-//         console.error("Authentication token is missing.");
-//         Alert.alert("Error", "You are not authorized. Please log in again.");
-//         return;
-//       }
-  
-//       const url = `/social/${userId}/following?page=${followingPage}&limit=10&${querystring}`;
-//       console.log(`${BASEAPIURL}${url}`);
-  
-//       const response = await apiClient.get(url, {
-//         headers: {
-//           Authorization: `Bearer ${token}`,
-//         },
-//       });
-  
-//       const data = response.data;
-//       console.log("Following:", data);
-  
-//       if (data.following.length < 10) setAllFollowingLoaded(true);
-//       setFollowing((prevPosts) => [...prevPosts, ...data.following]);
-//       setFollowingPage((prevPage) => prevPage + 1);
-//     } catch (err) {
-//       console.log(err.message);
-//     } finally {
-//       setLoadingFollowingAnimation(false);
-//     }
-//   };
-  
-//   const followersFollowingdata = type === "Followers" ? followers : following;
-//   console.log("followers:", following);
-
-//   const renderItem = ({ item }) => (
-//     <TouchableOpacity
-//     onPress={() =>
-//       navigation.navigate("EachProfile", { 
-//         userId: item._id,  // Use the userId from the item object
-//       })
-//     }
-//   >
-//     <View style={styles.itemContainer}>
-//       <Image
-//         source={
-//           item.image === ""
-//             ?  UserImg 
-//             : { uri: `${item.image}` }
-//         }
-//         style={styles.image}
-//       />
-//       <Text style={styles.name}>
-//         {item.firstName} {item.lastName}
-//       </Text>
-//     </View>
-//     </TouchableOpacity>
-//   );
-
-//   //debounce
-//   // Debounced fetch function to avoid unnecessary API calls
-//   const debouncedFetchData = useCallback(
-//     debounce((searchTerm) => {
-//       console.log("Fetching data for tab:", "with searchTerm:", searchTerm);
-//       type === "Followers"
-//         ? setLoadingFollowersAnimation(false)
-//         : setLoadingFollowingAnimation(false);
-//       const queryParams = new URLSearchParams();
-//       if (searchTerm.trim()) {
-//         queryParams.append("search", searchTerm);
-//       }
-
-//       const queryString = queryParams.toString();
-
-//       type === "Followers"
-//         ? fetchFollowers(queryString)
-//         : fetchFollowing(queryString);
-//     }, 1200), // Adjust debounce delay as needed
-//     []
-//   );
-
-//   useEffect(() => {
-//     debouncedFetchData(searchTerm);
-//   }, [searchTerm]);
-
-//   return (
-//     <>
-//       <View style={styles.container}>
-//         <Header />
-//         {isSearchVisible && (
-//           <View
-//             style={{
-//               alignItems: "center",
-//               marginLeft: 16,
-//               marginRight: 16,
-//               marginBottom: 10,
-//             }}
-//           >
-//             <SearchField placeholder="Search" onChangeText={handleSearch} />
-//           </View>
-//         )}
-//         {loadingFollowersAnimation && loadingFollowingAnimation ? (
-//           <ActivityIndicator
-//             style={{
-//               flex: 1,
-//               justifyContent: "center",
-//               alignItems: "center",
-//             }}
-//             size="large"
-//             color="#b98c13"
-//           />
-//         ) : followersFollowingdata.length === 0 ? (
-//           <View
-//             style={{
-//               flex: 1, // Takes up the full screen
-//               justifyContent: "center", // Centers vertically
-//               alignItems: "center", // Centers horizontally
-//             }}
-//           >
-//             <Text
-//               style={{
-//                 textAlign: "center",
-//                 fontWeight: "bold", // Makes the text bold
-//                 color: "black", // Sets the text color to black
-//                 fontSize: 16, // Optional: Adjust font size
-//               }}
-//             >
-//               {type === "Followers"
-//                 ? "You have no Followers"
-//                 : "You have no users Following you"}
-//             </Text>
-//           </View>
-//         ) : (
-//           <FlatList
-//             data={followersFollowingdata} // Use followersFollowingdata here
-//             renderItem={renderItem}
-//             keyExtractor={(item) => item._id} // Ensure keyExtractor uses a unique string
-//             showsVerticalScrollIndicator={false}
-//             onEndReached={() =>
-//               type === "Followers" && !allFollowersLoaded
-//                 ? setFollowersPage((prev) => prev + 1)
-//                 : !allFollowingLoaded && setFollowingPage((prev) => prev + 1)
-//             }
-//             onEndReachedThreshold={0.5}
-//           />
-//         )}
-//       </View>
-//     </>
-//   );
-// };
-
-// const styles = StyleSheet.create({
-//   container: {
-//     flex: 1,
-//     backgroundColor: "#f9f9f9",
-//     padding: 16,
-//   },
-//   header: {
-//     fontSize: 24,
-//     fontWeight: "bold",
-//     marginBottom: 16,
-//     textAlign: "center",
-//     color: "#333",
-//   },
-//   itemContainer: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     backgroundColor: "#fff",
-//     padding: 12,
-//     marginBottom: 8,
-//     borderRadius: 8,
-//     shadowColor: "#000",
-//     shadowOpacity: 0.1,
-//     shadowRadius: 4,
-//     shadowOffset: { width: 0, height: 2 },
-//     elevation: 1,
-//   },
-//   image: {
-//     width: 50,
-//     height: 50,
-//     borderRadius: 25,
-//     marginRight: 12,
-//   },
-//   name: {
-//     fontSize: 16,
-//     fontWeight: "500",
-//     color: "#333",
-//   },
-//   headerContainer: {
-//     flexDirection: "row",
-//     alignItems: "center",
-//     justifyContent: "space-between",
-//     paddingHorizontal: 10,
-//     marginVertical: 15,
-//     height: 60,
-//     backgroundColor: "#f9f9f9",
-//   },
-//   headerLeftIcon: {
-//     flex: 1,
-//   },
-//   headerTitle: {
-//     flex: 2,
-//     textAlign: "center",
-//     color: Theme.themeColor,
-//     fontSize: 20,
-//     fontWeight: "bold",
-//   },
-//   headerRightContainer: {
-//     flexDirection: "row",
-//     justifyContent: "flex-end",
-//     flex: 1,
-//   },
-//   headerRightIcon: {
-//     marginLeft: 15,
-//   },
-// });
-
-// export default FollowersFollowing;

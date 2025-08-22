@@ -4,167 +4,124 @@ import {
   Text,
   StyleSheet,
   Image,
-  ScrollView,
   TouchableOpacity,
-  Modal,
-  TouchableWithoutFeedback,
-  Keyboard,
   Alert,
-  Pressable,
   SafeAreaView,
+  FlatList,
+  Modal,
+  Pressable,
 } from "react-native";
-import { FlatList } from "react-native-gesture-handler";
-import Theme from "../../styles/theme";
-import Icon from "react-native-vector-icons/Ionicons";
-import { Button, TextInput } from "react-native-paper";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { IconButton } from "react-native-paper";
-import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "../../components/social/BottomNavigation";
 import { useSelector } from "react-redux";
-import { sendFollowRequest } from "./SocialMediaAPIs";
+import { useRoute, useNavigation } from "@react-navigation/native";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Icon from "react-native-vector-icons/Ionicons";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import { SearchField } from "../../styles/common.styles";
-import { BASEAPIURL } from "../../infrastructure/constants";
+import Theme from "../../styles/theme";
+import UserImg from "../../assets/images/general/user.png";
 import NewSocialCard from "./NewSocialCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
+import { useTranslation } from "react-i18next";
 import {
   fetchFollowStatusAPI,
-  fetchPostsAPI,
-  fetchProfileAPI,
-  sendFollowRequestAPI,
+  sendFollowRequest,
   unfollowUserAPI,
+  fetchProfileAPI,
+  fetchPostsAPI,
+  cancelRequest,
 } from "./SocialMediaAPIs";
-import { useTranslation } from "react-i18next";
+
 const Tab = createBottomTabNavigator();
 
 export default function EachProfile() {
-  const token = useSelector((state) => state.user.token);
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
   const route = useRoute();
-
+  const navigation = useNavigation();
   const { userId } = route.params;
-
   const user = useSelector((state) => state.user.user);
-  console.log("user: ", user);
-
-  // const {userId} = route.params;
-  const [allLoaded, setAllLoaded] = useState(false);
-  const [userposts, setUserPosts] = useState([]);
-  const [showAllPosts, setShowAllPosts] = useState(false);
-  // const [isFollowing, setIsFollowing] = useState(false);
-  const [isFollowing, setIsFollowing] = useState(null);
   const fromUserId = user?._id;
 
-  const handleSeeAllClick = () => {
-    setShowAllPosts((prev) => !prev);
+  // State declarations
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [userPosts, setUserPosts] = useState([]);
+  const [isFollowing, setIsFollowing] = useState("not_following");
+  const [showAllPosts, setShowAllPosts] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [activeTab, setActiveTab] = useState("posts");
+
+  // Fetch follow status
+  const fetchFollowStatus = async () => {
+    try {
+      const response = await fetchFollowStatusAPI(userId);
+      if (response.status === 200) {
+        const data = response.data;
+        console.log("following status", data);
+        // Handle different response structures
+        if (data.status) {
+          setIsFollowing(data.status);
+        } else if (data.isFollowing !== undefined) {
+          setIsFollowing(data.isFollowing ? "approved" : "none");
+        } else {
+          setIsFollowing("none");
+        }
+      } else {
+        console.error("Failed to fetch follow status");
+        setIsFollowing("none");
+      }
+    } catch (error) {
+      console.error("Error fetching follow status:", error);
+      setIsFollowing("none");
+    }
   };
 
-  // useEffect(() => {
-  //   if (userId) {
-  //     fetchFollowStatusAPI(userId, setIsFollowing);
-  //   }
-  // }, [userId]);
-  useEffect(() => {
-    const fetchFollowStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const response = await fetch(
-          `${BASEAPIURL}/social/check-follow-status/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("following status", data);
-          setIsFollowing(data.status);
-        } else {
-          console.error("Failed to fetch follow status");
-        }
-      } catch (error) {
-        console.error("Error fetching follow status:", error);
-      }
-    };
-
-    if (userId) {
-      fetchFollowStatus();
+  // Fetch user posts
+  const fetchPosts = async (isRefresh = false) => {
+    try {
+      await fetchPostsAPI(userId, setUserPosts);
+    } catch (error) {
+      console.error("Error fetching posts:", error);
     }
+  };
+
+  // Fetch user profile and posts
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchProfileAPI(userId, setProfile, setLoading),
+        fetchPosts(),
+        fetchFollowStatus()
+      ]);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
   }, [userId]);
 
+  // Listen for refresh parameter changes
   useEffect(() => {
-    fetchPosts();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Refresh follow status when screen comes into focus
+      fetchFollowStatus();
+    });
 
+    return unsubscribe;
+  }, [navigation]);
+
+  // Refresh posts when follow status changes
   useEffect(() => {
-    fetchProfile();
-  }, []);
+    if (isFollowing !== null) {
+      fetchPosts();
+    }
+  }, [isFollowing]);
 
-  const fetchPosts = async () => {
-    if (allLoaded) return;
-    fetchPostsAPI(userId, setUserPosts);
-  };
-
-  const fetchProfile = async () => {
-    fetchProfileAPI(userId, setProfile, setLoading);
-  };
-
-  console.log("Profile: ", profile);
-  console.log("UserPosts: ", userposts);
-
-  // const handleSendFollowRequest = async (fromUserId, toUserId) => {
-  //   try {
-  //      const token = await AsyncStorage.getItem("token");
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/social/send-request/${toUserId}`,
-  //       {
-  //         method: "POST",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //       }
-  //     );
-  //     console.log("response of sending req", response);
-  //     if (response.ok) {
-  //       setIsFollowing("pending");
-  //       Alert.alert("Success", "Connection request sent successfully.");
-  //     } else {
-  //       const data = await response.json();
-  //       if (data.message === "You are already following this user.") {
-  //         Alert.alert(
-  //           "Already Following",
-  //           "You are already following this user."
-  //         );
-  //       } else if (
-  //         data.message === "Follow request already sent to this user."
-  //       ) {
-  //         Alert.alert(
-  //           "Request Already Sent",
-  //           "You have already sent a connection request to this user."
-  //         );
-  //       } else {
-  //         Alert.alert("Error", "Failed to send connection request.");
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error connecting to user:", error);
-  //     Alert.alert(
-  //       "Error",
-  //       "An error occurred while trying to send the follow request."
-  //     );
-  //   }
-  // };
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
     try {
       const response = await sendFollowRequest(toUserId);
@@ -177,6 +134,7 @@ export default function EachProfile() {
     } catch (error) {
       const data = error.response?.data;
       if (data?.message === "You are already following this user.") {
+        setIsFollowing("approved");
         Alert.alert(
           "Already Following",
           "You are already following this user."
@@ -184,6 +142,7 @@ export default function EachProfile() {
       } else if (
         data?.message === "Follow request already sent to this user."
       ) {
+        setIsFollowing("pending");
         Alert.alert(
           "Request Already Sent",
           "You have already sent a connection request to this user."
@@ -198,8 +157,77 @@ export default function EachProfile() {
     }
   };
 
-  const unFollowUser = async ({ fromUserId, userId }) => {
-    unfollowUserAPI(fromUserId, setIsFollowing);
+  const unFollowUser = async () => {
+    try {
+      const response = await unfollowUserAPI(userId);
+      if (response && response.status === 200) {
+        setIsFollowing("none");
+        Alert.alert("Success", "User unfollowed successfully.");
+      }
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      Alert.alert("Error", "Failed to unfollow user.");
+    }
+  };
+
+  const handleFollowAction = async () => {
+    if (isFollowing === "none" || isFollowing === "not_following") {
+      // Send follow request
+      await handleSendFollowRequest(fromUserId, userId);
+    } else if (isFollowing === "pending") {
+      // Show option to withdraw request
+      Alert.alert(
+        "Withdraw Request",
+        "Do you want to withdraw your follow request?",
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Withdraw", 
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const response = await cancelRequest(userId);
+                if (response.status === 200) {
+                  setIsFollowing("none");
+                  Alert.alert("Success", "Request withdrawn successfully.");
+                  // Refresh the follow status to ensure consistency
+                  setTimeout(() => {
+                    fetchFollowStatus();
+                  }, 500);
+                }
+              } catch (error) {
+                console.error("Error withdrawing request:", error);
+                Alert.alert("Error", "Failed to withdraw request");
+              }
+            }
+          }
+        ]
+      );
+    } else if (isFollowing === "approved") {
+      // Unfollow user
+      Alert.alert(
+        "Unfollow User",
+        `Do you want to unfollow ${profile?.user?.firstName} ${profile?.user?.lastName}?`,
+        [
+          { text: "Cancel", style: "cancel" },
+          { 
+            text: "Unfollow", 
+            style: "destructive",
+            onPress: async () => {
+              await unFollowUser();
+              // Refresh the follow status to ensure consistency
+              setTimeout(() => {
+                fetchFollowStatus();
+              }, 500);
+            }
+          }
+        ]
+      );
+    }
+  };
+
+  const handleSeeAllClick = () => {
+    setShowAllPosts((prev) => !prev);
   };
 
   const blockUser = async (blockedUserId) => {
@@ -230,36 +258,11 @@ export default function EachProfile() {
     }
   };
 
-  const [isRequestSent, setIsRequestSent] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-
-  const [isShareModalVisible, setShareModalVisible] = useState(false);
-  const navigation = useNavigation();
-
-  const [activeTab, setActiveTab] = useState("posts");
   const bannerImageUri = profile?.followData?.bannerImage
     ? `${profile.followData.bannerImage}`
     : null;
 
   const profileImageUri = profile?.user?.image ? `${profile.user.image}` : null;
-
-  const postsContent = [
-    "This is my first post!",
-    "Loving the new features in React Native!",
-    "Just completed a project on full-stack development.",
-  ];
-
-  const articlesContent = [
-    "How to build a simple React Native app.",
-    "Understanding state management in React.",
-    "Best practices for web development.",
-  ];
-
-  const documentsContent = [
-    "Resume.pdf",
-    "Project Portfolio.pdf",
-    "Technical Report.docx",
-  ];
 
   // Function to render content based on the active tab
   const renderContent = () => {
@@ -267,7 +270,7 @@ export default function EachProfile() {
       case "Posts":
         if (showAllPosts) {
           // Show all posts
-          return userposts?.posts?.map((post) => {
+          return userPosts?.posts?.map((post) => {
             const createdBy = post.createdBy || {};
             return (
               <NewSocialCard
@@ -283,12 +286,14 @@ export default function EachProfile() {
                 postImages={post.images}
                 fetchPosts={fetchPosts}
                 userId={userId}
+                currentFollowStatus={isFollowing}
+                onFollowStatusChange={setIsFollowing}
               />
             );
           });
         } else {
           // Show only the first post
-          const firstPost = userposts?.posts?.[0];
+          const firstPost = userPosts?.posts?.[0];
 
           if (firstPost) {
             const createdBy = firstPost.createdBy || {};
@@ -306,24 +311,14 @@ export default function EachProfile() {
                 postImages={firstPost.images}
                 fetchPosts={fetchPosts}
                 userId={userId}
+                currentFollowStatus={isFollowing}
+                onFollowStatusChange={setIsFollowing}
               />
             );
           } else {
             return <Text>{t("NoPostsAvailable")}</Text>;
           }
         }
-      // case "Articles":
-      //   return articlesContent.map((article, index) => (
-      //     <Text key={index} style={styles.activityText}>
-      //       {article}
-      //     </Text>
-      //   ));
-      // case "Documents":
-      //   return documentsContent.map((doc, index) => (
-      //     <Text key={index} style={styles.activityText}>
-      //       {doc}
-      //     </Text>
-      //   ));
       default:
         return null;
     }
@@ -333,22 +328,19 @@ export default function EachProfile() {
   const followersCount = profile?.followData?.followers?.length || 0;
   const jobExperienceData = profile?.followData?.jobExperience || [];
 
-  return (
-    <ScrollView style={styles.container}>
+  const renderHeader = () => (
+    <>
       {/* Header with Back Arrow, Search Bar, and Settings Icon */}
       <View style={styles.headerContainer}>
-        <TouchableOpacity style={styles.iconButton}>
-          <Icon
-            name="arrow-back"
-            size={24}
-            color="#000"
-            onPress={() => navigation.goBack()}
-          />
+        <TouchableOpacity 
+          style={styles.iconButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <SearchField placeholder={t("search")} style={styles.searchField} />
         </View>
-
         <TouchableOpacity
           style={styles.iconButton}
           onPress={() => setModalVisible(true)}
@@ -356,6 +348,7 @@ export default function EachProfile() {
           <Icon name="settings" size={24} color="#000" />
         </TouchableOpacity>
       </View>
+
       {/* Banner Image */}
       <View style={styles.generalInfoContainer}>
         <View style={styles.bannerProfileContainer}>
@@ -368,12 +361,10 @@ export default function EachProfile() {
           </View>
         </View>
 
-        {/* User Info */}
         <View style={styles.userInfoContainer}>
           <Text style={styles.userName}>
             {profile?.user?.firstName} {profile?.user?.lastName}
           </Text>
-
           <Text style={styles.userLocation}>{profile?.user?.address}</Text>
           <View style={styles.socialContainer}>
             <Text style={styles.statsText}>
@@ -383,64 +374,32 @@ export default function EachProfile() {
         </View>
 
         <View style={styles.actionsContainer}>
-          {/* <TouchableOpacity
-            style={[
-              styles.followButton,
-              isFollowing && { backgroundColor: "grey" },
-            ]}
-            onPress={() => {
-              isFollowing
-                ? unFollowUser(fromUserId, userId)
-                : handleSendFollowRequest(fromUserId, userId);
-            }}
-            disabled={isFollowing}
-          >
-            <View style={styles.buttonContent}>
-              <Icon
-                name={isFollowing ? "" : "add"}
-                size={22}
-                color={isFollowing ? "white" : "white"}
-                style={{ marginRight: 10 }}
-              />
-              <Text
-                style={{
-                  ...styles.followButtonText,
-                  color: isFollowing ? "white" : "#fff", // Change text color dynamically
-                }}
-              >
-                {isFollowing ? "Unfollow" : "Follow"}
-              </Text>
-            </View>
-          </TouchableOpacity> */}
           <TouchableOpacity
             style={[
               styles.followButton,
-              isFollowing === "approved" && { backgroundColor: "grey" },
+              isFollowing === "approved" && { backgroundColor: "#666" },
+              isFollowing === "pending" && { backgroundColor: "#ffa500" },
+              isFollowing === "none" || isFollowing === "not_following" 
+                ? { backgroundColor: Theme.themeColor }
+                : {},
             ]}
-            onPress={() => {
-              if (isFollowing === "none") {
-                handleSendFollowRequest(fromUserId, userId);
-              } else if (isFollowing === "approved") {
-                unFollowUser();
-              }
-            }}
+            onPress={handleFollowAction}
           >
             <View style={styles.buttonContent}>
               <Icon
-                name={isFollowing === "none" ? "add" : ""}
+                name={
+                  isFollowing === "none" || isFollowing === "not_following" 
+                    ? "add" 
+                    : isFollowing === "pending"
+                    ? "time"
+                    : "checkmark"
+                }
                 size={18}
                 color="white"
-                style={{ marginRight: isFollowing === "none" ? 10 : 0 }}
+                style={{ marginRight: 8 }}
               />
-              {/* <Text style={{ ...styles.followButtonText, color: "white" }}>
-                {isFollowing === "none"
-                  ? "Follow"
-                  : isFollowing === "pending"
-                  ? "Pending"
-                  : "Following"}
-              </Text> */}
               <Text style={{ ...styles.followButtonText, color: "white" }}>
-                {isFollowing === "none"
+                {isFollowing === "none" || isFollowing === "not_following"
                   ? t("Follow")
                   : isFollowing === "pending"
                   ? t("Pending")
@@ -467,6 +426,7 @@ export default function EachProfile() {
         <Text style={styles.aboutMeTitle}>{t("about")}</Text>
         <Text style={styles.aboutMeText}>{profile?.followData?.about}</Text>
       </View>
+
       <View style={styles.activityContainer}>
         <Text style={styles.activityTitle}>{t("activity")}</Text>
         <View style={styles.tabContainer}>
@@ -487,44 +447,10 @@ export default function EachProfile() {
             </TouchableOpacity>
           ))}
         </View>
-        {activeTab === "posts" && (
-          <View>
-            <SafeAreaView style={styles.socialFeedContainer}>
-              {/* <FlatList
-                data={userposts}
-                renderItem={({ item }) => {
-                  return <NewSocialCard post={item} posts={userposts} />;
-                }}
-                keyExtractor={(item) => item._id.toString()}
-                onEndReached={fetchPosts}
-                onEndReachedThreshold={0.5}
-              /> */}
-              <FlatList
-                data={userposts?.posts || []}
-                renderItem={({ item }) => (
-                  <NewSocialCard
-                    post={item}
-                    profileImageUri={item.createdBy.image}
-                    description={item.content}
-                    video={item.video}
-                    source="EachProfile"
-                    firstName={item.createdBy.firstName}
-                    lastName={item.createdBy.lastName}
-                    postId={item._id}
-                    postImages={item.images}
-                    fetchPosts={fetchPosts}
-                    userId={userId}
-                  />
-                )}
-                keyExtractor={(item) => item._id}
-              />
-            </SafeAreaView>
-          </View>
-        )}
 
-        <ScrollView style={styles.contentContainer}>
+        <View style={styles.contentContainer}>
           {renderContent()}
-        </ScrollView>
+        </View>
         <View style={styles.lineDivider} />
         <Text style={styles.seeAllText} onPress={handleSeeAllClick}>
           {showAllPosts
@@ -550,6 +476,46 @@ export default function EachProfile() {
           <Text style={styles.description}>{jobExperience?.description}</Text>
         </View>
       ))}
+    </>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <FlatList
+        style={styles.container}
+        data={userPosts?.posts || []}
+        renderItem={({ item }) => (
+          <NewSocialCard
+            post={item}
+            profileImageUri={item.createdBy?.image}
+            description={item.content}
+            video={item.video}
+            source="EachProfile"
+            firstName={item.createdBy?.firstName}
+            lastName={item.createdBy?.lastName}
+            postId={item._id}
+            postImages={item.images}
+            fetchPosts={fetchPosts}
+            userId={userId}
+          />
+        )}
+        keyExtractor={(item) => item._id}
+        ListHeaderComponent={renderHeader}
+        ListEmptyComponent={() => (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>{t("NoPostsAvailable")}</Text>
+          </View>
+        )}
+      />
+
       <Modal
         animationType="slide"
         transparent={true}
@@ -560,39 +526,26 @@ export default function EachProfile() {
           style={styles.modalOverlay}
           onPress={() => setModalVisible(false)}
         />
-
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>User Options</Text>
-          {/* Report User */}
           <TouchableOpacity
             style={styles.optionButton}
             onPress={() => {
-              setModalVisible(false);
-              alert("Reported User!");
-            }}
-          >
-            <Text style={styles.optionText}>🚩 Report User</Text>
-          </TouchableOpacity>
-          {/* Block User */}
-          <TouchableOpacity
-            style={styles.optionButton}
-            onPress={() => {
-              setModalVisible(false);
               blockUser(userId);
+              setModalVisible(false);
             }}
           >
-            <Text style={styles.optionText}>🚫 Block User</Text>
+            <Text style={styles.optionButtonText}>Block User</Text>
           </TouchableOpacity>
-          {/* Cancel Button */}
           <TouchableOpacity
-            style={[styles.optionButton, styles.cancelButton]}
+            style={styles.optionButton}
             onPress={() => setModalVisible(false)}
           >
-            <Text style={styles.cancelText}>Cancel</Text>
+            <Text style={styles.optionButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </Modal>
-    </ScrollView>
+    </>
   );
 }
 
@@ -600,320 +553,221 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f0f0",
-    marginTop: 30,
   },
-  generalInfoContainer: {
-    backgroundColor: "white",
-    paddingBottom: 10,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    backgroundColor: "#f8f8f8",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
   },
   iconButton: {
     padding: 8,
   },
   searchContainer: {
-    height: 40,
-    width: "80%",
-    marginHorizontal: 5,
-    backgroundColor: "#eeeeee",
-    justifyContent: "center",
-    borderRadius: 0,
+    flex: 1,
+    marginHorizontal: 16,
   },
   searchField: {
     height: 40,
-    width: "100%",
-    backgroundColor: "#eeeeee",
-    paddingHorizontal: 15,
-    marginHorizontal: 10,
-    fontSize: 16,
-    borderRadius: 0,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 20,
+    paddingHorizontal: 16,
+  },
+  generalInfoContainer: {
+    backgroundColor: "#fff",
+    paddingBottom: 16,
   },
   bannerProfileContainer: {
-    height: 120,
-    backgroundColor: "#eeeeee",
-    alignItems: "center",
+    position: "relative",
   },
   bannerImage: {
     width: "100%",
-    height: "100%",
-    resizeMode: "cover",
+    height: 200,
   },
   profileImageContainer: {
     position: "absolute",
-    bottom: -30,
+    bottom: -40,
     left: 20,
-    borderWidth: 3,
-    borderColor: "#ffffff",
-    borderRadius: 50,
-    overflow: "hidden",
   },
   profileImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 4,
+    borderColor: "#fff",
   },
   userInfoContainer: {
-    marginTop: 30,
+    marginTop: 50,
     paddingHorizontal: 20,
-    alignItems: "flex-start",
   },
   userName: {
     fontSize: 24,
     fontWeight: "bold",
-    marginVertical: 5,
-  },
-  userTitle: {
-    fontSize: 16,
-    color: "#666666",
-    marginBottom: 3,
+    color: "#333",
   },
   userLocation: {
-    fontSize: 14,
-    color: "#888888",
+    fontSize: 16,
+    color: "#666",
+    marginTop: 4,
   },
   socialContainer: {
     flexDirection: "row",
-    marginTop: 10,
-    justifyContent: "center",
+    marginTop: 12,
   },
   statsText: {
-    fontSize: 14,
-    color: "gray",
-    fontWeight: "bold",
-  },
-  linkText: {
-    fontSize: 15,
-    color: Theme.themeColor,
-  },
-  divider: {
-    marginHorizontal: 5,
-    color: "#888888",
-  },
-  aboutMeContainer: {
-    marginTop: 15,
-    padding: 15,
-    backgroundColor: "white",
-  },
-  aboutMeTitle: {
     fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 5,
+    color: "#666",
+    fontWeight: "500",
   },
-  aboutMeText: {
-    fontSize: 14,
-    color: "#333",
-    textAlign: "left",
-    lineHeight: 20,
-  },
-
-  activityContainer: {
-    marginTop: 20,
-    width: "100%",
-    backgroundColor: "white",
-  },
-
-  tabContainer: {
-    flexDirection: "row",
-    borderRadius: 8,
-    overflow: "hidden",
-    marginBottom: 10,
-  },
-  tab: {
-    paddingVertical: 6,
-    alignItems: "center",
-    marginHorizontal: 10,
-    paddingHorizontal: 10,
-    borderWidth: 1.5,
-    borderColor: Theme.themeColor,
-    borderRadius: 30,
-    backgroundColor: "#fff",
-  },
-  activeTab: {
-    backgroundColor: Theme.themeColor,
-    elevation: 2,
-    borderBottomWidth: 4,
-    borderBottomColor: Theme.themeColor,
-  },
-  tabText: {
-    fontSize: 16,
-    color: Theme.themeColor,
-    textAlign: "center",
-  },
-  activeTabText: {
-    fontWeight: "bold",
-    color: "white",
-  },
-
-  contentContainer: {
-    padding: 10,
-  },
-  activityText: {
-    fontSize: 14,
-    marginVertical: 5,
-    color: "#333",
-  },
-  lineDivider: {
-    height: 1,
-    backgroundColor: "#e1e9ee",
-  },
-  seeAllText: {
-    marginTop: 10,
-
-    color: Theme.themeColor,
-    fontWeight: "600",
-    textAlign: "center",
-    fontSize: 18,
-    padding: 10,
-  },
-  activityTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-    padding: 10,
-  },
-
-  EducationTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    marginBottom: 10,
-  },
-
-  educationSection: {
-    padding: 12,
-    marginVertical: 10,
-    shadowColor: "#000",
-    marginTop: 20,
-    width: "100%",
-    backgroundColor: "white",
-  },
-  educationTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 5,
-  },
-  institution: {
-    fontSize: 16,
-    color: "#666666",
-    marginBottom: 5,
-  },
-  duration: {
-    fontSize: 14,
-    color: "#999999",
-    marginBottom: 10,
-  },
-  description: {
-    fontSize: 14,
-    color: "#666666",
-    lineHeight: 20,
-  },
-
-  suggestedPeopleSection: {
-    backgroundColor: "#ffffff",
-    padding: 20,
-    marginVertical: 10,
-    borderRadius: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333333",
-    marginBottom: 15,
-  },
-  personCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  avatar: {
-    width: 55,
-    height: 55,
-    borderRadius: 25,
-    marginRight: 15,
-  },
-  personInfo: {
-    flex: 1,
-  },
-  personName: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#333333",
-  },
-  personTitle: {
-    fontSize: 14,
-    color: "#666666",
-  },
-  connectButton: {
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    borderRadius: 30,
-    marginTop: 4,
-    width: 100,
-    borderColor: "black",
-    borderWidth: 1,
-  },
-
-  connectButtonText: {
-    color: "black",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-
   actionsContainer: {
     flexDirection: "row",
-    marginTop: 16,
     justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
+    paddingHorizontal: 20,
+    marginTop: 16,
   },
   followButton: {
-    flex: 1,
-    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
     backgroundColor: Theme.themeColor,
-    borderRadius: 20,
-    alignItems: "center",
-    marginRight: 8,
-    paddingHorizontal: 10,
-    marginHorizontal: 10,
-  },
-  followButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  messageButton: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
     flex: 1,
-    paddingVertical: 10,
-    borderColor: Theme.themeColor,
-    borderWidth: 1,
-    borderRadius: 20,
-    alignItems: "center",
-    paddingHorizontal: 10,
-    marginHorizontal: 10,
-  },
-  messageButtonText: {
-    color: Theme.themeColor,
-    fontWeight: "bold",
+    marginRight: 12,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
   },
-  divider: {
-    fontSize: 14,
-    color: "gray",
-    marginHorizontal: 4,
+  followButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  messageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: Theme.themeColor,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 25,
+    flex: 1,
+  },
+  messageButtonText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Theme.themeColor,
+  },
+  aboutMeContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#fff",
+  },
+  aboutMeTitle: {
+    fontSize: 18,
     fontWeight: "bold",
+    marginBottom: 8,
+    color: "#333",
+  },
+  aboutMeText: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+  activityContainer: {
+    marginTop: 16,
+    backgroundColor: "#fff",
+    padding: 16,
+  },
+  activityTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+    color: "#333",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    marginBottom: 16,
+  },
+  tab: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginRight: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Theme.themeColor,
+  },
+  activeTab: {
+    backgroundColor: Theme.themeColor,
+  },
+  tabText: {
+    fontSize: 14,
+    color: Theme.themeColor,
+  },
+  activeTabText: {
+    color: "#fff",
+    fontWeight: "600",
+  },
+  contentContainer: {
+    marginTop: 8,
+  },
+  lineDivider: {
+    height: 1,
+    backgroundColor: "#e0e0e0",
+    marginVertical: 12,
+  },
+  seeAllText: {
+    fontSize: 14,
+    color: Theme.themeColor,
+    textAlign: "center",
+    fontWeight: "600",
+  },
+  educationSection: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: "#fff",
+  },
+  educationTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  institution: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 4,
+  },
+  duration: {
+    fontSize: 12,
+    color: "#999",
+    marginTop: 2,
+  },
+  description: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,
@@ -921,37 +775,28 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     backgroundColor: "#fff",
+    margin: 20,
+    borderRadius: 12,
     padding: 20,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    position: "absolute",
-    bottom: 0,
-    width: "100%",
     alignItems: "center",
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 15,
+    marginBottom: 20,
+    color: "#333",
   },
   optionButton: {
     width: "100%",
-    padding: 15,
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: "#f5f5f5",
+    marginBottom: 8,
   },
-  optionText: {
+  optionButtonText: {
     fontSize: 16,
-    color: "#000",
-  },
-  cancelButton: {
-    backgroundColor: "#f2f2f2",
-    marginTop: 10,
-    borderBottomWidth: 0,
-  },
-  cancelText: {
-    fontSize: 16,
-    color: "red",
+    color: "#333",
+    textAlign: "center",
   },
 });

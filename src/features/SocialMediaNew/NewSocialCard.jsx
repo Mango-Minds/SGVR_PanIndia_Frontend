@@ -32,7 +32,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import {
   sendFollowRequest,
-  unfollowUser,
+  unfollowUserAPI,
   getFollowStatus,
   deletePost,
   getLikeStatus,
@@ -70,6 +70,8 @@ const NewSocialCard = ({
   fetchPosts,
   postImages,
   profileImageUrl,
+  currentFollowStatus,
+  onFollowStatusChange,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { t } = useTranslation();
@@ -100,6 +102,17 @@ const NewSocialCard = ({
 
   const [isRequestSent, setIsRequestSent] = useState(false);
   const [isFollowing, setIsFollowing] = useState(null);
+
+  // Use passed follow status if available, otherwise use local state
+  const effectiveFollowStatus = currentFollowStatus !== undefined ? currentFollowStatus : isFollowing;
+  const setEffectiveFollowStatus = onFollowStatusChange || setIsFollowing;
+
+  // Update local state when prop changes
+  useEffect(() => {
+    if (currentFollowStatus !== undefined) {
+      setIsFollowing(currentFollowStatus);
+    }
+  }, [currentFollowStatus]);
 
   // Share modal state
   const [shareUsers, setShareUsers] = useState([]);
@@ -153,7 +166,7 @@ const NewSocialCard = ({
       console.log("response of sending req", response);
 
       if (response.status === 200) {
-        setIsFollowing("pending");
+        setEffectiveFollowStatus("pending");
         Alert.alert("Success", "Connection request sent successfully.");
       }
     } catch (error) {
@@ -182,12 +195,12 @@ const NewSocialCard = ({
   const unFollowUser = async () => {
     try {
       console.log("removing", userId);
-      const response = await unfollowUser(userId);
+      const response = await unfollowUserAPI(userId);
       console.log("unfollow res", response);
 
       if (response.status === 200) {
-        setIsFollowing("none");
-        Alert.alert("Success", response.data.message);
+        setEffectiveFollowStatus("none");
+        Alert.alert("Success", "User unfollowed successfully.");
       }
     } catch (error) {
       console.error("Error unfollowing user:", error);
@@ -215,7 +228,7 @@ const NewSocialCard = ({
         if (response.ok) {
           const data = await response.json();
           console.log("following status", data);
-          setIsFollowing(data.status);
+          setEffectiveFollowStatus(data.status);
         } else {
           console.error("Failed to fetch follow status");
         }
@@ -224,10 +237,11 @@ const NewSocialCard = ({
       }
     };
 
-    if (userId) {
+    // Only fetch follow status if not provided via props
+    if (userId && currentFollowStatus === undefined) {
       fetchFollowStatus();
     }
-  }, [userId]);
+  }, [userId, currentFollowStatus]);
   const handleDeletePost = async () => {
     // Show confirmation dialog first
     Alert.alert(
@@ -464,13 +478,26 @@ const NewSocialCard = ({
     try {
       const response = await addComment(post._id, newCommentText);
       
-      console.log('Comment added successfully:', response.data.comment);
-      console.log('Comment has _id:', !!response.data.comment._id);
-      console.log('Comment _id value:', response.data.comment._id);
+
       
       // Add safety check for response data
       if (response?.data?.comment) {
-        setComments([response.data.comment, ...(comments || [])]);
+        let commentToAdd = response.data.comment;
+        
+        // If the comment doesn't have populated user data, populate it with current user data
+        if (!commentToAdd.userId || typeof commentToAdd.userId === 'string') {
+          commentToAdd = {
+            ...commentToAdd,
+            userId: {
+              _id: fromUserId,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              image: user.image
+            }
+          };
+        }
+        
+        setComments([commentToAdd, ...(comments || [])]);
         setCommentCount(commentCount + 1);
         setNewCommentText("");
       } else {
@@ -648,20 +675,15 @@ const NewSocialCard = ({
       return null;
     }
 
+
+
     const imageUri = item?.userId?.image ? `${item.userId?.image}` : UserImg;
 
-    const isCommentOwner = item?.userId?._id === fromUserId;
-    const isPostOwner = post?.createdBy?._id === fromUserId;
+    const isCommentOwner = String(item?.userId?._id) === String(fromUserId);
+    const isPostOwner = String(post?.createdBy?._id) === String(fromUserId);
     const canDeleteComment = isCommentOwner || isPostOwner;
 
-    console.log("Comment owner check:", { 
-      commentUserId: item?.userId?._id, 
-      fromUserId: fromUserId, 
-      commentId: item?._id, 
-      isCommentOwner: isCommentOwner, 
-      isPostOwner: isPostOwner, 
-      canDeleteComment: canDeleteComment 
-    });
+
 
     return (
       <View style={styles.commentItem}>
@@ -890,49 +912,49 @@ const NewSocialCard = ({
               <TouchableOpacity
                 style={[
                   styles.followContainer,
-                  isFollowing === "approved" && {
+                  effectiveFollowStatus === "approved" && {
                     backgroundColor: "transparent",
                   },
                 ]}
                 onPress={() => {
-                  if (isFollowing === "none" && userId) {
+                  if (effectiveFollowStatus === "none" && userId) {
                     handleSendFollowRequest(fromUserId, userId);
-                  } else if (isFollowing === "approved") {
+                  } else if (effectiveFollowStatus === "approved") {
                     unFollowUser();
                   }
                 }}
-                disabled={isFollowing === "pending"} // Disable button if follow request is pending
+                disabled={effectiveFollowStatus === "pending"} // Disable button if follow request is pending
               >
                 <View style={styles.iconContainer}>
                   <Icon
                     name={
-                      isFollowing === "none"
+                      effectiveFollowStatus === "none"
                         ? "add"
-                        : isFollowing === "pending"
+                        : effectiveFollowStatus === "pending"
                         ? "hourglass"
                         : "checkmark"
                     }
                     size={20}
                     style={
-                      isFollowing === "none"
+                      effectiveFollowStatus === "none"
                         ? styles.plusIcon
-                        : isFollowing === "pending"
+                        : effectiveFollowStatus === "pending"
                         ? styles.pendingIcon
                         : styles.checkIcon
                     }
                   />
                   <Text
                     style={
-                      isFollowing === "none"
+                      effectiveFollowStatus === "none"
                         ? styles.followText
-                        : isFollowing === "pending"
+                        : effectiveFollowStatus === "pending"
                         ? styles.pendingText
                         : styles.followingText
                     }
                   >
-                    {isFollowing === "none"
+                    {effectiveFollowStatus === "none"
                       ? t("Follow")
-                      : isFollowing === "pending"
+                      : effectiveFollowStatus === "pending"
                       ? t("Pending")
                       : t("Following")}
                   </Text>
@@ -1131,25 +1153,25 @@ const NewSocialCard = ({
                       <TouchableOpacity
                         style={[
                           styles.reelFollowButton,
-                          isFollowing === "approved" && {
+                          effectiveFollowStatus === "approved" && {
                             backgroundColor: "transparent",
                           },
                         ]}
                         onPress={() => {
-                          if (isFollowing === "none") {
+                          if (effectiveFollowStatus === "none") {
                             handleSendFollowRequest(fromUserId, userId);
-                          } else if (isFollowing === "approved") {
+                          } else if (effectiveFollowStatus === "approved") {
                             unFollowUser();
                           }
                         }}
-                        disabled={isFollowing === "pending"}
+                        disabled={effectiveFollowStatus === "pending"}
                       >
                         <View style={styles.buttonContent}>
                           <Icon
                             name={
-                              isFollowing === "none"
+                              effectiveFollowStatus === "none"
                                 ? "add"
-                                : isFollowing === "pending"
+                                : effectiveFollowStatus === "pending"
                                 ? "hourglass"
                                 : "checkmark"
                             }
@@ -1160,16 +1182,16 @@ const NewSocialCard = ({
                           <Text
                             style={[
                               styles.reelFollowButtonText,
-                              isFollowing === "approved"
+                              effectiveFollowStatus === "approved"
                                 ? { color: "#FF9933" }
-                                : isFollowing === "pending"
+                                : effectiveFollowStatus === "pending"
                                 ? { color: "#FF9933" }
                                 : { color: "#FF9933" },
                             ]}
                           >
-                            {isFollowing === "none"
+                            {effectiveFollowStatus === "none"
                               ? "Follow"
-                              : isFollowing === "pending"
+                              : effectiveFollowStatus === "pending"
                               ? "Pending"
                               : "Following"}
                           </Text>

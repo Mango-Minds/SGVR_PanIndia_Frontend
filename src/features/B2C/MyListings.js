@@ -303,6 +303,8 @@ const MyListingScreen = ({ route, navigation }) => {
     }
   } catch (error) {
     console.error("Error fetching products:", error);
+    // Set empty products array to prevent UI errors
+    setProducts([]);
   } finally {
     setLoadingAnimation(false);
   }

@@ -629,6 +629,9 @@ export default function EditListing({ route, navigation }) {
                 onChangeText={(text) =>
                   setModifiedDetails({ ...modifiedDetails, address_link: text })
                 }
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
                 style={[
                   styles.input,
                   {

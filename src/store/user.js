@@ -432,15 +432,16 @@ export const signup = (userData) => async (dispatch) => {
 
     const res = await axios.post(`${BASEAPIURL}/user/register`, trimmedData);
     if (res.status === 201) {
-      // Handle successful response
+      // Handle successful response - registration completed without OTP
       await dispatch(
         setError({
-          msg: "An OTP has been sent to your phone number.",
+          msg: "Registration successful! You can now login.",
           toggle: true,
           type: "success",
         })
       );
-      return res.data;
+      // Return success status to trigger navigation to login
+      return { status: 0, message: "Registration successful" };
     }
 
     // Handle non-successful status codes (e.g., status !== 201)
@@ -451,6 +452,7 @@ export const signup = (userData) => async (dispatch) => {
         type: "error",
       })
     );
+    return { status: 1, message: res.data?.msg || "Registration failed" };
   } catch (error) {
     // Handle specific error cases with detailed messages
     if (error.response) {
@@ -493,7 +495,7 @@ export const signup = (userData) => async (dispatch) => {
         })
       );
     }
-    return false;
+    return { status: 1, message: "Registration failed" };
   }
 };
 
