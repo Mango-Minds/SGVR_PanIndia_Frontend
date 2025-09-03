@@ -12,20 +12,23 @@ import Theme from "../styles/theme";
 
 const ChangeLanguage = ({ navigation }) => {
   const [languageChanged, setLanguageChanged] = useState(false);
- const { t, i18n } = useTranslation();
+  const { t, i18n } = useTranslation();
+  
+  // Get current language
+  const currentLanguage = i18n.language;
 
-const changeLanguage = async (lng) => {
-  console.log(`🔁 Attempting to change language to: ${lng}`);
+  const changeLanguage = async (lng) => {
+    console.log(`🔁 Attempting to change language to: ${lng}`);
 
-  try {
-    await i18n.changeLanguage(lng);
-    await AsyncStorage.setItem('user-language', lng);
-    console.log(`✅ Language changed to: ${lng}`);
-    setLanguageChanged((prev) => !prev);
-  } catch (error) {
-    console.error(`❌ Error changing language: ${error}`);
-  }
-};
+    try {
+      await i18n.changeLanguage(lng);
+      await AsyncStorage.setItem('user-language', lng);
+      console.log(`✅ Language changed to: ${lng}`);
+      setLanguageChanged((prev) => !prev);
+    } catch (error) {
+      console.error(`❌ Error changing language: ${error}`);
+    }
+  };
 
 
   console.log("languageChanged: ", languageChanged);
@@ -57,16 +60,28 @@ const changeLanguage = async (lng) => {
             <Button
               mode="contained"
               onPress={() => changeLanguage("mr")}
-              style={styles.button}
-              labelStyle={styles.buttonLabel}
+              style={[
+                styles.button,
+                currentLanguage === "mr" && styles.selectedButton
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                currentLanguage === "mr" && styles.selectedButtonLabel
+              ]}
             >
               मराठी (Marathi)
             </Button>
             <Button
               mode="contained"
               onPress={() => changeLanguage("en")}
-              style={styles.button}
-              labelStyle={styles.buttonLabel}
+              style={[
+                styles.button,
+                currentLanguage === "en" && styles.selectedButton
+              ]}
+              labelStyle={[
+                styles.buttonLabel,
+                currentLanguage === "en" && styles.selectedButtonLabel
+              ]}
             >
               English
             </Button>
@@ -124,5 +139,16 @@ const styles = StyleSheet.create({
   buttonLabel: {
     color: "#fff",
     fontSize: 16,
+  },
+  selectedButton: {
+    backgroundColor: "#FF6B35",
+    borderWidth: 2,
+    borderColor: "#FF6B35",
+    elevation: 5,
+  },
+  selectedButtonLabel: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
   },
 });

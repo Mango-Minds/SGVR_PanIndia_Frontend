@@ -42,11 +42,18 @@ export default function MessageScreen({ navigation }) {
   const socket = useRef();
 
   const updateStorageConvo = async () => {
-    const convodata = await AsyncStorage.getItem("coversation");
+    const convodata = await AsyncStorage.getItem("conversation");
     if (convodata) {
       await dispatch(updateConversation(JSON.parse(convodata)));
       // setChatsUser(conversations);
     }
+    
+    // Clean up old typo data
+    const oldConvoData = await AsyncStorage.getItem("coversation");
+    if (oldConvoData) {
+      await AsyncStorage.removeItem("coversation");
+    }
+    
     const chats = await AsyncStorage.getItem("localChats");
     if (chats) {
       const localchats = JSON.parse(chats);
@@ -56,7 +63,9 @@ export default function MessageScreen({ navigation }) {
 
   const getChatUsers = async () => {
     try {
+      console.log("MessageScreen - Fetching conversations...");
       const data = await getAllUserChats();
+      console.log("MessageScreen - API response:", data);
       if (data && data.length > 0) {
         await dispatch(updateConversation(data));
         // setChatsUser(conversations);
@@ -64,55 +73,68 @@ export default function MessageScreen({ navigation }) {
         await dispatch(updateConversation([]));
         // setChatsUser(conversations);
       }
-    } catch (error) {}
+    } catch (error) {
+      console.error("MessageScreen - Error fetching conversations:", error);
+    }
   };
 
   useEffect(() => {
+    console.log("MessageScreen - conversations updated:", conversations);
     setChatsUser(conversations);
   }, [conversations]);
 
   useEffect(() => {
-    // setChatsUser(conversations);
-    if (!socket.current) {
-      socket.current = io(SOCKETURL);
-    } else {
-      socket.current.emit("join", { userId: user._id });
-    }
-    updateStorageConvo();
-    getChatUsers();
+    const initializeScreen = async () => {
+      // setChatsUser(conversations);
+      if (!socket.current) {
+        socket.current = io(SOCKETURL);
+      } else {
+        socket.current.emit("join", { userId: user._id });
+      }
+      await updateStorageConvo();
+      await getChatUsers();
+    };
+    
+    initializeScreen();
   }, []);
   // useEffect(() => {
   // }, [chatsUser]);
 
   useFocusEffect(
     React.useCallback(() => {
-      if (!socket.current) {
-        socket.current = io(SOCKETURL);
-      } else {
-        socket.current.emit("join", { userId: user._id });
-      }
-      updateStorageConvo();
-      getChatUsers();
+      const initializeScreen = async () => {
+        if (!socket.current) {
+          socket.current = io(SOCKETURL);
+        } else {
+          socket.current.emit("join", { userId: user._id });
+        }
+        await updateStorageConvo();
+        await getChatUsers();
+      };
+      
+      initializeScreen();
     }, [socket])
   );
 
-  if (socket.current) {
-    socket.current.on("newMsg", (data) => {
-      for (let i = 0; i < conversations.length; i++) {
-        const item = conversations[i];
-        if (data.userid[0].id in item.user && data.userid[1].id in item.user) {
-          conversations.splice(i, 1);
-          conversations.splice(0, 0, {
-            user: item.user,
-            unreadCount:
-              data.isRead === false ? item.unreadCount + 1 : item.unreadCount,
-            lastmsg: data,
-          });
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("newMsg", (data) => {
+        for (let i = 0; i < conversations.length; i++) {
+          const item = conversations[i];
+          if (data.userid[0].id in item.user && data.userid[1].id in item.user) {
+            conversations.splice(i, 1);
+            conversations.splice(0, 0, {
+              user: item.user,
+              unreadCount:
+                data.isRead === false ? item.unreadCount + 1 : item.unreadCount,
+              lastmsg: data,
+            });
+          }
         }
-      }
-      // dispatch(updateChatUsers(conversations));
-    });
-  }
+        // dispatch(updateChatUsers(conversations));
+      });
+    }
+  }, [socket.current, conversations]);
 
   return (
     <Container
@@ -132,12 +154,6 @@ export default function MessageScreen({ navigation }) {
             Message
           </TopText>
         </View>
-        <TouchableOpacity
-          style={{ marginRight: 32 }}
-          onPress={() => navigation.navigate("NewMessageScreen")}
-        >
-          <Icon name="circle-edit-outline" size={24} />
-        </TouchableOpacity>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         <SearchField placeholder="Search" />
@@ -158,8 +174,8 @@ export default function MessageScreen({ navigation }) {
           refreshControl={
             <RefreshControl
               refreshing={false}
-              onRefresh={() => {
-                getChatUsers();
+              onRefresh={async () => {
+                await getChatUsers();
               }}
             />
           }
@@ -175,7 +191,7 @@ export default function MessageScreen({ navigation }) {
             marginTop: 200,
           }}
         >
-          <Ionicons name="md-chatbubbles" size={100} color="#0000001A" />
+          <Ionicons name="chatbubbles-outline" size={100} color="#0000001A" />
           <Text
             style={{
               fontSize: 25,

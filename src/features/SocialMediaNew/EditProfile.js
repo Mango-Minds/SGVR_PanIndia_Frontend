@@ -8,15 +8,15 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { IconButton, Provider } from "react-native-paper";
-import { Platform } from "react-native";
 import { SafeArea } from "../../components/utility/safe-area.component";
 import Theme from "../../styles/theme";
 import {
   FormButton,
   FormSection,
-  MainContainer,
   LoginInputField,
   AddProfileBox,
 } from "../../styles/prelogin.styles";
@@ -116,7 +116,16 @@ export default function EditUserProfile({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -136,11 +145,8 @@ export default function EditUserProfile({ navigation, route }) {
               </Text>
             </View>
           </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
+          <View
+            style={{ paddingBottom: 56, flex: 1 }}
           >
             {selectedImage.uri ? (
               <View
@@ -198,6 +204,8 @@ export default function EditUserProfile({ navigation, route }) {
                 placeholderTextColor="#9B9B9B"
                 value={firstName}
                 onChangeText={setFirstName}
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -209,6 +217,8 @@ export default function EditUserProfile({ navigation, route }) {
                 placeholderTextColor="#9B9B9B"
                 value={lastName}
                 onChangeText={setLastName}
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -222,6 +232,8 @@ export default function EditUserProfile({ navigation, route }) {
                 autoCapitalize="none"
                 value={email}
                 onChangeText={setEmail}
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -234,6 +246,8 @@ export default function EditUserProfile({ navigation, route }) {
                 autoCapitalize="none"
                 value={address}
                 onChangeText={setAddress}
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -247,6 +261,8 @@ export default function EditUserProfile({ navigation, route }) {
                 maxLength={10}
                 value={phone}
                 onChangeText={setPhone}
+                returnKeyType="done"
+                blurOnSubmit={true}
               />
 
               <FormButton onPress={handleSubmit}>
@@ -270,8 +286,9 @@ export default function EditUserProfile({ navigation, route }) {
                 </Text>
               </FormButton>
             </FormSection>
-          </MainContainer>
-        </ScrollView>
+          </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

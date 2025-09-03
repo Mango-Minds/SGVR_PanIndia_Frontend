@@ -10,6 +10,8 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -22,7 +24,7 @@ import { submitNewPost } from "./SocialMediaAPIs";
 
 import { useSelector } from "react-redux";
 import { Container, RowBetween } from "../../styles/common.styles";
-import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
 import { Ionicons } from "@expo/vector-icons";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { useDispatch } from "react-redux";
@@ -44,6 +46,31 @@ const CreateNewPost = ({ navigation }) => {
 
   const [thumbnail, setThumbnail] = useState(null);
 
+  // Request permissions for image picker
+  const requestPermissions = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to make this work!');
+      return false;
+    }
+    return true;
+  };
+
+  // Helper function to get media types safely
+  const getMediaTypes = () => {
+    try {
+      // Try the new MediaType enum first
+      if (ImagePicker.MediaType) {
+        return [ImagePicker.MediaType.Image, ImagePicker.MediaType.Video];
+      }
+      // Fallback to deprecated but working MediaTypeOptions
+      return ImagePicker.MediaTypeOptions.All;
+    } catch (error) {
+      console.warn('MediaType not available, using MediaTypeOptions.All');
+      return ImagePicker.MediaTypeOptions.All;
+    }
+  };
+
   const generateThumbnail = async (videoUri) => {
     console.log("inside generate thumb");
     try {
@@ -57,47 +84,58 @@ const CreateNewPost = ({ navigation }) => {
     }
   };
 
-  // Function to handle media selection
+  // Function to handle media selection (supports both images and videos)
   const pickMedia = async () => {
     try {
-      // Determine allowed media type based on the first item in the list
-
-      let allowedType = "*/*"; // Default to any file type
-
-      if (list.length > 0) {
-        const firstMediaType = list[0].mimeType;
-        // Adjust allowed type based on the first selected media's type
-        if (firstMediaType.startsWith("image")) {
-          allowedType = "image/*";
-        } else if (firstMediaType.startsWith("video")) {
-          allowedType = "video/*";
-        }
-      }
-
       // Check if the user has already uploaded 5 media items
-      if (allowedType === "image/*" && list.length >= 5) {
-        Alert.alert("Limit Reached", "You can only upload up to 5 images.", [
+      if (list.length >= 5) {
+        Alert.alert("Limit Reached", "You can only upload up to 5 media items.", [
           { text: "OK" },
         ]);
         return;
-      } else if (allowedType === "video/*" && list.length >= 1) {
+      }
+
+      // Check if there's already a video in the list (only 1 video allowed)
+      const hasVideo = list.some(item => item.type === 'video');
+      if (hasVideo) {
         Alert.alert("Limit Reached", "You can only upload 1 video.", [
           { text: "OK" },
         ]);
         return;
       }
 
-      // Open the DocumentPicker with the specified type
-      let result = await DocumentPicker.getDocumentAsync({
-        type: allowedType,
+      // Request permissions first
+      const hasPermission = await requestPermissions();
+      if (!hasPermission) {
+        return;
+      }
+
+      // Open the ImagePicker to show gallery (supports both images and videos)
+      // Users can switch between "Photos" and "Albums" tabs
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: getMediaTypes(),
+        allowsEditing: false,
+        quality: 0.8,
+        allowsMultipleSelection: false,
+        presentationStyle: 'pageSheet',
       });
 
       console.log(result);
 
       // Check if the user has selected a file and not canceled
-      if (!result.canceled) {
-        const selectedMedia = result.assets[0];
-        if (selectedMedia.mimeType.startsWith("video")) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const selectedAsset = result.assets[0];
+        
+        // Convert ImagePicker result to match the expected format
+        const selectedMedia = {
+          uri: selectedAsset.uri,
+          name: selectedAsset.fileName || `media_${Date.now()}.${selectedAsset.type === 'video' ? 'mp4' : 'jpg'}`,
+          mimeType: selectedAsset.type === 'video' ? 'video/mp4' : 'image/jpeg',
+          type: selectedAsset.type,
+          size: selectedAsset.fileSize,
+        };
+
+        if (selectedAsset.type === 'video') {
           generateThumbnail(selectedMedia.uri);
         }
 
@@ -265,6 +303,9 @@ const CreateNewPost = ({ navigation }) => {
     dispatch(setLoadingInBtn(true));
   
     try {
+      console.log("Submitting post with description:", description);
+      console.log("Media list:", list);
+      
       const response = await submitNewPost(description, list);
       console.log("response of add post", response);
   
@@ -275,12 +316,15 @@ const CreateNewPost = ({ navigation }) => {
         // Navigate back and trigger refresh by setting a flag
         navigation.navigate("SocialHomeScreen", { refresh: true });
       } else {
+        console.error("Post submission failed with status:", response.status);
+        console.error("Response data:", response.data);
         Alert.alert("Error", response.data?.message || "Something went wrong.");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Post submission error:", error);
+      console.error("Error details:", error.response?.data);
       dispatch(setLoadingInBtn(false));
-      Alert.alert("Error", "Unable to submit post.");
+      Alert.alert("Error", `Unable to submit post: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -303,93 +347,104 @@ const CreateNewPost = ({ navigation }) => {
           }}
         ></View>
       </RowBetween>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.mediaContainer}>
-          {list.map((item, index) => (
-            <View key={index} style={styles.mediaPreviewWrapper}>
-              {/* Image or video preview */}
-              {item.mimeType.startsWith("image/") ? (
-                <>
-                  <Image
-                    style={{ height: "100%", width: "100%", borderRadius: 10 }}
-                    source={{ uri: item.uri }}
-                  />
-                </>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+                 <ScrollView 
+           contentContainerStyle={styles.container}
+           showsVerticalScrollIndicator={false}
+           keyboardShouldPersistTaps="handled"
+         >
+          <View style={styles.mediaContainer}>
+            {list.map((item, index) => (
+              <View key={index} style={styles.mediaPreviewWrapper}>
+                {/* Image or video preview */}
+                {item.type === "image" || item.mimeType?.startsWith("image/") ? (
+                  <>
+                    <Image
+                      style={{ height: "100%", width: "100%", borderRadius: 10 }}
+                      source={{ uri: item.uri }}
+                    />
+                  </>
+                ) : (
+                  // Video preview
+                  <>
+                    <Image
+                      source={{ uri: thumbnail }}
+                      style={{ height: "100%", width: "100%", borderRadius: 10 }}
+                    />
+                    <Ionicons
+                      name="play-circle"
+                      size={20}
+                      color="white"
+                      style={{ position: "absolute", top: 20, left: 20 }}
+                    />
+                  </>
+                )}
+
+                {/* Cross icon to remove media */}
+                <TouchableOpacity
+                  style={styles.removeButton}
+                  onPress={() => removeMedia(index)}
+                >
+                  <Ionicons name="close" size={20} color="red" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          {/* Media Picker - Supports both images and videos */}
+          <TouchableOpacity style={styles.mediaButton} onPress={pickMedia}>
+            <Ionicons name="folder" size={24} color="white" />
+            <Text style={styles.mediaText}>{t("selectMediaFromAlbums") || "Select Media from Albums"}</Text>
+          </TouchableOpacity>
+          {/* Description Field */}
+                     <TextInput
+             style={styles.input}
+             placeholder={t("writeDescription")}
+             value={description}
+             onChangeText={setDescription}
+             multiline
+             returnKeyType="done"
+             blurOnSubmit={true}
+           />
+
+         
+          {/* Tag List */}
+          <View style={styles.tagList}>
+            {tags.map((tag, index) => (
+              <View key={index} style={styles.tagItem}>
+                <Text style={styles.tagText}>{tag}</Text>
+                <TouchableOpacity onPress={() => removeTag(tag)}>
+                  <Ionicons name="close" size={16} color="red" />
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+
+          {/* Submit Button */}
+          <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
+            <Text style={styles.submitButtonText}>
+              {loadingInBtn === true ? (
+                <ActivityIndicator
+                  style={{
+                    display: "flex",
+                    alignSelf: "center",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flex: 1,
+                  }}
+                  // size={"large"}
+                  color={"white"}
+                />
               ) : (
-                // Add Video Component logic here if you also want to support video previews
-                <>
-                  <Image
-                    source={{ uri: thumbnail }}
-                    style={{ height: "100%", width: "100%", borderRadius: 10 }}
-                  />
-                  <Ionicons
-                    name="play-circle"
-                    size={20}
-                    color="white"
-                    style={{ position: "absolute", top: 20, left: 20 }}
-                  />
-                </>
+               t("submitPost")
               )}
-
-              {/* Cross icon to remove media */}
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => removeMedia(index)}
-              >
-                <Ionicons name="close" size={20} color="red" />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        {/* Media Picker */}
-        <TouchableOpacity style={styles.mediaButton} onPress={pickMedia}>
-          <Ionicons name="camera" size={24} color="white" />
-          <Text style={styles.mediaText}>{t("pickMedia")}</Text>
-        </TouchableOpacity>
-        {/* Description Field */}
-        <TextInput
-          style={styles.input}
-          placeholder={t("writeDescription")}
-          value={description}
-          onChangeText={setDescription}
-          multiline
-        />
-
-       
-        {/* Tag List */}
-        <View style={styles.tagList}>
-          {tags.map((tag, index) => (
-            <View key={index} style={styles.tagItem}>
-              <Text style={styles.tagText}>{tag}</Text>
-              <TouchableOpacity onPress={() => removeTag(tag)}>
-                <Ionicons name="close" size={16} color="red" />
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
-
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-          <Text style={styles.submitButtonText}>
-            {loadingInBtn === true ? (
-              <ActivityIndicator
-                style={{
-                  display: "flex",
-                  alignSelf: "center",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  flex: 1,
-                }}
-                // size={"large"}
-                color={"white"}
-              />
-            ) : (
-             t("submitPost")
-            )}
-          </Text>
-        </TouchableOpacity>
-      </ScrollView>
+            </Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <BottomNavigation navigation={navigation} />
     </Container>
   );

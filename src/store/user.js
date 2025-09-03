@@ -80,6 +80,22 @@ const slice = createSlice({
       state.socialData.requestCount = 0;
       state.socialData.friendsCount = 0;
       state.socialData.friends = [];
+      state.socialData.mypostlist = [];
+      state.socialData.postList = [];
+      state.socialData.searchList = [];
+      state.socialData.mybio = {};
+      state.notification.homescreen = [];
+      state.notification.matrimony = [];
+      state.notification.meetup = [];
+      state.temple.templelist = [];
+      state.temple.keyword = "";
+      state.loading = false;
+      state.loadingInBtn = false;
+      state.error = {
+        msg: "",
+        toggle: false,
+        type: "",
+      };
     },
     setInitialUser: (state, action) => {
       state.user = action.payload.user;
@@ -109,6 +125,10 @@ const slice = createSlice({
     },
     updateconversation: (state, action) => {
       state.conversations = action.payload;
+      if (action.payload.length > 0) {
+        const convo = action.payload;
+        AsyncStorage.setItem("conversation", JSON.stringify(convo));
+      } else AsyncStorage.removeItem("conversation");
     },
     updatesocket: (state, action) => {
       state.socket = action.payload;
@@ -202,8 +222,8 @@ export const updateCloudChats = (cloudChats) => async (dispatch) => {
 export const updateConversation = (convo) => async (dispatch) => {
   dispatch(updateconversation(convo));
   if (convo.length > 0)
-    await AsyncStorage.setItem("coversation", JSON.stringify(convo));
-  else await AsyncStorage.removeItem("coversation");
+    await AsyncStorage.setItem("conversation", JSON.stringify(convo));
+  else await AsyncStorage.removeItem("conversation");
 };
 
 export const Isloading = (loading) => (dispatch) => {
@@ -315,6 +335,7 @@ export const login =
         await AsyncStorage.setItem("token", accessToken);
         await AsyncStorage.setItem("refresh_token", refreshToken);
         await AsyncStorage.setItem("user", JSON.stringify(user));
+        await AsyncStorage.setItem("loggedIn", "true");
 
         await dispatch(
           setInitialUser({
@@ -580,26 +601,59 @@ export const initialUser = () => async (dispatch) => {
     const token = await AsyncStorage.getItem("token");
     const refreshToken = await AsyncStorage.getItem("refresh_token");
     const userData = await AsyncStorage.getItem("user");
+    const loggedIn = await AsyncStorage.getItem("loggedIn");
+    
     console.log("token: ", token);
     console.log("refreshToken: ", refreshToken);
     console.log("userData: ", userData);
+    console.log("loggedIn: ", loggedIn);
 
-    if (!token || !refreshToken || !userData) {
-      return dispatch(logoutSuccess()); // Logout if no data
+    // If no loggedIn flag or it's false, clear everything and logout
+    if (loggedIn !== "true") {
+      console.log("User not logged in, clearing data");
+      await AsyncStorage.clear();
+      return dispatch(logoutSuccess());
     }
 
-    const user = JSON.parse(userData);
+    // If missing essential data, clear everything and logout
+    if (!token || !refreshToken || !userData) {
+      console.log("Missing essential data, clearing everything");
+      await AsyncStorage.clear();
+      return dispatch(logoutSuccess());
+    }
 
-    dispatch(
-      setInitialUser({
-        user,
-        token,
-        refreshToken,
-      })
-    );
+    try {
+      const user = JSON.parse(userData);
+      
+      // Validate that user data is properly formatted
+      if (!user || !user._id || !user.email) {
+        console.log("Invalid user data format, clearing everything");
+        await AsyncStorage.clear();
+        return dispatch(logoutSuccess());
+      }
+
+      dispatch(
+        setInitialUser({
+          user,
+          token,
+          refreshToken,
+        })
+      );
+      
+      console.log("User session restored successfully");
+    } catch (parseError) {
+      console.error("Error parsing user data:", parseError);
+      await AsyncStorage.clear();
+      return dispatch(logoutSuccess());
+    }
   } catch (error) {
     console.error("Error loading user session:", error);
-    dispatch(logoutSuccess()); // Logout on error
+    try {
+      await AsyncStorage.clear();
+    } catch (clearError) {
+      console.error("Error clearing storage:", clearError);
+    }
+    dispatch(logoutSuccess());
   }
 };
 
@@ -629,31 +683,66 @@ export const generateToken = (refreshToken) => async (dispatch) => {
 // export const imgHandler
 export const logout = () => async (dispatch) => {
   try {
-    const headers = await authHeader();
-    const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
+    // First, try to call the backend logout API
+    try {
+      const headers = await authHeader();
+      const res = await axios.post(`${BASEAPIURL}/user/logout`, {}, { headers });
+      
+      if (res.status === 200 || res.status === 401) {
+        console.log("Backend logout successful");
+      }
+    } catch (apiError) {
+      console.log("Backend logout failed, continuing with local logout:", apiError.message);
+    }
 
-    if (res.status === 200) {
-      await dispatch(
+    // Clear all AsyncStorage data
+    await AsyncStorage.clear();
+    
+    // Clear any additional stored data
+    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("refresh_token");
+    await AsyncStorage.removeItem("user");
+    await AsyncStorage.removeItem("loggedIn");
+    await AsyncStorage.removeItem("conversation");
+    await AsyncStorage.removeItem("localChats");
+    await AsyncStorage.removeItem("notifications");
+    await AsyncStorage.removeItem("socialdata");
+    await AsyncStorage.removeItem("firsttime");
+    await AsyncStorage.removeItem("user-language");
+
+    // Clear Redux state
+    dispatch(logoutSuccess());
+    
+    // Show success message
+    dispatch(
+      setError({
+        msg: "Logged out Successfully",
+        toggle: true,
+        type: "Success",
+      })
+    );
+
+    console.log("Logout completed successfully");
+    
+  } catch (error) {
+    console.error("Logout error:", error);
+    
+    // Even if there's an error, clear local data
+    try {
+      await AsyncStorage.clear();
+      dispatch(logoutSuccess());
+      
+      dispatch(
         setError({
           msg: "Logged out Successfully",
           toggle: true,
           type: "Success",
         })
       );
-      await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
-    } else if (res.status === 401) {
-      await dispatch(
-        setError({
-          msg: "Logged out Successfully",
-          toggle: true,
-          type: "Success",
-        })
-      );
-      await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
-    } else {
-      await dispatch(
+    } catch (clearError) {
+      console.error("Error clearing data:", clearError);
+      
+      dispatch(
         setError({
           msg: "There was some error. Please try again after some time",
           toggle: true,
@@ -661,14 +750,6 @@ export const logout = () => async (dispatch) => {
         })
       );
     }
-  } catch (error) {
-    await dispatch(
-      setError({
-        msg: "There was some error. Please try again after some time",
-        toggle: true,
-        type: "error",
-      })
-    );
   }
 };
 

@@ -6,6 +6,10 @@ import { FormButton } from "../../styles/prelogin.styles";
 import { UnfollowModalContainer } from "../../styles/social.styles";
 import RBSheet from "react-native-raw-bottom-sheet";
 import { deleteChat } from "../../services/socialMedia.services";
+import { useDispatch, useSelector } from "react-redux";
+import { updateConversation } from "../../store/user";
+import { useNavigation } from "@react-navigation/native";
+
 const styles = StyleSheet.create({
   overlay: {
     backgroundColor: "rgba(0,0,0,0.2)",
@@ -23,9 +27,52 @@ const styles = StyleSheet.create({
 });
 
 export default function DeleteModal({ slideUpRef, img, name, mainRef, data }) {
+  const dispatch = useDispatch();
+  const { conversations } = useSelector((state) => state.user);
+  const navigation = useNavigation();
+
   const handleDeleteChat = async () => {
-    id = data.id;
-    const res = await deleteChat(id);
+    try {
+      // Generate conversation ID from the conversation array if _id is not available
+      let conversationId = data._id;
+      
+      if (!conversationId && data.conversation) {
+        // Generate room ID from conversation array (sorted user IDs joined with underscore)
+        conversationId = data.conversation.sort().join('_');
+      }
+      
+      if (!conversationId) {
+        console.error("No conversation ID available for deletion");
+        return;
+      }
+      
+      console.log("Deleting chat with ID:", conversationId);
+      const res = await deleteChat(conversationId);
+      
+      if (res.success) {
+        console.log("Chat deleted successfully");
+        
+        // Remove the conversation from Redux state
+        const updatedConversations = conversations.filter(conv => {
+          // Check if this conversation matches the deleted one
+          if (conv._id === conversationId) return false;
+          if (conv.conversation && conv.conversation.sort().join('_') === conversationId) return false;
+          return true;
+        });
+        dispatch(updateConversation(updatedConversations));
+        
+        // Close modals
+        slideUpRef.current.close();
+        mainRef.current.close();
+        navigation.goBack();
+      } else {
+        console.error("Failed to delete chat:", res.message);
+        // You might want to show an error message to the user here
+      }
+    } catch (error) {
+      console.error("Error in handleDeleteChat:", error);
+      // You might want to show an error message to the user here
+    }
   };
 
   return (
@@ -70,11 +117,7 @@ export default function DeleteModal({ slideUpRef, img, name, mainRef, data }) {
         <Row style={{ width: "100%" }}>
           <FormButton
             style={{ flex: 1, marginLeft: 8, marginRight: 8 }}
-            onPress={() => {
-              handleDeleteChat();
-              slideUpRef.current.close();
-              mainRef.current.close();
-            }}
+            onPress={handleDeleteChat}
           >
             <Text style={{ color: "white", fontWeight: "bold" }}>Delete</Text>
           </FormButton>

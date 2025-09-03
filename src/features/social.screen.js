@@ -119,7 +119,7 @@ export default function SocialScreen({ navigation }) {
   });
 
   const updateStorageConvo = async () => {
-    const convodata = await AsyncStorage.getItem("coversation");
+    const convodata = await AsyncStorage.getItem("conversation");
     if (convodata) {
       dispatch(updateConversation(JSON.parse(convodata)));
     }

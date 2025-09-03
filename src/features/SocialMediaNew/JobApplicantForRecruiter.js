@@ -150,20 +150,24 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
   }, []);
 
   const renderEducationItem = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.degree}</Text>
-      <Text style={styles.subtitle}>{item.institution}</Text>
-      <Text style={styles.duration}>{item.duration}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+    <View style={styles.educationItem}>
+      <Text style={styles.educationDegree}>{item.degree}</Text>
+      <Text style={styles.educationInstitution}>{item.institution}</Text>
+      <Text style={styles.educationDuration}>{item.duration}</Text>
+      {item.description && (
+        <Text style={styles.educationDescription}>{item.description}</Text>
+      )}
     </View>
   );
 
   const renderJobItem = ({ item }) => (
-    <View style={styles.card}>
-      <Text style={styles.title}>{item.role}</Text>
-      <Text style={styles.subtitle}>{item.company}</Text>
-      <Text style={styles.duration}>{item.duration}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+    <View style={styles.jobItem}>
+      <Text style={styles.jobCompany}>{item.company}</Text>
+      <Text style={styles.jobRole}>{item.role}</Text>
+      <Text style={styles.jobDuration}>{item.duration}</Text>
+      {item.description && (
+        <Text style={styles.jobDescription}>{item.description}</Text>
+      )}
     </View>
   );
 
@@ -270,84 +274,71 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
         </RowBetween>
 
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.scrollContainer}
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContentContainer}
         >
-          <Text style={styles.sectionHeader}>Resume</Text>
-          <Text style={styles.title}>
-            {getFileNameFromUrl(applicantProfileData?.followData?.resume)}
-          </Text>
-          <TouchableOpacity style={[styles.uploadButton, { width: "45%" }]} onPress={() => downloadPDF(resumeUri)}>
-            <Text style={styles.uploadButtonText}>Download Resume</Text>
-          </TouchableOpacity>
+          {/* Resume Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Resume</Text>
+            <View style={styles.resumeItem}>
+              <Text style={styles.resumeFileName}>
+                {getFileNameFromUrl(applicantProfileData?.followData?.resume)}
+              </Text>
+              <TouchableOpacity 
+                style={styles.downloadResumeButton} 
+                onPress={() => downloadPDF(resumeUri)}
+              >
+                <Text style={styles.downloadResumeButtonText}>Download Resume</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
 
-          <Text style={styles.sectionHeader}>Education</Text>
-          <FlatList
-            data={applicantProfileData?.followData?.education}
-            renderItem={renderEducationItem}
-            keyExtractor={(item) => item._id}
-            scrollEnabled={false} // Disable scrolling for this FlatList
-            contentContainerStyle={styles.list}
-          />
-          <Text style={styles.sectionHeader}>Job Experience</Text>
-          <FlatList
-            data={applicantProfileData?.followData?.jobExperience}
-            renderItem={renderJobItem}
-            keyExtractor={(item) => item._id}
-            scrollEnabled={false} // Disable scrolling for this FlatList
-            contentContainerStyle={styles.list}
-          />
+          {/* Education Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Education</Text>
+            <FlatList
+              data={applicantProfileData?.followData?.education}
+              renderItem={renderEducationItem}
+              keyExtractor={(item) => item._id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.list}
+            />
+          </View>
+
+          {/* Job Experience Section */}
+          <View style={styles.sectionContainer}>
+            <Text style={styles.sectionTitle}>Job Experience</Text>
+            <FlatList
+              data={applicantProfileData?.followData?.jobExperience}
+              renderItem={renderJobItem}
+              keyExtractor={(item) => item._id}
+              scrollEnabled={false}
+              contentContainerStyle={styles.list}
+            />
+          </View>
         </ScrollView>
 
         <View style={styles.bottomBar}>
           <RadioButton.Group
-            value={applicationStatus} // Bind the selected value to the state
-            onValueChange={(newValue) => setApplicationStatus(newValue)} // Update state on change
+            value={applicationStatus}
+            onValueChange={(newValue) => setApplicationStatus(newValue)}
           >
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginTop: 10,
-                marginBottom: 15,
-              }}
-            >
-              {/* Option 1 */}
+            <View style={styles.radioButtonContainer}>
               <RadioButton value="applied" color={Theme.themeColor} />
-              <Text
-                style={{
-                  marginRight: 10,
-                  color: "grey",
-                  fontWeight: "600",
-                }}
-              >
-                Applied
-              </Text>
+              <Text style={styles.radioButtonText}>Applied</Text>
 
-              {/* Option 2 */}
               <RadioButton value="under review" color={Theme.themeColor} />
-              <Text style={{ color: "grey", fontWeight: "600" }}>
-                Under Review
-              </Text>
+              <Text style={styles.radioButtonText}>Under Review</Text>
 
-              {/* Option 3 */}
               <RadioButton value="rejected" color={Theme.themeColor} />
-              <Text
-                style={{
-                  marginRight: 10,
-                  color: "grey",
-                  fontWeight: "600",
-                }}
-              >
-                Rejected
-              </Text>
+              <Text style={styles.radioButtonText}>Rejected</Text>
             </View>
           </RadioButton.Group>
           <TouchableOpacity
-            style={styles.uploadButton}
+            style={styles.changeStatusButton}
             onPress={() => changeApplicationStatus()}
           >
-            <Text style={styles.uploadButtonText}>Change Applicant Status</Text>
+            <Text style={styles.changeStatusButtonText}>Change Applicant Status</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -358,97 +349,141 @@ const JobApplicantForRecruiter = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
-    padding: 10,
+    backgroundColor: "#f0f0f0",
   },
-  detailsContainer: {
-    backgroundColor: "#fff",
+  scrollContainer: {
+    flex: 1,
+  },
+  scrollContentContainer: {
     padding: 16,
-    borderRadius: 8,
-    marginVertical: 10,
   },
-  jobTitle: {
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 16,
+  },
+  resumeItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f8f9fa",
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  resumeFileName: {
+    flex: 1,
+    fontSize: 14,
+    color: "#495057",
+    fontWeight: "500",
+  },
+  downloadResumeButton: {
+    padding: 8,
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: Theme.themeColor,
+  },
+  downloadResumeButtonText: {
+    color: Theme.themeColor,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  educationItem: {
+    backgroundColor: "#f8f9fa",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: Theme.themeColor,
+  },
+  educationDegree: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    marginBottom: 4,
+  },
+  educationInstitution: {
+    fontSize: 14,
+    color: "#666",
+    marginBottom: 4,
+  },
+  educationDuration: {
+    fontSize: 14,
+    color: "#999",
+    marginBottom: 8,
+  },
+  educationDescription: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
+  },
+  jobItem: {
+    backgroundColor: "#f8f9fa",
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: "#ff6b35",
   },
   jobCompany: {
     fontSize: 16,
-    color: "#555",
-    marginVertical: 5,
-  },
-  jobLocation: {
-    fontSize: 14,
-    color: "#888",
-    marginVertical: 5,
-  },
-  jobStatus: {
-    fontSize: 14,
-    color: "#0073b1",
-    marginVertical: 5,
-  },
-  label: {
-    fontSize: 14,
     fontWeight: "bold",
-    marginTop: 10,
+    color: "#2c3e50",
+    marginBottom: 4,
   },
-  detailText: {
+  jobRole: {
     fontSize: 14,
-    color: "#333",
-    marginVertical: 5,
+    color: "#666",
+    marginBottom: 4,
   },
-  bottomBar: {
-    paddingVertical: 10,
-    backgroundColor: "#fff",
-    alignItems: "center",
-  },
-  uploadButton: {
-    backgroundColor: Theme.themeColor,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  uploadButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  sectionHeader: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: Theme.themeColor,
+  jobDuration: {
+    fontSize: 14,
+    color: "#999",
     marginBottom: 8,
+  },
+  jobDescription: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
   },
   list: {
     paddingBottom: 16,
   },
-  card: {
+  bottomBar: {
+    paddingVertical: 20,
+    paddingHorizontal: 16,
     backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 10,
-    marginBottom: 12,
-    width: "100%",
+    borderTopWidth: 1,
+    borderTopColor: "#e9ecef",
   },
-  title: {
-    fontSize: 18,
-    fontWeight: "600",
-    color: "#000",
-    marginBottom: 4,
+  radioButtonContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-around",
+    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: 16,
+  radioButtonText: {
+    fontSize: 14,
+    color: "#666",
     fontWeight: "500",
-    color: "#000",
-    marginBottom: 4,
+    marginLeft: 4,
   },
-  duration: {
-    fontSize: 14,
-    fontWeight: "400",
-    color: "#000",
-    marginBottom: 8,
+  changeStatusButton: {
+    backgroundColor: Theme.themeColor,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: "center",
   },
-  description: {
-    fontSize: 14,
-    fontWeight: "300",
-    color: "#000",
+  changeStatusButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 

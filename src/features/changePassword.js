@@ -3,7 +3,7 @@ import { BASEAPIURL } from "../infrastructure/constants";
 import authHeader from "../services/auth.header";
 import { useDispatch } from "react-redux";
 import { ErrorToggle } from "../store/user";
-import { Text, View, TouchableOpacity, Image } from "react-native";
+import { Text, View, TouchableOpacity, Image, KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import { LoginInputField } from "../styles/prelogin.styles";
 import axios from "axios";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -82,171 +82,184 @@ export default function ChangePassword({ navigation }) {
     }
   };
   return (
-    <View
-      style={{
-        paddingLeft: 15,
-        paddingRight: 15,
-        paddingTop: 50,
-      }}
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
     >
-      <View
-        style={{
-          alignItems: "center",
-          paddingVertical: 16,
-          flexDirection: "row",
-        }}
+      <ScrollView 
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
-        <IconButton icon="chevron-left" onPress={() => navigation.goBack()} />
-        <TopText style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}>
-          Change Password
-        </TopText>
-      </View>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "center",
-          alignItems: "center",
-          marginTop: 30,
-          marginBottom: 50,
-        }}
-      >
-        <Image source={Logo} />
-      </View>
-      <View>
-        <Text
-          style={{
-            fontSize: 15,
-            fontWeight: "500",
-            marginBottom: 15,
-            color: "#999999",
-          }}
-        >
-          Change Your Password Below..
-        </Text>
-      </View>
-      <Divider />
-      <View style={{ position: "relative" }}>
-        <LoginInputField
-          placeholderTextColor="#9B9B9B"
-          underlineColor="transparent"
-          placeholder="Old Password*"
-          selectionColor={Theme.themeColor}
-          activeUnderlineColor={Theme.themeColor}
-          value={changepassword.oldpassword}
-          secureTextEntry={hidePass ? true : false}
-          onChangeText={(text) =>
-            setChangepassword({ ...changepassword, oldpassword: text })
-          }
-        />
         <View
           style={{
-            position: "absolute",
-            top: "51%",
-            right: "5%",
-            elevation: 3,
+            paddingLeft: 15,
+            paddingRight: 15,
+            paddingTop: 50,
+            paddingBottom: 30,
           }}
         >
-          <TouchableOpacity onPress={handleShowPassword}>
-            {!hidePass ? (
-              <Icon name="eye-outline" size={20} />
-            ) : (
-              <Icon name="eye-off-outline" size={20} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-      <View style={{ position: "relative" }}>
-        <LoginInputField
-          placeholderTextColor="#9B9B9B"
-          underlineColor="transparent"
-          placeholder="New Password*"
-          selectionColor={Theme.themeColor}
-          activeUnderlineColor={Theme.themeColor}
-          value={changepassword.password}
-          secureTextEntry={hidePass ? true : false}
-          onChangeText={(text) =>
-            setChangepassword({ ...changepassword, password: text })
-          }
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: "51%",
-            right: "5%",
-            elevation: 3,
-          }}
-        >
-          <TouchableOpacity onPress={handleShowPassword}>
-            {!hidePass ? (
-              <Icon name="eye-outline" size={20} />
-            ) : (
-              <Icon name="eye-off-outline" size={20} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-      <View style={{ position: "relative" }}>
-        <LoginInputField
-          placeholderTextColor="#9B9B9B"
-          underlineColor="transparent"
-          placeholder="Confirm Password*"
-          selectionColor={Theme.themeColor}
-          activeUnderlineColor={Theme.themeColor}
-          value={changepassword.cpassword}
-          secureTextEntry={hidePass ? true : false}
-          onChangeText={(text) =>
-            setChangepassword({ ...changepassword, cpassword: text })
-          }
-        />
-        <View
-          style={{
-            position: "absolute",
-            top: "51%",
-            right: "5%",
-            elevation: 3,
-          }}
-        >
-          <TouchableOpacity onPress={handleShowPassword}>
-            {!hidePass ? (
-              <Icon name="eye-outline" size={20} />
-            ) : (
-              <Icon name="eye-off-outline" size={20} />
-            )}
-          </TouchableOpacity>
-        </View>
-      </View>
-      <TouchableOpacity
-        style={{
-          marginTop: 30,
-          marginBottom: 30,
-          backgroundColor: Theme.themeColor,
-          borderRadius: 10,
-          padding: 10,
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-          height: 50,
-          elevation: 3,
-          shadowColor: "#000",
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-        }}
-        onPress={onHandlesubmit}
-      >
-        <View>
-          <Text
+          <View
             style={{
-              fontSize: 15,
-              fontWeight: "500",
-              color: "#fff",
+              alignItems: "center",
+              paddingVertical: 16,
+              flexDirection: "row",
             }}
           >
-            Change Password
-          </Text>
+            <IconButton icon="chevron-left" onPress={() => navigation.goBack()} />
+            <TopText style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}>
+              Change Password
+            </TopText>
+          </View>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "center",
+              alignItems: "center",
+              marginTop: 30,
+              marginBottom: 50,
+            }}
+          >
+            <Image source={Logo} />
+          </View>
+          <View>
+            <Text
+              style={{
+                fontSize: 15,
+                fontWeight: "500",
+                marginBottom: 15,
+                color: "#999999",
+              }}
+            >
+              Change Your Password Below..
+            </Text>
+          </View>
+          <Divider />
+          <View style={{ position: "relative" }}>
+            <LoginInputField
+              placeholderTextColor="#9B9B9B"
+              underlineColor="transparent"
+              placeholder="Old Password*"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
+              value={changepassword.oldpassword}
+              secureTextEntry={hidePass ? true : false}
+              onChangeText={(text) =>
+                setChangepassword({ ...changepassword, oldpassword: text })
+              }
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: "51%",
+                right: "5%",
+                elevation: 3,
+              }}
+            >
+              <TouchableOpacity onPress={handleShowPassword}>
+                {!hidePass ? (
+                  <Icon name="eye-outline" size={20} />
+                ) : (
+                  <Icon name="eye-off-outline" size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={{ position: "relative" }}>
+            <LoginInputField
+              placeholderTextColor="#9B9B9B"
+              underlineColor="transparent"
+              placeholder="New Password*"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
+              value={changepassword.password}
+              secureTextEntry={hidePass ? true : false}
+              onChangeText={(text) =>
+                setChangepassword({ ...changepassword, password: text })
+              }
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: "51%",
+                right: "5%",
+                elevation: 3,
+              }}
+            >
+              <TouchableOpacity onPress={handleShowPassword}>
+                {!hidePass ? (
+                  <Icon name="eye-outline" size={20} />
+                ) : (
+                  <Icon name="eye-off-outline" size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={{ position: "relative" }}>
+            <LoginInputField
+              placeholderTextColor="#9B9B9B"
+              underlineColor="transparent"
+              placeholder="Confirm Password*"
+              selectionColor={Theme.themeColor}
+              activeUnderlineColor={Theme.themeColor}
+              value={changepassword.cpassword}
+              secureTextEntry={hidePass ? true : false}
+              onChangeText={(text) =>
+                setChangepassword({ ...changepassword, cpassword: text })
+              }
+            />
+            <View
+              style={{
+                position: "absolute",
+                top: "51%",
+                right: "5%",
+                elevation: 3,
+              }}
+            >
+              <TouchableOpacity onPress={handleShowPassword}>
+                {!hidePass ? (
+                  <Icon name="eye-outline" size={20} />
+                ) : (
+                  <Icon name="eye-off-outline" size={20} />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={{
+              marginTop: 30,
+              marginBottom: 30,
+              backgroundColor: Theme.themeColor,
+              borderRadius: 10,
+              padding: 10,
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: 50,
+              elevation: 3,
+              shadowColor: "#000",
+              shadowOffset: {
+                width: 0,
+                height: 2,
+              },
+            }}
+            onPress={onHandlesubmit}
+          >
+            <View>
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: "500",
+                  color: "#fff",
+                }}
+              >
+                Change Password
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
-      </TouchableOpacity>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

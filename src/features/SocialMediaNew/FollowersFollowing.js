@@ -29,13 +29,15 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import NewSocialCard from "./NewSocialCard";
 import { FlatList } from "react-native-gesture-handler";
 import { debounce } from "lodash";
-import { getFollowing, getFollowers } from "./SocialMediaAPIs";
+import { useFollowStatus } from "./FollowStatusContext";
+import { getFollowing, getFollowers, unfollowUserAPI } from "./SocialMediaAPIs";
 
 const FollowersFollowing = ({ navigation, route }) => {
   const { type } = route.params; // 'Followers' or 'Following'
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
+  const { updateFollowStatus } = useFollowStatus();
 
   const toggleSearch = () => {
     setIsSearchVisible(!isSearchVisible);
@@ -174,6 +176,24 @@ const FollowersFollowing = ({ navigation, route }) => {
   const isLoading = type === "Followers" ? loadingFollowersAnimation : loadingFollowingAnimation;
   const isRefreshing = type === "Followers" ? followersRefreshing : followingRefreshing;
 
+  const handleUnfollow = async (userId) => {
+    try {
+      const response = await unfollowUserAPI(userId);
+      if (response.status === 200) {
+        // Update global follow status
+        updateFollowStatus(userId, "none");
+        
+        // Remove from local following list
+        setFollowing(prev => prev.filter(user => user._id !== userId));
+        
+        Alert.alert("Success", "User unfollowed successfully.");
+      }
+    } catch (error) {
+      console.error("Error unfollowing user:", error);
+      Alert.alert("Error", "Failed to unfollow user.");
+    }
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
       onPress={() =>
@@ -195,11 +215,15 @@ const FollowersFollowing = ({ navigation, route }) => {
         <Text style={styles.name}>
           {item.firstName} {item.lastName}
         </Text>
-        <Text style={styles.role}>{item.role || "User"}</Text>
       </View>
-      <TouchableOpacity style={styles.messageButton}>
-        <Icon name="chatbubble-outline" size={20} color={Theme.themeColor} />
-      </TouchableOpacity>
+      {type === "Following" && (
+        <TouchableOpacity 
+          style={styles.unfollowButton}
+          onPress={() => handleUnfollow(item._id)}
+        >
+          <Text style={styles.unfollowText}>Unfollow</Text>
+        </TouchableOpacity>
+      )}
     </TouchableOpacity>
   );
 
@@ -455,6 +479,18 @@ const styles = StyleSheet.create({
   },
   messageButton: {
     padding: 8,
+  },
+  unfollowButton: {
+    backgroundColor: "#ff6b6b",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    marginRight: 8,
+  },
+  unfollowText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "bold",
   },
   footerLoader: {
     paddingVertical: 16,

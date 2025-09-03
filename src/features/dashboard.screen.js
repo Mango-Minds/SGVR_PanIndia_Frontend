@@ -428,54 +428,6 @@ export default function DashboardScreen({ navigation }) {
                 alignItems: "center",
               }}
             >
-              <TouchableOpacity
-                onPress={() => {
-                  navigation.navigate("ChatHome"), { user };
-                }}
-              >
-                <IconButton icon="chat" size={30}></IconButton>
-              </TouchableOpacity>
-
-              <Pressable
-                onPress={() => {
-                  setNotifications(
-                    notifications.map((notification) => ({
-                      ...notification,
-                      isRead: true,
-                    }))
-                  );
-                  socket.emit("markAllNotificationsAsRead", userId),
-                    setBelliconbadge(0),
-                    navigation.navigate("DashboardNotification", {
-                      notifications: notifications,
-                    });
-                }}
-              >
-                <Ionicons
-                  style={{
-                    opacity: 0.75,
-                  }}
-                  name="notifications"
-                  color="black"
-                  size={30}
-                />
-                {belliconbadge > 0 && (
-                  <Badge
-                    style={{
-                      position: "absolute",
-                      fontSize: 10,
-                      marginTop: 0,
-                      marginLeft: 10,
-                      fontWeight: "bold",
-                      backgroundColor: "#D80808",
-                    }}
-                    size={15}
-                  >
-                    {belliconbadge}
-                  </Badge>
-                )}
-              </Pressable>
-
               <IconButton
                 icon="account-circle"
                 onPress={() => navigation.navigate("SettingsScreen")}

@@ -8,6 +8,8 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { IconButton, Provider } from "react-native-paper";
 import { SafeArea } from "../../components/utility/safe-area.component";
@@ -121,226 +123,248 @@ const EditJobPost = ({ route, navigation }) => {
     <>
       <SafeArea>
         <Provider>
-          <ScrollView showsVerticalScrollIndicator={false}>
-            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
-              <View style={{ alignItems: "center", flexDirection: "row" }}>
-                <IconButton
-                  icon="arrow-left"
-                  size={28}
-                  onPress={() => navigation.goBack()}
-                />
-                <Text
-                  style={{
-                    fontSize: 20,
-                    fontWeight: "500",
-                    color: "#000",
-                  }}
-                >
-                  {t("editJobPosting")}
-                </Text>
-              </View>
-            </RowBetween>
-            <MainContainer
-              style={{ paddingBottom: 56 }}
-              keyboardDismissMode="on-drag"
-              keyboardShouldPersistTaps="handled"
-              contentInsetAdjustmentBehavior="always"
-            >
-              <FormSection style={{ paddingTop: 0 }}>
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                 {t("jobTitle")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  placeholder="Job Title*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.jobTitle}
-                  onChangeText={(text) =>
-                    setModifiedDetails({ ...modifiedDetails, jobTitle: text })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                  {t("company")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  placeholder="Company*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.company}
-                  onChangeText={(text) =>
-                    setModifiedDetails({ ...modifiedDetails, company: text })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                  {t("location")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  placeholder="Location*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.location}
-                  onChangeText={(text) =>
-                    setModifiedDetails({ ...modifiedDetails, location: text })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                 {t("jobDescription")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  multiline={true}
-                  placeholder="Job Description*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.description}
-                  onChangeText={(text) =>
-                    setModifiedDetails({
-                      ...modifiedDetails,
-                      description: text,
-                    })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                 {t("companyDescription")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  multiline={true}
-                  placeholder="Company Description*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.companyDescription}
-                  onChangeText={(text) =>
-                    setModifiedDetails({
-                      ...modifiedDetails,
-                      companyDescription: text,
-                    })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                  {t("responsibilities")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  multiline={true}
-                  placeholder="Responsibilities*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.responsibilities}
-                  onChangeText={(text) =>
-                    setModifiedDetails({
-                      ...modifiedDetails,
-                      responsibilities: text,
-                    })
-                  }
-                />
-                <Text
-                  style={{
-                    fontSize: 16,
-                    marginLeft: 4,
-                    color: "grey",
-                    fontWeight: "600",
-                  }}
-                >
-                 {t("ctc")}
-                </Text>
-                <LoginInputField
-                  selectionColor={Theme.themeColor}
-                  placeholder="CTC*"
-                  activeUnderlineColor={Theme.themeColor}
-                  style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
-                  underlineColor="transparent"
-                  placeholderTextColor="#9B9B9B"
-                  value={modifiedDetails.CTC}
-                  onChangeText={(text) =>
-                    setModifiedDetails({
-                      ...modifiedDetails,
-                      CTC: text,
-                    })
-                  }
-                />
-                <FormButton onPress={handleUpdate}>
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            style={{ flex: 1 }}
+          >
+                         <ScrollView 
+               showsVerticalScrollIndicator={false}
+               keyboardShouldPersistTaps="handled"
+             >
+              <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+                <View style={{ alignItems: "center", flexDirection: "row" }}>
+                  <IconButton
+                    icon="arrow-left"
+                    size={28}
+                    onPress={() => navigation.goBack()}
+                  />
                   <Text
-                    style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+                    style={{
+                      fontSize: 20,
+                      fontWeight: "500",
+                      color: "#000",
+                    }}
                   >
-                    {loadingInBtn === true ? (
-                      <ActivityIndicator
-                        style={{
-                          display: "flex",
-                          alignSelf: "center",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          flex: 1,
-                        }}
-                        // size={"large"}
-                        color={"white"}
-                      />
-                    ) : (
-                      t("submit")
-                    )}
+                    {t("editJobPosting")}
                   </Text>
-                </FormButton>
-              </FormSection>
-            </MainContainer>
-            
-          </ScrollView>
+                </View>
+              </RowBetween>
+              <MainContainer
+                style={{ paddingBottom: 56 }}
+                keyboardDismissMode="on-drag"
+                keyboardShouldPersistTaps="handled"
+                contentInsetAdjustmentBehavior="always"
+              >
+                <FormSection style={{ paddingTop: 0 }}>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                   {t("jobTitle")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     placeholder="Job Title*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.jobTitle}
+                     onChangeText={(text) =>
+                       setModifiedDetails({ ...modifiedDetails, jobTitle: text })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("company")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     placeholder="Company*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.company}
+                     onChangeText={(text) =>
+                       setModifiedDetails({ ...modifiedDetails, company: text })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("location")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     placeholder="Location*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.location}
+                     onChangeText={(text) =>
+                       setModifiedDetails({ ...modifiedDetails, location: text })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                   {t("jobDescription")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     multiline={true}
+                     placeholder="Job Description*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.description}
+                     onChangeText={(text) =>
+                       setModifiedDetails({
+                         ...modifiedDetails,
+                         description: text,
+                       })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                   {t("companyDescription")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     multiline={true}
+                     placeholder="Company Description*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.companyDescription}
+                     onChangeText={(text) =>
+                       setModifiedDetails({
+                         ...modifiedDetails,
+                         companyDescription: text,
+                       })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                    {t("responsibilities")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     multiline={true}
+                     placeholder="Responsibilities*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.responsibilities}
+                     onChangeText={(text) =>
+                       setModifiedDetails({
+                         ...modifiedDetails,
+                         responsibilities: text,
+                       })
+                     }
+                     returnKeyType="next"
+                     blurOnSubmit={false}
+                   />
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                    }}
+                  >
+                   {t("ctc")}
+                  </Text>
+                                     <LoginInputField
+                     selectionColor={Theme.themeColor}
+                     placeholder="CTC*"
+                     activeUnderlineColor={Theme.themeColor}
+                     style={[styles.input, { marginTop: 10, marginBottom: 15 }]}
+                     underlineColor="transparent"
+                     placeholderTextColor="#9B9B9B"
+                     value={modifiedDetails.CTC}
+                     onChangeText={(text) =>
+                       setModifiedDetails({
+                         ...modifiedDetails,
+                         CTC: text,
+                       })
+                     }
+                     returnKeyType="done"
+                     blurOnSubmit={true}
+                   />
+                  <FormButton onPress={handleUpdate}>
+                    <Text
+                      style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+                    >
+                      {loadingInBtn === true ? (
+                        <ActivityIndicator
+                          style={{
+                            display: "flex",
+                            alignSelf: "center",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            flex: 1,
+                          }}
+                          // size={"large"}
+                          color={"white"}
+                        />
+                      ) : (
+                        t("submit")
+                      )}
+                    </Text>
+                  </FormButton>
+                </FormSection>
+              </MainContainer>
+              
+            </ScrollView>
+          </KeyboardAvoidingView>
         </Provider>
       </SafeArea>
     </>

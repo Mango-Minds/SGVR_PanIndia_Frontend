@@ -26,6 +26,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ErrorToggle, logout } from "../store/user";
 import { useMutation } from "@tanstack/react-query";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import Theme from "../styles/theme";
 
 const ViewUserScreen = ({ navigation, route }) => {
   const { user } = useSelector((state) => state.user);
@@ -46,29 +47,29 @@ const ViewUserScreen = ({ navigation, route }) => {
   const [isRequested, setIsRequested] = useState();
   const [dp, setDp] = useState(userdp);
 
-  const { data, isError, error, isLoading } = useQuery(
-    ["social-other-user-profile", userid],
-    () => getSocialMediaProfile(userid),
-    {
-      onSuccess: async (data) => {
-        setUserdata(data.result);
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["social-other-user-profile", userid],
+    queryFn: () => getSocialMediaProfile(userid),
+    onSuccess: async (data) => {
+      setUserdata(data.result);
+      if (data.result && data.result.data && data.result.data.requests) {
         data.result.data.requests.map((item, index) => {
           if (item._id === user._id) {
             setIsRequested(true);
           }
         });
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            type: "error",
-            msg: err.response.data.error,
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+      }
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          type: "error",
+          msg: err.response?.data?.error || "An error occurred",
+          toggle: true,
+        })
+      );
+    },
+  });
 
   const options = [
     {
@@ -96,12 +97,13 @@ const ViewUserScreen = ({ navigation, route }) => {
     },
   ];
 
-  const addFriendMutation = useMutation(SendFriendRequest, {
+  const addFriendMutation = useMutation({
+    mutationFn: SendFriendRequest,
     onSuccess: (data) => {},
     onError: (err) => {
       dispatch(
         ErrorToggle({
-          msg: err.response.data.message,
+          msg: err.response?.data?.message || "An error occurred",
           type: "error",
           toggle: true,
         })
@@ -111,7 +113,7 @@ const ViewUserScreen = ({ navigation, route }) => {
 
   const handleFollow = async (e) => {
     await addFriendMutation.mutateAsync({ userid });
-    await queryClient.invalidateQueries("social-other-user-profile");
+    await queryClient.invalidateQueries({ queryKey: ["social-other-user-profile"] });
     setRequested(true);
   };
 
@@ -152,7 +154,7 @@ const ViewUserScreen = ({ navigation, route }) => {
           onPress={() =>
             navigation.navigate("ChatScreen", {
               toid: userid,
-              toName: userprofile.fname + " " + userprofile.lname,
+              toName: username || "User",
               // index: ,
             })
           }
@@ -236,7 +238,7 @@ const ViewUserScreen = ({ navigation, route }) => {
                   textTransform: "capitalize",
                 }}
               >
-                {userprofile.fname} {userprofile.lname}
+                {username || "User"}
               </Text>
               <Text style={{ color: "white", fontSize: 12, marginTop: 5 }}>
                 {data?.result?.data.bio ? data?.result?.data.bio : "No Bio"}

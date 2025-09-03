@@ -16,6 +16,7 @@ import {
   Dimensions,
   Pressable,
   ActivityIndicator,
+  SafeAreaView,
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -31,7 +32,7 @@ import UserImg from "../../assets/images/general/user.png";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import {
-  sendFollowRequest,
+  followUserAPI,
   unfollowUserAPI,
   getFollowStatus,
   deletePost,
@@ -42,10 +43,12 @@ import {
   deleteComment,
   reportPostApi,
   getUsers,
+  getUserFriends,
   } from "./SocialMediaAPIs";
   import { useTranslation } from "react-i18next";
-  import { generateShareUrl, generateShareMessage } from "../../utils/shareUtils";
-  import * as Clipboard from 'expo-clipboard';
+import { generateShareUrl, generateShareMessage } from "../../utils/shareUtils";
+import * as Clipboard from 'expo-clipboard';
+import { useFollowStatus } from "./FollowStatusContext";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -102,94 +105,119 @@ const NewSocialCard = ({
 
   const [isRequestSent, setIsRequestSent] = useState(false);
   const [isFollowing, setIsFollowing] = useState(null);
+  const { getFollowStatus, updateFollowStatus } = useFollowStatus();
 
-  // Use passed follow status if available, otherwise use local state
-  const effectiveFollowStatus = currentFollowStatus !== undefined ? currentFollowStatus : isFollowing;
-  const setEffectiveFollowStatus = onFollowStatusChange || setIsFollowing;
+  // Use follow status from post data if available, otherwise use global follow status, local state, or prop
+  const effectiveFollowStatus = post?.followStatus || getFollowStatus(userId) || currentFollowStatus || isFollowing;
+  
+  // Debug logging
+  console.log('NewSocialCard follow status debug:', {
+    userId,
+    postFollowStatus: post?.followStatus,
+    globalFollowStatus: getFollowStatus(userId),
+    currentFollowStatus,
+    isFollowing,
+    effectiveFollowStatus
+  });
+  
+  const setEffectiveFollowStatus = (status) => {
+    updateFollowStatus(userId, status);
+    setIsFollowing(status);
+    if (onFollowStatusChange) {
+      onFollowStatusChange(userId, status);
+    }
+  };
 
   // Update local state when prop changes
   useEffect(() => {
-    if (currentFollowStatus !== undefined) {
-      setIsFollowing(currentFollowStatus);
+    // Initialize follow status from post data or props if available
+    const initialStatus = post?.followStatus || currentFollowStatus;
+    if (initialStatus !== undefined) {
+      setIsFollowing(initialStatus);
+      updateFollowStatus(userId, initialStatus);
     }
-  }, [currentFollowStatus]);
+  }, [post?.followStatus, currentFollowStatus, userId, updateFollowStatus]);
 
-  // Share modal state
+  // Share modal state - stores friends list for sharing
   const [shareUsers, setShareUsers] = useState([]);
   const [shareSearchTerm, setShareSearchTerm] = useState("");
   const [shareLoading, setShareLoading] = useState(false);
 
-  // Function to fetch users for sharing
+  // Function to fetch friends for sharing
   const fetchShareUsers = async () => {
     try {
       setShareLoading(true);
-      const response = await getUsers();
+      const response = await getUserFriends(fromUserId);
       
-      // The unfollowed-users endpoint returns { unfollowedUsers: [...] }
-      const users = response.data.unfollowedUsers || [];
+      // The friends endpoint returns { friends: [...] }
+      const friends = response.data.friends || [];
       
       // Filter out the current user from the list (though it should already be filtered)
-      const filteredUsers = users.filter(user => user._id !== fromUserId);
-      setShareUsers(filteredUsers);
+      const filteredFriends = friends.filter(friend => friend._id !== fromUserId);
+      setShareUsers(filteredFriends);
+      
+      // Log the number of friends found for debugging
+      console.log(`Found ${filteredFriends.length} friends for sharing`);
     } catch (error) {
-      console.error("Error fetching share users:", error);
+      console.error("Error fetching friends for sharing:", error);
+      // Set empty array on error
+      setShareUsers([]);
     } finally {
       setShareLoading(false);
     }
   };
 
-  // Fetch users when share modal opens
+  // Fetch friends when share modal opens
   useEffect(() => {
+    console.log("useEffect triggered - isShareModalVisible:", isShareModalVisible, "shareUsers.length:", shareUsers.length);
     if (isShareModalVisible && shareUsers.length === 0) {
       fetchShareUsers();
     }
   }, [isShareModalVisible]);
 
+  // Monitor reel modal state changes
+  useEffect(() => {
+    console.log("Reel modal state changed - reelModalVisible:", reelModalVisible);
+  }, [reelModalVisible]);
+
   // Handle search functionality - now using client-side filtering
   // No need to make API calls on search change since we filter client-side
 
-  // Filter users based on search term (client-side filtering)
-  const filteredShareUsers = shareUsers.filter(user => 
-    user.firstName?.toLowerCase().includes(shareSearchTerm.toLowerCase()) ||
-    user.lastName?.toLowerCase().includes(shareSearchTerm.toLowerCase())
-  );
+  // Filter friends based on search term (client-side filtering)
+  const filteredShareUsers = shareUsers.filter(friend => 
+    friend.firstName?.toLowerCase().includes(shareSearchTerm.toLowerCase()) ||
+    friend.lastName?.toLowerCase().includes(shareSearchTerm.toLowerCase())
+  ); // This contains the filtered list of friends to display in the share modal
 
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
-    // Check if both users exist before attempting to send follow request
+    console.log('handleSendFollowRequest called with:', { fromUserId, toUserId, userId });
+    
+    // Check if both users exist before attempting to follow
     if (!fromUserId || !toUserId) {
-      console.warn("Cannot send follow request: missing user IDs");
+      console.warn("Cannot follow user: missing user IDs", { fromUserId, toUserId });
       return;
     }
     
     try {
-      const response = await sendFollowRequest(toUserId);
-      console.log("response of sending req", response);
-
-      if (response.status === 200) {
-        setEffectiveFollowStatus("pending");
-        Alert.alert("Success", "Connection request sent successfully.");
-      }
+      await followUserAPI(fromUserId, toUserId, (status) => {
+        setEffectiveFollowStatus(status);
+        
+        // Notify parent component to refresh all posts for this user
+        if (onFollowStatusChange) {
+          onFollowStatusChange(userId, status);
+        }
+        
+        // Trigger a refresh of all posts to update follow status across all posts
+        if (fetchPosts) {
+          setTimeout(() => {
+            fetchPosts(true); // Force refresh
+          }, 1000);
+        }
+      });
+      console.log("User followed successfully");
     } catch (error) {
-      const data = error.response?.data;
-      if (data?.message === "You are already following this user.") {
-        Alert.alert(
-          "Already Following",
-          "You are already following this user."
-        );
-      } else if (
-        data?.message === "Follow request already sent to this user."
-      ) {
-        Alert.alert(
-          "Request Already Sent",
-          "You have already sent a connection request to this user."
-        );
-      } else {
-        console.error("Error connecting to user:", error);
-        Alert.alert(
-          "Error",
-          "An error occurred while trying to send the follow request."
-        );
-      }
+      console.error("Error following user:", error);
+      // Error handling is done inside followUserAPI
     }
   };
   const unFollowUser = async () => {
@@ -201,6 +229,23 @@ const NewSocialCard = ({
       if (response.status === 200) {
         setEffectiveFollowStatus("none");
         Alert.alert("Success", "User unfollowed successfully.");
+        
+        // Notify parent component to refresh all posts for this user
+        if (onFollowStatusChange) {
+          onFollowStatusChange(userId, "none");
+        }
+        
+        // Force refresh of follow status for this post
+        setTimeout(() => {
+          fetchFollowStatus();
+        }, 500);
+        
+        // Trigger a refresh of all posts to update follow status across all posts
+        if (fetchPosts) {
+          setTimeout(() => {
+            fetchPosts(true); // Force refresh
+          }, 1000);
+        }
       }
     } catch (error) {
       console.error("Error unfollowing user:", error);
@@ -210,38 +255,38 @@ const NewSocialCard = ({
       );
     }
   };
-  useEffect(() => {
-    const fetchFollowStatus = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const response = await fetch(
-          `${BASEAPIURL}/social/check-follow-status/${userId}`,
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("following status", data);
-          setEffectiveFollowStatus(data.status);
-        } else {
-          console.error("Failed to fetch follow status");
+  const fetchFollowStatus = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await fetch(
+        `${BASEAPIURL}/social/check-follow-status/${userId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
         }
-      } catch (error) {
-        console.error("Error fetching follow status:", error);
-      }
-    };
+      );
 
-    // Only fetch follow status if not provided via props
-    if (userId && currentFollowStatus === undefined) {
+      if (response.ok) {
+        const data = await response.json();
+        console.log("following status", data);
+        setEffectiveFollowStatus(data.status);
+      } else {
+        console.error("Failed to fetch follow status");
+      }
+    } catch (error) {
+      console.error("Error fetching follow status:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Only fetch follow status if not provided via post data or props
+    if (userId && !post?.followStatus && currentFollowStatus === undefined) {
       fetchFollowStatus();
     }
-  }, [userId, currentFollowStatus]);
+  }, [userId, post?.followStatus, currentFollowStatus]);
   const handleDeletePost = async () => {
     // Show confirmation dialog first
     Alert.alert(
@@ -613,8 +658,19 @@ const NewSocialCard = ({
   const flatListRef = useRef(null);
 
   const openShareModal = () => {
+    console.log("openShareModal called - opening friends share modal");
+    console.log("Current modal states - reelModalVisible:", reelModalVisible, "isShareModalVisible:", isShareModalVisible);
+    
+    // Close any other modals that might interfere
+    setReelModalVisible(false);
+    setCommentsModalVisible(false);
+    setRepostModalVisible(false);
+    setReportModalVisible(false);
+    
     setShareModalVisible(true);
-    // Reset search and fetch users when opening modal
+    console.log("Share modal state set to true, isShareModalVisible:", true);
+    
+    // Reset search and fetch friends when opening modal
     setShareSearchTerm("");
     if (shareUsers.length === 0) {
       fetchShareUsers();
@@ -622,18 +678,19 @@ const NewSocialCard = ({
   };
 
   const closeShareModal = () => {
+    console.log("closeShareModal called - closing friends share modal");
     setShareModalVisible(false);
     setSelectedUsers([]);
   };
 
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([]); // Stores selected friends for sharing
 
-  const toggleSelection = (user) => {
-    const userId = user._id;
-    if (selectedUsers.includes(userId)) {
-      setSelectedUsers(selectedUsers.filter((id) => id !== userId));
+  const toggleSelection = (friend) => {
+    const friendId = friend._id;
+    if (selectedUsers.includes(friendId)) {
+      setSelectedUsers(selectedUsers.filter((id) => id !== friendId));
     } else {
-      setSelectedUsers([...selectedUsers, userId]);
+      setSelectedUsers([...selectedUsers, friendId]);
     }
   };
 
@@ -687,10 +744,21 @@ const NewSocialCard = ({
 
     return (
       <View style={styles.commentItem}>
-        <Image
-          source={typeof imageUri === "string" ? { uri: imageUri } : imageUri}
-          style={styles.commentProfileImage}
-        />
+        <TouchableOpacity
+          onPress={() => {
+            // Navigate to commenter's profile
+            if (item?.userId?._id) {
+              navigation.navigate("EachProfile", {
+                userId: item.userId._id,
+              });
+            }
+          }}
+        >
+          <Image
+            source={typeof imageUri === "string" ? { uri: imageUri } : imageUri}
+            style={styles.commentProfileImage}
+          />
+        </TouchableOpacity>
         <View style={styles.commentContent}>
           <Text style={styles.commentName}>
             {item.userId.firstName || "Unknown"} {item.userId.lastName || "User"}
@@ -798,14 +866,25 @@ const NewSocialCard = ({
       {/* Each post card */}
       <View style={styles.card}>
         <View style={styles.header}>
-          <Image
-            style={styles.profileImage}
-            source={
-              profileImageUri && profileImageUri.trim() !== ""
-                ? { uri: profileImageUri }
-                : UserImg
-            }
-          />
+          <TouchableOpacity
+            onPress={() => {
+              // Only navigate if user exists and has a valid ID
+              if (userId) {
+                navigation.navigate("EachProfile", {
+                  userId: userId,
+                });
+              }
+            }}
+          >
+            <Image
+              style={styles.profileImage}
+              source={
+                profileImageUri && profileImageUri.trim() !== ""
+                  ? { uri: profileImageUri }
+                  : UserImg
+              }
+            />
+          </TouchableOpacity>
 
           <View style={styles.headerText}>
             <TouchableOpacity
@@ -923,23 +1002,18 @@ const NewSocialCard = ({
                     unFollowUser();
                   }
                 }}
-                disabled={effectiveFollowStatus === "pending"} // Disable button if follow request is pending
               >
                 <View style={styles.iconContainer}>
                   <Icon
                     name={
                       effectiveFollowStatus === "none"
                         ? "add"
-                        : effectiveFollowStatus === "pending"
-                        ? "hourglass"
                         : "checkmark"
                     }
                     size={20}
                     style={
                       effectiveFollowStatus === "none"
                         ? styles.plusIcon
-                        : effectiveFollowStatus === "pending"
-                        ? styles.pendingIcon
                         : styles.checkIcon
                     }
                   />
@@ -947,15 +1021,11 @@ const NewSocialCard = ({
                     style={
                       effectiveFollowStatus === "none"
                         ? styles.followText
-                        : effectiveFollowStatus === "pending"
-                        ? styles.pendingText
                         : styles.followingText
                     }
                   >
                     {effectiveFollowStatus === "none"
                       ? t("Follow")
-                      : effectiveFollowStatus === "pending"
-                      ? t("Pending")
                       : t("Following")}
                   </Text>
                 </View>
@@ -1067,11 +1137,10 @@ const NewSocialCard = ({
           <>
             <TouchableOpacity onPress={openReelModal}>
               <View>
-                <Video
+                <VideoView
                   source={{ uri: `${video.replace(/\\/g, "/")}` }}
                   style={styles.chatVideoThumbnail}
                   resizeMode="cover"
-                  usePoster
                   shouldPlay={false}
                   isLooping
                   isMuted={isMuted}
@@ -1094,7 +1163,7 @@ const NewSocialCard = ({
               visible={reelModalVisible}
               onRequestClose={closeReelModal}
             >
-              <View style={styles.reelModalOverlay}>
+              <SafeAreaView style={styles.reelModalOverlay}>
                 <View style={styles.reelModalContent}>
                   {/* Back Arrow */}
                   <TouchableOpacity
@@ -1106,11 +1175,11 @@ const NewSocialCard = ({
 
                   {/* Video Player */}
 
-                  <Video
+                  <VideoView
                     ref={reelRef}
                     source={{ uri: `${video.replace(/\\/g, "/")}` }}
                     style={styles.reelVideo}
-                    resizeMode={ResizeMode.CONTAIN}
+                    resizeMode="contain"
                     shouldPlay={isReelPlaying}
                     isLooping
                     isMuted={isReelMuted}
@@ -1131,21 +1200,25 @@ const NewSocialCard = ({
 
                   {/* Profile Picture, Username, and Follow Button */}
                   <View style={styles.reelProfileContainer}>
-                    {/* <Image
-                      // source={{
-                      //   uri: "https://media.istockphoto.com/id/2143311599/photo/a-cheerful-asian-woman-enjoys-a-walk-during-a-summer-night.webp?a=1&b=1&s=612x612&w=0&k=20&c=D7Yb-GG6xR5vPDF40d5pL8OtDGHbav2AOZmg9q6nEXg=",
-                      // }} // Replace with your profile picture URL
-                      source={profileImageUri}
-                      style={styles.reelProfilePicture}
-                    /> */}
-                    <Image
-                      style={styles.reelProfilePicture}
-                      source={
-                        profileImageUri && profileImageUri.trim() !== ""
-                          ? { uri: profileImageUri }
-                          : UserImg
+                    <TouchableOpacity
+                      onPress={() => {
+                        // Only navigate if user exists and has a valid ID
+                        if (userId) {
+                          navigation.navigate("EachProfile", {
+                            userId: userId,
+                          });
+                        }
+                      }}
+                    >
+                      <Image
+                        style={styles.reelProfilePicture}
+                        source={
+                          profileImageUri && profileImageUri.trim() !== ""
+                            ? { uri: profileImageUri }
+                            : UserImg
                       }
-                    />
+                      />
+                    </TouchableOpacity>
                     <Text style={styles.reelUsername}>
                       {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                     </Text>
@@ -1164,15 +1237,12 @@ const NewSocialCard = ({
                             unFollowUser();
                           }
                         }}
-                        disabled={effectiveFollowStatus === "pending"}
                       >
                         <View style={styles.buttonContent}>
                           <Icon
                             name={
                               effectiveFollowStatus === "none"
                                 ? "add"
-                                : effectiveFollowStatus === "pending"
-                                ? "hourglass"
                                 : "checkmark"
                             }
                             size={18}
@@ -1184,15 +1254,11 @@ const NewSocialCard = ({
                               styles.reelFollowButtonText,
                               effectiveFollowStatus === "approved"
                                 ? { color: "#FF9933" }
-                                : effectiveFollowStatus === "pending"
-                                ? { color: "#FF9933" }
                                 : { color: "#FF9933" },
                             ]}
                           >
                             {effectiveFollowStatus === "none"
                               ? "Follow"
-                              : effectiveFollowStatus === "pending"
-                              ? "Pending"
                               : "Following"}
                           </Text>
                         </View>
@@ -1289,12 +1355,18 @@ const NewSocialCard = ({
                       <Ionicons name="repeat" size={28} color="white" />
                     </TouchableOpacity>
                     <Text style={{ color: "white" }}>{reposts}</Text>
-                    <TouchableOpacity style={styles.reelIconButton}>
+                    <TouchableOpacity 
+                      style={styles.reelIconButton}
+                      onPress={() => {
+                        console.log("Reel share button pressed - calling openShareModal");
+                        openShareModal();
+                      }}
+                    >
                       <Ionicons name="paper-plane" size={28} color="white" />
                     </TouchableOpacity>
                   </View>
                 </View>
-              </View>
+              </SafeAreaView>
             </Modal>
           </>
         )}
@@ -1338,56 +1410,60 @@ const NewSocialCard = ({
           </View>
         )} */}
 
-        <View style={styles.imageContainer}>
-          {images && images.length > 0 ? (
-            <>
-              {images.length > 1 ? (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  onScroll={handleScroll}
-                  scrollEventThrottle={16}
-                  snapToInterval={windowWidth}
-                  decelerationRate="fast"
-                  snapToAlignment="center"
-                >
-                  {images.map((image, index) => {
-                    const imageUri = `${image}`;
-                    console.log("Rendering image:", imageUri);
-                    return (
-                      <TouchableWithoutFeedback
-                        key={index}
-                        onPress={handleDoubleTap}
-                      >
-                        <Image
-                          style={styles.bannerImage}
-                          source={{ uri: imageUri }}
-                        />
-                      </TouchableWithoutFeedback>
-                    );
-                  })}
-                </ScrollView>
-              ) : (
-                <TouchableWithoutFeedback onPress={handleDoubleTap}>
-                  <Image
-                    style={styles.bannerSingleImage}
-                    source={{ uri: `${images[0]}` }}
-                  />
-                </TouchableWithoutFeedback>
-              )}
+        {/* Only show image container if there are images and no video */}
+        {images && images.length > 0 && !video && (
+          <View style={styles.imageContainer}>
+            {images.length > 1 ? (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                onScroll={handleScroll}
+                scrollEventThrottle={16}
+                snapToInterval={windowWidth}
+                decelerationRate="fast"
+                snapToAlignment="center"
+              >
+                {images.map((image, index) => {
+                  const imageUri = `${image}`;
+                  console.log("Rendering image:", imageUri);
+                  return (
+                    <TouchableWithoutFeedback
+                      key={index}
+                      onPress={handleDoubleTap}
+                    >
+                      <Image
+                        style={styles.bannerImage}
+                        source={{ uri: imageUri }}
+                      />
+                    </TouchableWithoutFeedback>
+                  );
+                })}
+              </ScrollView>
+            ) : (
+              <TouchableWithoutFeedback onPress={handleDoubleTap}>
+                <Image
+                  style={styles.bannerSingleImage}
+                  source={{ uri: `${images[0]}` }}
+                />
+              </TouchableWithoutFeedback>
+            )}
 
-              {images.length > 1 && (
-                <View style={styles.indexContainer}>
-                  <Text style={styles.indexText}>
-                    {currentIndex + 1} / {images.length}
-                  </Text>
-                </View>
-              )}
-            </>
-          ) : (
-            <Text>{t("no_images_visible")}</Text> // Fallback message in case there are no images
-          )}
-        </View>
+            {images.length > 1 && (
+              <View style={styles.indexContainer}>
+                <Text style={styles.indexText}>
+                  {currentIndex + 1} / {images.length}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
+        {/* Show "no images" message only for text-only posts (no video, no images) */}
+        {(!images || images.length === 0) && !video && (
+          <View style={styles.imageContainer}>
+            <Text>{t("no_images_visible")}</Text>
+          </View>
+        )}
 
         {heartVisible && (
           <View style={styles.likeIconContainer}>
@@ -1448,7 +1524,7 @@ const NewSocialCard = ({
               marginLeft={10}
               color="#000"
             />
-            <Text style={styles.actionText}>{t("send")}</Text>
+            <Text style={styles.actionText}>{t("share") || "Share"}</Text>
           </TouchableOpacity>
         </View>
 
@@ -1527,14 +1603,25 @@ const NewSocialCard = ({
               ListHeaderComponent={() => (
                 <View>
                   <View style={styles.header}>
-                    <Image
-                      style={styles.profileImage}
-                      source={
-                        profileImageUri && profileImageUri.trim() !== ""
-                          ? { uri: profileImageUri }
-                          : UserImg
+                    <TouchableOpacity
+                      onPress={() => {
+                        // Only navigate if user exists and has a valid ID
+                        if (userId) {
+                          navigation.navigate("EachProfile", {
+                            userId: userId,
+                          });
+                        }
+                      }}
+                    >
+                      <Image
+                        style={styles.profileImage}
+                        source={
+                          profileImageUri && profileImageUri.trim() !== ""
+                            ? { uri: profileImageUri }
+                            : UserImg
                       }
                     />
+                    </TouchableOpacity>
                     <View style={styles.headerText}>
                       <Text style={styles.name}>
                         {" "}
@@ -1546,13 +1633,12 @@ const NewSocialCard = ({
                   {video && (
                     <>
                       <View>
-                        <Video
+                        <VideoView
                           source={{
                             uri: `${video.replace(/\\/g, "/")}`,
                           }}
                           style={styles.chatVideoThumbnail}
                           resizeMode="cover"
-                          usePoster
                           shouldPlay={false}
                           isLooping
                           isMuted={isMuted}
@@ -1660,15 +1746,22 @@ const NewSocialCard = ({
         </Modal>
 
         {/* Modal for Share */}
+        {console.log("Rendering share modal, isShareModalVisible:", isShareModalVisible)}
+        {isShareModalVisible && console.log("Share modal should be visible now")}
         <Modal
           transparent={true}
           visible={isShareModalVisible}
           animationType="slide"
           onRequestClose={closeShareModal}
+          presentationStyle="overFullScreen"
+          statusBarTranslucent={true}
         >
           <TouchableWithoutFeedback onPress={closeShareModal}>
             <View style={styles.shareModalOverlay}>
               <View style={styles.shareModalContainer}>
+                <Text style={[styles.modalTitle, { marginBottom: 15, textAlign: "center" }]}>
+                  Share with Friends
+                </Text>
                 <View
                   style={{
                     alignItems: "center",
@@ -1687,7 +1780,7 @@ const NewSocialCard = ({
                       paddingHorizontal: 12,
                       backgroundColor: "#f8f8f8",
                     }}
-                    placeholder={t("search")}
+                    placeholder={t("searchFriends") || "Search friends..."}
                     value={shareSearchTerm}
                     onChangeText={setShareSearchTerm}
                   />
@@ -1701,9 +1794,13 @@ const NewSocialCard = ({
                   ListEmptyComponent={
                     shareLoading ? (
                       <ActivityIndicator size="large" color="#007AFF" />
+                    ) : shareUsers.length === 0 ? (
+                      <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
+                        No friends to share with
+                      </Text>
                     ) : (
                       <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
-                        {shareSearchTerm ? "No users found" : "No users available"}
+                        {shareSearchTerm ? "No friends found" : "No friends to share"}
                       </Text>
                     )
                   }
@@ -1718,12 +1815,12 @@ const NewSocialCard = ({
                       closeShareModal();
                       Alert.alert(
                         "Success", 
-                        `Post shared with ${selectedUsers.length} user${selectedUsers.length > 1 ? 's' : ''} successfully.`
+                        `Post shared with ${selectedUsers.length} friend${selectedUsers.length > 1 ? 's' : ''} successfully.`
                       );
                     }}
                   >
                     <Text style={styles.sendButtonText}>
-                      {t("send")} to {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''}
+                      {t("send")} to {selectedUsers.length} friend{selectedUsers.length > 1 ? 's' : ''}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1919,17 +2016,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
   },
-  pendingIcon: {
-    fontSize: 20,
-    color: "#FFA500", // Orange color for pending state
-    marginRight: 4,
-    fontWeight: "bold",
-  },
-  pendingText: {
-    color: "#FFA500", // Orange color for pending state
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+
   checkIcon: {
     fontSize: 20,
     color: "grey",
@@ -2336,15 +2423,17 @@ const styles = StyleSheet.create({
   },
   reelBackButton: {
     position: "absolute",
-    top: 40,
+    top: 10,
     left: 20,
+    zIndex: 1000,
   },
   reelMuteButton: {
     position: "absolute",
-    top: 40,
+    top: 10,
     right: 20,
     borderRadius: 20,
     padding: 5,
+    zIndex: 1000,
   },
   reelActionButtons: {
     position: "absolute",

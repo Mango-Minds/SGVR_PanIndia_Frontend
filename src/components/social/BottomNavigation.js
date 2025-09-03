@@ -5,42 +5,110 @@ import { Card, IconButton } from "react-native-paper";
 import Theme from "../../styles/theme";
 import { useTranslation } from "react-i18next";
 
-export default function BottomNavigation({ navigation }) {
+export default function BottomNavigation({ navigation, currentScreen }) {
   const { t } = useTranslation();
+  
+  const getIconName = (screen) => {
+    switch (screen) {
+      case "home":
+        return "home-outline";
+      case "myNetwork":
+        return "people-outline";
+      case "notifications":
+        return "notifications-outline";
+      case "jobs":
+        return "briefcase-outline";
+      default:
+        return "home-outline";
+    }
+  };
+
+  const getFilledIconName = (screen) => {
+    switch (screen) {
+      case "home":
+        return "home";
+      case "myNetwork":
+        return "people";
+      case "notifications":
+        return "notifications";
+      case "jobs":
+        return "briefcase";
+      default:
+        return "home";
+    }
+  };
+
+  const isActive = (screen) => currentScreen === screen;
+
   return (
     <View style={styles.bottomBarContainer}>
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.navigate("SocialHomeScreen")}
         >
-          <Ionicons name="home-outline" size={24} color={Theme.themeColor} />
-          <Text style={[styles.iconText, { color: Theme.themeColor }]}>
-           {t("home")}
+          <Ionicons 
+            name={isActive("home") ? getFilledIconName("home") : getIconName("home")}
+            size={24} 
+            color={isActive("home") ? Theme.themeColor : "#666"} 
+          />
+          <Text style={[
+            styles.iconText, 
+            { color: isActive("home") ? Theme.themeColor : "#666" }
+          ]}>
+            {t("home")}
           </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.iconContainer}
           onPress={() => navigation.navigate("MyNetwork")}
         >
-          <Ionicons name="people-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}> {t("myNetwork")}</Text>
+          <Ionicons 
+            name={isActive("myNetwork") ? getFilledIconName("myNetwork") : getIconName("myNetwork")}
+            size={24} 
+            color={isActive("myNetwork") ? Theme.themeColor : "#666"} 
+          />
+          <Text style={[
+            styles.iconText, 
+            { color: isActive("myNetwork") ? Theme.themeColor : "#666" }
+          ]}> 
+            {t("myNetwork")}
+          </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.iconContainer}
           onPress={() => navigation.navigate("NotificationsScreen")}
         >
-          <Ionicons name="notifications-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>
+          <Ionicons 
+            name={isActive("notifications") ? getFilledIconName("notifications") : getIconName("notifications")}
+            size={24} 
+            color={isActive("notifications") ? Theme.themeColor : "#666"} 
+          />
+          <Text style={[
+            styles.iconText, 
+            { color: isActive("notifications") ? Theme.themeColor : "#666" }
+          ]}>
             {t("notifications")}
           </Text>
         </TouchableOpacity>
+        
         <TouchableOpacity
           style={styles.iconContainer}
           onPress={() => navigation.navigate("SocialJobs")}
         >
-          <Ionicons name="briefcase-outline" size={28} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>{t("jobs")}</Text>
+          <Ionicons 
+            name={isActive("jobs") ? getFilledIconName("jobs") : getIconName("jobs")}
+            size={24} 
+            color={isActive("jobs") ? Theme.themeColor : "#666"} 
+          />
+          <Text style={[
+            styles.iconText, 
+            { color: isActive("jobs") ? Theme.themeColor : "#666" }
+          ]}>
+            {t("jobs")}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -156,20 +224,31 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 8,
+    borderTopWidth: 0.5,
+    borderTopColor: "#e0e0e0",
   },
   bottomBar: {
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    paddingVertical: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 8,
   },
   iconContainer: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 4,
   },
 
   iconText: {
     marginTop: 4,
+    fontSize: 12,
+    fontWeight: "500",
+    textAlign: "center",
+    textDecorationLine: "none",
+    includeFontPadding: false,
+    textAlignVertical: "center",
   },
   icon: {
     marginRight: 10,

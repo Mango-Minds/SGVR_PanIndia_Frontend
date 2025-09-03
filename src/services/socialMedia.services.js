@@ -4,7 +4,7 @@ import authHeader from "./auth.header";
 
 export const getSearchUsers = async ({ searchTerm = "" }) => {
   const res = await axios.get(
-    `${BASEAPIURL}/meetup/search-profile/?username=${searchTerm}`,
+    `${BASEAPIURL}/social/search-users?search=${searchTerm}`,
     {
       headers: await authHeader(),
     }
@@ -14,10 +14,8 @@ export const getSearchUsers = async ({ searchTerm = "" }) => {
 
 export const unfollowUser = async ({ userId }) => {
   const res = await axios.patch(
-    `${BASEAPIURL}/meetup/unfollow`,
-    {
-      userid: userId,
-    },
+    `${BASEAPIURL}/social/unfollow/${userId}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -27,10 +25,8 @@ export const unfollowUser = async ({ userId }) => {
 
 export const blockuser = async ({ userId }) => {
   const res = await axios.patch(
-    `${BASEAPIURL}/meetup/unfollow`,
-    {
-      userid: userId,
-    },
+    `${BASEAPIURL}/social/unfollow/${userId}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -69,18 +65,16 @@ export const getSearchUsersMatrimony = async ({
 };
 
 export const getSocialMediaTimeline = async () => {
-  const res = await axios.get(`${BASEAPIURL}/meetup/timeline?page=1`, {
+  const res = await axios.get(`${BASEAPIURL}/social/post/all?page=1&limit=10`, {
     headers: await authHeader(),
   });
   return res.data;
 };
 
 export const likePost = async ({ postId }) => {
-  const res = await axios.patch(
-    `${BASEAPIURL}/meetup/like`,
-    {
-      postId: postId,
-    },
+  const res = await axios.post(
+    `${BASEAPIURL}/social/post/like/${postId}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -89,11 +83,9 @@ export const likePost = async ({ postId }) => {
 };
 
 export const unlikePost = async ({ postId }) => {
-  const res = await axios.patch(
-    `${BASEAPIURL}/meetup/unlike`,
-    {
-      postId: postId,
-    },
+  const res = await axios.post(
+    `${BASEAPIURL}/social/post/unlike/${postId}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -102,7 +94,7 @@ export const unlikePost = async ({ postId }) => {
 };
 
 export const getAllLikes = async ({ postId }) => {
-  const res = await axios.get(`${BASEAPIURL}/meetup/likes?postId=${postId}`, {
+  const res = await axios.get(`${BASEAPIURL}/social/post/like-status/${postId}`, {
     headers: await authHeader(),
   });
   return res.data;
@@ -138,7 +130,7 @@ export const commentOnPost = async ({ postId, content }) => {
 
 export const getSocialMediaProfile = async (userid) => {
   const res = await axios.get(
-    `${BASEAPIURL}/meetup/get-profile?userid=${userid}`,
+    `${BASEAPIURL}/user/profile/${userid}`,
     {
       headers: await authHeader(),
     }
@@ -148,7 +140,7 @@ export const getSocialMediaProfile = async (userid) => {
 
 export const getSocialMediaProfilePosts = async (batch) => {
   const res = await axios.get(
-    `${BASEAPIURL}/meetup/all-post?page=${batch}&limit=10`,
+    `${BASEAPIURL}/social/post/user/${batch}?page=1&limit=10`,
     {
       headers: await authHeader(),
     }
@@ -159,7 +151,7 @@ export const getSocialMediaProfilePosts = async (batch) => {
 export const createPost = async (data) => {
   try {
     const res = await axios
-      .post(`${BASEAPIURL}/meetup/new-post`, data, {
+      .post(`${BASEAPIURL}/social/post/create`, data, {
         headers: await authHeader(),
       })
       .then((res) => {
@@ -169,7 +161,7 @@ export const createPost = async (data) => {
 };
 
 export const editSocialMediaProfile = async (data) => {
-  const res = await axios.patch(`${BASEAPIURL}/meetup/edit-profile`, data, {
+  const res = await axios.patch(`${BASEAPIURL}/user/profile/${data.userId}`, data, {
     headers: await authHeader(),
   });
   return res.data;
@@ -177,10 +169,8 @@ export const editSocialMediaProfile = async (data) => {
 
 export const unfollowSocialMediaProfile = async ({ username }) => {
   const res = await axios.patch(
-    `${BASEAPIURL}/meetup/unfollow`,
-    {
-      userid: username,
-    },
+    `${BASEAPIURL}/social/unfollow/${username}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -188,13 +178,10 @@ export const unfollowSocialMediaProfile = async ({ username }) => {
   return res.data;
 };
 
-export const SendFriendRequest = async ({ userid }) => {
-  const editProfileObj = {
-    userid,
-  };
-  const res = await axios.patch(
-    `${BASEAPIURL}/meetup/send-request`,
-    editProfileObj,
+export const sendRequest = async ({ toUserId }) => {
+  const res = await axios.post(
+    `${BASEAPIURL}/social/send-request/${toUserId}`,
+    {},
     {
       headers: await authHeader(),
     }
@@ -202,28 +189,20 @@ export const SendFriendRequest = async ({ userid }) => {
   return res.data;
 };
 
-export const AcceptFriendRequest = async ({ userid }) => {
-  const editProfileObj = {
-    userid,
-  };
+export const acceptRequest = async ({ requestId }) => {
   const res = await axios.patch(
-    `${BASEAPIURL}/meetup/accept-request`,
-    editProfileObj,
+    `${BASEAPIURL}/social/update-request/${requestId}`,
+    { status: 'approved' },
     {
       headers: await authHeader(),
     }
   );
-  console.log(res.data);
   return res.data;
 };
 
-export const DeleteFriendRequest = async ({ userid }) => {
-  const editProfileObj = {
-    userid,
-  };
-  const res = await axios.patch(
-    `${BASEAPIURL}/meetup/delete-request`,
-    editProfileObj,
+export const deleteRequest = async ({ requestId }) => {
+  const res = await axios.delete(
+    `${BASEAPIURL}/social/delete-request/${requestId}`,
     {
       headers: await authHeader(),
     }
@@ -232,7 +211,7 @@ export const DeleteFriendRequest = async ({ userid }) => {
 };
 
 export const GetAllFriends = async ({ userid }) => {
-  const res = await axios.get(`${BASEAPIURL}/meetup/friends/${userid}`, {
+  const res = await axios.get(`${BASEAPIURL}/social/${userid}/friends`, {
     headers: await authHeader(),
   });
   return res.data;
@@ -246,24 +225,29 @@ export const getImageUrl = async (id) => {
 };
 
 export const getSinglePost = async (id) => {
-  const res = await axios.get(`${BASEAPIURL}/meetup/post?id=${id}`, {
+  const res = await axios.get(`${BASEAPIURL}/social/post/${id}`, {
     headers: await authHeader(),
   });
   return res.data;
 };
 
-export const getDeletemypost = async (id) => {
-  const res = await axios.delete(`${BASEAPIURL}/meetup/post?id=${id.id}`, {
+export const deletePost = async (id) => {
+  const res = await axios.delete(`${BASEAPIURL}/social/post/delete/${id}`, {
+    headers: await authHeader(),
+  });
+  return res.data;
+};
+
+export const deleteComment = async (postId, commentId) => {
+  const res = await axios.delete(`${BASEAPIURL}/social/post/comment/${postId}/${commentId}`, {
     headers: await authHeader(),
   });
   return res.data;
 };
 
 export const getTagspeople = async () => {
-  const res = await axios.get(`${BASEAPIURL}/meetup/tags`, {
-    headers: await authHeader(),
-  });
-  return res.data;
+  // Tags endpoint not available in social routes, return empty array
+  return { data: [] };
 };
 
 export const getAllNotifications = async (module) => {
@@ -277,13 +261,17 @@ export const getAllNotifications = async (module) => {
 };
 
 export const deleteChat = async (id) => {
-  return await axios.delete(
-    `${BASEAPIURL}/api/chat/delete-convo`,
-    {
-      convoId: id,
-    },
-    {
-      headers: authHeader(),
-    }
-  );
+  try {
+    const res = await axios.delete(
+      `${BASEAPIURL}/chat/delete-convo`,
+      {
+        data: { convoId: id },
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting chat:", error);
+    return { success: false, message: 'Failed to delete chat' };
+  }
 };

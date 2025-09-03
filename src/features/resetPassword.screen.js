@@ -6,6 +6,9 @@ import {
   Text,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 import Theme from "../styles/theme";
 import { Checkbox } from "react-native-paper";
@@ -15,7 +18,6 @@ import {
   FormSection,
   FormSectionSubtitle,
   FormSectionTitle,
-  MainContainer,
   LoginInputField,
 } from "../styles/prelogin.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -99,7 +101,17 @@ export default function ResetPasswordScreen({ route, navigation }) {
 
   return (
     <SafeArea>
-      <MainContainer>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ flex: 1, justifyContent: "center" }}>
         <Image
           style={styles.logo}
           source={require("../assets/images/pre-login/miLogo-small.png")}
@@ -119,6 +131,8 @@ export default function ResetPasswordScreen({ route, navigation }) {
               secureTextEntry={hidePass ? true : false}
               onChangeText={(text) => setPassword(text)}
               value={password}
+              returnKeyType="next"
+              blurOnSubmit={false}
             />
             <View
               style={{
@@ -148,6 +162,8 @@ export default function ResetPasswordScreen({ route, navigation }) {
               secureTextEntry={hideConfirmPass ? true : false}
               onChangeText={(text) => setConfirmPassword(text)}
               value={confirmPassword}
+              returnKeyType="done"
+              blurOnSubmit={true}
             />
             <View
               style={{
@@ -187,7 +203,9 @@ export default function ResetPasswordScreen({ route, navigation }) {
             </Text>
           </FormButton>
         </FormSection>
-      </MainContainer>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeArea>
   );
 }

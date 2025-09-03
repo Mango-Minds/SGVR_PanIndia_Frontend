@@ -32,22 +32,37 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       
       const refreshToken = await AsyncStorage.getItem("refresh_token");
-      const res = await getUpdatedTokens(refreshToken);
+      
+      if (!refreshToken) {
+        console.error("No refresh token found, logging out...");
+        await AsyncStorage.clear();
+        return Promise.reject(error);
+      }
+      
+      try {
+        const res = await getUpdatedTokens(refreshToken);
 
-      if (res && res.status === 0) {
-        console.log("New Tokens:", res);
+        if (res && res.status === 0) {
+          console.log("New Tokens:", res);
 
-        // **STORE NEW TOKENS**
-        await AsyncStorage.setItem("token", res.accessToken);
-        await AsyncStorage.setItem("refresh_token", res.refreshToken);
+          // **STORE NEW TOKENS**
+          await AsyncStorage.setItem("token", res.accessToken);
+          await AsyncStorage.setItem("refresh_token", res.refreshToken);
 
-        // **UPDATE HEADER & RETRY REQUEST**
-        originalRequest.headers.Authorization = `Bearer ${res.accessToken}`;
-        return apiClient(originalRequest);
-      } else {
-        console.error("Token refresh failed, logging out...");
-        await AsyncStorage.removeItem("token");
-        await AsyncStorage.removeItem("refresh_token");
+          // **UPDATE HEADER & RETRY REQUEST**
+          originalRequest.headers.Authorization = `Bearer ${res.accessToken}`;
+          return apiClient(originalRequest);
+        } else {
+          console.error("Token refresh failed, logging out...");
+          await AsyncStorage.clear();
+          await AsyncStorage.removeItem("loggedIn");
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        console.error("Token refresh error:", refreshError);
+        await AsyncStorage.clear();
+        await AsyncStorage.removeItem("loggedIn");
+        return Promise.reject(error);
       }
     }
 

@@ -20,37 +20,69 @@ export const submitNewJob = async (jobData) => {
 };
 
 export const submitNewPost = async (description, list) => {
-  const token = await getToken();
+  try {
+    const token = await getToken();
+    console.log("Token obtained:", token ? "Yes" : "No");
 
-  const formData = new FormData();
-  formData.append("content", description);
+    const formData = new FormData();
+    formData.append("content", description);
+    console.log("Description appended:", description);
 
-  if (list[0].mimeType.startsWith("image")) {
-    formData.append("type", "text+image");
-    list.forEach((image) => {
-      formData.append("images", {
-        uri: image.uri,
-        name: image.name,
-        type: image.mimeType,
-      });
+    // Check if there's any media to upload
+    if (list && list.length > 0) {
+      console.log("Processing media list with", list.length, "items");
+      // Handle both DocumentPicker and ImagePicker formats
+      const firstItem = list[0];
+      const isImage = firstItem.type === "image" || firstItem.mimeType?.startsWith("image");
+      const isVideo = firstItem.type === "video" || firstItem.mimeType?.startsWith("video");
+
+      console.log("First item type:", firstItem.type);
+      console.log("First item mimeType:", firstItem.mimeType);
+      console.log("Is image:", isImage);
+      console.log("Is video:", isVideo);
+
+      if (isImage) {
+        formData.append("type", "text+image");
+        list.forEach((image, index) => {
+          const mediaItem = {
+            uri: image.uri,
+            name: image.name,
+            type: image.mimeType || (image.type === "image" ? "image/jpeg" : "video/mp4"),
+          };
+          formData.append("images", mediaItem);
+          console.log(`Appended image ${index}:`, mediaItem);
+        });
+      } else if (isVideo) {
+        formData.append("type", "text+video");
+        const videoItem = {
+          uri: list[0].uri,
+          name: list[0].name,
+          type: list[0].mimeType || "video/mp4",
+        };
+        formData.append("video", videoItem);
+        console.log("Appended video:", videoItem);
+      }
+    } else {
+      // Text-only post
+      formData.append("type", "text");
+      console.log("Text-only post, type set to 'text'");
+    }
+
+    console.log("FormData prepared, making API call...");
+    const response = await apiClient.post("/social/post/create", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`,
+      },
     });
-  } else if (list[0].mimeType.startsWith("video")) {
-    formData.append("type", "text+video");
-    formData.append("video", {
-      uri: list[0].uri,
-      name: list[0].name,
-      type: list[0].mimeType,
-    });
+
+    console.log("API response received:", response.status);
+    return response;
+  } catch (error) {
+    console.error("Error in submitNewPost:", error);
+    console.error("Error response:", error.response?.data);
+    throw error;
   }
-
-  const response = await apiClient.post("/social/post/create", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  return response;
 };
 
 // Fetch follow status
@@ -251,15 +283,30 @@ console.log("ProfileData: ", profileData);
 
 
 
-export const sendFollowRequestAPI = async (
+export const followUserAPI = async (
   fromUserId,
   toUserId,
-  setIsFollowing
+  setFollowStatus
 ) => {
   try {
+    // Validate inputs
+    if (!toUserId) {
+      console.error('followUserAPI: toUserId is required');
+      Alert.alert("Error", "Invalid user ID");
+      return;
+    }
+
+    if (!fromUserId) {
+      console.error('followUserAPI: fromUserId is required');
+      Alert.alert("Error", "Invalid user ID");
+      return;
+    }
+
+    console.log('followUserAPI called with:', { fromUserId, toUserId });
+
     const token = await getToken();
     const response = await apiClient.post(
-      `social/send-request/${toUserId}`,
+      `social/follow/${toUserId}`,
       {},
       {
         headers: {
@@ -269,30 +316,42 @@ export const sendFollowRequestAPI = async (
       }
     );
 
-    console.log("response of sending req", response);
+    console.log("response of following user", response);
 
     // Axios throws on non-2xx status, so if you're here, it's successful
     if (response.status === 200) {
-      setIsFollowing(true);
-      Alert.alert("Success", "Connection request sent successfully.");
+      setFollowStatus("approved");
+      Alert.alert("Success", "User followed successfully.");
     }
   } catch (error) {
-    console.error("Error connecting to user:", error);
+    console.error("Error following user:", error);
 
     if (error.response) {
       const message = error.response.data.message;
       if (message === "You are already following this user.") {
-        setIsFollowing(true);
+        setFollowStatus("approved");
         Alert.alert("Already Following", message);
-      } else if (message === "Follow request already sent to this user.") {
-        Alert.alert("Request Already Sent", message);
       } else {
-        Alert.alert("Error", message || "Failed to send connection request.");
+        Alert.alert("Error", message || "Failed to follow user.");
+        // Don't update follow status on error
+        return;
       }
     } else {
       Alert.alert("Error", "An unexpected error occurred.");
+      // Don't update follow status on error
+      return;
     }
   }
+};
+
+// Legacy function for backward compatibility (now uses direct follow)
+export const sendFollowRequestAPI = async (
+  fromUserId,
+  toUserId,
+  setFollowStatus
+) => {
+  // Use the new direct follow API instead
+  return followUserAPI(fromUserId, toUserId, setFollowStatus);
 };
 
 // Unfollow user
@@ -316,12 +375,15 @@ export const unfollowUserAPI = async (toUserId) => {
   }
 };
 
-export const fetchAllPosts = (page = 1, limit = 10) => {
-  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}`);
+export const fetchAllPosts = (page = 1, limit = 10, search = '') => {
+  const searchParam = search && search.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
+  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}${searchParam}`);
 };
 
+// Legacy function - use followUserAPI instead
 export const sendFollowRequest = (toUserId) => {
-  return apiClient.post(`/social/send-request/${toUserId}`);
+  console.warn('sendFollowRequest is deprecated. Use followUserAPI instead.');
+  return apiClient.post(`/social/follow/${toUserId}`);
 };
 
 export const getFollowStatus = (userId) => {
@@ -496,6 +558,53 @@ export const getMutualConnections = (userId) => {
   return apiClient.get(`/social/mutual-connections/${userId}`);
 };
 
+// ========== FRIEND REQUEST SYSTEM ==========
+
+// Send a friend request
+export const sendFriendRequest = (toUserId) => {
+  return apiClient.post(`/social/send-friend-request/${toUserId}`);
+};
+
+// Get incoming friend requests
+export const getFriendRequests = () => {
+  return apiClient.get("/social/list-friend-requests");
+};
+
+// Get sent friend requests
+export const getSentFriendRequests = () => {
+  return apiClient.get("/social/sent-friend-requests");
+};
+
+// Accept or reject a friend request
+export const updateFriendRequestStatus = (requestId, status) => {
+  return apiClient.patch(`/social/update-friend-request/${requestId}`, { status });
+};
+
+// Cancel a sent friend request
+export const cancelFriendRequest = (toUserId) => {
+  return apiClient.delete(`/social/cancel-friend-request/${toUserId}`);
+};
+
+// Remove a friend
+export const removeFriend = (toUserId) => {
+  return apiClient.patch(`/social/remove-friend/${toUserId}`);
+};
+
+// Get user's friends list
+export const getUserFriends = (userId) => {
+  return apiClient.get(`/social/${userId}/friends`);
+};
+
+// Check friend status between two users
+export const checkFriendStatus = (userId) => {
+  return apiClient.get(`/social/check-friend-status/${userId}`);
+};
+
+// Get all users who are not friends with the current user
+export const getNonFriends = () => {
+  return apiClient.get("/social/non-friends");
+};
+
 // Block user
 export const blockUser = (userId) => {
   return apiClient.post(`/social/block/${userId}`);
@@ -594,12 +703,19 @@ export const updateUserAboutEducationDetails = async ({
   navigation,
   t,
 }) => {
+  // Set a timeout to prevent loading state from getting stuck
+  const timeoutId = setTimeout(async () => {
+    await dispatch(setLoadingInBtn(false));
+    Alert.alert(t("error"), t("requestTimeout"));
+  }, 30000); // 30 seconds timeout
+
   try {
     const token = await AsyncStorage.getItem("token");
     const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
 
     if (!token) {
       console.error("Bearer token not found");
+      clearTimeout(timeoutId);
       Alert.alert(t("error"), t("auth_token_missing"));
       return;
     }
@@ -622,35 +738,153 @@ export const updateUserAboutEducationDetails = async ({
 
     console.log("API Response:", response.data);
 
-    // Corrected: send data as an array with a text field to match backend expectation
-    const translateResponse = await apiClient.post("/translate", {
-      data: [{ text: "Information Updated Successfully" }],
-      targetLang: selectedLanguage,
-    });
+    // Clear timeout and loading state
+    clearTimeout(timeoutId);
+    await dispatch(setLoadingInBtn(false));
 
-    const translated =
-      translateResponse.data?.translatedData?.[0]?.text || t("info_updated_successfully");
+    try {
+      // Corrected: send data as an array with a text field to match backend expectation
+      const translateResponse = await apiClient.post("/translate", {
+        data: [{ text: "Information Updated Successfully" }],
+        targetLang: selectedLanguage,
+      });
 
-    Alert.alert(t("success"), translated);
+      const translated =
+        translateResponse.data?.translatedData?.[0]?.text || t("info_updated_successfully");
+
+      Alert.alert(t("success"), translated);
+    } catch (translationError) {
+      console.error("Translation error:", translationError);
+      Alert.alert(t("success"), t("info_updated_successfully"));
+    }
 
     fetchUserProfile();
     navigation.goBack();
   } catch (error) {
     console.error("Error updating user:", error);
 
+    // Clear timeout and loading state
+    clearTimeout(timeoutId);
+    await dispatch(setLoadingInBtn(false));
+
+    try {
+      const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
+
+      const translateErrorResponse = await apiClient.post("/translate", {
+        data: [{ text: "Failed to update user information." }],
+        targetLang: selectedLanguage,
+      });
+
+      const errorMessage =
+        translateErrorResponse.data?.translatedData?.[0]?.text || t("failed_to_update_user_info");
+
+      Alert.alert(t("error"), errorMessage);
+    } catch (translationError) {
+      console.error("Translation error:", translationError);
+      Alert.alert(t("error"), t("failed_to_update_user_info"));
+    }
+  }
+};
+
+// New function to update banner image
+export const updateUserBannerImage = async ({
+  bannerImage,
+  dispatch,
+  setLoadingInBtn,
+  fetchUserProfile,
+  navigation,
+  t,
+}) => {
+  // Set a timeout to prevent loading state from getting stuck
+  const timeoutId = setTimeout(async () => {
+    await dispatch(setLoadingInBtn(false));
+    Alert.alert(t("error"), t("requestTimeout"));
+  }, 30000); // 30 seconds timeout
+
+  try {
+    const token = await AsyncStorage.getItem("token");
     const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
 
-    const translateErrorResponse = await apiClient.post("/translate", {
-      data: [{ text: "Failed to update user information." }],
-      targetLang: selectedLanguage,
+    if (!token) {
+      console.error("Bearer token not found");
+      clearTimeout(timeoutId);
+      Alert.alert(t("error"), t("auth_token_missing"));
+      return;
+    }
+
+    let formData = new FormData();
+
+    if (bannerImage && bannerImage.uri) {
+      const localUri = bannerImage.uri;
+      const filename = localUri.split("/").pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : `image`;
+
+      formData.append("bannerImage", {
+        uri: localUri,
+        name: filename,
+        type,
+      });
+    }
+
+    await dispatch(setLoadingInBtn(true));
+
+    const fullUrl = `/user/update-follow-data`;
+
+    const response = await apiClient.patch(fullUrl, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "multipart/form-data",
+      },
     });
 
-    const errorMessage =
-      translateErrorResponse.data?.translatedData?.[0]?.text || t("failed_to_update_user_info");
+    console.log("API Response:", response.data);
 
-    Alert.alert(t("error"), errorMessage);
-
+    // Clear timeout and loading state
+    clearTimeout(timeoutId);
     await dispatch(setLoadingInBtn(false));
+
+    try {
+      // Corrected: send data as an array with a text field to match backend expectation
+      const translateResponse = await apiClient.post("/translate", {
+        data: [{ text: "Banner image updated successfully" }],
+        targetLang: selectedLanguage,
+      });
+
+      const translated =
+        translateResponse.data?.translatedData?.[0]?.text || t("banner_updated_successfully");
+
+      Alert.alert(t("success"), translated);
+    } catch (translationError) {
+      console.error("Translation error:", translationError);
+      Alert.alert(t("success"), t("banner_updated_successfully"));
+    }
+
+    fetchUserProfile();
+    navigation.goBack();
+  } catch (error) {
+    console.error("Error updating banner image:", error);
+
+    // Clear timeout and loading state
+    clearTimeout(timeoutId);
+    await dispatch(setLoadingInBtn(false));
+
+    try {
+      const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
+
+      const translateErrorResponse = await apiClient.post("/translate", {
+        data: [{ text: "Failed to update banner image." }],
+        targetLang: selectedLanguage,
+      });
+
+      const errorMessage =
+        translateErrorResponse.data?.translatedData?.[0]?.text || t("failed_to_update_banner");
+
+      Alert.alert(t("error"), errorMessage);
+    } catch (translationError) {
+      console.error("Translation error:", translationError);
+      Alert.alert(t("error"), t("failed_to_update_banner"));
+    }
   }
 };
 

@@ -172,7 +172,9 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
         throw new Error("Failed to update user");
       }
       alert("Information Updated Successfully");
-      fetchUser();
+      if (fetchUser && typeof fetchUser === 'function') {
+        fetchUser();
+      }
       navigation.goBack();
     } catch (error) {
       console.error("Error updating user:", error);

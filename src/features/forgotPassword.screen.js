@@ -1,6 +1,15 @@
 import axios from "axios";
 import React, { useState } from "react";
-import { ActivityIndicator, Image, StyleSheet, Text } from "react-native";
+import {
+  ActivityIndicator,
+  Image,
+  StyleSheet,
+  Text,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
+  View
+} from "react-native";
 import { useDispatch, useSelector } from "react-redux";
 import { SafeArea } from "../components/utility/safe-area.component";
 import { BASEAPIURL } from "../infrastructure/constants";
@@ -10,7 +19,6 @@ import {
   FormSection,
   FormSectionSubtitle,
   FormSectionTitle,
-  MainContainer,
   LoginInputField,
   BottomText,
   ForgotText,
@@ -41,14 +49,14 @@ export default function ForgotPasswordScreen({ navigation }) {
       );
       return;
     }
-    
+
     dispatch(setLoadingInBtn(true));
     try {
       // Skip OTP verification and go directly to reset password
       const res = await axios.post(BASEAPIURL + "/user/forgot-password/verify-user", {
         phone: phone,
       });
-      
+
       if (res.data.status === 0) {
         dispatch(
           ErrorToggle({
@@ -97,7 +105,17 @@ export default function ForgotPasswordScreen({ navigation }) {
   };
   return (
     <SafeArea>
-      <MainContainer>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ flex: 1, justifyContent: "center" }}>
         <Image
           style={styles.logo}
           source={require("../assets/images/pre-login/miLogo-small.png")}
@@ -119,6 +137,8 @@ export default function ForgotPasswordScreen({ navigation }) {
             value={phone}
             keyboardType="default"
             onChangeText={(e) => setPhone(e)}
+            returnKeyType="done"
+            blurOnSubmit={true}
           />
 
           <FormButton onPress={forgotPassword}>
@@ -152,7 +172,9 @@ export default function ForgotPasswordScreen({ navigation }) {
             Login
           </ForgotText>
         </BottomText>
-      </MainContainer>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeArea>
   );
 }

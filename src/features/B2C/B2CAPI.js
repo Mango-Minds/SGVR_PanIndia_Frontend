@@ -879,7 +879,9 @@ export const updateUserProfile = async ({
 
     Alert.alert("Success", "Information Updated Successfully");
 
-    fetchUser();
+    if (fetchUser && typeof fetchUser === 'function') {
+      fetchUser();
+    }
     navigation.goBack();
   } catch (error) {
     console.error("Error updating user:", error);

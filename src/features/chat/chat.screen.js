@@ -10,10 +10,9 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from "react-native";
-import { IconButton } from "react-native-paper";
+import { IconButton, TextInput } from "react-native-paper";
 import {
   ChatDateLabel,
-  ChatTextInput,
   RecieveChatBlock,
   SendChatBlock,
   TopText,
@@ -33,9 +32,8 @@ import {
 } from "../../store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { cloneDeep } from "lodash";
-import CHatBackground from "../../assets/images/general/chatback.png";
 import { SOCKETURL } from "../../infrastructure/constants";
-import BlockModal from "../../components/modals/Blockuser";
+import { BASEAPIURL } from "../../infrastructure/constants";
 import DeleteModal from "../../components/modals/DeleteChat";
 
 const ChatScreen = ({ navigation, route }) => {
@@ -48,13 +46,13 @@ const ChatScreen = ({ navigation, route }) => {
   const [menu, setMenu] = useState(false);
   const { user, localChats, cloudChats, conversations, socialData } =
     useSelector((state) => state.user);
+  const token = useSelector((state) => state.user.token);
 
   const socket = React.useRef();
   const scrollViewRef = React.useRef();
   const focusref = React.useRef();
   const { toid, toName, index } = route.params;
   const [cindex, setCindex] = useState(index);
-  const blockRef = React.useRef(null);
   const deleteRef = React.useRef(null);
   const chatindex = useRef(null);
 
@@ -198,6 +196,29 @@ const ChatScreen = ({ navigation, route }) => {
   }
 
   const sendMessage = async (e) => {
+    console.log("sendMessage function called with message:", message);
+    
+    // Create chat room if it doesn't exist
+    try {
+      const roomResponse = await fetch(`${BASEAPIURL}/chat/room`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          userIds: [user._id, toid]
+        })
+      });
+      
+      if (roomResponse.ok) {
+        const roomData = await roomResponse.json();
+        console.log("Chat room created/retrieved:", roomData.roomId);
+      }
+    } catch (error) {
+      console.error("Error creating chat room:", error);
+    }
+    
     const obj = {
       msg: message,
       sender: user._id,
@@ -283,82 +304,56 @@ const ChatScreen = ({ navigation, route }) => {
         marginTop: 0,
         paddingLeft: 0,
         paddingRight: 0,
-        backgroundColor: "#FAFAFA",
+        backgroundColor: "#FFFFFF",
         flex: 1,
       }}
     >
       <RowBetween
         style={{
-          paddingTop: 35,
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: 16,
+          backgroundColor: "#FFFFFF",
+          borderBottomWidth: 1,
+          borderBottomColor: "#E8ECF2",
           paddingBottom: 10,
-
-          backgroundColor: "#F8F7F7",
-          shadowColor: "#0000001B",
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.7,
-          shadowRadius: 2,
-          elevation: 10,
         }}
       >
-        <View style={{ alignItems: "center", marginTop: 0 }}>
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
           <IconButton
             icon="arrow-left"
             onPress={() => {
               navigation.goBack();
             }}
           />
-          <View
+          <Text
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              width: 100,
-              alignItems: "center",
+              color: "#000000",
+              fontSize: 20,
+              fontWeight: "bold",
+              textTransform: "capitalize",
+              marginLeft: 8,
             }}
           >
-            <View>
-              {active === true ? (
-                <View
-                  style={{
-                    position: "absolute",
-                    backgroundColor: "green",
-                    borderRadius: 10,
-                    width: 10,
-                    height: 10,
-                    padding: 0,
-                    marginTop: 5,
-                  }}
-                >
-                  <Text style={{ marginLeft: 100 }}></Text>
-                </View>
-              ) : null}
-              <Text
-                style={{
-                  color: "#000000",
-                  fontSize: 18,
-                  fontWeight: "600",
-                  textTransform: "capitalize",
-                  marginTop: 0,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  marginLeft: 20,
-                }}
-              >
-                {toName}
-              </Text>
-            </View>
-            <IconButton
-              icon="dots-vertical"
+            {toName}
+          </Text>
+          {active === true && (
+            <View
               style={{
-                marginRight: 10,
-                fontSize: 20,
-                fontWeight: "600",
-                // paddingHorizontal: 10,
+                backgroundColor: "green",
+                borderRadius: 10,
+                width: 10,
+                height: 10,
+                marginLeft: 8,
               }}
-              onPress={() => setMenu(!menu)}
             />
-          </View>
+          )}
         </View>
+        <IconButton
+          icon="dots-vertical"
+          onPress={() => setMenu(!menu)}
+        />
       </RowBetween>
       {menu && (
         <View
@@ -383,15 +378,11 @@ const ChatScreen = ({ navigation, route }) => {
         >
           <TouchableOpacity
             onPress={() => {
-              for (let i = 0; i < socialData.friends.length; i++) {
-                const item = socialData.friends[i];
-                if (item._id === toid) {
-                  navigation.navigate("ViewUserScreen", {
-                    username: socialData.friends[i].username,
-                    userid: socialData.friends[i]._id,
-                  });
-                }
-              }
+              setMenu(false);
+              // Navigate to the user's profile
+              navigation.navigate("EachProfile", {
+                userId: toid,
+              });
             }}
           >
             <Text
@@ -408,28 +399,6 @@ const ChatScreen = ({ navigation, route }) => {
               }}
             >
               View User
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPressIn={() => {
-              setMenu(false);
-              blockRef.current.open();
-            }}
-          >
-            <Text
-              style={{
-                fontSize: Platform.OS === "android" ? 14 : 20,
-                color: "grey",
-                textTransform: "capitalize",
-                marginTop: 0,
-                backgroundColor: "white",
-                paddingVertical: Platform.OS === "android" ? 8 : 10,
-                letterSpacing: 0.5,
-                width: Platform.OS === "android" ? 170 : 200,
-                paddingLeft: 30,
-              }}
-            >
-              Block User
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -456,29 +425,21 @@ const ChatScreen = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
       )}
-      <View style={{ flex: 1, paddingHorizontal: 0, flexDirection: "column" }}>
-        <ImageBackground
-          source={CHatBackground}
-          resizeMode="cover"
+      <View style={{ flex: 1, paddingHorizontal: 0, flexDirection: "column", backgroundColor: "#FFFFFF" }}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          ref={scrollViewRef}
+          onContentSizeChange={() => {
+            scrollViewRef.current.scrollToEnd({
+              animated: animated.current,
+            });
+            animated.current = true;
+          }}
           style={{
-            width: "100%",
-            height: "100%",
+            paddingHorizontal: 10,
+            backgroundColor: "#FFFFFF",
           }}
         >
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            ref={scrollViewRef}
-            onContentSizeChange={() => {
-              scrollViewRef.current.scrollToEnd({
-                animated: animated.current,
-              });
-              animated.current = true;
-            }}
-            backgroundColor={Theme.themeColor}
-            style={{
-              paddingHorizontal: 10,
-            }}
-          >
             {chattings &&
               chattings.length > 0 &&
               chattings.map((chat, index) => {
@@ -508,32 +469,57 @@ const ChatScreen = ({ navigation, route }) => {
                 );
               })}
           </ScrollView>
-        </ImageBackground>
       </View>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         enabled={true}
       >
-        <ChatTextInput
+        <TextInput
           placeholder="Type your message"
           placeholderTextColor="#78849E"
           selectionColor="#B98C13"
           value={message}
           right={
-            <ChatTextInput.Icon
-              name="send"
+            <TextInput.Icon
+              icon="send"
               style={{ marginTop: 15 }}
               onPress={() => {
-                if (message !== "") sendMessage();
-                scrollViewRef.current.scrollToEnd({ animated: true });
+                console.log("Send button pressed, message:", message);
+                if (message !== "") {
+                  sendMessage();
+                  scrollViewRef.current.scrollToEnd({ animated: true });
+                } else {
+                  console.log("Message is empty, cannot send");
+                }
               }}
             />
           }
           activeUnderlineColor="transparent"
           underlineColor="transparent"
-          // onSubmitEditing={sendMessage}
+          mode="outlined"
+          outlineColor="transparent"
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 26,
+            height: 40,
+            marginTop: 10,
+            marginBottom: 10,
+            marginLeft: 15,
+            marginRight: 15,
+            borderWidth: 1,
+            borderColor: "#E8ECF2",
+            shadowColor: "#000000",
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.05,
+            shadowRadius: 2,
+            elevation: 2,
+          }}
           onChangeText={(text) => {
             setMessage(text);
+          }}
+          onSubmitEditing={() => {
+            if (message !== "") sendMessage();
+            scrollViewRef.current.scrollToEnd({ animated: true });
           }}
           onFocus={() => {
             setTimeout(() => {
@@ -544,14 +530,13 @@ const ChatScreen = ({ navigation, route }) => {
         />
       </KeyboardAvoidingView>
 
-      <BlockModal
-        slideUpRef={blockRef}
-        data={{ id: toid, name: toName }}
-        mainRef={blockRef}
-      />
       <DeleteModal
         slideUpRef={deleteRef}
-        data={{ id: toid, name: toName }}
+        data={{ 
+          _id: route.params.conversationId || route.params._id,
+          conversation: [user._id, toid], // Pass conversation array for ID generation
+          name: toName 
+        }}
         mainRef={deleteRef}
       />
     </Container>

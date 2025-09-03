@@ -8,6 +8,8 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useSelector } from "react-redux";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -102,78 +104,88 @@ const RepostWithThoughts = ({ route, navigation }) => {
   }
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.headerContainer}>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon
-            name="arrow-back"
-            size={24}
-            color="#000"
-          />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.postButton, isPosting && styles.postButtonDisabled]}
-          onPress={handleRepost}
-          disabled={isPosting}
-        >
-          <Text style={styles.postButtonText}>
-            {isPosting ? "Posting..." : "Post"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="What do you want to talk about?"
-          value={thoughts}
-          onChangeText={setThoughts}
-          multiline
-          numberOfLines={4}
-        />
-      </View>
-
-      <View style={styles.repostContainer}>
-        <View style={styles.originalPost}>
-          <View style={styles.postHeader}>
-            <Image
-              source={
-                originalPost.createdBy?.image
-                  ? { uri: originalPost.createdBy.image }
-                  : require("../../assets/images/general/user.png")
-              }
-              style={styles.profileImage}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1 }}
+    >
+             <ScrollView 
+         style={styles.container}
+         keyboardShouldPersistTaps="handled"
+       >
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            style={styles.iconButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Icon
+              name="arrow-back"
+              size={24}
+              color="#000"
             />
-
-            <View style={styles.headerText}>
-              <Text style={styles.username}>
-                {originalPost.createdBy?.firstName} {originalPost.createdBy?.lastName}
-              </Text>
-              <Text style={styles.time}>
-                {originalPost.createdAt
-                  ? new Date(originalPost.createdAt).toLocaleDateString()
-                  : "Recently"
-                }
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.description}>
-            {originalPost.content || "No content available"}
-          </Text>
-
-          {(originalPost.images && originalPost.images.length > 0) || originalPost.image ? (
-            <Image
-              style={styles.bannerImage}
-              source={{ uri: originalPost.images?.[0] || originalPost.image }}
-            />
-          ) : null}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.postButton, isPosting && styles.postButtonDisabled]}
+            onPress={handleRepost}
+            disabled={isPosting}
+          >
+            <Text style={styles.postButtonText}>
+              {isPosting ? "Posting..." : "Post"}
+            </Text>
+          </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+
+                 <View style={styles.inputContainer}>
+           <TextInput
+             style={styles.input}
+             placeholder="What do you want to talk about?"
+             value={thoughts}
+             onChangeText={setThoughts}
+             multiline
+             numberOfLines={4}
+             returnKeyType="done"
+             blurOnSubmit={true}
+           />
+         </View>
+
+        <View style={styles.repostContainer}>
+          <View style={styles.originalPost}>
+            <View style={styles.postHeader}>
+              <Image
+                source={
+                  originalPost.createdBy?.image
+                    ? { uri: originalPost.createdBy.image }
+                    : require("../../assets/images/general/user.png")
+                }
+                style={styles.profileImage}
+              />
+
+              <View style={styles.headerText}>
+                <Text style={styles.username}>
+                  {originalPost.createdBy?.firstName} {originalPost.createdBy?.lastName}
+                </Text>
+                <Text style={styles.time}>
+                  {originalPost.createdAt
+                    ? new Date(originalPost.createdAt).toLocaleDateString()
+                    : "Recently"
+                  }
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.description}>
+              {originalPost.content || "No content available"}
+            </Text>
+
+            {(originalPost.images && originalPost.images.length > 0) || originalPost.image ? (
+              <Image
+                style={styles.bannerImage}
+                source={{ uri: originalPost.images?.[0] || originalPost.image }}
+              />
+            ) : null}
+          </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

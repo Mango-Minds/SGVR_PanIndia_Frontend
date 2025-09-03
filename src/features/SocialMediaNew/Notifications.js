@@ -20,6 +20,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
 import { getGeneralNotifications } from "./SocialMediaAPIs";
+import BottomNavigation from "../../components/social/BottomNavigation";
 
 const NotificationsScreen = ({ navigation }) => {
   const { t } = useTranslation();
@@ -296,7 +297,7 @@ const NotificationsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with Back Arrow, Search Bar, and Settings Icon */}
+      {/* Header with Back Arrow and Search Bar */}
       <View style={styles.headerContainer}>
         <TouchableOpacity 
           style={styles.iconButton}
@@ -311,9 +312,6 @@ const NotificationsScreen = ({ navigation }) => {
             onFocus={() => navigation.navigate("SearchResults")}
           />
         </View>
-        <TouchableOpacity style={styles.iconButton}>
-          <Icon name="settings" size={24} color="#000" />
-        </TouchableOpacity>
       </View>
 
       <View style={styles.notificationContainer}>
@@ -352,6 +350,7 @@ const NotificationsScreen = ({ navigation }) => {
           showsVerticalScrollIndicator={false}
         />
       </View>
+      <BottomNavigation navigation={navigation} currentScreen="notifications" />
     </View>
   );
 };

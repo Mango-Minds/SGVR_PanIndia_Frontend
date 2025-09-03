@@ -6,6 +6,7 @@ import store from "./src/store/index";
 import { RootSiblingParent } from "react-native-root-siblings";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { FollowStatusProvider } from './src/features/SocialMediaNew/FollowStatusContext';
 import './src/features/i18n';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -25,9 +26,9 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
         <RootSiblingParent>
-         
+          <FollowStatusProvider>
             <Navigation />
-         
+          </FollowStatusProvider>
           <ExpoStatusBar style="dark" />
         </RootSiblingParent>
       </Provider>

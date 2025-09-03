@@ -7,6 +7,9 @@ import {
   ScrollView,
   View,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
@@ -180,97 +183,107 @@ const handleUpdate = async () => {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
-            <View style={{ alignItems: "center", flexDirection: "row" }}>
-              <IconButton
-                icon="arrow-left"
-                size={28}
-                onPress={() => navigation.goBack()}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "500",
-                  color: "#000",
-                }}
-              >
-                Edit Post
-              </Text>
-            </View>
-          </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
-          >
-            <FormSection style={{ paddingTop: 0 }}>
-              <Text
-                style={{
-                  fontSize: 16,
-                  marginLeft: 4,
-                  color: "grey",
-                  fontWeight: "600",
-                  marginTop: 20,
-                }}
-              >
-                Description
-              </Text>
-              <TextInput
-                multiline={true}
-                numberOfLines={14}
-                selectionColor={Theme.themeColor}
-                placeholder="Post Description*"
-                activeUnderlineColor={Theme.themeColor}
-                underlineColor="transparent"
-                placeholderTextColor="#9B9B9B"
-                value={modifiedDetails.description}
-                onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, description: text })
-                }
-                style={[
-                  styles.input,
-                  {
-                    padding: 25,
-                    borderRadius: 5,
-                    fontSize: 16,
-                    height: 300,
-                    color: "black",
-                    fontWeight: "400",
-                    backgroundColor: "#F0F0F0",
-                    marginTop: 5,
-                    paddingTop: 15,
-                    borderColor: "#e6e6e6",
-                    textTransform: "capitalize",
-                  },
-                ]}
-              />
-
-              <FormButton onPress={handleUpdate}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
+        >
+                     <ScrollView 
+             showsVerticalScrollIndicator={false}
+             keyboardShouldPersistTaps="handled"
+           >
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row" }}>
+                <IconButton
+                  icon="arrow-left"
+                  size={28}
+                  onPress={() => navigation.goBack()}
+                />
                 <Text
-                  style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "500",
+                    color: "#000",
+                  }}
                 >
-                  {loadingInBtn === true ? (
-                    <ActivityIndicator
-                      style={{
-                        display: "flex",
-                        alignSelf: "center",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        flex: 1,
-                      }}
-                     
-                      color={"white"}
-                    />
-                  ) : (
-                    "Submit"
-                  )}
+                  Edit Post
                 </Text>
-              </FormButton>
-            </FormSection>
-          </MainContainer>
-        </ScrollView>
+              </View>
+            </RowBetween>
+            <MainContainer
+              style={{ paddingBottom: 56 }}
+              keyboardDismissMode="on-drag"
+              keyboardShouldPersistTaps="handled"
+              contentInsetAdjustmentBehavior="always"
+            >
+              <FormSection style={{ paddingTop: 0 }}>
+                <Text
+                  style={{
+                    fontSize: 16,
+                    marginLeft: 4,
+                    color: "grey",
+                    fontWeight: "600",
+                    marginTop: 20,
+                  }}
+                >
+                  Description
+                </Text>
+                                 <TextInput
+                   multiline={true}
+                   numberOfLines={14}
+                   selectionColor={Theme.themeColor}
+                   placeholder="Post Description*"
+                   activeUnderlineColor={Theme.themeColor}
+                   underlineColor="transparent"
+                   placeholderTextColor="#9B9B9B"
+                   value={modifiedDetails.description}
+                   onChangeText={(text) =>
+                     setModifiedDetails({ ...modifiedDetails, description: text })
+                   }
+                   returnKeyType="done"
+                   blurOnSubmit={true}
+                   style={[
+                     styles.input,
+                     {
+                       padding: 25,
+                       borderRadius: 5,
+                       fontSize: 16,
+                       height: 300,
+                       color: "black",
+                       fontWeight: "400",
+                       backgroundColor: "#F0F0F0",
+                       marginTop: 5,
+                       paddingTop: 15,
+                       borderColor: "#e6e6e6",
+                       textTransform: "capitalize",
+                     },
+                   ]}
+                 />
+
+                <FormButton onPress={handleUpdate}>
+                  <Text
+                    style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+                  >
+                    {loadingInBtn === true ? (
+                      <ActivityIndicator
+                        style={{
+                          display: "flex",
+                          alignSelf: "center",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          flex: 1,
+                        }}
+                       
+                        color={"white"}
+                      />
+                    ) : (
+                      "Submit"
+                    )}
+                  </Text>
+                </FormButton>
+              </FormSection>
+            </MainContainer>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

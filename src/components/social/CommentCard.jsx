@@ -1,15 +1,18 @@
-import React from "react";
-import { Card, Button, Divider, IconButton } from "react-native-paper";
-import { Image, Text } from "react-native";
-import { RowBetween, View } from "../../styles/common.styles";
+import React, { useState } from "react";
+import { Card, IconButton, Menu, Divider } from "react-native-paper";
+import { Image, Text, TouchableOpacity, View, Alert } from "react-native";
+import { RowBetween, View as StyledView } from "../../styles/common.styles";
 import { useSelector } from "react-redux";
 import { getImageUrl } from "../../services/socialMedia.services";
 import { useNavigation } from "@react-navigation/native";
+import { deleteComment } from "../../services/socialMedia.services";
+import moment from "moment";
 
 export default function CommentCard(props) {
   const { user } = useSelector((state) => state.user);
-
-  const { comment } = props;
+  const { comment, postId, onCommentDeleted } = props;
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   // Add safety checks
   if (!comment) {
@@ -17,7 +20,7 @@ export default function CommentCard(props) {
     return null;
   }
 
-  const { userId, content, createdAt } = comment;
+  const { userId, content, createdAt, _id: commentId } = comment;
 
   console.log("Comment data:", comment);
   const navigation = useNavigation();
@@ -55,71 +58,182 @@ export default function CommentCard(props) {
     }
   };
 
+  const isCommentOwner = user?._id === userId?._id;
+
+  const handleDeleteComment = async () => {
+    if (!postId || !commentId) {
+      Alert.alert("Error", "Cannot delete comment: Missing data");
+      return;
+    }
+
+    Alert.alert(
+      "Delete Comment",
+      "Are you sure you want to delete this comment?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setDeleting(true);
+              const response = await deleteComment(postId, commentId);
+              if (response.status === 0) {
+                onCommentDeleted && onCommentDeleted(commentId);
+              } else {
+                Alert.alert("Error", response.message || "Failed to delete comment");
+              }
+            } catch (error) {
+              console.error("Error deleting comment:", error);
+              Alert.alert("Error", "Failed to delete comment");
+            } finally {
+              setDeleting(false);
+              setMenuVisible(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Safety check for required data
   if (!userId || !content) {
     console.warn("CommentCard: Missing required data", { userId, content });
     return null;
   }
 
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const now = moment();
+    const commentTime = moment(timestamp);
+    const diffMinutes = now.diff(commentTime, 'minutes');
+    const diffHours = now.diff(commentTime, 'hours');
+    const diffDays = now.diff(commentTime, 'days');
+
+    if (diffMinutes < 1) return "Just now";
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return commentTime.format('MMM D, YYYY');
+  };
+
   return (
     <Card
       style={{
-        marginHorizontal: 0,
-        shadowColor: "transparent",
-        backgroundColor: "transparent",
-        borderBottomWidth: 0.5,
-        borderBottomColor: "#EFEFEF",
-        opacity: userId !== null ? 1 : 0.5,
+        marginHorizontal: 16,
+        marginVertical: 8,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+        backgroundColor: "#FFFFFF",
+        borderRadius: 12,
       }}
-      onPress={handleUserPress}
     >
-      <Card.Content>
-        <RowBetween>
-          <View style={{ alignItems: "center" }}>
+      <Card.Content style={{ padding: 16 }}>
+        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+          {/* Profile Image */}
+          <TouchableOpacity onPress={handleUserPress} style={{ marginRight: 12 }}>
             <Image
               source={
                 dp
                   ? { uri: dp }
                   : require("../../assets/images/general/user.png")
               }
-              resizeMode="contain"
-              style={{ width: 46, height: 46, borderRadius: 6 }}
-            />
-            <View
-              style={{
-                flexDirection: "column",
+              style={{ 
+                width: 40, 
+                height: 40, 
+                borderRadius: 20,
+                borderWidth: 1,
+                borderColor: "#E0E0E0"
               }}
-            >
+            />
+          </TouchableOpacity>
+
+          {/* Comment Content */}
+          <View style={{ flex: 1, marginRight: 8 }}>
+            {/* User Name and Time */}
+            <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
               <Text
                 style={{
-                  fontSize: 15,
-                  color: "#454F63",
-                  fontWeight: "bold",
-                  marginLeft: 8,
-                  marginRight: 16,
+                  fontSize: 14,
+                  color: "#1A1A1A",
+                  fontWeight: "600",
+                  marginRight: 8,
                 }}
               >
-                {userId !== null
-                  ? userId.firstName === user?.firstName
-                    ? "You"
-                    : (userId.firstName || "Unknown") + " " + (userId.lastName || "")
-                  : "@user_not_found"}
-                {"  "}
+                {userId.firstName === user?.firstName ? "You" : `${userId.firstName || "Unknown"} ${userId.lastName || ""}`}
               </Text>
               <Text
                 style={{
-                  fontSize: 13,
-                  marginLeft: 12,
-                  marginTop: 4,
-                  color: "#454F63",
-                  fontWeight: "normal",
+                  fontSize: 12,
+                  color: "#8E8E93",
+                  fontWeight: "400",
                 }}
               >
-                {content}
+                {formatTime(createdAt)}
               </Text>
             </View>
+
+            {/* Comment Text */}
+            <Text
+              style={{
+                fontSize: 15,
+                color: "#2C2C2E",
+                fontWeight: "400",
+                lineHeight: 20,
+                marginBottom: 8,
+              }}
+            >
+              {content}
+            </Text>
           </View>
-        </RowBetween>
+
+          {/* Menu Button - Only visible to comment owner */}
+          {isCommentOwner && (
+            <Menu
+              visible={menuVisible}
+              onDismiss={() => setMenuVisible(false)}
+              anchor={
+                <TouchableOpacity
+                  onPress={() => setMenuVisible(true)}
+                  style={{
+                    padding: 8,
+                    borderRadius: 16,
+                    backgroundColor: menuVisible ? '#F2F2F7' : 'transparent',
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <IconButton
+                    icon="dots-vertical"
+                    size={20}
+                    iconColor="#8E8E93"
+                    style={{ margin: 0, padding: 0 }}
+                  />
+                </TouchableOpacity>
+              }
+              contentStyle={{
+                backgroundColor: "#FFFFFF",
+                borderRadius: 8,
+                elevation: 4,
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+              }}
+            >
+              <Menu.Item
+                onPress={handleDeleteComment}
+                title="Delete Comment"
+                titleStyle={{ color: "#FF3B30", fontSize: 14 }}
+                leadingIcon="delete"
+                leadingIconColor="#FF3B30"
+                disabled={deleting}
+              />
+            </Menu>
+          )}
+        </View>
       </Card.Content>
     </Card>
   );

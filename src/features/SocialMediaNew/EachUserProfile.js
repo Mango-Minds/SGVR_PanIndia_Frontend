@@ -25,12 +25,16 @@ import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
 import {
   fetchFollowStatusAPI,
-  sendFollowRequest,
+  followUserAPI,
   unfollowUserAPI,
   fetchProfileAPI,
   fetchPostsAPI,
   cancelRequest,
+  sendFriendRequest,
+  cancelFriendRequest,
+  removeFriend,
 } from "./SocialMediaAPIs";
+import { useFollowStatus } from "./FollowStatusContext";
 
 const Tab = createBottomTabNavigator();
 
@@ -47,32 +51,54 @@ export default function EachProfile() {
   const [loading, setLoading] = useState(true);
   const [userPosts, setUserPosts] = useState([]);
   const [isFollowing, setIsFollowing] = useState("not_following");
-  const [showAllPosts, setShowAllPosts] = useState(false);
+  const [friendStatus, setFriendStatus] = useState("none"); // none, friends, request_sent, request_received
+
   const [modalVisible, setModalVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("posts");
+  const { getFollowStatus, updateFollowStatus } = useFollowStatus();
 
-  // Fetch follow status
+  // Fetch follow status - only when viewing another user's profile
   const fetchFollowStatus = async () => {
+    // Don't fetch follow status if viewing own profile
+    if (fromUserId === userId) {
+      setIsFollowing("none");
+      setFriendStatus("none");
+      return;
+    }
+
     try {
       const response = await fetchFollowStatusAPI(userId);
       if (response.status === 200) {
         const data = response.data;
-        console.log("following status", data);
         // Handle different response structures
+        let status;
         if (data.status) {
-          setIsFollowing(data.status);
+          status = data.status;
         } else if (data.isFollowing !== undefined) {
-          setIsFollowing(data.isFollowing ? "approved" : "none");
+          status = data.isFollowing ? "approved" : "none";
         } else {
-          setIsFollowing("none");
+          status = "none";
+        }
+        
+        setIsFollowing(status);
+        // Update global follow status context
+        updateFollowStatus(userId, status);
+
+        // Also update friend status if available
+        if (data.friendStatus !== undefined) {
+          setFriendStatus(data.friendStatus);
+        } else {
+          setFriendStatus("none");
         }
       } else {
         console.error("Failed to fetch follow status");
         setIsFollowing("none");
+        updateFollowStatus(userId, "none");
       }
     } catch (error) {
       console.error("Error fetching follow status:", error);
       setIsFollowing("none");
+      updateFollowStatus(userId, "none");
     }
   };
 
@@ -89,11 +115,17 @@ export default function EachProfile() {
   const fetchUserData = async () => {
     try {
       setLoading(true);
-      await Promise.all([
+      const promises = [
         fetchProfileAPI(userId, setProfile, setLoading),
-        fetchPosts(),
-        fetchFollowStatus()
-      ]);
+        fetchPosts()
+      ];
+      
+      // Only fetch follow status if viewing another user's profile
+      if (fromUserId !== userId) {
+        promises.push(fetchFollowStatus());
+      }
+      
+      await Promise.all(promises);
     } catch (error) {
       console.error("Error fetching user data:", error);
     } finally {
@@ -108,53 +140,55 @@ export default function EachProfile() {
   // Listen for refresh parameter changes
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      // Refresh follow status when screen comes into focus
-      fetchFollowStatus();
+      // Refresh follow status when screen comes into focus (only for other users)
+      if (fromUserId !== userId) {
+        fetchFollowStatus();
+      }
     });
 
     return unsubscribe;
-  }, [navigation]);
+  }, [navigation, fromUserId, userId]);
 
-  // Refresh posts when follow status changes
+  // Handle follow status changes across all posts
+  const handleFollowStatusChange = (userId, status) => {
+    updateFollowStatus(userId, status);
+    // Also update the main follow status for this profile
+    if (userId === route.params.userId) {
+      setIsFollowing(status);
+    }
+  };
+
+  // Refresh posts when follow status changes (only for other users)
   useEffect(() => {
-    if (isFollowing !== null) {
+    if (fromUserId !== userId && isFollowing !== null) {
       fetchPosts();
     }
-  }, [isFollowing]);
+  }, [isFollowing, fromUserId, userId]);
 
   const handleSendFollowRequest = async (fromUserId, toUserId) => {
     try {
-      const response = await sendFollowRequest(toUserId);
-      console.log("response of sending req", response);
-
-      if (response.status === 200) {
-        setIsFollowing("pending");
-        Alert.alert("Success", "Connection request sent successfully.");
-      }
+      await followUserAPI(fromUserId, toUserId, (status) => {
+        setIsFollowing(status);
+        // Update global follow status context
+        updateFollowStatus(toUserId, status);
+      });
     } catch (error) {
-      const data = error.response?.data;
-      if (data?.message === "You are already following this user.") {
-        setIsFollowing("approved");
-        Alert.alert(
-          "Already Following",
-          "You are already following this user."
-        );
-      } else if (
-        data?.message === "Follow request already sent to this user."
-      ) {
-        setIsFollowing("pending");
-        Alert.alert(
-          "Request Already Sent",
-          "You have already sent a connection request to this user."
-        );
-      } else {
-        console.error("Error connecting to user:", error);
-        Alert.alert(
-          "Error",
-          "An error occurred while trying to send the follow request."
-        );
-      }
+      console.error("Error following user:", error);
+      // Error handling is done inside followUserAPI
     }
+  };
+
+  const handleMessagePress = () => {
+    // Generate conversation ID from current user and target user
+    const conversationId = [user._id, userId].sort().join('_');
+    
+    // Navigate to chat screen with the target user's information
+    navigation.navigate("ChatScreen", {
+      toid: userId,
+      toName: `${profile?.user?.firstName} ${profile?.user?.lastName}`,
+      index: 0, // Default index for new chat
+      conversationId: conversationId, // Pass the conversation ID
+    });
   };
 
   const unFollowUser = async () => {
@@ -162,6 +196,8 @@ export default function EachProfile() {
       const response = await unfollowUserAPI(userId);
       if (response && response.status === 200) {
         setIsFollowing("none");
+        // Update global follow status context
+        updateFollowStatus(userId, "none");
         Alert.alert("Success", "User unfollowed successfully.");
       }
     } catch (error) {
@@ -172,37 +208,8 @@ export default function EachProfile() {
 
   const handleFollowAction = async () => {
     if (isFollowing === "none" || isFollowing === "not_following") {
-      // Send follow request
+      // Follow user directly
       await handleSendFollowRequest(fromUserId, userId);
-    } else if (isFollowing === "pending") {
-      // Show option to withdraw request
-      Alert.alert(
-        "Withdraw Request",
-        "Do you want to withdraw your follow request?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Withdraw", 
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await cancelRequest(userId);
-                if (response.status === 200) {
-                  setIsFollowing("none");
-                  Alert.alert("Success", "Request withdrawn successfully.");
-                  // Refresh the follow status to ensure consistency
-                  setTimeout(() => {
-                    fetchFollowStatus();
-                  }, 500);
-                }
-              } catch (error) {
-                console.error("Error withdrawing request:", error);
-                Alert.alert("Error", "Failed to withdraw request");
-              }
-            }
-          }
-        ]
-      );
     } else if (isFollowing === "approved") {
       // Unfollow user
       Alert.alert(
@@ -226,36 +233,94 @@ export default function EachProfile() {
     }
   };
 
-  const handleSeeAllClick = () => {
-    setShowAllPosts((prev) => !prev);
-  };
-
-  const blockUser = async (blockedUserId) => {
+  // Friend request handling functions
+  const handleSendFriendRequest = async () => {
     try {
-      console.log("Blocking user", blockedUserId);
-      const token = await AsyncStorage.getItem("token");
-      const response = await fetch(
-        `${BASEAPIURL}/social/post/block-user/${blockedUserId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      console.log("Block user response", response);
-      if (response.ok) {
-        const data = await response.json();
-        Alert.alert("Success", data.message);
-      } else {
-        Alert.alert("Error", "Failed to block user.");
+      const response = await sendFriendRequest(userId);
+      if (response.status === 200) {
+        setFriendStatus("request_sent");
+        Alert.alert("Success", "Friend request sent successfully.");
       }
     } catch (error) {
-      console.error("Error blocking user:", error);
-      Alert.alert("Error", "An error occurred while trying to block the user.");
+      console.error("Error sending friend request:", error);
+      if (error.response?.data?.message) {
+        Alert.alert("Error", error.response.data.message);
+      } else {
+        Alert.alert("Error", "Failed to send friend request.");
+      }
     }
+  };
+
+  const handleCancelFriendRequest = async () => {
+    try {
+      const response = await cancelFriendRequest(userId);
+      if (response.status === 200) {
+        setFriendStatus("none");
+        Alert.alert("Success", "Friend request cancelled successfully.");
+      }
+    } catch (error) {
+      console.error("Error cancelling friend request:", error);
+      Alert.alert("Error", "Failed to cancel friend request.");
+    }
+  };
+
+  const handleRemoveFriend = async () => {
+    Alert.alert(
+      "Remove Friend",
+      `Do you want to remove ${profile?.user?.firstName} ${profile?.user?.lastName} from your friends?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Remove", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await removeFriend(userId);
+              if (response.status === 200) {
+                setFriendStatus("none");
+                Alert.alert("Success", "Friend removed successfully.");
+              }
+            } catch (error) {
+              console.error("Error removing friend:", error);
+              Alert.alert("Error", "Failed to remove friend.");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleFriendAction = async () => {
+    switch (friendStatus) {
+      case "none":
+        await handleSendFriendRequest();
+        break;
+      case "request_sent":
+        await handleCancelFriendRequest();
+        break;
+      case "friends":
+        await handleRemoveFriend();
+        break;
+      case "request_received":
+        // Navigate to network tab to handle incoming request
+        navigation.navigate("MyNetwork");
+        break;
+      default:
+        break;
+    }
+  };
+
+
+
+  const blockUser = (blockedUserId) => {
+    // Static frontend-only block functionality
+    Alert.alert(
+      "Block User",
+      `User ${profile?.user?.firstName} ${profile?.user?.lastName} has been blocked successfully.`,
+      [
+        { text: "OK", onPress: () => setModalVisible(false) }
+      ]
+    );
   };
 
   const bannerImageUri = profile?.followData?.bannerImage
@@ -268,57 +333,28 @@ export default function EachProfile() {
   const renderContent = () => {
     switch (activeTab) {
       case "Posts":
-        if (showAllPosts) {
-          // Show all posts
-          return userPosts?.posts?.map((post) => {
-            const createdBy = post.createdBy || {};
-            return (
-              <NewSocialCard
-                key={post._id}
-                post={post}
-                profileImageUri={createdBy.image ? `${createdBy.image}` : ""}
-                description={post.content}
-                video={post.video}
-                source="EachProfile"
-                firstName={createdBy.firstName || "Deleted"}
-                lastName={createdBy.lastName || "User"}
-                postId={post._id}
-                postImages={post.images}
-                fetchPosts={fetchPosts}
-                userId={userId}
-                currentFollowStatus={isFollowing}
-                onFollowStatusChange={setIsFollowing}
-              />
-            );
-          });
-        } else {
-          // Show only the first post
-          const firstPost = userPosts?.posts?.[0];
-
-          if (firstPost) {
-            const createdBy = firstPost.createdBy || {};
-            return (
-              <NewSocialCard
-                key={firstPost._id}
-                post={firstPost}
-                profileImageUri={createdBy.image ? `${createdBy.image}` : ""}
-                description={firstPost.content}
-                video={firstPost.video}
-                source="EachProfile"
-                firstName={createdBy.firstName || "Deleted"}
-                lastName={createdBy.lastName || "User"}
-                postId={firstPost._id}
-                postImages={firstPost.images}
-                fetchPosts={fetchPosts}
-                userId={userId}
-                currentFollowStatus={isFollowing}
-                onFollowStatusChange={setIsFollowing}
-              />
-            );
-          } else {
-            return <Text>{t("NoPostsAvailable")}</Text>;
-          }
-        }
+        // Show all posts
+        return userPosts?.posts?.map((post) => {
+          const createdBy = post.createdBy || {};
+          return (
+            <NewSocialCard
+              key={post._id}
+              post={post}
+              profileImageUri={createdBy.image ? `${createdBy.image}` : ""}
+              description={post.content}
+              video={post.video}
+              source="EachProfile"
+              firstName={createdBy.firstName || "Deleted"}
+              lastName={createdBy.lastName || "User"}
+              postId={post._id}
+              postImages={post.images}
+              fetchPosts={fetchPosts}
+              userId={userId}
+              currentFollowStatus={isFollowing}
+              onFollowStatusChange={handleFollowStatusChange}
+            />
+          );
+        }) || <Text>{t("NoPostsAvailable")}</Text>;
       default:
         return null;
     }
@@ -326,6 +362,7 @@ export default function EachProfile() {
 
   const educationData = profile?.followData?.education || [];
   const followersCount = profile?.followData?.followers?.length || 0;
+  const followingCount = profile?.followData?.following?.length || 0;
   const jobExperienceData = profile?.followData?.jobExperience || [];
 
   const renderHeader = () => (
@@ -333,20 +370,27 @@ export default function EachProfile() {
       {/* Header with Back Arrow, Search Bar, and Settings Icon */}
       <View style={styles.headerContainer}>
         <TouchableOpacity 
-          style={styles.iconButton}
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
-          <SearchField placeholder={t("search")} style={styles.searchField} />
+          <SearchField 
+            placeholder={t("search")} 
+            style={styles.searchField}
+            onFocus={() => navigation.navigate("SearchResults")}
+          />
         </View>
-        <TouchableOpacity
-          style={styles.iconButton}
-          onPress={() => setModalVisible(true)}
-        >
-          <Icon name="settings" size={24} color="#000" />
-        </TouchableOpacity>
+        {/* Settings Button - Only show if not viewing own profile */}
+        {fromUserId !== userId && (
+          <TouchableOpacity
+            style={styles.settingsButton}
+            onPress={() => setModalVisible(true)}
+          >
+            <Icon name="settings" size={24} color="#000" />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Banner Image */}
@@ -370,61 +414,113 @@ export default function EachProfile() {
             <Text style={styles.statsText}>
               {followersCount} {t("followers")}
             </Text>
+            <Text style={styles.statsText}>
+              {followingCount} {t("following")}
+            </Text>
           </View>
         </View>
 
         <View style={styles.actionsContainer}>
-          <TouchableOpacity
-            style={[
-              styles.followButton,
-              isFollowing === "approved" && { backgroundColor: "#666" },
-              isFollowing === "pending" && { backgroundColor: "#ffa500" },
-              isFollowing === "none" || isFollowing === "not_following" 
-                ? { backgroundColor: Theme.themeColor }
-                : {},
-            ]}
-            onPress={handleFollowAction}
-          >
-            <View style={styles.buttonContent}>
-              <Icon
-                name={
-                  isFollowing === "none" || isFollowing === "not_following" 
-                    ? "add" 
+          {/* Follow Button - Only show if not viewing own profile */}
+          {fromUserId !== userId && (
+            <TouchableOpacity
+              style={[
+                styles.followButton,
+                isFollowing === "approved" && { backgroundColor: "#28A745" },
+                isFollowing === "pending" && { backgroundColor: "#FFC107" },
+                isFollowing === "none" || isFollowing === "not_following" 
+                  ? { backgroundColor: "#4A90E2" }
+                  : {},
+              ]}
+              onPress={handleFollowAction}
+            >
+              <View style={styles.buttonContent}>
+                <Icon
+                  name={
+                    isFollowing === "none" || isFollowing === "not_following" 
+                      ? "add" 
+                      : isFollowing === "pending"
+                      ? "time"
+                      : "checkmark"
+                  }
+                  size={16}
+                  color="white"
+                />
+                <Text style={styles.followButtonText}>
+                  {isFollowing === "none" || isFollowing === "not_following"
+                    ? t("Follow")
                     : isFollowing === "pending"
-                    ? "time"
-                    : "checkmark"
-                }
-                size={18}
-                color="white"
-                style={{ marginRight: 8 }}
-              />
-              <Text style={{ ...styles.followButtonText, color: "white" }}>
-                {isFollowing === "none" || isFollowing === "not_following"
-                  ? t("Follow")
-                  : isFollowing === "pending"
-                  ? t("Pending")
-                  : t("Following")}
-              </Text>
-            </View>
-          </TouchableOpacity>
+                    ? t("Pending")
+                    : t("Following")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
 
-          <TouchableOpacity style={styles.messageButton}>
-            <View style={styles.buttonContent}>
-              <FontAwesomeIcon
-                name="paper-plane-o"
-                size={22}
-                color={Theme.themeColor}
-                style={{ marginRight: 10 }}
-              />
-              <Text style={styles.messageButtonText}>{t("Message")}</Text>
-            </View>
-          </TouchableOpacity>
+          {/* Friend Request Button - Only show if not viewing own profile */}
+          {fromUserId !== userId && (
+            <TouchableOpacity
+              style={[
+                styles.friendButton,
+                friendStatus === "friends" && { backgroundColor: "#DC3545" },
+                friendStatus === "request_sent" && { backgroundColor: "#FFC107" },
+                friendStatus === "request_received" && { backgroundColor: "#28A745" },
+                friendStatus === "none" && { backgroundColor: "#6C757D" },
+              ]}
+              onPress={handleFriendAction}
+            >
+              <View style={styles.buttonContent}>
+                <Icon
+                  name={
+                    friendStatus === "none" 
+                      ? "person-add" 
+                      : friendStatus === "request_sent"
+                      ? "time"
+                      : friendStatus === "request_received"
+                      ? "checkmark-circle"
+                      : "person-remove"
+                  }
+                  size={16}
+                  color="white"
+                />
+                <Text style={styles.friendButtonText}>
+                  {friendStatus === "none"
+                    ? t("Add Friend")
+                    : friendStatus === "request_sent"
+                    ? t("Sent")
+                    : friendStatus === "request_received"
+                    ? t("Respond")
+                    : t("Remove")}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          )}
+
+          {/* Message Button - Only show if users are friends */}
+          {friendStatus === "friends" && (
+            <TouchableOpacity style={styles.messageButton} onPress={handleMessagePress}>
+              <View style={styles.buttonContent}>
+                <FontAwesomeIcon
+                  name="paper-plane-o"
+                  size={16}
+                  color={Theme.themeColor}
+                />
+                <Text style={styles.messageButtonText}>{t("Message")}</Text>
+              </View>
+            </TouchableOpacity>
+          )}
         </View>
       </View>
 
       <View style={styles.aboutMeContainer}>
         <Text style={styles.aboutMeTitle}>{t("about")}</Text>
-        <Text style={styles.aboutMeText}>{profile?.followData?.about}</Text>
+        {profile?.followData?.about ? (
+          <Text style={styles.aboutMeText}>{profile?.followData?.about}</Text>
+        ) : (
+          <View style={styles.emptyAboutContainer}>
+            <Text style={styles.emptyAboutText}>{t("No information available")}</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.activityContainer}>
@@ -451,12 +547,6 @@ export default function EachProfile() {
         <View style={styles.contentContainer}>
           {renderContent()}
         </View>
-        <View style={styles.lineDivider} />
-        <Text style={styles.seeAllText} onPress={handleSeeAllClick}>
-          {showAllPosts
-            ? t("showLess")
-            : `${t("seeAll")} ${t(activeTab.toLowerCase())}`}
-        </Text>
       </View>
 
       {educationData.map((education, index) => (
@@ -488,7 +578,7 @@ export default function EachProfile() {
   }
 
   return (
-    <>
+    <SafeAreaView style={styles.safeArea}>
       <FlatList
         style={styles.container}
         data={userPosts?.posts || []}
@@ -505,6 +595,8 @@ export default function EachProfile() {
             postImages={item.images}
             fetchPosts={fetchPosts}
             userId={userId}
+            currentFollowStatus={item.followStatus || isFollowing}
+            onFollowStatusChange={handleFollowStatusChange}
           />
         )}
         keyExtractor={(item) => item._id}
@@ -529,27 +621,41 @@ export default function EachProfile() {
         <View style={styles.modalContainer}>
           <Text style={styles.modalTitle}>User Options</Text>
           <TouchableOpacity
-            style={styles.optionButton}
+            style={[styles.optionButton, styles.blockButton]}
             onPress={() => {
               blockUser(userId);
+            }}
+          >
+            <Icon name="ban" size={20} color="#DC3545" style={{ marginRight: 8 }} />
+            <Text style={[styles.optionButtonText, { color: "#DC3545" }]}>Block User</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.optionButton, styles.reportButton]}
+            onPress={() => {
+              Alert.alert("Report User", "User reported successfully.");
               setModalVisible(false);
             }}
           >
-            <Text style={styles.optionButtonText}>Block User</Text>
+            <Icon name="flag" size={20} color="#FFC107" style={{ marginRight: 8 }} />
+            <Text style={[styles.optionButtonText, { color: "#FFC107" }]}>Report User</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={styles.optionButton}
+            style={[styles.optionButton, styles.cancelButton]}
             onPress={() => setModalVisible(false)}
           >
             <Text style={styles.optionButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </Modal>
-    </>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
   container: {
     flex: 1,
     backgroundColor: "#f0f0f0",
@@ -575,17 +681,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 16,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
   },
-  iconButton: {
+  backButton: {
     padding: 8,
+    marginRight: 12,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
   },
   searchContainer: {
     flex: 1,
     marginHorizontal: 16,
+  },
+  settingsButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: "#f8f9fa",
   },
   searchField: {
     height: 40,
@@ -610,32 +724,43 @@ const styles = StyleSheet.create({
     left: 20,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     borderWidth: 4,
     borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   userInfoContainer: {
     marginTop: 50,
     paddingHorizontal: 20,
+    marginBottom: 10,
   },
   userName: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#333",
+    fontSize: 26,
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 4,
   },
   userLocation: {
     fontSize: 16,
     color: "#666",
-    marginTop: 4,
+    marginBottom: 12,
+    fontWeight: "400",
   },
   socialContainer: {
     flexDirection: "row",
-    marginTop: 12,
+    marginTop: 8,
   },
   statsText: {
-    fontSize: 16,
+    fontSize: 15,
     color: "#666",
     fontWeight: "500",
   },
@@ -643,91 +768,174 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 20,
-    marginTop: 16,
+    marginTop: 20,
+    marginBottom: 10,
+    gap: 12,
   },
   followButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Theme.themeColor,
-    paddingHorizontal: 24,
+    justifyContent: "center",
+    backgroundColor: "#4A90E2",
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 25,
     flex: 1,
-    marginRight: 12,
+    minWidth: 90,
+    maxWidth: 130,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   buttonContent: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
   },
   followButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
+    color: "white",
+    marginLeft: 6,
+  },
+  friendButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6C757D",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    flex: 1,
+    minWidth: 90,
+    maxWidth: 130,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  friendButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "white",
+    marginLeft: 6,
   },
   messageButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1,
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 2,
     borderColor: Theme.themeColor,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 25,
     flex: 1,
+    minWidth: 90,
+    maxWidth: 130,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   messageButtonText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
     color: Theme.themeColor,
+    marginLeft: 8,
   },
   aboutMeContainer: {
-    marginTop: 16,
-    padding: 16,
+    marginTop: 20,
+    padding: 20,
     backgroundColor: "#fff",
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
   },
   aboutMeTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 12,
+    color: "#1A1A1A",
   },
   aboutMeText: {
     fontSize: 14,
     color: "#666",
     lineHeight: 20,
   },
+  emptyAboutContainer: {
+    alignItems: "center",
+    paddingVertical: 20,
+    paddingHorizontal: 16,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+    borderStyle: "dashed",
+  },
+  emptyAboutText: {
+    fontSize: 14,
+    color: "#6c757d",
+    textAlign: "center",
+    lineHeight: 20,
+  },
   activityContainer: {
-    marginTop: 16,
+    marginTop: 20,
     backgroundColor: "#fff",
-    padding: 16,
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#F0F0F0",
   },
   activityTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 12,
-    color: "#333",
+    fontSize: 20,
+    fontWeight: "700",
+    marginBottom: 16,
+    color: "#1A1A1A",
   },
   tabContainer: {
     flexDirection: "row",
-    marginBottom: 16,
+    marginBottom: 20,
   },
   tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     marginRight: 12,
-    borderRadius: 20,
-    borderWidth: 1,
+    borderRadius: 25,
+    borderWidth: 2,
     borderColor: Theme.themeColor,
+    backgroundColor: "#FFFFFF",
   },
   activeTab: {
     backgroundColor: Theme.themeColor,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   tabText: {
-    fontSize: 14,
+    fontSize: 15,
     color: Theme.themeColor,
+    fontWeight: "600",
   },
   activeTabText: {
     color: "#fff",
-    fontWeight: "600",
+    fontWeight: "700",
   },
   contentContainer: {
     marginTop: 8,
@@ -737,12 +945,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#e0e0e0",
     marginVertical: 12,
   },
-  seeAllText: {
-    fontSize: 14,
-    color: Theme.themeColor,
-    textAlign: "center",
-    fontWeight: "600",
-  },
+
   educationSection: {
     marginTop: 16,
     padding: 16,
@@ -793,10 +996,27 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#f5f5f5",
     marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  blockButton: {
+    backgroundColor: "#FFEBEE",
+    borderWidth: 1,
+    borderColor: "#DC3545",
+  },
+  reportButton: {
+    backgroundColor: "#FFF8E1",
+    borderWidth: 1,
+    borderColor: "#FFC107",
+  },
+  cancelButton: {
+    backgroundColor: "#f5f5f5",
   },
   optionButtonText: {
     fontSize: 16,
     color: "#333",
     textAlign: "center",
+    fontWeight: "500",
   },
 });

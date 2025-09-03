@@ -6,6 +6,9 @@ import {
   TouchableOpacity,
   View,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from "react-native";
 import { Checkbox } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
@@ -17,7 +20,6 @@ import {
   FormSection,
   FormSectionSubtitle,
   FormSectionTitle,
-  MainContainer,
   LoginInputField,
 } from "../styles/prelogin.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
@@ -181,7 +183,17 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <SafeArea>
-      <MainContainer>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={{ flex: 1, justifyContent: "center" }}>
         <Image
           style={styles.logo}
           source={require("../assets/images/pre-login/miLogo-small.png")}
@@ -192,29 +204,33 @@ export default function LoginScreen({ navigation }) {
 
           <FormSectionSubtitle>Please sign in to continue</FormSectionSubtitle>
 
-          <LoginInputField
-            placeholderTextColor="#9B9B9B"
-            underlineColor="transparent"
-            borderBottomWidth={0}
-            autoCapitalize="none"
-            placeholder="Email or Phone No."
-            selectionColor={Theme.themeColor}
-            activeUnderlineColor={Theme.themeColor}
-            onChangeText={(e) => setEmail(e)}
-            value={email}
-          />
+                        <LoginInputField
+                placeholderTextColor="#9B9B9B"
+                underlineColor="transparent"
+                borderBottomWidth={0}
+                autoCapitalize="none"
+                placeholder="Email or Phone No."
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                onChangeText={(e) => setEmail(e)}
+                value={email}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
 
           <View style={{ position: "relative" }}>
-            <LoginInputField
-              placeholderTextColor="#9B9B9B"
-              underlineColor="transparent"
-              placeholder="Password"
-              selectionColor={Theme.themeColor}
-              activeUnderlineColor={Theme.themeColor}
-              secureTextEntry={hidePass ? true : false}
-              onChangeText={(e) => setPassword(e)}
-              value={password}
-            />
+                            <LoginInputField
+                  placeholderTextColor="#9B9B9B"
+                  underlineColor="transparent"
+                  placeholder="Password"
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
+                  secureTextEntry={hidePass ? true : false}
+                  onChangeText={(e) => setPassword(e)}
+                  value={password}
+                  returnKeyType="done"
+                  blurOnSubmit={true}
+                />
             <View
               style={{
                 position: "absolute",
@@ -320,7 +336,9 @@ export default function LoginScreen({ navigation }) {
             Contact Us
           </ForgotText>
         </BottomText>
-      </MainContainer>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeArea>
   );
 }

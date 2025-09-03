@@ -66,9 +66,9 @@ export default function DashboardSettingsScreen({ navigation }) {
   //     },
   //   },
   // ];
-  const searchData = [
+  const mainOptions = [
     {
-      name: t("change_language"), // 👈 Use translated label
+      name: t("change_language"),
       callback: () => {
         navigation.navigate("ChangeLanguage");
       },
@@ -104,12 +104,6 @@ export default function DashboardSettingsScreen({ navigation }) {
       },
     },
     {
-      name: t("logout"),
-      callback: async () => {
-        dispatch(logout());
-      },
-    },
-    {
       name: t("delete_account"),
       callback: () => {
         navigation.navigate("DeleteAccount");
@@ -117,6 +111,14 @@ export default function DashboardSettingsScreen({ navigation }) {
       isDestructive: true,
     },
   ];
+
+  const logoutOption = {
+    name: t("logout"),
+    callback: async () => {
+      dispatch(logout());
+    },
+    isLogout: true,
+  };
   return (
     <Container
       style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}
@@ -137,11 +139,45 @@ export default function DashboardSettingsScreen({ navigation }) {
         showsVerticalScrollIndicator={false}
       >
         <Divider />
-        {searchData.map((item, index) => (
+        {mainOptions.map((item, index) => (
           <TouchableOpacity activeOpacity={0.25} key={index}>
             <SettingCard {...item} key={index} />
           </TouchableOpacity>
         ))}
+        
+        {/* Separator before logout */}
+        <View style={{ marginVertical: 20 }}>
+          <Divider />
+        </View>
+        
+        {/* Logout option at bottom */}
+        <TouchableOpacity 
+          activeOpacity={0.25} 
+          style={{
+            backgroundColor: "#FF6B35",
+            marginHorizontal: 16,
+            borderRadius: 12,
+            paddingVertical: 16,
+            paddingHorizontal: 20,
+            shadowColor: "#000",
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+          onPress={logoutOption.callback}
+        >
+          <Text style={{
+            color: "#FFFFFF",
+            fontSize: 18,
+            fontWeight: "bold",
+            textAlign: "center",
+            textTransform: "uppercase",
+            letterSpacing: 0.5,
+          }}>
+            {logoutOption.name}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </Container>
   );

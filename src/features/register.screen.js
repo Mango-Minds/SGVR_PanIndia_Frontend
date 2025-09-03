@@ -22,7 +22,6 @@ import {
   FormButton,
   FormSection,
   FormSectionTitle,
-  MainContainer,
   MenuLead,
   Row,
   LoginInputField,
@@ -122,8 +121,17 @@ export default function RegisterScreen({ navigation }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <MainContainer style={{ paddingBottom: 10 }}>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={{ flex: 1, justifyContent: "center" }}>
             <Image
               style={styles.logo}
               source={require("../assets/images/pre-login/miLogo-small.png")}
@@ -144,6 +152,8 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, username: text })
                 }
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -157,6 +167,8 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, firstName: text })
                 }
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -170,6 +182,8 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, midname: text })
                 }
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -183,6 +197,8 @@ export default function RegisterScreen({ navigation }) {
                 onChangeText={(text) =>
                   setRegisterDetails({ ...registerDetails, lastName: text })
                 }
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <LoginInputField
@@ -197,6 +213,8 @@ export default function RegisterScreen({ navigation }) {
                   setRegisterDetails({ ...registerDetails, email: text })
                 }
                 autoCapitalize="none"
+                returnKeyType="next"
+                blurOnSubmit={false}
               />
 
               <View style={{ position: "relative" }}>
@@ -211,6 +229,8 @@ export default function RegisterScreen({ navigation }) {
                   onChangeText={(text) =>
                     setRegisterDetails({ ...registerDetails, password: text })
                   }
+                  returnKeyType="done"
+                  blurOnSubmit={true}
                 />
                 <View
                   style={{
@@ -271,8 +291,9 @@ export default function RegisterScreen({ navigation }) {
                 Contact Us
               </ForgotText>
             </BottomText>
-          </MainContainer>
-        </ScrollView>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

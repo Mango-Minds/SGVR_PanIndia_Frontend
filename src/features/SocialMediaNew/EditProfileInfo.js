@@ -8,6 +8,9 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -15,7 +18,6 @@ import { SafeArea } from "../../components/utility/safe-area.component";
 import {
   FormButton,
   FormSection,
-  MainContainer,
   LoginInputField,
   AddProfileBox,
 } from "../../styles/prelogin.styles";
@@ -31,6 +33,7 @@ import { FlatList } from "react-native-gesture-handler";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
+import { updateUserBannerImage } from "./SocialMediaAPIs";
 
 const styles = StyleSheet.create({
   logo: {
@@ -131,10 +134,14 @@ const styles = StyleSheet.create({
 export default function EditProfileInfo({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
-const { t } = useTranslation();
+  const { t } = useTranslation();
 
   const token = useSelector((state) => state.user.token);
-  const { userProfile, fetchUserProfile } = route.params;
+  const { userProfile, fetchUserProfile, userId, fetchUser } = route.params;
+
+  const [firstName, setFirstName] = useState(userProfile?.user?.firstName || "");
+  const [lastName, setLastName] = useState(userProfile?.user?.lastName || "");
+  const [address, setAddress] = useState(userProfile?.user?.address || "");
 
   const [selectedImage, setSelectedImage] = useState({
     uri: userProfile.followData?.bannerImage
@@ -148,7 +155,7 @@ const { t } = useTranslation();
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [16, 9], // Better aspect ratio for banner images
       quality: 1,
       crop: true,
     });
@@ -160,65 +167,57 @@ const { t } = useTranslation();
   
   const handleSubmit = async () => {
     try {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
-        return;
-      }
-  
-      await dispatch(setLoadingInBtn(true));
-  
-      let headers = {
-        Authorization: `Bearer ${token}`,
-      };
-  
-      let body;
-  
+      // Check if we have a banner image to update
       if (selectedImage && selectedImage.uri) {
-        // ✅ Sending FormData if image is selected
-        body = new FormData();
-        body.append("firstName", firstName);
-        body.append("lastName", lastName);
-        body.append("address", address);
-  
-        const localUri = selectedImage.uri;
-        const filename = localUri.split("/").pop();
-        const match = /\.(\w+)$/.exec(filename);
-        const type = match ? `image/${match[1]}` : `image`;
-  
-        body.append("image", {
-          uri: localUri,
-          name: filename,
-          type,
+        // Update banner image using the new function
+        await updateUserBannerImage({
+          bannerImage: selectedImage,
+          dispatch,
+          setLoadingInBtn,
+          fetchUserProfile,
+          navigation,
+          t,
         });
-  
-        headers["Content-Type"] = "multipart/form-data";
       } else {
-        // ✅ Sending JSON if no image is selected
-        body = {
+        // Update user profile information (name, address, etc.)
+        const token = await AsyncStorage.getItem("token");
+        if (!token) {
+          console.error("Authentication token is missing.");
+          Alert.alert("Error", "You are not authorized. Please log in again.");
+          return;
+        }
+    
+        await dispatch(setLoadingInBtn(true));
+    
+        let headers = {
+          Authorization: `Bearer ${token}`,
+        };
+    
+        let body = {
           firstName,
           lastName,
           address,
         };
         headers["Content-Type"] = "application/json";
+    
+        const response = await apiClient.patch(
+          `/user/update/${userId}`,
+          body,
+          { headers }
+        );
+    
+        await dispatch(setLoadingInBtn(false));
+    
+        if (response.status !== 200) {
+          throw new Error(`Failed to update user: ${response.data?.message || ""}`);
+        }
+    
+        alert("Information Updated Successfully");
+        if (fetchUser && typeof fetchUser === 'function') {
+          fetchUser();
+        }
+        navigation.goBack();
       }
-  
-      const response = await apiClient.patch(
-        `/user/update/${userId}`,
-        body,
-        { headers }
-      );
-  
-      await dispatch(setLoadingInBtn(false));
-  
-      if (response.status !== 200) {
-        throw new Error(`Failed to update user: ${response.data?.message || ""}`);
-      }
-  
-      alert("Information Updated Successfully");
-      fetchUser();
-      navigation.goBack();
     } catch (error) {
       console.error("Error updating user:", error);
       alert(`Error: ${error.message}`);
@@ -229,7 +228,16 @@ const { t } = useTranslation();
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -245,64 +253,123 @@ const { t } = useTranslation();
                   letterSpacing: 0.5,
                 }}
               >
-               {t("editUserProfile")}
+               {t("editBannerImage")}
               </Text>
             </View>
           </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
-            keyboardDismissMode="on-drag"
-            keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
+          <View
+            style={{ paddingBottom: 56, flex: 1 }}
           >
+            <View style={{ marginTop: 20, paddingHorizontal: 20 }}>
+              <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, textAlign: "center" }}>
+                {t("editBannerImage")}
+              </Text>
+              <Text style={{ fontSize: 14, color: "#666", marginBottom: 20, textAlign: "center" }}>
+                {t("bannerImageDescription")}
+              </Text>
+            </View>
+            
             {selectedImage.uri ? (
               <View
                 style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: 60,
-                  backgroundColor: "red",
-                  marginTop: "10%",
+                  width: "90%",
+                  height: 200,
+                  borderRadius: 12,
+                  backgroundColor: "#f0f0f0",
+                  marginTop: 10,
                   alignSelf: "center",
+                  overflow: "hidden",
                 }}
               >
                 <Image
-                  style={styles.logo}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    resizeMode: "cover",
+                  }}
                   source={{ uri: selectedImage.uri }}
                 />
                 <TouchableOpacity onPress={_pickDocument}>
                   <View
                     style={{
                       position: "absolute",
-                      right: 0,
-                      bottom: 0,
-
-                      backgroundColor: "lightgrey",
-                      display: "flex",
-                      flex: 1,
+                      right: 10,
+                      bottom: 10,
+                      backgroundColor: "rgba(0,0,0,0.7)",
+                      borderRadius: 25,
+                      padding: 10,
                       alignItems: "center",
                       justifyContent: "center",
-
-                      borderRadius: 60,
-                      padding: 8,
                     }}
                   >
-                    <Image
-                      source={require("../../assets/images/matrimony/camera.png")}
-                      style={{ width: 15, height: 15 }}
-                    />
+                    <Icon name="camera" size={20} color="#fff" />
                   </View>
                 </TouchableOpacity>
               </View>
             ) : (
-              <AddProfileBox
+              <TouchableOpacity
                 onPress={_pickDocument}
-                style={{ ...styles.logo, marginTop: "10%" }}
+                style={{
+                  width: "90%",
+                  height: 200,
+                  borderRadius: 12,
+                  backgroundColor: "#f0f0f0",
+                  marginTop: 10,
+                  alignSelf: "center",
+                  borderWidth: 2,
+                  borderColor: "#ddd",
+                  borderStyle: "dashed",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Icon name="plus" size={35} color={Theme.themeColor} />
-              </AddProfileBox>
+                <Icon name="image-plus" size={50} color={Theme.themeColor} />
+                <Text style={{ marginTop: 10, color: Theme.themeColor, fontSize: 16 }}>
+                  {t("selectBannerImage")}
+                </Text>
+              </TouchableOpacity>
             )}
             <FormSection style={{ paddingTop: 0 }}>
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
+                placeholder="First Name *"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                value={firstName}
+                onChangeText={setFirstName}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
+                placeholder="Last Name *"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                value={lastName}
+                onChangeText={setLastName}
+                returnKeyType="next"
+                blurOnSubmit={false}
+              />
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
+                placeholder="Address *"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                autoCapitalize="none"
+                value={address}
+                onChangeText={setAddress}
+                returnKeyType="done"
+                blurOnSubmit={true}
+              />
+
               <FormButton onPress={handleSubmit}>
                 <Text
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
@@ -324,8 +391,9 @@ const { t } = useTranslation();
                 </Text>
               </FormButton>
             </FormSection>
-          </MainContainer>
-        </ScrollView>
+          </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

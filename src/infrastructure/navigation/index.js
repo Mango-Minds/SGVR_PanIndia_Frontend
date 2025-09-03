@@ -67,35 +67,59 @@ export const Navigation = () => {
       if (loggedIn === "true") {
         const accessToken = await AsyncStorage.getItem("token");
         const refreshToken = await AsyncStorage.getItem("refresh_token");
+        const userData = await AsyncStorage.getItem("user");
   
-        if (accessToken) {
-          console.log("Access Token found, navigating to Dashboard");
+        if (accessToken && userData) {
+          console.log("Access Token and user data found, navigating to Dashboard");
           dispatch(Isloading(false)); 
           return true;
         } else if (refreshToken) {
           // Attempt to refresh the token here
-          const response = await dispatch(generateToken(refreshToken));
-          
-          if (response && response.accessToken) {
-            // Save new access token to AsyncStorage
-            await AsyncStorage.setItem("token", response.accessToken);
+          try {
+            const response = await dispatch(generateToken(refreshToken));
+            
+            if (response && response.accessToken) {
+              // Save new access token to AsyncStorage
+              await AsyncStorage.setItem("token", response.accessToken);
+              await AsyncStorage.setItem("loggedIn", "true");
+              dispatch(Isloading(false));
+              return true;
+            } else {
+              console.log("Token refresh failed, logging out");
+              await AsyncStorage.clear();
+              dispatch(logoutSuccess());
+              dispatch(Isloading(false));
+              return false;
+            }
+          } catch (refreshError) {
+            console.error("Token refresh error:", refreshError);
+            await AsyncStorage.clear();
+            dispatch(logoutSuccess());
             dispatch(Isloading(false));
-            return true;
-          } else {
-            dispatch(logoutSuccess()); // Log out if refresh token fails
-            dispatch(Isloading(false));
+            return false;
           }
         } else {
-          dispatch(logoutSuccess()); // Log out if no token found
+          console.log("No valid tokens found, logging out");
+          await AsyncStorage.clear();
+          dispatch(logoutSuccess());
           dispatch(Isloading(false));
+          return false;
         }
       } else {
         console.log("User is not logged in, hiding loader");
-        dispatch(Isloading(false)); 
+        dispatch(Isloading(false));
+        return false;
       }
     } catch (error) {
       console.error("Error checking login status:", error);
+      try {
+        await AsyncStorage.clear();
+      } catch (clearError) {
+        console.error("Error clearing storage:", clearError);
+      }
+      dispatch(logoutSuccess());
       dispatch(Isloading(false));
+      return false;
     }
   };
   

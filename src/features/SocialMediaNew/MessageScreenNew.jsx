@@ -21,69 +21,74 @@ export default function MessageScreenNew({ navigation }) {
   const dispatch = useDispatch();
   const socket = useRef();
 
-  // const updateStorageConvo = async () => {
-  //   const convoData = await AsyncStorage.getItem("conversation");
-  //   if (convoData) {
-  //     dispatch(updateConversation(JSON.parse(convoData)));
-  //   }
-  //   const chats = await AsyncStorage.getItem("localChats");
-  //   if (chats) {
-  //     dispatch(updateLocalChats(JSON.parse(chats)));
-  //   }
-  // };
+  console.log("MessageScreenNew - user:", user);
+  console.log("MessageScreenNew - conversations:", conversations);
 
-  // const getChatUsers = async () => {
-  //   try {
-  //     const data = await getAllUserChats();
-  //     dispatch(updateConversation(data || []));
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
+  const updateStorageConvo = async () => {
+    const convoData = await AsyncStorage.getItem("conversation");
+    if (convoData) {
+      dispatch(updateConversation(JSON.parse(convoData)));
+    }
+    const chats = await AsyncStorage.getItem("localChats");
+    if (chats) {
+      dispatch(updateLocalChats(JSON.parse(chats)));
+    }
+  };
 
-  // useEffect(() => {
-  //   setChatsUser(conversations);
-  // }, [conversations]);
+  const getChatUsers = async () => {
+    try {
+      console.log("MessageScreenNew - Fetching conversations...");
+      const data = await getAllUserChats();
+      console.log("MessageScreenNew - API response:", data);
+      dispatch(updateConversation(data || []));
+    } catch (error) {
+      console.error("MessageScreenNew - Error fetching conversations:", error);
+    }
+  };
 
-  // useEffect(() => {
-  //   if (!socket.current) {
-  //     socket.current = io(SOCKETURL);
-  //   } else {
-  //     socket.current.emit("join", { userId: user._id });
-  //   }
-  //   updateStorageConvo();
-  //   getChatUsers();
-  // }, []);
+  useEffect(() => {
+    setChatsUser(conversations);
+  }, [conversations]);
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     if (!socket.current) {
-  //       socket.current = io(SOCKETURL);
-  //     } else if (user && user._id) {
-  //       socket.current.emit("join", { userId: user._id });
-  //     }
-  //     updateStorageConvo();
-  //     getChatUsers();
-  //   }, [user])
-  // );
+  useEffect(() => {
+    if (!socket.current) {
+      socket.current = io(SOCKETURL);
+    } else {
+      socket.current.emit("join", { userId: user._id });
+    }
+    updateStorageConvo();
+    getChatUsers();
+  }, []);
 
-  // useEffect(() => {
-  //   if (socket.current) {
-  //     socket.current.on("newMsg", (data) => {
-  //       const updatedConversations = conversations.map((item) => {
-  //         if (data.userid.some((id) => id.id === item.user._id)) {
-  //           return {
-  //             ...item,
-  //             unreadCount: data.isRead ? item.unreadCount : item.unreadCount + 1,
-  //             lastmsg: data,
-  //           };
-  //         }
-  //         return item;
-  //       });
-  //       dispatch(updateConversation(updatedConversations));
-  //     });
-  //   }
-  // }, [conversations]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!socket.current) {
+        socket.current = io(SOCKETURL);
+      } else if (user && user._id) {
+        socket.current.emit("join", { userId: user._id });
+      }
+      updateStorageConvo();
+      getChatUsers();
+    }, [user])
+  );
+
+  useEffect(() => {
+    if (socket.current) {
+      socket.current.on("newMsg", (data) => {
+        const updatedConversations = conversations.map((item) => {
+          if (data.userid.some((id) => id.id === item.user._id)) {
+            return {
+              ...item,
+              unreadCount: data.isRead ? item.unreadCount : item.unreadCount + 1,
+              lastmsg: data,
+            };
+          }
+          return item;
+        });
+        dispatch(updateConversation(updatedConversations));
+      });
+    }
+  }, [conversations]);
 
   return (
     <Container style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}>
@@ -92,9 +97,6 @@ export default function MessageScreenNew({ navigation }) {
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}>Message</TopText>
         </View>
-        <TouchableOpacity style={{ marginRight: 32 }} onPress={() => navigation.navigate("NewMessageScreen")}>
-          <Icon name="circle-edit-outline" size={24} />
-        </TouchableOpacity>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         <SearchField placeholder="NewSearch" />
@@ -114,7 +116,7 @@ export default function MessageScreenNew({ navigation }) {
         />
       ) : (
         <View style={styles.noMessages}>
-          <Ionicons name="chatbubbles" size={100} color="#0000001A" />
+          <Ionicons name="chatbubbles-outline" size={100} color="#0000001A" />
           <Text style={styles.noMessagesText}>No Messages</Text>
         </View>
       )}
