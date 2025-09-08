@@ -26,6 +26,7 @@ import { Row } from "../../styles/dashboard.styles";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
 import { useQuery } from "@tanstack/react-query";
 import { getShceduledDates } from "../../services/matrimony.services";
+import { useTranslation } from "react-i18next";
 
 const MatrimonyEachVendor = ({ route }) => {
   const [vendorImages, setVendorImages] = useState([]);
@@ -34,6 +35,7 @@ const MatrimonyEachVendor = ({ route }) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(5, 7)); // 05/02/2022
   const [markedDates, setMarkedDates] = useState();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { t } = useTranslation();
 
   const {
     _id,
@@ -168,15 +170,15 @@ const MatrimonyEachVendor = ({ route }) => {
       <View style={styles.scrollContainer}>
         <RowBetween>
           <View>
-            <Text style={styles.title}>{`${user.name}`}</Text>
+            <Text style={styles.title}>{user.name || t('vendorName') || 'Vendor Name'}</Text>
             <Text style={styles.content}>
-              {user.city ? user.city : "" + ", " + user.state ? user.state : ""}
+              {user.city || t('city') || 'City'}{user.state ? `, ${user.state}` : ''}
             </Text>
           </View>
         </RowBetween>
         <View style={styles.services}>
           <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-            Service Provided
+            {t('serviceProvided') || 'Service Provided'}
           </Text>
           <View>
             <Text
@@ -192,19 +194,20 @@ const MatrimonyEachVendor = ({ route }) => {
                 borderWidth: 1,
               }}
             >
-              {user.services}
+              {user.services || t('noServicesAvailable') || 'No services available'}
             </Text>
           </View>
         </View>
 
         <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-          Gallery
+          {t('gallery') || 'Gallery'}
         </Text>
         <Row style={{ paddingTop: 16, paddingBottom: 16 }}>
           <ScrollView horizontal={true} showsHorizontalScrollIndicator={false}>
             {vendorImages && vendorImages.length > 0 ? (
               vendorImages.map((image, i) => (
                 <TouchableOpacity
+                  key={i}
                   onPress={() => {
                     setCurrentIndex(i);
                     setShowViewer(true);
@@ -221,30 +224,29 @@ const MatrimonyEachVendor = ({ route }) => {
                       borderRadius: 8,
                       marginRight: 10,
                     }}
-                    key={i}
                   />
                 </TouchableOpacity>
               ))
             ) : (
-              <View>
-                <Text style={{ marginLeft: 140, opacity: 0.4 }}>No Images</Text>
+              <View style={styles.noImagesContainer}>
+                <Text style={styles.noImagesText}>{t('noImagesAvailable') || 'No images available'}</Text>
               </View>
             )}
           </ScrollView>
         </Row>
         <View>
           <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-            About Us
+            {t('aboutUs') || 'About Us'}
           </Text>
           <Text style={{ color: "#898E92", marginTop: "2%" }}>
-            {user.about ? user.about : "No Description Available"}
+            {user.about || t('noDescriptionAvailable') || 'No description available'}
           </Text>
         </View>
 
         <View>
           <View style={{ display: "flex", flexDirection: "row" }}>
             <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
-              Avaibility
+              {t('availability') || 'Availability'}
             </Text>
             {loadingDates && (
               <Image
@@ -347,18 +349,18 @@ const MatrimonyEachVendor = ({ route }) => {
           >
             <Icon name="map-marker" size={20} color="#D4AF37" />
           </View>
-          <Text
-            style={{
-              fontSize: 14,
-              color: "#656565",
-              marginLeft: 12,
-              marginRight: 16,
-              width: "90%",
-              textTransform: "capitalize",
-            }}
-          >
-            {user.city}, {user.address}
-          </Text>
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#656565",
+                  marginLeft: 12,
+                  marginRight: 16,
+                  width: "90%",
+                  textTransform: "capitalize",
+                }}
+              >
+                {user.city || t('city') || 'City'}, {user.address || t('address') || 'Address'}
+              </Text>
         </View>
 
         <View>
@@ -388,7 +390,7 @@ const MatrimonyEachVendor = ({ route }) => {
                   width: "90%",
                 }}
               >
-                {user.emailId ? user.emailId : "No Email"}
+                {user.emailId || t('noEmail') || 'No email'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -422,7 +424,7 @@ const MatrimonyEachVendor = ({ route }) => {
                   width: "90%",
                 }}
               >
-                {user.contactNo ? user.contactNo : "No Contact Number"}
+                {user.contactNo || t('noContactNumber') || 'No contact number'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -452,7 +454,7 @@ const MatrimonyEachVendor = ({ route }) => {
             fontWeight: "bold",
           }}
         >
-          Matrimony
+          {t('matrimony') || 'Matrimony'}
         </Text>
       </View>
       {vendorImages && vendorImages.length > 0 ? (
@@ -530,5 +532,16 @@ const styles = StyleSheet.create({
     marginTop: 15,
     flexDirection: "row",
     alignItems: "center",
+  },
+  noImagesContainer: {
+    padding: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noImagesText: {
+    fontSize: 14,
+    color: '#666',
+    opacity: 0.6,
+    textAlign: 'center',
   },
 });

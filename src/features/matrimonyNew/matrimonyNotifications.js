@@ -81,6 +81,7 @@ function MatrimonyNotifications({ navigation, route }) {
       }
     } catch (error) {
       console.error("Error accepting request:", error);
+      Alert.alert("Error", "Failed to accept request. Please try again.");
     }
   };
   const handleDeleteRequest = async (requestId) => {
@@ -95,6 +96,23 @@ function MatrimonyNotifications({ navigation, route }) {
       }
     } catch (error) {
       console.error("Error deleting request:", error);
+      Alert.alert("Error", "Failed to delete request. Please try again.");
+    }
+  };
+
+  const handleWithdrawRequest = async (requestId) => {
+    try {
+      const response = await rejectConnectionRequest(requestId);
+
+      if (response.status === 200) {
+        Alert.alert("Request Withdrawn Successfully.");
+        fetchRequest();
+      } else {
+        throw new Error("Failed to withdraw request");
+      }
+    } catch (error) {
+      console.error("Error withdrawing request:", error);
+      Alert.alert("Error", "Failed to withdraw request. Please try again.");
     }
   };
 
@@ -125,7 +143,13 @@ function MatrimonyNotifications({ navigation, route }) {
       >
         <RowBetween style={{ paddingTop: 24 }}>
           <View style={{ alignItems: "center", flexDirection: "row" }}>
-            <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
+            <IconButton icon="arrow-left" onPress={() => {
+              if (navigation.canGoBack()) {
+                navigation.goBack();
+              } else {
+                navigation.navigate("MatrimonyNew");
+              }
+            }} />
             <TopText
               style={{
                 color: Theme.themeColor,
@@ -177,7 +201,174 @@ function MatrimonyNotifications({ navigation, route }) {
 </View>
       <View></View>
 
-      {selectedTab === "requests" && <></>}
+      {selectedTab === "requests" && (
+        <>
+          <ScrollView style={{ flex: 1 }}>
+            <View
+              style={{
+                padding: "2%",
+                margin: "2%",
+                display: "flex",
+                flexDirection: "column",
+              }}
+            >
+              {sentRequests.length === 0 ? (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 400,
+                  }}
+                >
+                  <Text style={{ fontSize: 18, color: "grey" }}>
+                    {t("no_data_found")}
+                  </Text>
+                </View>
+              ) : (
+                <>
+                  {sentRequests.map((sentRequest, index) => (
+                    <TouchableOpacity key={index}>
+                      <View
+                        style={{
+                          marginVertical: "4%",
+                          flexDirection: "row",
+                          alignItems: "center",
+                        }}
+                      >
+                        <Image
+                          style={{
+                            width: 60,
+                            height: 65,
+                            borderRadius: 8,
+                            marginRight: "6%",
+                          }}
+                          source={
+                            sentRequest.receiver.images && sentRequest.receiver.images.length > 0
+                              ? {
+                                  uri: `${sentRequest.receiver.images[0]}`,
+                                }
+                              : UserImg
+                          }
+                        />
+                        <View style={{ flex: 1 }}>
+                          <Text
+                            style={{
+                              fontWeight: "bold",
+                              opacity: 0.7,
+                              fontSize: 17,
+                            }}
+                          >
+                            {sentRequest.receiver.name}
+                          </Text>
+
+                          
+                          <Text
+                            style={{
+                              fontWeight: "500",
+                              opacity: 0.6,
+                              marginTop: "1%",
+                              fontSize: 14,
+                            }}
+                          >
+                            Status: {sentRequest.status}
+                          </Text>
+                        </View>
+
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            marginLeft: "5%",
+                            marginTop: "2%",
+                          }}
+                        >
+                          <View
+                            style={{
+                              width: 75,
+                              height: 35,
+                              backgroundColor: sentRequest.status === "pending" ? "#FFF3CD" : "#D4EDDA",
+                              borderRadius: 8,
+                              paddingHorizontal: 4,
+                              margin: 0,
+                              marginBottom: 0,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              marginRight: 5,
+                            }}
+                          >
+                            <Text style={{ 
+                              color: sentRequest.status === "pending" ? "#856404" : "#155724",
+                              fontSize: 12,
+                              fontWeight: "600"
+                            }}>
+                              {sentRequest.status === "pending" ? "Pending" : "Accepted"}
+                            </Text>
+                          </View>
+                          
+                          {sentRequest.status === "pending" && (
+                            <TouchableOpacity
+                              style={{
+                                width: 75,
+                                height: 35,
+                                backgroundColor: "#F8D7DA",
+                                borderRadius: 8,
+                                paddingHorizontal: 4,
+                                margin: 0,
+                                marginBottom: 0,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginRight: 0,
+                              }}
+                              onPress={() => {
+                                Alert.alert(
+                                  "Withdraw Request",
+                                  "Are you sure you want to withdraw this connection request?",
+                                  [
+                                    {
+                                      text: "Cancel",
+                                      style: "cancel"
+                                    },
+                                    {
+                                      text: "Withdraw",
+                                      style: "destructive",
+                                      onPress: () => handleWithdrawRequest(sentRequest._id)
+                                    }
+                                  ]
+                                );
+                              }}
+                            >
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Icon
+                                  name="close-circle"
+                                  size={15}
+                                  color="#721C24"
+                                  style={{ marginRight: 5 }}
+                                />
+                                <Text style={{ 
+                                  color: "#721C24",
+                                  fontSize: 12,
+                                  fontWeight: "600"
+                                }}>
+                                  Withdraw
+                                </Text>
+                              </View>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+            </View>
+          </ScrollView>
+        </>
+      )}
 {selectedTab === "notifications"  && (
         <>
           <ScrollView style={{ flex: 1 }}>
@@ -189,8 +380,7 @@ function MatrimonyNotifications({ navigation, route }) {
                 flexDirection: "column",
               }}
             >
-              {receivedRequests.length === 0 &&
-              receivedRequests.length === 0 ? (
+              {receivedRequests.length === 0 ? (
                 <View
                   style={{
                     flex: 1,
@@ -242,15 +432,6 @@ function MatrimonyNotifications({ navigation, route }) {
                                 {receivedRequest.sender.name}
                               </Text>
 
-                              <Text
-                                style={{
-                                  fontWeight: "600",
-                                  opacity: 0.4,
-                                  marginTop: "2%",
-                                }}
-                              >
-                                {receivedRequest.createdBy}
-                              </Text>
                             </View>
 
                             <View
@@ -274,9 +455,24 @@ function MatrimonyNotifications({ navigation, route }) {
                                   marginRight: 5,
                                 }}
                                 onPress={() => {
-                                  const requestId = receivedRequest._id;
-                                  console.log("OnReq: ", requestId);
-                                  handleAcceptRequest(requestId);
+                                  Alert.alert(
+                                    "Accept Request",
+                                    "Are you sure you want to accept this connection request?",
+                                    [
+                                      {
+                                        text: "Cancel",
+                                        style: "cancel"
+                                      },
+                                      {
+                                        text: "Accept",
+                                        onPress: () => {
+                                          const requestId = receivedRequest._id;
+                                          console.log("OnReq: ", requestId);
+                                          handleAcceptRequest(requestId);
+                                        }
+                                      }
+                                    ]
+                                  );
                                 }}
                               >
                                 <View
@@ -308,9 +504,25 @@ function MatrimonyNotifications({ navigation, route }) {
                                   marginRight: 0,
                                 }}
                                 onPress={() => {
-                                  const requestId = receivedRequest._id;
-                                  console.log("OnReq: ", requestId);
-                                  handleDeleteRequest(requestId);
+                                  Alert.alert(
+                                    "Delete Request",
+                                    "Are you sure you want to delete this connection request?",
+                                    [
+                                      {
+                                        text: "Cancel",
+                                        style: "cancel"
+                                      },
+                                      {
+                                        text: "Delete",
+                                        style: "destructive",
+                                        onPress: () => {
+                                          const requestId = receivedRequest._id;
+                                          console.log("OnReq: ", requestId);
+                                          handleDeleteRequest(requestId);
+                                        }
+                                      }
+                                    ]
+                                  );
                                 }}
                               >
                                 <View

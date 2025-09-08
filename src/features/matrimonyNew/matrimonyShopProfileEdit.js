@@ -66,7 +66,28 @@ const MatrimonyShopProfileEdit = ({ navigation, route }) => {
   
   const { loadingInBtn } = useSelector((state) => state.user);
   const ownerId = user_details.user_details._id;
-  ownerRole = user.user.userType[0];
+  const userTypes = user.user.userType || [];
+  
+  // Determine ownerRole with better logic for vendor roles
+  let ownerRole;
+  if (userTypes.includes("matrimonyMan")) {
+    ownerRole = "matrimonyMan";
+  } else if (userTypes.includes("matrimonyWoman")) {
+    ownerRole = "matrimonyWoman";
+  } else if (userTypes.includes("matrimonyVendor")) {
+    ownerRole = "matrimonyVendor";
+  } else if (userTypes.includes("decorator")) {
+    ownerRole = "decorator";
+  } else if (userTypes.includes("caterer")) {
+    ownerRole = "caterer";
+  } else if (userTypes.includes("planner")) {
+    ownerRole = "planner";
+  } else if (userTypes.includes("venue")) {
+    ownerRole = "venue";
+  } else {
+    ownerRole = userTypes[0];
+  }
+  
   console.log("OR: ", ownerRole);
   
   const [userRoleData, setUserRoleData] = useState(user_details.user_details);

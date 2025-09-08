@@ -193,7 +193,13 @@ console.log("Selected Module:", selectedModule);
       console.log("Data.user: ", data.user);
   
       dispatch(setLoadingInBtn(false));
-      navigation.navigate(selectedModule);
+      
+      // Navigate to the specific module after successful onboarding
+      if (selectedModule === "Matrimony") {
+        navigation.navigate("Matrimony");
+      } else {
+        navigation.navigate(selectedModule);
+      }
     } catch (err) {
       dispatch(setLoadingInBtn(false));
       console.error("Submit failed", err);

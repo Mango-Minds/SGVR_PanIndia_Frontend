@@ -21,31 +21,47 @@ const imageHeight = screenWidth * 0.6;
 
 const ReadMoreComponent = ({ description }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-const { t } = useTranslation();
+  const { t } = useTranslation();
+  
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
+
+  // Handle undefined, null, or empty description
+  if (!description || typeof description !== 'string' || description.trim() === '') {
+    return (
+      <View style={styles.readMoreContainer}>
+        <Text style={styles.description}>
+          {t('noDescriptionAvailable') || 'No description available'}
+        </Text>
+      </View>
+    );
+  }
+
+  const shouldShowReadMore = description.length > 100;
 
   return (
     <View style={styles.readMoreContainer}>
       <Text style={styles.description}>
         {isExpanded ? description : `${description.slice(0, 100)}...`}
       </Text>
-      <TouchableOpacity onPress={handleToggle}>
-        <View>
-          {isExpanded ? (
-            <Text>
-              <Text style={styles.readMore}>{t('readLess')}</Text>
-              <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
-            </Text>
-          ) : (
-            <Text>
-              <Text style={styles.readMore}>{t('readMore')}</Text>
-              <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
+      {shouldShowReadMore && (
+        <TouchableOpacity onPress={handleToggle}>
+          <View>
+            {isExpanded ? (
+              <Text>
+                <Text style={styles.readMore}>{t('readLess') || 'Read less'}</Text>
+                <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
+              </Text>
+            ) : (
+              <Text>
+                <Text style={styles.readMore}>{t('readMore') || 'Read more'}</Text>
+                <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -109,31 +125,39 @@ const { t } = useTranslation();
     <SafeArea style={{ flex: 1 }}>
       <View style={styles.header}>
         <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-        <TopText style={styles.headerText}>{vendorData?.businessName || " "}</TopText>
+        <TopText style={styles.headerText}>{vendorData?.businessName || t('businessName') || 'Business Name'}</TopText>
       </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.carouselContainer}>
-          <FlatList
-            ref={mainFlatListRef}
-            data={vendorData.images.map(
-              (imagePath) => `${imagePath}`
-            )}
-            renderItem={renderItem}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          />
-          <TouchableOpacity
-            style={styles.leftButton}
-            onPress={goToPreviousImage}
-          >
-            <Text style={styles.buttonText}>{"<"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.rightButton} onPress={goToNextImage}>
-            <Text style={styles.buttonText}>{">"}</Text>
-          </TouchableOpacity>
+          {vendorData?.images && vendorData.images.length > 0 ? (
+            <>
+              <FlatList
+                ref={mainFlatListRef}
+                data={vendorData.images.map(
+                  (imagePath) => `${imagePath}`
+                )}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => index.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carousel}
+              />
+              <TouchableOpacity
+                style={styles.leftButton}
+                onPress={goToPreviousImage}
+              >
+                <Text style={styles.buttonText}>{"<"}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.rightButton} onPress={goToNextImage}>
+                <Text style={styles.buttonText}>{">"}</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Text style={styles.noImageText}>{t('noImagesAvailable') || 'No images available'}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.infoContainer}>
           <ReadMoreComponent description={vendorData.description} />
@@ -145,7 +169,7 @@ const { t } = useTranslation();
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>{t('address')}: </Text> {vendorData.address}
+              <Text style={styles.label}>{t('address') || 'Address'}: </Text> {vendorData?.address || t('notProvided') || 'Not provided'}
             </Text>
           </View>
           <View style={styles.infoItem}>
@@ -156,7 +180,7 @@ const { t } = useTranslation();
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>{t('city')}: </Text> {vendorData.address}
+              <Text style={styles.label}>{t('city') || 'City'}: </Text> {vendorData?.address || t('notProvided') || 'Not provided'}
             </Text>
           </View>
           <View style={styles.infoItem}>
@@ -167,8 +191,8 @@ const { t } = useTranslation();
               style={styles.infoIcon}
             />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>{t('mobileNumber')}:</Text>{" "}
-              {vendorData.contactInfo}
+              <Text style={styles.label}>{t('mobileNumber') || 'Mobile Number'}:</Text>{" "}
+              {vendorData?.contactInfo || t('notProvided') || 'Not provided'}
             </Text>
           </View>
         </View>
@@ -213,7 +237,7 @@ const { t } = useTranslation();
             style={styles.closeButton}
             onPress={closeImageModal}
           >
-            <Text style={styles.closeButtonText}>{t('close')}</Text>
+            <Text style={styles.closeButtonText}>{t('close') || 'Close'}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.leftButton}
@@ -397,5 +421,22 @@ const styles = StyleSheet.create({
   },
   facilitiesIcon: {
     marginRight: 10,
+  },
+  noImageContainer: {
+    width: screenWidth * 0.9,
+    height: imageHeight,
+    borderRadius: 8,
+    marginHorizontal: screenWidth * 0.05,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderStyle: 'dashed',
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

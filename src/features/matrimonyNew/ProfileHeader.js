@@ -15,9 +15,11 @@ import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
 import Theme from "../../styles/theme";
 import { useTranslation } from "react-i18next";
-const ProfileHeader = ({ title }) => {
+
+const ProfileHeader = ({ title, onEditPress }) => {
   const navigation = useNavigation();
   const { t } = useTranslation();
+  
   return (
     <View style={styles.container}>
       <View style={{ alignItems: "center", flexDirection: "row" }}>
@@ -33,11 +35,14 @@ const ProfileHeader = ({ title }) => {
           justifyContent: "center",
         }}
       >
-        {/* <IconButton
-          icon="bell-outline"
-          style={{ marginLeft: "auto" }}
-          onPress={() => navigation.navigate("JewelleryNotifications")}
-        ></IconButton> */}
+        {onEditPress && (
+          <IconButton
+            icon="pencil"
+            iconColor={Theme.themeColor}
+            size={24}
+            onPress={onEditPress}
+          />
+        )}
       </View>
     </View>
   );

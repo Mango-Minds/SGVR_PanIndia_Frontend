@@ -11,29 +11,47 @@ const imageHeight = screenWidth * 0.6;
 
 const ReadMoreComponent = ({ description }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-const { t } = useTranslation();
+  const { t } = useTranslation();
+  
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
   };
 
+  // Handle undefined, null, or empty description
+  if (!description || typeof description !== 'string' || description.trim() === '') {
+    return (
+      <View style={styles.readMoreContainer}>
+        <Text style={styles.description}>
+          {t('noDescriptionAvailable') || 'No description available'}
+        </Text>
+      </View>
+    );
+  }
+
+  const shouldShowReadMore = description.length > 100;
+
   return (
     <View style={styles.readMoreContainer}>
-      <Text style={styles.description}>{isExpanded ? description : `${description.slice(0, 100)}...`}</Text>
-      <TouchableOpacity onPress={handleToggle} >
-        <View>
-          {isExpanded ? (
-            <Text >
-              <Text style={styles.readMore}>Read less</Text>
-              <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
-            </Text>
-          ) : (
-            <Text>
-              <Text style={styles.readMore}>Read more</Text>
-              <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
-            </Text>
-          )}
-        </View>
-      </TouchableOpacity>
+      <Text style={styles.description}>
+        {isExpanded ? description : `${description.slice(0, 100)}...`}
+      </Text>
+      {shouldShowReadMore && (
+        <TouchableOpacity onPress={handleToggle}>
+          <View>
+            {isExpanded ? (
+              <Text>
+                <Text style={styles.readMore}>{t('readLess') || 'Read less'}</Text>
+                <Ionicons name="chevron-up-outline" size={16} color={Theme.themeColor} />
+              </Text>
+            ) : (
+              <Text>
+                <Text style={styles.readMore}>{t('readMore') || 'Read more'}</Text>
+                <Ionicons name="chevron-down-outline" size={16} color={Theme.themeColor} />
+              </Text>
+            )}
+          </View>
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -43,6 +61,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
     showViewer: false,
     currentIndex: 0,
   });
+  const { t } = useTranslation();
 
   const { vendorData } = route.params;
   const mainFlatListRef = useRef(null);
@@ -93,41 +112,49 @@ export default function MatrimonyProfileNew({ route, navigation }) {
       </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.carouselContainer}>
-          <FlatList
-            ref={mainFlatListRef}
-            data={vendorData.image}
-            renderItem={renderItem}
-            keyExtractor={(item, index) => index.toString()}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.carousel}
-          />
-          <TouchableOpacity style={styles.leftButton} onPress={goToPreviousImage}>
-            <Text style={styles.buttonText}>{"<"}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.rightButton} onPress={goToNextImage}>
-            <Text style={styles.buttonText}>{">"}</Text>
-          </TouchableOpacity>
+          {vendorData?.image && vendorData.image.length > 0 ? (
+            <>
+              <FlatList
+                ref={mainFlatListRef}
+                data={vendorData.image}
+                renderItem={renderItem}
+                keyExtractor={(item, index) => index.toString()}
+                horizontal
+                pagingEnabled
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.carousel}
+              />
+              <TouchableOpacity style={styles.leftButton} onPress={goToPreviousImage}>
+                <Text style={styles.buttonText}>{"<"}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.rightButton} onPress={goToNextImage}>
+                <Text style={styles.buttonText}>{">"}</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <View style={styles.noImageContainer}>
+              <Text style={styles.noImageText}>{t('noImagesAvailable') || 'No images available'}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.infoContainer}>
           <ReadMoreComponent description={vendorData.about} />
           <View style={styles.infoItem}>
             <Ionicons name="location" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>City:</Text> {vendorData.city}
+              <Text style={styles.label}>{t('city') || 'City'}:</Text> {vendorData?.city || t('notProvided') || 'Not provided'}
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Ionicons name="call" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>Mobile Number:</Text> {vendorData.phone}
+              <Text style={styles.label}>{t('mobileNumber') || 'Mobile Number'}:</Text> {vendorData?.phone || t('notProvided') || 'Not provided'}
             </Text>
           </View>
           <View style={styles.infoItem}>
             <Ionicons name="mail" size={24} color={Theme.themeColor} style={styles.infoIcon} />
             <Text style={styles.infoText}>
-              <Text style={styles.label}>Email:</Text> {vendorData.email}
+              <Text style={styles.label}>{t('email') || 'Email'}:</Text> {vendorData?.email || t('notProvided') || 'Not provided'}
             </Text>
           </View>
         </View>
@@ -135,31 +162,31 @@ export default function MatrimonyProfileNew({ route, navigation }) {
         <View style={styles.facilitiesContainer}>
           <View style={styles.facilitiesLabelContainer}>
             <Ionicons name="options" size={24} color={Theme.themeColor} style={styles.facilitiesIcon} />
-            <Text style={styles.facilitiesLabel}>Facilities</Text>
+            <Text style={styles.facilitiesLabel}>{t('facilities') || 'Facilities'}</Text>
           </View>
           <View style={styles.facilitiesIcons}>
             <View style={styles.facilityItem}>
               <Ionicons name="restaurant" size={24} color={Theme.themeColor} />
-              <Text style={styles.facilityText}>Catering</Text>
+              <Text style={styles.facilityText}>{t('catering') || 'Catering'}</Text>
             </View>
             <View style={styles.facilityItem}>
               <Ionicons name="fast-food-outline" size={24} color={Theme.themeColor} />
-              <Text style={styles.facilityText}>Food</Text>
+              <Text style={styles.facilityText}>{t('food') || 'Food'}</Text>
             </View>
             <View style={styles.facilityItem}>
               <Ionicons name="wine" size={24} color={Theme.themeColor} />
-              <Text style={styles.facilityText}>Bar</Text>
+              <Text style={styles.facilityText}>{t('bar') || 'Bar'}</Text>
             </View>
             <View style={styles.facilityItem}>
               <Ionicons name="ice-cream" size={24} color={Theme.themeColor} />
-              <Text style={styles.facilityText}>Dessert</Text>
+              <Text style={styles.facilityText}>{t('dessert') || 'Dessert'}</Text>
             </View>
           </View>
         </View>
 
         <View style={styles.priceBookNowContainer}>
           <View>
-            <Text style={styles.priceLabel}>Price</Text>
+            <Text style={styles.priceLabel}>{t('price') || 'Price'}</Text>
             <Text style={styles.priceText}>₹199</Text>
           </View>
           <TouchableOpacity
@@ -168,7 +195,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
               /* Handle book now */
             }}
           >
-            <Text style={styles.bookNowButtonText}>Book Now</Text>
+            <Text style={styles.bookNowButtonText}>{t('bookNow') || 'Book Now'}</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -192,7 +219,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
           />
 
           <TouchableOpacity style={styles.closeButton} onPress={closeImageModal}>
-            <Text style={styles.closeButtonText}>Close</Text>
+            <Text style={styles.closeButtonText}>{t('close') || 'Close'}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.leftButton} onPress={goToPreviousImage}>
             <Text style={styles.buttonText}>{"<"}</Text>
@@ -373,5 +400,22 @@ const styles = StyleSheet.create({
   },
   facilitiesIcon: {
     marginRight: 10,
+  },
+  noImageContainer: {
+    width: screenWidth * 0.9,
+    height: imageHeight,
+    borderRadius: 8,
+    marginHorizontal: screenWidth * 0.05,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderStyle: 'dashed',
+  },
+  noImageText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

@@ -88,22 +88,12 @@ export default function MatrimonyViewUser({ route }) {
   const renderContentBackground = (user) => {
     return (
       <View style={styles.scrollContainer}>
-        <RowBetween>
-          <View>
-            <Text style={styles.title}>
-              {`${user?.fname} ${user?.midname} ${user?.lname}`}, {user?.age}
-            </Text>
-            <Text style={styles.content}>{user?.job}</Text>
-          </View>
-          <TouchableOpacity
-            onPress={() => {
-              navigation.navigate("Editmyprofile");
-            }}
-            style={{ backgroundColor: "#D4AF37", padding: 8, borderRadius: 4 }}
-          >
-            <Icon name="account-edit" size={24} color="white" />
-          </TouchableOpacity>
-        </RowBetween>
+        <View>
+          <Text style={styles.title}>
+            {`${user?.fname} ${user?.midname} ${user?.lname}`}, {user?.age}
+          </Text>
+          <Text style={styles.content}>{user?.job}</Text>
+        </View>
 
         <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
           Picture
@@ -638,6 +628,8 @@ export default function MatrimonyViewUser({ route }) {
           alignItems: "center",
           flexDirection: "row",
           backgroundColor: "white",
+          justifyContent: "space-between",
+          paddingHorizontal: 16,
         }}
       >
         <IconButton
@@ -654,6 +646,24 @@ export default function MatrimonyViewUser({ route }) {
         >
           Matrimony
         </Text>
+        <TouchableOpacity
+          onPress={() => {
+            navigation.navigate("Editmyprofile");
+          }}
+          style={{ 
+            backgroundColor: "#D4AF37", 
+            padding: 8, 
+            borderRadius: 6,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}
+        >
+          <Icon name="account-edit" size={18} color="white" />
+          <Text style={{ color: 'white', marginLeft: 4, fontSize: 12, fontWeight: '500' }}>
+            Edit
+          </Text>
+        </TouchableOpacity>
       </View>
       {images.length > 0 && (
         <Modal visible={showViewer} transparent={true}>

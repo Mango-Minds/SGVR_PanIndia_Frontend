@@ -42,7 +42,6 @@ export default function LoginScreen({ navigation }) {
   const [hidePass, setHidePass] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loadingAnimation, setLoadingAnimation] = useState(false);
 
   const handleShowPassword = () => {
     setHidePass((prevState) => !prevState);
@@ -107,60 +106,6 @@ export default function LoginScreen({ navigation }) {
  
  
 
-  const handleAdminLogin = async () => {
-    try {
-      if (!email) {
-        dispatch(
-          ErrorToggle({
-            toggle: true,
-            msg: "Enter your correct email",
-            type: "error",
-          })
-        );
-        return;
-      }
-      if (!password) {
-        dispatch(
-          ErrorToggle({
-            toggle: true,
-            msg: "Enter your password",
-            type: "error",
-          })
-        );
-        return;
-      }
-      if (!tcCheck) {
-        dispatch(
-          ErrorToggle({
-            toggle: true,
-            msg: "You must agree to the terms and conditions",
-            type: "error",
-          })
-        );
-        return;
-      }
-      setLoadingAnimation(true);
-      const data = await dispatch(login({ email, password, isAdmin: "true" }));
-      setLoadingAnimation(false);
-      if (data !== true)
-        if (data.msgCode === 1) {
-          navigation.navigate("Register");
-        } else if (data.msgCode === 4) {
-        } else if (data.msgCode === 5) {
-          navigation.navigate("Verify", {
-            phone: data.phone,
-            id: data.data.id,
-            password: password,
-            type: "login",
-          });
-        }
-    } catch (err) {
-      console.log("Error");
-      console.log(err);
-      dispatch(IsBttnloading(false));
-      dispatch(ErrorToggle({ toggle: true, msg: err.message, type: "error" }));
-    }
-  };
 
    const logAsyncStorageData = async () => {
     try {
@@ -290,25 +235,6 @@ export default function LoginScreen({ navigation }) {
                 />
               ) : (
                 "Login"
-              )}
-            </Text>
-          </FormButton>
-          <FormButton onPress={handleAdminLogin}>
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
-              {loadingAnimation === true ? (
-                <ActivityIndicator
-                  style={{
-                    display: "flex",
-                    alignSelf: "center",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    flex: 1,
-                  }}
-                  // size={"large"}
-                  color={"white"}
-                />
-              ) : (
-                "Login as Super Admin"
               )}
             </Text>
           </FormButton>

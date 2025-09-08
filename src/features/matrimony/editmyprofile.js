@@ -11,6 +11,8 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import {
   Divider,
@@ -87,7 +89,7 @@ export const MenuItem = (props) => {
 };
 
 export default function Editmyprofile({ navigation }) {
-  const { myMatrimonyProfile, loadingInBtn } = useSelector(
+  const { myMatrimonyProfile, loadingInBtn, user } = useSelector(
     (state) => state.user
   );
 
@@ -125,8 +127,8 @@ export default function Editmyprofile({ navigation }) {
     lname: myMatrimonyProfile.lname,
     age: myMatrimonyProfile.age,
     gender: myMatrimonyProfile.gender,
-    phone: myMatrimonyProfile,
-    email: myMatrimonyProfile,
+    phone: user?.phone || myMatrimonyProfile.phone || "",
+    email: user?.email || myMatrimonyProfile.email || "",
     education: "",
     job: "",
     jobType: "",
@@ -330,7 +332,14 @@ export default function Editmyprofile({ navigation }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={{ flex: 1 }}
+        >
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -1734,7 +1743,8 @@ export default function Editmyprofile({ navigation }) {
               <ForgotText style={{ color: '#B98C13', fontSize: 13 }}>Contact Us</ForgotText>
             </BottomText> */}
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

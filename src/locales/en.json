@@ -123,6 +123,7 @@
   "accept": "Accept",
   "edit_shop_profile": "Edit Shop Profile",
   "view_shop_profile": "View Shop Profile",
+  "view_shop_details": "View Shop Details",
   "edit_your_matrimony_profile": "Edit your Matrimony Profile",
   "view_your_matrimony_profile": "View your Matrimony Profile",
   "cm": "cm",
@@ -148,7 +149,16 @@
     "alreadySent": "Request Already Sent",
     "alreadySentMsg": "You have already sent a connection request.",
     "requestSent": "Connection request sent successfully",
-    "sendError": "Unable to send connection request."
+    "sendError": "Unable to send connection request.",
+    "waitingForApproval": "Waiting for Approval",
+    "connected": "Connected",
+    "requestPending": "Request Pending",
+    "requestPendingMsg": "Your connection request is pending approval.",
+    "requestAccepted": "Request Accepted",
+    "requestAcceptedMsg": "Your connection request has been accepted.",
+    "requestRejected": "Request Rejected",
+    "requestRejectedMsg": "Your connection request has been rejected.",
+    "message": "Message"
   },
   "common": {
     "success": "Success",
@@ -299,6 +309,8 @@
   "connect_error": "Error connecting to user",
   "unable_error": "Unable to send connection request",
    "requests": "Requests",
+   "received_requests": "Received Requests",
+   "sent_requests": "Sent Requests",
    
   "chat": {
     "sameIdError": "Chat room cannot be created: same ID",
@@ -539,7 +551,24 @@
   "failed_to_update_banner": "Failed to update banner image",
   "editBannerImage": "Edit Banner Image",
   "bannerImageDescription": "Choose a banner image to display at the top of your profile",
-  "selectBannerImage": "Select Banner Image"
+  "selectBannerImage": "Select Banner Image",
+  "noDescriptionAvailable": "No description available",
+  "noImagesAvailable": "No images available",
+  "notProvided": "Not provided",
+  "businessName": "Business Name",
+  "facilities": "Facilities",
+  "catering": "Catering",
+  "food": "Food",
+  "bar": "Bar",
+  "dessert": "Dessert",
+  "vendorName": "Vendor Name",
+  "serviceProvided": "Service Provided",
+  "noServicesAvailable": "No services available",
+  "gallery": "Gallery",
+  "aboutUs": "About Us",
+  "availability": "Availability",
+  "noEmail": "No email",
+  "noContactNumber": "No contact number"
 
 }
 

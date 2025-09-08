@@ -22,30 +22,95 @@ import { decode } from "base-64";
 import { LinearGradient } from "expo-linear-gradient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
-import { sendConnectionRequest } from "./matrimonyAPIs";
+import { sendConnectionRequest, fetchConnectionRequests, checkConnectionStatus, fetchMatrimonyUserProfile } from "./matrimonyAPIs";
 import { useTranslation } from "react-i18next";
+import { useFocusEffect } from "@react-navigation/native";
+import Icon from "react-native-vector-icons/Ionicons";
 export default function MatrimonyProfileNew({ route, navigation }) {
   const { t } = useTranslation();
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
-  const userType = user.userType[0];
+
+
+  // Helper function to format date of birth
+  const formatDateOfBirth = (dateString) => {
+    if (!dateString) return 'Not specified';
+    
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return date.toLocaleDateString('en-IN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch (error) {
+      return 'Not specified';
+    }
+  };
+  const userTypes = user?.userType || [];
+  const userType = userTypes.includes("matrimonyMan") ? "matrimonyMan" : 
+                   userTypes.includes("matrimonyWoman") ? "matrimonyWoman" : 
+                   userTypes[0];
   console.log("User Type in connections: ", userType);
+  console.log("UserTypes array: ", userTypes);
   const { groomsData } = route.params;
   console.log("GroomsData in new Screen: ", groomsData);
   const [modalVisible, setModalVisible] = useState(false);
   const [isRequestSent, setIsRequestSent] = useState(false);
+  const [requestStatus, setRequestStatus] = useState('none'); // 'none', 'pending', 'accepted', 'rejected'
+  const [matrimonyData, setMatrimonyData] = useState(route.params?.matrimonyData || {});
   const [viewerState, setViewerState] = useState({
     showViewer: false,
     currentIndex: 0,
     modelImages: [
       {
-        url: route.params.matrimonyData.image,
+        url: matrimonyData?.image || UserImg,
         props: { style: { width: "100%", height: "100%" } },
       },
     ],
   });
+
+  // Check if current user is the owner of this profile
+  const isOwner = () => {
+    const currentUserId = user?._id || decodedPayload?.id;
+    const profileOwnerId = matrimonyData?.owner?._id || matrimonyData?.owner;
+    return currentUserId === profileOwnerId;
+  };
+
+  // Handle message navigation for connected users
+  const handleMessagePress = () => {
+    const currentUserId = user?._id || decodedPayload?.id;
+    const targetUserId = matrimonyData?.owner?._id || matrimonyData?.owner;
+    
+    // Get the target user's name - try multiple sources
+    let targetUserName = '';
+    if (matrimonyData?.name) {
+      // Use the profile name if available
+      targetUserName = matrimonyData.name;
+    } else if (matrimonyData?.owner?.firstName || matrimonyData?.owner?.lastName) {
+      // Fall back to owner's first and last name
+      targetUserName = `${matrimonyData?.owner?.firstName || ''} ${matrimonyData?.owner?.lastName || ''}`.trim();
+    } else {
+      // Final fallback
+      targetUserName = 'User';
+    }
+    
+    // Generate conversation ID from current user and target user
+    const conversationId = [currentUserId, targetUserId].sort().join('_');
+    
+    // Navigate to chat screen with the target user's information
+    navigation.navigate("ChatScreen", {
+      toid: targetUserId,
+      toName: targetUserName,
+      index: 0, // Default index for new chat
+      conversationId: conversationId, // Pass the conversation ID
+    });
+  };
 
   const dateToText = (manDate) => {
     const date = new Date(manDate);
@@ -95,7 +160,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
     setClickedButton(buttonName);
   };
 
-  console.log(route.params.matrimonyData);
+  console.log(matrimonyData);
   const renderContent = () => {
     switch (clickedButton) {
       case "ABOUT":
@@ -104,21 +169,21 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             <View style={styles.aboutContent1}>
               <Text style={styles.aboutLabel1}>{t('matrimony.bio')}</Text>
               <Text style={styles.aboutText1}>
-                {route.params.matrimonyData.aboutMe}
+                {matrimonyData?.aboutMe || ''}
               </Text>
             </View>
 
-            {route.params.matrimonyData.socials.visible && (
+            {matrimonyData?.socials?.visible && (
               <View style={styles.aboutContent2}>
                 <Text style={styles.aboutLabel2}>{t('matrimony.reachMeAt')}</Text>
                 <View style={{ flexDirection: "row" }}>
-                  <Link to={`/${route.params.matrimonyData.socials.instagram}`}>
+                  <Link to={`/${matrimonyData?.socials?.instagram || ''}`}>
                     <IconButton icon="instagram" />
                   </Link>
-                  <Link to={`/${route.params.matrimonyData.socials.linkedin}`}>
+                  <Link to={`/${matrimonyData?.socials?.linkedin || ''}`}>
                     <IconButton icon="linkedin" />
                   </Link>
-                  <Link to={`/${route.params.matrimonyData.socials.whatsapp}`}>
+                  <Link to={`/${matrimonyData?.socials?.whatsapp || ''}`}>
                     <IconButton icon="whatsapp" />
                   </Link>
                 </View>
@@ -129,14 +194,14 @@ export default function MatrimonyProfileNew({ route, navigation }) {
               <View style={{ flexDirection: "row" }}>
                 <Text style={styles.aboutLabel3}>{t('matrimony.website')}</Text>
                 <Text style={styles.aboutText3}>
-                  {route.params.matrimonyData.email}
+                  {matrimonyData?.email || ''}
                 </Text>
               </View>
 
               <View style={{ flexDirection: "row" }}>
                 <Text style={styles.aboutLabel3}>{t('matrimony.contact')}</Text>
                 <Text style={styles.aboutText3}>
-                  {route.params.matrimonyData.phone}
+                  {matrimonyData?.phone || ''}
                 </Text>
               </View>
             </View>
@@ -157,7 +222,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
                 {t('matrimony.title')}
               </Text>
               <Text style={{ paddingHorizontal: 10, paddingBottom: 10 }}>
-                {route.params.matrimonyData.occupation}
+                {matrimonyData?.occupation || ''}
               </Text>
 
               <Text
@@ -177,7 +242,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
                   paddingBottom: 10,
                 }}
               >
-                {route.params.matrimonyData.occupationDescription}.
+                {matrimonyData?.occupation || 'No occupation provided'}.
               </Text>
             </View>
           </View>
@@ -196,7 +261,6 @@ export default function MatrimonyProfileNew({ route, navigation }) {
               >
                 {t('matrimony.activity')}
               </Text>
-              {/* Add more ACTIVITY section content here */}
               <Text
                 style={{
                   fontSize: 14,
@@ -204,9 +268,88 @@ export default function MatrimonyProfileNew({ route, navigation }) {
                   paddingBottom: 10,
                 }}
               >
-                {route.params.matrimonyData.hobbies.join(", ")}
+                {matrimonyData?.hobbies?.join(", ") || 'No hobbies listed'}
               </Text>
-              {/* Hardcoded hobbies text */}
+            </View>
+          </View>
+        );
+      case "PERSONAL":
+        return (
+          <View style={styles.personalInfo}>
+            <View style={styles.personalInfoContent}>
+              <Text style={styles.personalInfoTitle}>Personal Information</Text>
+              
+              <View style={styles.infoGrid}>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Caste</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.caste?.type || matrimonyData?.subcaste || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Gothra</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.gothra || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Family Type</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.familyType || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Family Status</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.familyStatus || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Work Location</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.workLocation || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Height</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.height ? `${matrimonyData.height} cm` : 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Marital Status</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.maritalStatus || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Home Town</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.homeTown || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Highest Education</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.highestEducation || 'Not specified'}
+                  </Text>
+                </View>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Employed In</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData?.employedIn || 'Not specified'}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
         );
@@ -217,21 +360,21 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             <View style={styles.aboutContent1}>
               <Text style={styles.aboutLabel1}>{t('matrimony.bio')}</Text>
               <Text style={styles.aboutText1}>
-                {route.params.matrimonyData.aboutMe}
+                {matrimonyData?.aboutMe || ''}
               </Text>
             </View>
 
-            {route.params.matrimonyData.socials.visible && (
+            {matrimonyData?.socials?.visible && (
               <View style={styles.aboutContent2}>
                 <Text style={styles.aboutLabel2}>{t('matrimony.reachMeAt')}</Text>
                 <View style={{ flexDirection: "row" }}>
-                  <Link to={`/${route.params.matrimonyData.socials.instagram}`}>
+                  <Link to={`/${matrimonyData?.socials?.instagram || ''}`}>
                     <IconButton icon="instagram" />
                   </Link>
-                  <Link to={`/${route.params.matrimonyData.socials.linkedin}`}>
+                  <Link to={`/${matrimonyData?.socials?.linkedin || ''}`}>
                     <IconButton icon="linkedin" />
                   </Link>
-                  <Link to={`/${route.params.matrimonyData.socials.whatsapp}`}>
+                  <Link to={`/${matrimonyData?.socials?.whatsapp || ''}`}>
                     <IconButton icon="whatsapp" />
                   </Link>
                 </View>
@@ -242,14 +385,14 @@ export default function MatrimonyProfileNew({ route, navigation }) {
               <View style={{ flexDirection: "row" }}>
                 <Text style={styles.aboutLabel3}>{t('matrimony.website')}</Text>
                 <Text style={styles.aboutText3}>
-                  {route.params.matrimonyData.email}
+                  {matrimonyData?.email || ''}
                 </Text>
               </View>
 
               <View style={{ flexDirection: "row" }}>
                 <Text style={styles.aboutLabel3}>{t('matrimony.contact')}</Text>
                 <Text style={styles.aboutText3}>
-                  {route.params.matrimonyData.phone}
+                  {matrimonyData?.phone || ''}
                 </Text>
               </View>
             </View>
@@ -258,10 +401,85 @@ export default function MatrimonyProfileNew({ route, navigation }) {
     }
   };
 
-  const receiverId = route.params.matrimonyData._id;
+  const receiverId = matrimonyData._id;
   const senderId = user?.roleData?.MatrimonyUser?._id;
-  console.log("SID: ", senderId);
 
+  // Check if a request has already been sent to this user or if they are already connected
+  const checkRequestStatus = async () => {
+    try {
+      // First, check if users are already connected
+      const connectionData = await checkConnectionStatus(senderId, receiverId);
+      
+      if (connectionData.isConnected) {
+        setRequestStatus('accepted');
+        setIsRequestSent(true);
+        return;
+      }
+      
+      // If not connected, check for pending requests
+      const data = await fetchConnectionRequests(senderId);
+      const sentRequests = data.sentRequests || [];
+      
+      // Check if there's a pending request to this specific user
+      const existingRequest = sentRequests.find(request => {
+        const requestReceiverId = request.receiver?._id || request.receiver;
+        return requestReceiverId === receiverId;
+      });
+      
+      if (existingRequest) {
+        setRequestStatus(existingRequest.status);
+        setIsRequestSent(true);
+      } else {
+        setRequestStatus('none');
+        setIsRequestSent(false);
+      }
+    } catch (error) {
+      console.error("Error checking request status:", error);
+    }
+  };
+
+  // Check request status when component mounts
+  useEffect(() => {
+    if (senderId && receiverId) {
+      checkRequestStatus();
+    }
+  }, [senderId, receiverId]);
+
+  // Update viewerState when matrimonyData changes
+  useEffect(() => {
+    setViewerState(prevState => ({
+      ...prevState,
+      modelImages: [
+        {
+          url: matrimonyData?.image || UserImg,
+          props: { style: { width: "100%", height: "100%" } },
+        },
+      ],
+    }));
+  }, [matrimonyData]);
+
+  // Refresh matrimony data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshMatrimonyData = async () => {
+        try {
+          // Get the user ID from the matrimony data
+          const userId = matrimonyData?.owner?._id || matrimonyData?.owner;
+          if (userId) {
+            const updatedData = await fetchMatrimonyUserProfile(userId);
+            const updatedMatrimonyData = updatedData.user.roleData?.MatrimonyUser || updatedData.user.roleData?.MatrimonyVendor;
+            if (updatedMatrimonyData) {
+              setMatrimonyData(updatedMatrimonyData);
+            }
+          }
+        } catch (error) {
+          console.error("Error refreshing matrimony data:", error);
+        }
+      };
+
+      refreshMatrimonyData();
+    }, [matrimonyData?.owner?._id || matrimonyData?.owner])
+  );
 
   const handleConnect = async () => {
     if (isRequestSent) {
@@ -313,6 +531,7 @@ export default function MatrimonyProfileNew({ route, navigation }) {
 
     if (response.status === 200 || response.status === 201) {
         setIsRequestSent(true);
+        setRequestStatus('pending');
         Alert.alert(t("success_msg"), t("message"), [
           { text: t('ok') },
         ]);
@@ -344,9 +563,9 @@ export default function MatrimonyProfileNew({ route, navigation }) {
         <View style={styles.headerImageContainer}>
           <Image
             source={
-              route.params.matrimonyData.images
+              matrimonyData?.images && matrimonyData?.images.length > 0
                 ? {
-                    uri: `${route.params.matrimonyData.images[0]}`,
+                    uri: `${matrimonyData?.images[0]}`,
                   }
                 : UserImg
             }
@@ -356,28 +575,58 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             colors={["transparent", "rgba(0,0,0,0.8)"]}
             style={styles.gradientOverlay}
           />
-          <TouchableOpacity style={styles.backButton}>
-            <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          </TouchableOpacity>
+          <View style={styles.headerButtonsContainer}>
+            <TouchableOpacity style={styles.backButton}>
+              <IconButton icon="arrow-left" onPress={() => {
+                if (navigation.canGoBack()) {
+                  navigation.goBack();
+                } else {
+                  navigation.navigate("MatrimonyNew");
+                }
+              }} />
+            </TouchableOpacity>
+            {isOwner() && (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  navigation.navigate("MyMatrimonyProfileEdit", {
+                    user_details: matrimonyData,
+                  });
+                }}
+              >
+                <MaterialIcon name="edit" size={20} color="white" />
+                <Text style={styles.editButtonText}>Edit</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
 
         <View style={styles.eventInfoContainer}>
           <View style={styles.nameAndLocationContainer}>
             <Text style={styles.headerTitle}>
-              {route.params.matrimonyData.name}
+              {matrimonyData?.name || ''}
             </Text>
             <View style={styles.locationContainer}>
               <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
               <Text style={styles.homeTown}>
-                {route.params.matrimonyData.homeTown}
+                {matrimonyData?.homeTown || ''}
               </Text>
             </View>
           </View>
 
           <View style={styles.eventDetails}>
             <Text style={styles.detailItem}>
-              {dateToText(route.params.matrimonyData.dateOfBirth)} |{" "}
-              {route.params.matrimonyData.occupation}
+              {dateToText(matrimonyData?.dateOfBirth)} |{" "}
+              {matrimonyData?.occupation || ''}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.eventInfoContainer}>
+          <View style={styles.eventDetails}>
+            <Text style={styles.priceText}>{t('matrimony.bio')}</Text>
+            <Text style={styles.bioText}>
+              {matrimonyData?.aboutMe || 'No bio information provided'}
             </Text>
           </View>
         </View>
@@ -389,51 +638,106 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.caste')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.subcaste}
+                {matrimonyData?.caste?.type || matrimonyData?.subcaste || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.gothra')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.gothra}
+                {matrimonyData?.gothra || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.familyType')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.familyType}
+                {matrimonyData?.familyType || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.familyStatus')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.familyStatus}
+                {matrimonyData?.familyStatus || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.workLocation')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.workLocation}
+                {matrimonyData?.workLocation || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.height')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.height} {t('cm')}
+                {matrimonyData?.height ? `${matrimonyData.height} cm` : 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.maritalStatus')}</Text>
               <Text style={styles.infoValue}>
-                {route.params.matrimonyData.maritalStatus}
+                {matrimonyData?.maritalStatus || 'Not specified'}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>{t('matrimony.hobbies')}</Text>
-              {/* <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="tail"> */}
               <Text style={styles.infoValue}>
-              {route.params.matrimonyData.hobbies.join(", ")}
-
+                {matrimonyData?.hobbies?.length > 0 ? matrimonyData.hobbies.join(", ") : 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Home Town</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.homeTown || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Highest Education</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.highestEducation || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Employed In</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.employedIn || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Dosh</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.dosh || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Family Values</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.familyValues || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Languages</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.languages?.length > 0 ? 
+                  matrimonyData.languages.map(lang => 
+                    typeof lang === 'string' ? lang : `${lang.language} (${lang.languageProficiency})`
+                  ).join(", ") : 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Annual Income</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.Annualincome?.salary ? `₹${matrimonyData.Annualincome.salary} LPA` : 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Age</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.age ? `${matrimonyData.age} years` : 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Gender</Text>
+              <Text style={styles.infoValue}>
+                {matrimonyData?.gender ? matrimonyData.gender.charAt(0).toUpperCase() + matrimonyData.gender.slice(1) : 'Not specified'}
               </Text>
             </View>
 
@@ -443,12 +747,61 @@ export default function MatrimonyProfileNew({ route, navigation }) {
 
         <View style={styles.eventInfoContainer}>
           <View style={styles.eventDetails}>
-            <Text style={styles.priceText}>{t('matrimony.bio')}</Text>
-            <Text style={styles.bioText}>
-              {route.params.matrimonyData.aboutMe}
-            </Text>
+            <Text style={styles.priceText}>Contact Information</Text>
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>
+                {user?.email || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Phone</Text>
+              <Text style={styles.infoValue}>
+                {user?.phone || 'Not specified'}
+              </Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Date of Birth</Text>
+              <Text style={styles.infoValue}>
+                {formatDateOfBirth(matrimonyData?.dateOfBirth)}
+              </Text>
+            </View>
           </View>
         </View>
+
+        {matrimonyData?.socials?.visible && (
+          <View style={styles.eventInfoContainer}>
+            <View style={styles.eventDetails}>
+              <Text style={styles.priceText}>Social Media</Text>
+              
+              {matrimonyData?.socials?.instagram && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Instagram</Text>
+                  <Text style={styles.infoValue}>
+                    @{matrimonyData.socials.instagram}
+                  </Text>
+                </View>
+              )}
+              {matrimonyData?.socials?.linkedin && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>LinkedIn</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData.socials.linkedin}
+                  </Text>
+                </View>
+              )}
+              {matrimonyData?.socials?.whatsapp && (
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>WhatsApp</Text>
+                  <Text style={styles.infoValue}>
+                    {matrimonyData.socials.whatsapp}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
 {console.log("Sender id: ", senderId)}
@@ -461,14 +814,52 @@ export default function MatrimonyProfileNew({ route, navigation }) {
             <View style={styles.ticketInfoContainer}>
               <Text style={styles.priceText}>{t('matrimony.interested')}</Text>
 
-              <TouchableOpacity
-                style={styles.bookNowButton}
-                onPress={() => {
-                  handleConnect(senderId, receiverId, userType);
-                }}
-              >
-                <Text style={styles.bookNowButtonText}>{t('matrimony.sendRequest')}</Text>
-              </TouchableOpacity>
+              {requestStatus === 'accepted' ? (
+                // Show message button for connected users
+                <TouchableOpacity
+                  style={styles.messageButton}
+                  onPress={handleMessagePress}
+                >
+                  <Icon name="chatbubble-outline" size={20} color="#fff" style={styles.messageIcon} />
+                  <Text style={styles.messageButtonText}>{t('matrimony.message')}</Text>
+                </TouchableOpacity>
+              ) : (
+                // Show connection button for non-connected users
+                <TouchableOpacity
+                  style={[
+                    styles.bookNowButton,
+                    requestStatus === 'pending' && styles.pendingButton,
+                    requestStatus === 'rejected' && styles.rejectedButton
+                  ]}
+                  onPress={() => {
+                    if (requestStatus === 'pending') {
+                      Alert.alert(
+                        t('matrimony.requestPending'),
+                        t('matrimony.requestPendingMsg')
+                      );
+                      return;
+                    }
+                    if (requestStatus === 'rejected') {
+                      Alert.alert(
+                        t('matrimony.requestRejected'),
+                        t('matrimony.requestRejectedMsg')
+                      );
+                      return;
+                    }
+                    handleConnect(senderId, receiverId, userType);
+                  }}
+                >
+                  <Text style={[
+                    styles.bookNowButtonText,
+                    requestStatus === 'pending' && styles.pendingButtonText,
+                    requestStatus === 'rejected' && styles.rejectedButtonText
+                  ]}>
+                    {requestStatus === 'pending' ? t('matrimony.waitingForApproval') :
+                     requestStatus === 'rejected' ? t('matrimony.requestRejected') :
+                     t('matrimony.sendRequest')}
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           </View>
         </View>
@@ -507,10 +898,32 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     bottom: 10,
   },
-  backButton: {
+  headerButtonsContainer: {
     position: "absolute",
     top: 40,
     left: 15,
+    right: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  backButton: {
+    // Remove absolute positioning since it's now in a flex container
+  },
+  editButton: {
+    backgroundColor: Theme.themeColor,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  editButtonText: {
+    color: "white",
+    marginLeft: 4,
+    fontSize: 12,
+    fontWeight: "500",
   },
   headerTitle: {
     bottom: 10,
@@ -633,6 +1046,30 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 16,
   },
+  pendingButton: {
+    backgroundColor: "#FFA500", // Orange for pending
+  },
+  acceptedButton: {
+    backgroundColor: "#28A745", // Green for accepted
+  },
+  rejectedButton: {
+    backgroundColor: "#DC3545", // Red for rejected
+  },
+  pendingButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  acceptedButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
+  rejectedButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 16,
+  },
   infoText: {
     fontSize: 16,
     marginVertical: 2,
@@ -693,6 +1130,78 @@ const styles = StyleSheet.create({
     color: "grey",
     flex: 1,
   },
+  personalInfo: {
+    backgroundColor: "white",
+    margin: 10,
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  personalInfoContent: {
+    padding: 10,
+  },
+  personalInfoTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#333",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  infoGrid: {
+    flexDirection: "column",
+  },
+  infoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  infoLabel: {
+    fontSize: 14,
+    color: "#666",
+    fontWeight: "500",
+    flex: 1,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#333",
+    flex: 1,
+    textAlign: "right",
+  },
+  messageButton: {
+    backgroundColor: Theme.themeColor,
+    borderRadius: 25,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  messageIcon: {
+    marginRight: 8,
+  },
+  messageButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
 });
 
 
@@ -742,7 +1251,7 @@ const styles = StyleSheet.create({
 //     currentIndex: 0,
 //     modelImages: [
 //       {
-//         url: route.params.matrimonyData.image,
+//         url: matrimonyData.image,
 //         props: { style: { width: "100%", height: "100%" } },
 //       },
 //     ],
@@ -796,7 +1305,7 @@ const styles = StyleSheet.create({
 //     setClickedButton(buttonName);
 //   };
 
-//   console.log(route.params.matrimonyData);
+//   console.log(matrimonyData);
 //   const renderContent = () => {
 //     switch (clickedButton) {
 //       case "ABOUT":
@@ -805,21 +1314,21 @@ const styles = StyleSheet.create({
 //             <View style={styles.aboutContent1}>
 //               <Text style={styles.aboutLabel1}>BIO</Text>
 //               <Text style={styles.aboutText1}>
-//                 {route.params.matrimonyData.aboutMe}
+//                 {matrimonyData?.aboutMe || ''}
 //               </Text>
 //             </View>
 
-//             {route.params.matrimonyData.socials.visible && (
+//             {matrimonyData?.socials?.visible && (
 //               <View style={styles.aboutContent2}>
 //                 <Text style={styles.aboutLabel2}>REACH ME AT</Text>
 //                 <View style={{ flexDirection: "row" }}>
-//                   <Link to={`/${route.params.matrimonyData.socials.instagram}`}>
+//                   <Link to={`/${matrimonyData?.socials?.instagram || ''}`}>
 //                     <IconButton icon="instagram" />
 //                   </Link>
-//                   <Link to={`/${route.params.matrimonyData.socials.linkedin}`}>
+//                   <Link to={`/${matrimonyData?.socials?.linkedin || ''}`}>
 //                     <IconButton icon="linkedin" />
 //                   </Link>
-//                   <Link to={`/${route.params.matrimonyData.socials.whatsapp}`}>
+//                   <Link to={`/${matrimonyData?.socials?.whatsapp || ''}`}>
 //                     <IconButton icon="whatsapp" />
 //                   </Link>
 //                 </View>
@@ -830,14 +1339,14 @@ const styles = StyleSheet.create({
 //               <View style={{ flexDirection: "row" }}>
 //                 <Text style={styles.aboutLabel3}>WEBSITE</Text>
 //                 <Text style={styles.aboutText3}>
-//                   {route.params.matrimonyData.email}
+//                   {matrimonyData?.email || ''}
 //                 </Text>
 //               </View>
 
 //               <View style={{ flexDirection: "row" }}>
 //                 <Text style={styles.aboutLabel3}>CONTACT</Text>
 //                 <Text style={styles.aboutText3}>
-//                   {route.params.matrimonyData.phone}
+//                   {matrimonyData?.phone || ''}
 //                 </Text>
 //               </View>
 //             </View>
@@ -858,7 +1367,7 @@ const styles = StyleSheet.create({
 //                 TITLE
 //               </Text>
 //               <Text style={{ paddingHorizontal: 10, paddingBottom: 10 }}>
-//                 {route.params.matrimonyData.occupation}
+//                 {matrimonyData?.occupation || ''}
 //               </Text>
 
 //               <Text
@@ -878,7 +1387,7 @@ const styles = StyleSheet.create({
 //                   paddingBottom: 10,
 //                 }}
 //               >
-//                 {route.params.matrimonyData.occupationDescription}.
+//                 {matrimonyData?.occupation || ''Description}.
 //               </Text>
 //             </View>
 //           </View>
@@ -905,7 +1414,7 @@ const styles = StyleSheet.create({
 //                   paddingBottom: 10,
 //                 }}
 //               >
-//                 {route.params.matrimonyData.hobbies.join(", ")}
+//                 {matrimonyData?.hobbies?.join(", ") || ''}
 //               </Text>
 //               {/* Hardcoded hobbies text */}
 //             </View>
@@ -918,21 +1427,21 @@ const styles = StyleSheet.create({
 //             <View style={styles.aboutContent1}>
 //               <Text style={styles.aboutLabel1}>BIO</Text>
 //               <Text style={styles.aboutText1}>
-//                 {route.params.matrimonyData.aboutMe}
+//                 {matrimonyData?.aboutMe || ''}
 //               </Text>
 //             </View>
 
-//             {route.params.matrimonyData.socials.visible && (
+//             {matrimonyData?.socials?.visible && (
 //               <View style={styles.aboutContent2}>
 //                 <Text style={styles.aboutLabel2}>REACH ME AT</Text>
 //                 <View style={{ flexDirection: "row" }}>
-//                   <Link to={`/${route.params.matrimonyData.socials.instagram}`}>
+//                   <Link to={`/${matrimonyData?.socials?.instagram || ''}`}>
 //                     <IconButton icon="instagram" />
 //                   </Link>
-//                   <Link to={`/${route.params.matrimonyData.socials.linkedin}`}>
+//                   <Link to={`/${matrimonyData?.socials?.linkedin || ''}`}>
 //                     <IconButton icon="linkedin" />
 //                   </Link>
-//                   <Link to={`/${route.params.matrimonyData.socials.whatsapp}`}>
+//                   <Link to={`/${matrimonyData?.socials?.whatsapp || ''}`}>
 //                     <IconButton icon="whatsapp" />
 //                   </Link>
 //                 </View>
@@ -943,14 +1452,14 @@ const styles = StyleSheet.create({
 //               <View style={{ flexDirection: "row" }}>
 //                 <Text style={styles.aboutLabel3}>WEBSITE</Text>
 //                 <Text style={styles.aboutText3}>
-//                   {route.params.matrimonyData.email}
+//                   {matrimonyData?.email || ''}
 //                 </Text>
 //               </View>
 
 //               <View style={{ flexDirection: "row" }}>
 //                 <Text style={styles.aboutLabel3}>CONTACT</Text>
 //                 <Text style={styles.aboutText3}>
-//                   {route.params.matrimonyData.phone}
+//                   {matrimonyData?.phone || ''}
 //                 </Text>
 //               </View>
 //             </View>
@@ -959,7 +1468,7 @@ const styles = StyleSheet.create({
 //     }
 //   };
 
-//   const receiverId = route.params.matrimonyData._id;
+//   const receiverId = matrimonyData._id;
 //   const senderId = user?.roleData?._id;
 //   console.log("SID: ", senderId);
 
@@ -1066,9 +1575,9 @@ const styles = StyleSheet.create({
 //         <View style={styles.headerImageContainer}>
 //           <Image
 //             source={
-//               route.params.matrimonyData.images
+//               matrimonyData.images
 //                 ? {
-//                     uri: `${route.params.matrimonyData.images[0]}`,
+//                     uri: `${matrimonyData?.images[0]}`,
 //                   }
 //                 : UserImg
 //             }
@@ -1086,20 +1595,20 @@ const styles = StyleSheet.create({
 //         <View style={styles.eventInfoContainer}>
 //           <View style={styles.nameAndLocationContainer}>
 //             <Text style={styles.headerTitle}>
-//               {route.params.matrimonyData.name}
+//               {matrimonyData?.name || ''}
 //             </Text>
 //             <View style={styles.locationContainer}>
 //               <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
 //               <Text style={styles.homeTown}>
-//                 {route.params.matrimonyData.homeTown}
+//                 {matrimonyData?.homeTown || ''}
 //               </Text>
 //             </View>
 //           </View>
 
 //           <View style={styles.eventDetails}>
 //             <Text style={styles.detailItem}>
-//               {dateToText(route.params.matrimonyData.dateOfBirth)} |{" "}
-//               {route.params.matrimonyData.occupation}
+//               {dateToText(matrimonyData?.dateOfBirth)} |{" "}
+//               {matrimonyData?.occupation || ''}
 //             </Text>
 //           </View>
 //         </View>
@@ -1111,50 +1620,50 @@ const styles = StyleSheet.create({
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Caste</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.subcaste}
+//                 {matrimonyData?.subcaste || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Gothra</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.gothra}
+//                 {matrimonyData?.gothra || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Family Type</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.familyType}
+//                 {matrimonyData?.familyType || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Family Status</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.familyStatus}
+//                 {matrimonyData?.familyStatus || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Work Location</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.workLocation}
+//                 {matrimonyData?.workLocation || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Height</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.height} cm
+//                 {matrimonyData?.height || ''} cm
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Marital Status</Text>
 //               <Text style={styles.infoValue}>
-//                 {route.params.matrimonyData.maritalStatus}
+//                 {matrimonyData?.maritalStatus || ''}
 //               </Text>
 //             </View>
 //             <View style={styles.infoRow}>
 //               <Text style={styles.infoLabel}>Hobbies</Text>
 //               {/* <Text style={styles.infoValue} numberOfLines={1} ellipsizeMode="tail"> */}
 //               <Text style={styles.infoValue}>
-//               {route.params.matrimonyData.hobbies.join(", ")}
+//               {matrimonyData?.hobbies?.join(", ") || ''}
 
 //               </Text>
 //             </View>
@@ -1162,9 +1671,9 @@ const styles = StyleSheet.create({
 //             {/* <View style={styles.hobbiesContainer}>
 //               <Text style={styles.hobbiesHeader}>Hobbies</Text>
 //               <View style={styles.tags}>
-//                 {route.params.matrimonyData.hobbies &&
-//                 route.params.matrimonyData.hobbies.length > 0 ? (
-//                   route.params.matrimonyData.hobbies.map((hobby, index) => (
+//                 {matrimonyData.hobbies &&
+//                 matrimonyData.hobbies.length > 0 ? (
+//                   matrimonyData.hobbies.map((hobby, index) => (
 //                     <View key={index} style={styles.tag}>
 //                       <Text style={styles.tagText}>{hobby}</Text>
 //                     </View>
@@ -1181,7 +1690,7 @@ const styles = StyleSheet.create({
 //           <View style={styles.eventDetails}>
 //             <Text style={styles.priceText}>Bio</Text>
 //             <Text style={styles.bioText}>
-//               {route.params.matrimonyData.aboutMe}
+//               {matrimonyData?.aboutMe || ''}
 //             </Text>
 //           </View>
 //         </View>
@@ -1426,3 +1935,4 @@ const styles = StyleSheet.create({
 //     flex: 1,
 //   },
 // });
+

@@ -84,6 +84,14 @@ const fetchConnectionRequests = async (userId) => {
   return response.data;
 };
 
+// Check if two users are already connected
+const checkConnectionStatus = async (userId1, userId2) => {
+  const response = await apiClient.get(
+    `/matrimony/connection/check-connection/${userId1}/${userId2}`
+  );
+  return response.data;
+};
+
 // Accept a connection request
 const acceptConnectionRequest = async (requestId) => {
   const response = await apiClient.post(
@@ -336,6 +344,7 @@ export {
   fetchPlannerData,
   fetchVenueData,
   fetchConnectionRequests,
+  checkConnectionStatus,
   acceptConnectionRequest,
   rejectConnectionRequest,
   fetchMatrimonyUserProfile,

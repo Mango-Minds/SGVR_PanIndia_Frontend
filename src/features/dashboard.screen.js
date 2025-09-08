@@ -135,15 +135,29 @@ export default function DashboardScreen({ navigation }) {
   const { user } = useSelector((state) => state.user);
   const { t } = useTranslation();
 
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user?.userType?.[0]);
   const loggedInUser = useSelector((state) => state.user);
   console.log("loggedInUser in dashboard: ", loggedInUser);
   console.log("Usertype: ", userType);
   const { token } = useSelector((state) => state.user);
   const { loading, notification, temple } = useSelector((state) => state.user);
+  
+  // Safety check for token
+  if (!token) {
+    return (
+      <ActivityIndicator
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+        size={"large"}
+        color={"#b98c13"}
+      />
+    );
+  }
+  
   const tokenPayload = token.split(".")[1];
-
-
   const decodedPayload = JSON.parse(decode(tokenPayload));
   console.log(decodedPayload);
   const userId = decodedPayload.id;
@@ -358,21 +372,34 @@ export default function DashboardScreen({ navigation }) {
       const updatedUser = await refreshUserData();
       if (!updatedUser) return;
 
-      const onboardFlags = {
-        Matrimony: updatedUser?.isMatrimonyOnboarded,
-        Jewellery: updatedUser?.isJewelleryOnboarded,
-        Temple: updatedUser?.isTempleOnboarded,
-      };
-
-      const isAnyModuleOnboarded = Object.values(onboardFlags).some(Boolean);
-
-      if (isAnyModuleOnboarded) {
-        navigateToScreen(modulePath);
+      // Check specific module onboarding status
+      if (moduleKey === "Matrimony") {
+        if (updatedUser?.isMatrimonyOnboarded) {
+          navigateToScreen(modulePath);
+        } else {
+          navigation.navigate("OnboardModuleForm", {
+            userId,
+            redirectTo: moduleKey,
+          });
+        }
       } else {
-        navigation.navigate("OnboardModuleForm", {
-          userId,
-          redirectTo: moduleKey,
-        });
+        // For other modules, use the existing logic
+        const onboardFlags = {
+          Matrimony: updatedUser?.isMatrimonyOnboarded,
+          Jewellery: updatedUser?.isJewelleryOnboarded,
+          Temple: updatedUser?.isTempleOnboarded,
+        };
+
+        const isAnyModuleOnboarded = Object.values(onboardFlags).some(Boolean);
+
+        if (isAnyModuleOnboarded) {
+          navigateToScreen(modulePath);
+        } else {
+          navigation.navigate("OnboardModuleForm", {
+            userId,
+            redirectTo: moduleKey,
+          });
+        }
       }
     } catch (err) {
       console.error("Onboarding check failed", err);

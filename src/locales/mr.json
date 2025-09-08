@@ -122,6 +122,7 @@
   "accept": "स्वीकारा",
   "edit_shop_profile": "दुकान प्रोफाईल संपादित करा",
   "view_shop_profile": "दुकान प्रोफाईल पहा",
+  "view_shop_details": "दुकान तपशील पहा",
   "edit_your_matrimony_profile": "तुमची विवाह जुळणी प्रोफाईल संपादित करा",
   "view_your_matrimony_profile": "तुमची विवाह जुळणी प्रोफाईल पहा",
   "cm": "सेमी",
@@ -147,7 +148,16 @@
     "alreadySent": "विनंती आधीच पाठवली आहे",
     "alreadySentMsg": "आपण आधीच कनेक्शन विनंती पाठवली आहे.",
     "requestSent": "कनेक्शन विनंती यशस्वीपणे पाठवली गेली",
-    "sendError": "कनेक्शन विनंती पाठवता आली नाही."
+    "sendError": "कनेक्शन विनंती पाठवता आली नाही.",
+    "waitingForApproval": "मंजुरीसाठी प्रतीक्षा",
+    "connected": "कनेक्टेड",
+    "requestPending": "विनंती प्रलंबित",
+    "requestPendingMsg": "आपली कनेक्शन विनंती मंजुरीसाठी प्रतीक्षा करत आहे.",
+    "requestAccepted": "विनंती स्वीकारली",
+    "requestAcceptedMsg": "आपली कनेक्शन विनंती स्वीकारली गेली आहे.",
+    "requestRejected": "विनंती नाकारली",
+    "requestRejectedMsg": "आपली कनेक्शन विनंती नाकारली गेली आहे.",
+    "message": "संदेश"
   },
   "common": {
     "success": "यश",
@@ -279,6 +289,8 @@
    "editJobPosting": "नोकरी पोस्ट संपादित करा",
     "jobPosting": "नोकरीची जाहिरात",
   "requests": "विनंत्या",
+  "received_requests": "मिळालेल्या विनंत्या",
+  "sent_requests": "पाठवलेल्या विनंत्या",
   "applicants": "अर्जदार",
   "category_furniture": "फर्निचर",
   "category_electronics": "इलेक्ट्रॉनिक्स",
@@ -501,7 +513,24 @@
   "failed_to_update_banner": "बॅनर प्रतिमा अपडेट करण्यात अयशस्वी",
   "editBannerImage": "बॅनर प्रतिमा संपादा",
   "bannerImageDescription": "तुमच्या प्रोफाइलच्या शीर्षस्थानी दाखवण्यासाठी बॅनर प्रतिमा निवडा",
-  "selectBannerImage": "बॅनर प्रतिमा निवडा"
+  "selectBannerImage": "बॅनर प्रतिमा निवडा",
+  "noDescriptionAvailable": "कोणतेही वर्णन उपलब्ध नाही",
+  "noImagesAvailable": "कोणत्याही प्रतिमा उपलब्ध नाहीत",
+  "notProvided": "प्रदान केले नाही",
+  "businessName": "व्यवसायाचे नाव",
+  "facilities": "सुविधा",
+  "catering": "खाद्यसेवा",
+  "food": "अन्न",
+  "bar": "बार",
+  "dessert": "मिष्टान्न",
+  "vendorName": "पुरवठादाराचे नाव",
+  "serviceProvided": "प्रदान केलेली सेवा",
+  "noServicesAvailable": "कोणत्याही सेवा उपलब्ध नाहीत",
+  "gallery": "गॅलरी",
+  "aboutUs": "आमच्याबद्दल",
+  "availability": "उपलब्धता",
+  "noEmail": "ईमेल नाही",
+  "noContactNumber": "संपर्क नंबर नाही"
 
 }
 

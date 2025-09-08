@@ -9,6 +9,8 @@ import {
   Image,
   Dimensions,
   ActivityIndicator,
+  Alert,
+  Modal,
 } from "react-native";
 import { IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -33,6 +35,8 @@ import {
   TopHeader,
   ViewDetails,
 } from "../../styles/dashboard.styles";
+import CompactProfileCard from "../../components/matrimony/CompactProfileCard";
+import VendorCompactCard from "../../components/matrimony/VendorCompactCard";
 import UserImg from "../../assets/images/general/user.png";
 import FilterMenu from "./FilterMenu";
 import Theme from "../../styles/theme";
@@ -45,15 +49,35 @@ import {
   fetchDecoratorData,
   fetchCatererData,
   fetchPlannerData,
-  fetchVenueData
+  fetchVenueData,
+  fetchConnectionRequests,
+  checkConnectionStatus,
+  acceptConnectionRequest,
+  rejectConnectionRequest,
 } from "./matrimonyAPIs";
+import PremiumSubscriptionModal from "../../components/modals/PremiumSubscriptionModal";
+import { useSubscription } from "../../hooks/useSubscription";
 
 const NewMatrimony = ({ navigation }) => {
   //user data
   const { t } = useTranslation();
-  const { user } = useSelector((state) => state.user);
+  const user = useSelector((state) => state.user.user);
+  
+  // Subscription state
+  const {
+    subscriptionStatus,
+    subscriptionPlans,
+    loading: subscriptionLoading,
+    subscribeToPlan,
+    fetchSubscriptionStatus,
+  } = useSubscription();
+
   console.log("User in matrimony: ", user);
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = user?.userType?.[0];
+  const userTypes = user?.userType || [];
+  console.log("UserType: ", userType);
+  console.log("User.userType: ", user?.userType);
+  console.log("UserTypes array: ", userTypes);
  
 
   const isFocused = useIsFocused();
@@ -70,9 +94,9 @@ const NewMatrimony = ({ navigation }) => {
   //     : "Vendors"
   // );
   const [selectedTab, setSelectedTab] = useState(
-  user.userType[0] === "matrimonyMan"
+  userTypes.includes("matrimonyMan")
     ? "brides"
-    : user.userType[0] === "matrimonyWoman"
+    : userTypes.includes("matrimonyWoman")
     ? "grooms"
     : "vendors"
 );
@@ -113,6 +137,168 @@ const NewMatrimony = ({ navigation }) => {
       setSelectedOptions([]);
       setSelectedFiltersArray([]);
     }
+  };
+
+  // Function to render profile card using compact view
+  const renderProfileCard = (profile, index, isBride = false) => {
+    const onPress = () => {
+      if (isBride) {
+        navigation.navigate("MatrimonyProfileNew", {
+          matrimonyData: bridesData[index],
+          groomsData: groomsData,
+        });
+      } else {
+        navigation.navigate("MatrimonyProfileNew", {
+          matrimonyData: groomsData[index],
+          groomsData: groomsData,
+        });
+      }
+    };
+
+    // Get subscription info for this profile's owner
+    const profileOwnerId = profile.owner?._id || profile.owner;
+    const currentUserId = user?._id;
+    
+    // Don't show premium status in profile cards anymore
+    const profileSubscriptionInfo = null;
+
+    return (
+      <CompactProfileCard
+        key={index}
+        profile={profile}
+        onPress={onPress}
+        subscriptionInfo={profileSubscriptionInfo}
+      />
+    );
+  };
+
+  // Function to get limited profiles based on subscription status
+  const getLimitedProfiles = (profiles, isBride = false) => {
+    if (subscriptionStatus.isPremium) {
+      return profiles; // Show all profiles for premium users
+    }
+    return profiles.slice(0, 4); // Show only 4 profiles for non-premium users
+  };
+
+  // Function to render premium upgrade section
+  const renderPremiumUpgradeSection = (totalProfiles, currentProfiles, isBride = false) => {
+    if (subscriptionStatus.isPremium || totalProfiles <= 4) {
+      return null;
+    }
+
+    const profileType = isBride ? 'bride' : 'groom';
+    const profileTypePlural = isBride ? 'brides' : 'grooms';
+
+    return (
+      <View style={styles.premiumUpgradeSection}>
+        <View style={styles.premiumUpgradeContent}>
+          <Text style={styles.premiumUpgradeTitle}>
+            Want to see more profiles?
+          </Text>
+          <Text style={styles.premiumUpgradeDescription}>
+            Currently showing {currentProfiles} {profileTypePlural}. Upgrade to Premium to view all {totalProfiles} {profileTypePlural}!
+          </Text>
+          <TouchableOpacity
+            style={styles.upgradeButton}
+            onPress={() => setPremiumModalVisible(true)}
+          >
+            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  };
+
+  // Function to render vendor card using compact view
+  const renderVendorCard = (vendor, index, vendorType) => {
+    const onPress = () => {
+      navigation.navigate("MatrimonyProfileWithConnection", vendor);
+    };
+
+    return (
+      <VendorCompactCard
+        key={index}
+        vendor={vendor}
+        onPress={onPress}
+      />
+    );
+  };
+
+  // Connection requests functions
+  const userId = user?.roleData?.MatrimonyUser?._id || user?.roleData?.MatrimonyVendor?._id || user?.roleData?.pandit?._id;
+
+  const fetchRequest = async () => {
+    if (!userId) return;
+    
+    try {
+      setRequestsLoading(true);
+      const data = await fetchConnectionRequests(userId);
+      console.log("Req data: ", data);
+
+      setReceivedRequests(data.receivedRequests || []);
+      setSentRequests(data.sentRequests || []);
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+    } finally {
+      setRequestsLoading(false);
+    }
+  };
+
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      console.log("req id: ", requestId);
+      const response = await acceptConnectionRequest(requestId);
+
+      if (response.status === 200) {
+        Alert.alert("Request Accepted Successfully.");
+        removeAcceptedRequest(requestId, setReceivedRequests);
+        // Refresh the requests to update the status
+        fetchRequest();
+      } else {
+        throw new Error("Failed to accept request");
+      }
+    } catch (error) {
+      console.error("Error accepting request:", error);
+      Alert.alert("Error", "Failed to accept request. Please try again.");
+    }
+  };
+
+  const handleDeleteRequest = async (requestId) => {
+    try {
+      const response = await rejectConnectionRequest(requestId);
+
+      if (response.status === 200) {
+        Alert.alert("Request Deleted Successfully.");
+        fetchRequest();
+      } else {
+        throw new Error("Failed to delete request");
+      }
+    } catch (error) {
+      console.error("Error deleting request:", error);
+      Alert.alert("Error", "Failed to delete request. Please try again.");
+    }
+  };
+
+  const handleWithdrawRequest = async (requestId) => {
+    try {
+      const response = await rejectConnectionRequest(requestId);
+
+      if (response.status === 200) {
+        Alert.alert("Request Withdrawn Successfully.");
+        fetchRequest();
+      } else {
+        throw new Error("Failed to withdraw request");
+      }
+    } catch (error) {
+      console.error("Error withdrawing request:", error);
+      Alert.alert("Error", "Failed to withdraw request. Please try again.");
+    }
+  };
+
+  const removeAcceptedRequest = (requestId, setStateFunc) => {
+    setStateFunc((prevRequests) =>
+      prevRequests.filter((request) => request._id !== requestId)
+    );
   };
 
   // useEffect(() => {
@@ -180,17 +366,24 @@ const NewMatrimony = ({ navigation }) => {
   };
   
   const matrimonyMenu = [
-  { key: "brides", condition: () => user.userType[0] === "matrimonyMan" },
-  { key: "grooms", condition: () => user.userType[0] === "matrimonyWoman" },
+  { key: "brides", condition: () => userTypes.includes("matrimonyMan") },
+  { key: "grooms", condition: () => userTypes.includes("matrimonyWoman") },
   { key: "vendors" },
   { key: "decorators" },
   { key: "caterers" },
   { key: "planners" },
   { key: "venues" },
 ];
+
+// Debug: Log the condition results
+console.log("Brides condition result: ", userTypes.includes("matrimonyMan"));
+console.log("Grooms condition result: ", userTypes.includes("matrimonyWoman"));
 const displayMenu = matrimonyMenu
   .filter(item => !item.condition || item.condition())
   .map(item => item.key);
+
+console.log("DisplayMenu: ", displayMenu);
+console.log("MatrimonyMenu: ", matrimonyMenu);
 
 // const matrimonyMenu = [
 //     "Brides",
@@ -228,6 +421,15 @@ const displayMenu = matrimonyMenu
   const [catererData, setCatererData] = useState([]);
   const [venueData, setVenueData] = useState([]);
   const [plannerData, setPlannerData] = useState([]);
+
+  // Connection requests state
+  const [receivedRequests, setReceivedRequests] = useState([]);
+  const [sentRequests, setSentRequests] = useState([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [requestsModalVisible, setRequestsModalVisible] = useState(false);
+
+  // Premium subscription modal state
+  const [premiumModalVisible, setPremiumModalVisible] = useState(false);
 
   
   // const handleFetchMatrimonyData = async (queryString, selectedFiltersArray) => {
@@ -536,18 +738,29 @@ console.log("grooms: ", groomsData);
     debouncedFetchData(searchTerm, selectedTab, selectedFiltersArray);
   }, [searchTerm, selectedTab, selectedFiltersArray]);
 
+
  
 
   return (
     <Container style={{ backgroundColor: "white", paddingBottom: 0 }}>
       <RowBetween style={{ paddingTop: 24 }}>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
-          <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
+          <IconButton icon="arrow-left" onPress={() => {
+            if (navigation.canGoBack()) {
+              navigation.goBack();
+            } else {
+              navigation.navigate("Dashboard");
+            }
+          }} />
           <TopText
             style={{ color: Theme.themeColor, fontSize: 20, fontWeight: "bold" }}
-          >{t("matrimonyHeading")}
-         
-          </TopText>
+          >{t("matrimonyHeading")}</TopText>
+          {subscriptionStatus?.isPremium && (
+            <View style={styles.premiumBadge}>
+              <Icon name="star" size={12} color="#FFD700" />
+              <Text style={styles.premiumText}>Premium</Text>
+            </View>
+          )}
         </View>
         <View
           style={{
@@ -574,11 +787,10 @@ console.log("grooms: ", groomsData);
           <IconButton
             icon="bell-outline"
             style={{ marginLeft: "auto" }}
-            onPress={() =>
-              navigation.navigate("MatrimonyNotifications", {
-                user: user,
-              })
-            }
+            onPress={() => {
+              setRequestsModalVisible(true);
+              fetchRequest();
+            }}
           ></IconButton>
         </View>
       </RowBetween>
@@ -644,19 +856,7 @@ console.log("grooms: ", groomsData);
               color={Theme.themeColor}
             />
           ) : (
-            <View
-              style={[
-            
-                {
-                 
-                  padding: "2%",
-                  margin: "2%",
-                  display: "flex",
-                  flexDirection: "row",
-                  flex: 1,
-                },
-              ]}
-            >
+            <View style={{ flex: 1 }}>
               {bridesData.length === 0 ? (
                 <View
                   style={{
@@ -670,65 +870,18 @@ console.log("grooms: ", groomsData);
                   </Text>
                 </View>
               ) : (
-                <ScrollView
-                  vertical={true}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {bridesData.map((product, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={{
-                        padding: 16,
-                        flexDirection: "row",
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#ccc",
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      <HallImageContainer>
-                      
-                        <Image
-                          source={
-                            product.images
-                              ? {
-                                  uri: `${product.images[0]}`,
-                                }
-                              : UserImg
-                          }
-                          style={{ width: 120, height: 120, borderRadius: 8 }}
-                        />
-                      </HallImageContainer>
-
-                      <HallDetailsContainer
-                        style={{
-                          flex: 1,
-                          marginLeft: 12,
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <TopHeader style={{ marginBottom: 8 }}>
-                          <Heading>{product.name}</Heading>
-                        </TopHeader>
-                        <Row style={{ marginBottom: 8 }}>
-                          <JobLocation>{product.occupation}</JobLocation>
-                        </Row>
-                        <Row style={{ marginBottom: 8 }}>
-                          <JobLocation>{product.homeTown}</JobLocation>
-                        </Row>
-                        <TouchableOpacity
-                          onPress={() =>
-                            navigation.navigate("MatrimonyProfileNew", {
-                              matrimonyData: bridesData[index],
-                              groomsData: groomsData,
-                            })
-                          }
-                        >
-                          <ViewDetails>{t("view_details")}</ViewDetails>
-                        </TouchableOpacity>
-                      </HallDetailsContainer>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={{ flex: 1 }}>
+                  <ScrollView
+                    vertical={true}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 8 }}
+                  >
+                    {getLimitedProfiles(bridesData, true).map((product, index) => 
+                      renderProfileCard(product, index, true)
+                    )}
+                  </ScrollView>
+                  {renderPremiumUpgradeSection(bridesData.length, getLimitedProfiles(bridesData, true).length, true)}
+                </View>
               )}
             </View>
           )}
@@ -747,19 +900,7 @@ console.log("grooms: ", groomsData);
               color={Theme.themeColor}
             />
           ) : (
-            <View
-              style={[
-                // styles.shadowProp,
-                {
-                  // backgroundColor: "#e6f9ff",
-                  padding: "2%",
-                  margin: "2%",
-                  display: "flex",
-                  flexDirection: "row",
-                  flex: 1,
-                },
-              ]}
-            >
+            <View style={{ flex: 1 }}>
               {groomsData.length === 0 ? (
                 <View
                   style={{
@@ -773,62 +914,18 @@ console.log("grooms: ", groomsData);
                   </Text>
                 </View>
               ) : (
-                <ScrollView
-                  vertical={true}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {groomsData.map((product, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={{
-                        padding: 16,
-                        flexDirection: "row",
-                        borderBottomWidth: 1,
-                        borderBottomColor: "#ccc",
-                        backgroundColor: "#fff",
-                      }}
-                    >
-                      <HallImageContainer>
-                        <Image
-                          source={
-                            product.images
-                              ? {
-                                  uri: `${product.images[0]}`,
-                                }
-                              : UserImg
-                          }
-                          style={{ width: 120, height: 120, borderRadius: 8 }}
-                        />
-                      </HallImageContainer>
-                      <HallDetailsContainer
-                        style={{
-                          flex: 1,
-                          marginLeft: 12,
-                          justifyContent: "space-between",
-                        }}
-                      >
-                        <TopHeader style={{ marginBottom: 8 }}>
-                          <Heading>{product.name}</Heading>
-                        </TopHeader>
-                        <Row style={{ marginBottom: 4 }}>
-                          <JobLocation>{product.occupation}</JobLocation>
-                        </Row>
-                        <Row style={{ marginBottom: 4 }}>
-                          <JobLocation>{product.homeTown}</JobLocation>
-                        </Row>
-                        <TouchableOpacity
-                          onPress={() =>
-                            navigation.navigate("MatrimonyProfileNew", {
-                              matrimonyData: groomsData[index],
-                            })
-                          }
-                        >
-                          <ViewDetails>{t("view_details")}</ViewDetails>
-                        </TouchableOpacity>
-                      </HallDetailsContainer>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
+                <View style={{ flex: 1 }}>
+                  <ScrollView
+                    vertical={true}
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingVertical: 8 }}
+                  >
+                    {getLimitedProfiles(groomsData, false).map((product, index) => 
+                      renderProfileCard(product, index, false)
+                    )}
+                  </ScrollView>
+                  {renderPremiumUpgradeSection(groomsData.length, getLimitedProfiles(groomsData, false).length, false)}
+                </View>
               )}
             </View>
           )}
@@ -848,83 +945,30 @@ console.log("grooms: ", groomsData);
             color={Theme.themeColor}
           />
         ) : (
-        <View
-          style={{
-            padding: "2%",
-            margin: "2%",
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-          }}
-        >
+        <View style={{ flex: 1 }}>
           {vendorData.length === 0 ? (
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 18, color: "grey" }}>
-                  {t("no_data_found")}
-                  </Text>
-                </View>
-              ) : (
-          <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-            {vendorData.map((product, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  padding: 16,
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
-                }}
-              >
-                <HallImageContainer>
-                  <Image
-                   source={{ uri: `${product.images[0]}` }}
-                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                  />
-                </HallImageContainer>
-                <HallDetailsContainer
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TopHeader style={{ marginBottom: 8 }}>
-                    <Heading>{product?.businessName}</Heading>
-                  </TopHeader>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product?.address}</JobLocation>
-                  </Row>
-                  <Row style={{ marginBottom: 4 }}>
-                    {/* <JobLocation>
-                      {product.city}, {product.state}
-                    </JobLocation> */}
-                  </Row>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "MatrimonyProfileWithConnection",
-                        vendorData[index]
-                      )
-                    }
-                  >
-                    <ViewDetails>{t("view_details")}</ViewDetails>
-                  </TouchableOpacity>
-                </HallDetailsContainer>
-              </TouchableOpacity>
-            ))}
-          
-          </ScrollView>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, color: "grey" }}>
+                {t("no_data_found")}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              vertical={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+            >
+              {vendorData.map((vendor, index) => 
+                renderVendorCard(vendor, index, 'vendor')
+              )}
+            </ScrollView>
           )}
-           
         </View>
       )}
       </View>
@@ -943,78 +987,30 @@ console.log("grooms: ", groomsData);
            color={Theme.themeColor}
          />
        ) : (
-        <View
-          style={{
-            padding: "2%",
-            margin: "2%",
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-          }}
-        >
+        <View style={{ flex: 1 }}>
           {decoratorData.length === 0 ? (
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 18, color: "grey" }}>
-                    {t("no_data_found")}
-                  </Text>
-                </View>
-              ) : (
-          <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-            {decoratorData.map((product, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  padding: 16,
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  backgroundColor: "#fff",
-                  width: "100%", 
-                }}
-              >
-                <HallImageContainer>
-                  <Image
-                    source={{ uri: `${product.images[0]}` }}
-                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                  />
-                </HallImageContainer>
-                <HallDetailsContainer
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TopHeader style={{ marginBottom: 8 }}>
-                    <Heading>{product.businessName}</Heading>
-                  </TopHeader>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.address}</JobLocation>
-                  </Row>
-                
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "MatrimonyProfileWithConnection",
-                        decoratorData[index]
-                      )
-                    }
-                  >
-                    <ViewDetails>{t("view_details")}</ViewDetails>
-                  </TouchableOpacity>
-                </HallDetailsContainer>
-              </TouchableOpacity>
-            ))}
-           
-          </ScrollView>
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, color: "grey" }}>
+                {t("no_data_found")}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              vertical={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+            >
+              {decoratorData.map((decorator, index) => 
+                renderVendorCard(decorator, index, 'decorator')
               )}
+            </ScrollView>
+          )}
         </View>
       )}
       </View>
@@ -1033,80 +1029,30 @@ console.log("grooms: ", groomsData);
            color={Theme.themeColor}
          />
        ) : (
-        <View
-          style={{
-            padding: "2%",
-            margin: "2%",
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-          }}
-        >
-           {catererData.length === 0 ? (
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 18, color: "grey" }}>
-                   {t("no_data_found")}
-                  </Text>
-                </View>
-              ) : (
-          <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-            {catererData.map((product, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  padding: 16,
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
-                }}
-              >
-                <HallImageContainer>
-                  <Image
-                    source={{ uri: `${product.images[0]}` }}
-                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                  />
-                </HallImageContainer>
-                <HallDetailsContainer
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TopHeader style={{ marginBottom: 8 }}>
-                    <Heading>{product.businessName}</Heading>
-                  </TopHeader>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.address}</JobLocation>
-                  </Row>
-                  {/* <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.city}</JobLocation>
-                  </Row> */}
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "MatrimonyProfileWithConnection",
-                        catererData[index]
-                      )
-                    }
-                  >
-                    <ViewDetails>{t("view_details")}</ViewDetails>
-                  </TouchableOpacity>
-                </HallDetailsContainer>
-              </TouchableOpacity>
-            ))}
-           
-          </ScrollView>
+        <View style={{ flex: 1 }}>
+          {catererData.length === 0 ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, color: "grey" }}>
+                {t("no_data_found")}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              vertical={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+            >
+              {catererData.map((caterer, index) => 
+                renderVendorCard(caterer, index, 'caterer')
               )}
+            </ScrollView>
+          )}
         </View>
       )}
       </View>
@@ -1125,77 +1071,30 @@ console.log("grooms: ", groomsData);
            color={Theme.themeColor}
          />
        ) : (
-        <View
-          style={{
-            padding: "2%",
-            margin: "2%",
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-          }}
-        > 
-        {plannerData.length === 0 ? (
-          <View
-            style={{
-              flex: 1,
-              justifyContent: "center",
-              alignItems: "center",
-            }}
-          >
-            <Text style={{ fontSize: 18, color: "grey" }}>
-            {t("no_data_found")}
-            </Text>
-          </View>
-        ) : (
-          <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-            {plannerData.map((product, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  padding: 16,
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
-                }}
-              >
-                <HallImageContainer>
-                  <Image
-                      source={{ uri: `${product.images[0]}` }}
-                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                  />
-                </HallImageContainer>
-                <HallDetailsContainer
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TopHeader style={{ marginBottom: 8 }}>
-                    <Heading>{product.businessName}</Heading>
-                  </TopHeader>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.address}</JobLocation>
-                  </Row>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "MatrimonyProfileWithConnection",
-                        plannerData[index]
-                      )
-                    }
-                  >
-                    <ViewDetails>{t("view_details")}</ViewDetails>
-                  </TouchableOpacity>
-                </HallDetailsContainer>
-              </TouchableOpacity>
-            ))}
-          
-          </ScrollView>
-        )}
+        <View style={{ flex: 1 }}>
+          {plannerData.length === 0 ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, color: "grey" }}>
+                {t("no_data_found")}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              vertical={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+            >
+              {plannerData.map((planner, index) => 
+                renderVendorCard(planner, index, 'planner')
+              )}
+            </ScrollView>
+          )}
         </View>
       )}
        </View>
@@ -1214,80 +1113,30 @@ console.log("grooms: ", groomsData);
            color={Theme.themeColor}
          />
        ) : (
-        <View
-          style={{
-            padding: "2%",
-            margin: "2%",
-            display: "flex",
-            flexDirection: "row",
-            flex: 1,
-          }}
-        >
-           {venueData.length === 0 ? (
-                <View
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                  }}
-                >
-                  <Text style={{ fontSize: 18, color: "grey" }}>
-                   {t("no_data_found")}
-                  </Text>
-                </View>
-              ) : (
-          <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-            {venueData.map((product, index) => (
-              <TouchableOpacity
-                key={index}
-                style={{
-                  padding: 16,
-                  flexDirection: "row",
-                  borderBottomWidth: 1,
-                  borderBottomColor: "#ccc",
-                  backgroundColor: "#fff",
-                  width: "100%", // Ensuring each item takes the full width of the, ScrollView,
-                }}
-              >
-                <HallImageContainer>
-                  <Image
-                   source={{ uri: `${product.images[0]}` }}
-                    style={{ width: 120, height: 120, borderRadius: 8 }}
-                  />
-                </HallImageContainer>
-                <HallDetailsContainer
-                  style={{
-                    flex: 1,
-                    marginLeft: 12,
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <TopHeader style={{ marginBottom: 8 }}>
-                    <Heading>{product.businessName}</Heading>
-                  </TopHeader>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.address}</JobLocation>
-                  </Row>
-                  <Row style={{ marginBottom: 4 }}>
-                    <JobLocation>{product.city}</JobLocation>
-                  </Row>
-
-                  <TouchableOpacity
-                    onPress={() =>
-                      navigation.navigate(
-                        "MatrimonyProfileWithConnection",
-                        venueData[index]
-                      )
-                    }
-                  >
-                    <ViewDetails>{t("view_details")}</ViewDetails>
-                  </TouchableOpacity>
-                </HallDetailsContainer>
-              </TouchableOpacity>
-            ))}
-          
-          </ScrollView>
+        <View style={{ flex: 1 }}>
+          {venueData.length === 0 ? (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Text style={{ fontSize: 18, color: "grey" }}>
+                {t("no_data_found")}
+              </Text>
+            </View>
+          ) : (
+            <ScrollView
+              vertical={true}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingVertical: 8 }}
+            >
+              {venueData.map((venue, index) => 
+                renderVendorCard(venue, index, 'venue')
               )}
+            </ScrollView>
+          )}
         </View>
       )}
        </View>
@@ -1327,6 +1176,426 @@ console.log("grooms: ", groomsData);
         setSelectedFiltersArray={setSelectedFiltersArray}
       />
 
+      {/* Requests Modal */}
+      <Modal
+        visible={requestsModalVisible}
+        animationType="slide"
+        onRequestClose={() => setRequestsModalVisible(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: "white" }}>
+          <RowBetween style={{ paddingTop: 50, paddingHorizontal: 10 }}>
+            <View style={{ alignItems: "center", flexDirection: "row" }}>
+              <IconButton 
+                icon="arrow-left" 
+                onPress={() => setRequestsModalVisible(false)} 
+              />
+              <TopText
+                style={{
+                  color: Theme.themeColor,
+                  fontSize: 20,
+                  fontWeight: "bold",
+                }}
+              >
+                {t("matrimonyHeading")} {t("requests")}
+              </TopText>
+            </View>
+          </RowBetween>
+
+          {requestsLoading ? (
+            <ActivityIndicator
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+              size="large"
+              color={Theme.themeColor}
+            />
+          ) : (
+            <ScrollView style={{ flex: 1 }}>
+              <View
+                style={{
+                  padding: "2%",
+                  margin: "2%",
+                  display: "flex",
+                  flexDirection: "column",
+                }}
+              >
+                {/* Received Requests Section */}
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    marginBottom: 15,
+                    color: Theme.themeColor,
+                  }}
+                >
+                  {t("received_requests")}
+                </Text>
+                {receivedRequests.length === 0 ? (
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: 200,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: "grey" }}>
+                      {t("no_data_found")}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {receivedRequests.map((receivedRequest, index) => (
+                      <TouchableOpacity key={index}>
+                        <View
+                          style={{
+                            marginVertical: "4%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#f8f9fa",
+                            padding: 15,
+                            borderRadius: 10,
+                          }}
+                        >
+                          <Image
+                            style={{
+                              width: 60,
+                              height: 65,
+                              borderRadius: 8,
+                              marginRight: "6%",
+                            }}
+                            source={
+                              receivedRequest.sender.images && receivedRequest.sender.images.length > 0
+                                ? {
+                                    uri: `${receivedRequest.sender.images[0]}`,
+                                  }
+                                : UserImg
+                            }
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontWeight: "bold",
+                                opacity: 0.7,
+                                fontSize: 17,
+                              }}
+                            >
+                              {receivedRequest.sender.name}
+                            </Text>
+
+                          </View>
+
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              marginLeft: "5%",
+                              marginTop: "2%",
+                            }}
+                          >
+                            <TouchableOpacity
+                              style={{
+                                width: 75,
+                                height: 35,
+                                backgroundColor: "#E9ECEF",
+                                borderRadius: 8,
+                                paddingHorizontal: 4,
+                                margin: 0,
+                                marginBottom: 0,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginRight: 5,
+                              }}
+                              onPress={() => {
+                                Alert.alert(
+                                  "Accept Request",
+                                  "Are you sure you want to accept this connection request?",
+                                  [
+                                    {
+                                      text: "Cancel",
+                                      style: "cancel"
+                                    },
+                                    {
+                                      text: "Accept",
+                                      onPress: () => {
+                                        const requestId = receivedRequest._id;
+                                        console.log("OnReq: ", requestId);
+                                        handleAcceptRequest(requestId);
+                                      }
+                                    }
+                                  ]
+                                );
+                              }}
+                            >
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                }}
+                              >
+                                <Icon
+                                  name="checkmark-circle"
+                                  size={15}
+                                  color="#7AB163"
+                                  style={{ marginRight: 5 }}
+                                />
+                                <Text>{t("accept")}</Text>
+                              </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={{
+                                width: 75,
+                                height: 35,
+                                backgroundColor: "#E9ECEF",
+                                borderRadius: 8,
+                                paddingHorizontal: 4,
+                                margin: 0,
+                                marginBottom: 0,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginRight: 0,
+                              }}
+                              onPress={() => {
+                                Alert.alert(
+                                  "Delete Request",
+                                  "Are you sure you want to delete this connection request?",
+                                  [
+                                    {
+                                      text: "Cancel",
+                                      style: "cancel"
+                                    },
+                                    {
+                                      text: "Delete",
+                                      style: "destructive",
+                                      onPress: () => {
+                                        const requestId = receivedRequest._id;
+                                        console.log("OnReq: ", requestId);
+                                        handleDeleteRequest(requestId);
+                                      }
+                                    }
+                                  ]
+                                );
+                              }}
+                            >
+                              <View
+                                style={{
+                                  flexDirection: "row",
+                                  alignItems: "center",
+                                  paddingVertical: 8,
+                                  paddingHorizontal: 12,
+                                  borderRadius: 5,
+                                }}
+                              >
+                                <Icon
+                                  name="close-circle"
+                                  size={15}
+                                  color="#ff0000"
+                                  style={{ marginRight: 5 }}
+                                />
+                                <Text>{t("delete")}</Text>
+                              </View>
+                            </TouchableOpacity>
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+
+                {/* Sent Requests Section */}
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    marginBottom: 15,
+                    marginTop: 30,
+                    color: Theme.themeColor,
+                  }}
+                >
+                  {t("sent_requests")}
+                </Text>
+                {sentRequests.length === 0 ? (
+                  <View
+                    style={{
+                      flex: 1,
+                      justifyContent: "center",
+                      alignItems: "center",
+                      minHeight: 200,
+                    }}
+                  >
+                    <Text style={{ fontSize: 16, color: "grey" }}>
+                      {t("no_data_found")}
+                    </Text>
+                  </View>
+                ) : (
+                  <>
+                    {sentRequests.map((sentRequest, index) => (
+                      <TouchableOpacity key={index}>
+                        <View
+                          style={{
+                            marginVertical: "4%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#f8f9fa",
+                            padding: 15,
+                            borderRadius: 10,
+                          }}
+                        >
+                          <Image
+                            style={{
+                              width: 60,
+                              height: 65,
+                              borderRadius: 8,
+                              marginRight: "6%",
+                            }}
+                            source={
+                              sentRequest.receiver.images && sentRequest.receiver.images.length > 0
+                                ? {
+                                    uri: `${sentRequest.receiver.images[0]}`,
+                                  }
+                                : UserImg
+                            }
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontWeight: "bold",
+                                opacity: 0.7,
+                                fontSize: 17,
+                              }}
+                            >
+                              {sentRequest.receiver.name}
+                            </Text>
+
+                            
+                            <Text
+                              style={{
+                                fontWeight: "500",
+                                opacity: 0.6,
+                                marginTop: "1%",
+                                fontSize: 14,
+                              }}
+                            >
+                              Status: {sentRequest.status}
+                            </Text>
+                          </View>
+
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              marginLeft: "5%",
+                              marginTop: "2%",
+                            }}
+                          >
+                            <View
+                              style={{
+                                width: 75,
+                                height: 35,
+                                backgroundColor: sentRequest.status === "pending" ? "#FFF3CD" : "#D4EDDA",
+                                borderRadius: 8,
+                                paddingHorizontal: 4,
+                                margin: 0,
+                                marginBottom: 0,
+                                justifyContent: "center",
+                                alignItems: "center",
+                                marginRight: 5,
+                              }}
+                            >
+                              <Text style={{ 
+                                color: sentRequest.status === "pending" ? "#856404" : "#155724",
+                                fontSize: 12,
+                                fontWeight: "600"
+                              }}>
+                                {sentRequest.status === "pending" ? "Pending" : "Accepted"}
+                              </Text>
+                            </View>
+                            
+                            {sentRequest.status === "pending" && (
+                              <TouchableOpacity
+                                style={{
+                                  width: 75,
+                                  height: 35,
+                                  backgroundColor: "#F8D7DA",
+                                  borderRadius: 8,
+                                  paddingHorizontal: 4,
+                                  margin: 0,
+                                  marginBottom: 0,
+                                  justifyContent: "center",
+                                  alignItems: "center",
+                                  marginRight: 0,
+                                }}
+                                onPress={() => {
+                                  Alert.alert(
+                                    "Withdraw Request",
+                                    "Are you sure you want to withdraw this connection request?",
+                                    [
+                                      {
+                                        text: "Cancel",
+                                        style: "cancel"
+                                      },
+                                      {
+                                        text: "Withdraw",
+                                        style: "destructive",
+                                        onPress: () => handleWithdrawRequest(sentRequest._id)
+                                      }
+                                    ]
+                                  );
+                                }}
+                              >
+                                <View
+                                  style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <Icon
+                                    name="close-circle"
+                                    size={15}
+                                    color="#721C24"
+                                    style={{ marginRight: 5 }}
+                                  />
+                                  <Text style={{ 
+                                    color: "#721C24",
+                                    fontSize: 12,
+                                    fontWeight: "600"
+                                  }}>
+                                    Withdraw
+                                  </Text>
+                                </View>
+                              </TouchableOpacity>
+                            )}
+                          </View>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+              </View>
+            </ScrollView>
+          )}
+        </View>
+      </Modal>
+
+      {/* Premium Subscription Modal */}
+      <PremiumSubscriptionModal
+        visible={premiumModalVisible}
+        onClose={() => setPremiumModalVisible(false)}
+        onSubscribe={async (subscriptionData) => {
+          try {
+            await fetchSubscriptionStatus();
+            Alert.alert(
+              'Success!',
+              'Your premium subscription has been activated. You can now view all profiles!',
+              [{ text: 'OK' }]
+            );
+          } catch (error) {
+            console.error('Error refreshing subscription status:', error);
+          }
+        }}
+        subscriptionPlans={subscriptionPlans}
+        loading={subscriptionLoading}
+      />
      
     </Container>
   );
@@ -1335,6 +1604,69 @@ console.log("grooms: ", groomsData);
 export default NewMatrimony;
 
 const styles = StyleSheet.create({
+  premiumUpgradeSection: {
+    backgroundColor: '#FFF3CD',
+    margin: 16,
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#FFEAA7',
+  },
+  premiumUpgradeContent: {
+    alignItems: 'center',
+  },
+  premiumUpgradeTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  premiumUpgradeDescription: {
+    fontSize: 14,
+    color: '#856404',
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  upgradeButton: {
+    backgroundColor: Theme.themeColor,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  upgradeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  premiumBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3CD',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#FFEAA7',
+    marginLeft: 8,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.22,
+    shadowRadius: 2.22,
+    elevation: 3,
+  },
+  premiumText: {
+    fontSize: 10,
+    color: '#856404',
+    fontWeight: '600',
+    marginLeft: 2,
+  },
   container: {
     flex: 1,
     backgroundColor: "white",

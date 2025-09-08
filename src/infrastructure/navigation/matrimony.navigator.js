@@ -27,11 +27,12 @@ import DashboardScreen from "../../features/dashboard.screen";
 import MyMatrimonyProfile from "../../features/matrimonyNew/matrimonyProfile";
 import TempleEditAdminRegisterScreen from "../../features/Temple/EditProfile";
 import MatrimonyProfileEdit from "../../features/matrimonyNew/matrimonyProfileEdit";
-import MatrimonyNotifications from "../../features/matrimonyNew/matrimonyNotifications";
 
 import MatrimonyShopProfileEdit from "../../features/matrimonyNew/matrimonyShopProfileEdit";
 import MatrimonyProfileWithConnection from "../../features/matrimonyNew/matrimonyShopProfileWithConnection";
 import ChatScreenNew from "../../features/chat/chat.screen.new";
+import ChatScreen from "../../features/chat/chat.screen";
+import EachProfile from "../../features/SocialMediaNew/EachUserProfile.js";
 import MatrimonyShopProfile from "../../features/matrimonyNew/matrimonyShopProfile";
 import ProfileHeader from "../../features/matrimonyNew/ProfileHeader";
 
@@ -44,7 +45,6 @@ export const MatrimonyStackNavigator = () => {
       <Stack.Screen name="Main" component={MatrimonyScreenNew} />
        {/* <Stack.Screen name="Main" component={MatrimonyNavigator} />  */}
       <Stack.Screen name = "MainHome" component={DashboardScreen}/>
-      <Stack.Screen name="MatrimonyNotifications" component={MatrimonyNotifications} />
       {/* <Stack.Screen name="MatrimonyChatScreen" component={MatrimonyChatScreen} /> */}
       <Stack.Screen name="MatrimonyProfile" component={MatrimonyProfileScreen} />
       <Stack.Screen name="MatrimonyProfileNew" component={MatrimonyProfileScreenNew} />
@@ -66,6 +66,8 @@ export const MatrimonyStackNavigator = () => {
 
       <Stack.Screen name="MatrimonyProfileWithConnection" component={MatrimonyProfileWithConnection}/>
       <Stack.Screen name="ChatScreenNew" component={ChatScreenNew} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
+      <Stack.Screen name="EachProfile" component={EachProfile} />
       <Stack.Screen name="MyMatrimonyShopProfileEdit" component={MatrimonyShopProfileEdit}/>
       
     </Stack.Navigator>

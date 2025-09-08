@@ -262,6 +262,18 @@ export default function EditUserProfile({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
+                placeholder="Phone Number *"
+                underlineColor="transparent"
+                placeholderTextColor="#9B9B9B"
+                keyboardType="numeric"
+                maxLength={10}
+                value={phone}
+                onChangeText={setPhone}
+              />
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={styles.input}
                 placeholder="Address *"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
