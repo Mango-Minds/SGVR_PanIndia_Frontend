@@ -15,8 +15,6 @@ import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-import Banner from "./B2C.banner";
-import BottomNavigation from "./BottomNavigation";
 import { useIsFocused } from "@react-navigation/native";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
@@ -27,6 +25,8 @@ import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
+import { useRealEstateSubscription } from "../../hooks/useRealEstateSubscription";
+import PremiumBadge from "../../components/common/PremiumBadge";
 
 const products = [
   // Furniture
@@ -200,6 +200,8 @@ const BuySellScreen = ({ navigation }) => {
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
 
+  const { subscriptionStatus, fetchSubscriptionStatus } = useRealEstateSubscription();
+
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
   };
@@ -212,7 +214,9 @@ const BuySellScreen = ({ navigation }) => {
   const categories = [
   { name: "Furniture", icon: "chair", label: t("Furniture") },
   { name: "Electronics", icon: "kitchen", label: t("Electronics") },
+  { name: "Food Products", icon: "restaurant", label: t("Food Products") },
   { name: "Vehicles", icon: "directions-car", label: t("Vehicles") },
+  { name: "Real Estate", icon: "home", label: t("Real Estate") },
 ];
 
  
@@ -232,6 +236,8 @@ const BuySellScreen = ({ navigation }) => {
   useEffect(() => {
     if (isFocused) {
       fetchProducts();
+      // Refresh subscription status when screen comes into focus
+      fetchSubscriptionStatus();
     }
   }, [isFocused]);
 
@@ -266,13 +272,22 @@ const BuySellScreen = ({ navigation }) => {
   //   }
   // };
 const handleCategoryPress = (category) => {
-  if (["Furniture", "Electronics", "Vehicles"].includes(category)) {
-    navigation.navigate("FurnitureScreen", {
-      category,
-      filteredItems,
-      items,
-      fetchProducts,
-    });
+  if (["Furniture", "Electronics", "Vehicles", "Real Estate", "Food Products"].includes(category)) {
+    if (category === "Food Products") {
+      navigation.navigate("FoodProductsScreen", {
+        category,
+        filteredItems,
+        items,
+        fetchProducts,
+      });
+    } else {
+      navigation.navigate("FurnitureScreen", {
+        category,
+        filteredItems,
+        items,
+        fetchProducts,
+      });
+    }
   } else {
     console.warn("Invalid category selected:", category);
   }
@@ -372,7 +387,6 @@ const handleCategoryPress = (category) => {
             <Icon name="arrow-forward-ios" size={16} color="#000" />
           </TouchableOpacity>
 
-          <Banner />
 
           <ScrollView contentContainerStyle={styles.categoryGrid}>
             {categories.map((category) => (
@@ -381,8 +395,20 @@ const handleCategoryPress = (category) => {
                 style={styles.categoryItem}
                 onPress={() => handleCategoryPress(category.name)}
               >
-                <Icon name={category.icon} size={36} color={Theme.themeColor} />
-                <Text style={styles.categoryText}>{category.label}</Text>
+                <View style={styles.categoryContent}>
+                  <Icon name={category.icon} size={36} color={Theme.themeColor} />
+                  <View style={styles.categoryTextContainer}>
+                    <Text style={styles.categoryText}>{category.label}</Text>
+                    {category.name === "Real Estate" && subscriptionStatus.isPremium && (
+                      <View style={styles.categoryBadgeContainer}>
+                        <PremiumBadge 
+                          size="small" 
+                          showExpiry={false}
+                        />
+                      </View>
+                    )}
+                  </View>
+                </View>
               </TouchableOpacity>
             ))}
             
@@ -423,17 +449,8 @@ const handleCategoryPress = (category) => {
           />
         </ScrollView>
 
-        <TouchableOpacity
-          style={styles.floatingButton}
-          onPress={() =>
-            navigation.navigate("AddProduct", { fetchProducts: fetchProducts })
-          }
-        >
-          <Text style={styles.plus}>+</Text>
-        </TouchableOpacity>
       </View>
 
-      <BottomNavigation navigation={navigation} />
     </SafeAreaView>
   );
 };
@@ -533,30 +550,20 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     padding: 10,
   },
-  categoryText: {
+  categoryContent: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  categoryTextContainer: {
+    alignItems: "center",
     marginTop: 8,
+  },
+  categoryText: {
     fontSize: 14,
     textAlign: "center",
   },
-  floatingButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: Theme.themeColor,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  plus: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "bold",
+  categoryBadgeContainer: {
+    marginTop: 4,
   },
 
   selectedCategory: { backgroundColor: "#ddd" },

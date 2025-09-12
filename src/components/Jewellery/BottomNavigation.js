@@ -13,14 +13,6 @@ export default function BottomNavigation({ navigation }) {
           <Ionicons name="home-outline" size={24} color="#b98c13" />
           <Text style={[styles.iconText, { color: "#b98c13" }]}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="list-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>Details</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="settings-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>Settings</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

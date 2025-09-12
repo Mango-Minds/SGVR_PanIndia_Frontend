@@ -9,6 +9,7 @@ import {
   Text,
   TouchableOpacity,
   TouchableWithoutFeedback,
+  SafeAreaView,
 } from "react-native";
 import { IconButton, TextInput } from "react-native-paper";
 import {
@@ -294,20 +295,22 @@ const ChatScreen = ({ navigation, route }) => {
   };
 
   return (
-    // <TouchableWithoutFeedback
-    //   onPressIn={() => setMenu(false)}
-    //   style={{ zIndex: 0 }}
-    // >
-    <Container
-      style={{
-        margin: 0,
-        marginTop: 0,
-        paddingLeft: 0,
-        paddingRight: 0,
-        backgroundColor: "#FFFFFF",
-        flex: 1,
-      }}
-    >
+    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -10}
+      >
+        <Container
+          style={{
+            margin: 0,
+            marginTop: 0,
+            paddingLeft: 0,
+            paddingRight: 0,
+            backgroundColor: "#FFFFFF",
+            flex: 1,
+          }}
+        >
       <RowBetween
         style={{
           flexDirection: "row",
@@ -470,11 +473,7 @@ const ChatScreen = ({ navigation, route }) => {
               })}
           </ScrollView>
       </View>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        enabled={true}
-      >
-        <TextInput
+      <TextInput
           placeholder="Type your message"
           placeholderTextColor="#78849E"
           selectionColor="#B98C13"
@@ -498,22 +497,22 @@ const ChatScreen = ({ navigation, route }) => {
           underlineColor="transparent"
           mode="outlined"
           outlineColor="transparent"
-          style={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: 26,
-            height: 40,
-            marginTop: 10,
-            marginBottom: 10,
-            marginLeft: 15,
-            marginRight: 15,
-            borderWidth: 1,
-            borderColor: "#E8ECF2",
-            shadowColor: "#000000",
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 0.05,
-            shadowRadius: 2,
-            elevation: 2,
-          }}
+           style={{
+             backgroundColor: "#FFFFFF",
+             borderRadius: 26,
+             height: 40,
+             marginTop: 10,
+             marginBottom: 0,
+             marginLeft: 15,
+             marginRight: 15,
+             borderWidth: 1,
+             borderColor: "#E8ECF2",
+             shadowColor: "#000000",
+             shadowOffset: { width: 0, height: 1 },
+             shadowOpacity: 0.05,
+             shadowRadius: 2,
+             elevation: 2,
+           }}
           onChangeText={(text) => {
             setMessage(text);
           }}
@@ -528,19 +527,18 @@ const ChatScreen = ({ navigation, route }) => {
           }}
           ref={focusref}
         />
+          <DeleteModal
+            slideUpRef={deleteRef}
+            data={{ 
+              _id: route.params.conversationId || route.params._id,
+              conversation: [user._id, toid], // Pass conversation array for ID generation
+              name: toName 
+            }}
+            mainRef={deleteRef}
+          />
+        </Container>
       </KeyboardAvoidingView>
-
-      <DeleteModal
-        slideUpRef={deleteRef}
-        data={{ 
-          _id: route.params.conversationId || route.params._id,
-          conversation: [user._id, toid], // Pass conversation array for ID generation
-          name: toName 
-        }}
-        mainRef={deleteRef}
-      />
-    </Container>
-    // </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 

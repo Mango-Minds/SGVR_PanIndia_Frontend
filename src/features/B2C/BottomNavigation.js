@@ -20,18 +20,6 @@ export default function BottomNavigation({ navigation }) {
             {t("home")}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="list-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>
-            {t("details")}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconContainer}>
-          <Ionicons name="settings-outline" size={24} color="gray" />
-          <Text style={[styles.iconText, { color: "gray" }]}>
-            {t("settings")}
-          </Text>
-        </TouchableOpacity>
       </View>
     </View>
   );

@@ -4,6 +4,7 @@ import B2CHome from "../../features/B2C/B2C.Home";
 import PageComingSoon from "../../features/B2C/B2c.PageComingSoon";
 import BuySellScreen from "../../features/B2C/B2C.homeScreen";
 import FurnitureScreen from "../../features/B2C/FurniturePage";
+import FoodProductsScreen from "../../features/B2C/FoodProductsPage";
 
 import EachListing from "../../features/B2C/EachListing";
 import AddProduct from "../../features/B2C/AddListing";
@@ -14,6 +15,9 @@ import JewelleryEditUserRegisterScreen from "../../features/jewellery/EditUserRe
 import AllListingScreen from "../../features/B2C/AllListings";
 import EditUserProfile from "../../features/B2C/EditProfile";
 import DashboardScreen from "../../features/dashboard.screen";
+import ChatScreenNew from "../../features/chat/chat.screen.new";
+import ChatScreen from "../../features/chat/chat.screen";
+import EachProfile from "../../features/SocialMediaNew/EachUserProfile";
 const Stack = createStackNavigator();
 
 export const B2CStackNavigator = () => (
@@ -24,6 +28,7 @@ export const B2CStackNavigator = () => (
     
     <Stack.Screen name="BuySellScreen" component={BuySellScreen} />
     <Stack.Screen name="FurnitureScreen" component={FurnitureScreen} />
+    <Stack.Screen name="FoodProductsScreen" component={FoodProductsScreen} />
 
     <Stack.Screen name="EachListing" component={EachListing} />
     <Stack.Screen name="AddProduct" component={AddProduct} />
@@ -36,5 +41,8 @@ export const B2CStackNavigator = () => (
     />
     <Stack.Screen name="AllListingScreen" component={AllListingScreen} />
     <Stack.Screen name="EditProfile" component={EditUserProfile}/>
+    <Stack.Screen name="ChatScreenNew" component={ChatScreenNew} />
+    <Stack.Screen name="ChatScreen" component={ChatScreen} />
+    <Stack.Screen name="EachProfile" component={EachProfile} />
   </Stack.Navigator>
 );

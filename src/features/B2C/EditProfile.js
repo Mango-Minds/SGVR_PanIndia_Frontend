@@ -8,7 +8,9 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
-  Alert
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -149,7 +151,15 @@ export default function EditUserProfile({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -305,7 +315,8 @@ export default function EditUserProfile({ navigation, route }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

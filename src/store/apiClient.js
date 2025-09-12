@@ -56,13 +56,15 @@ apiClient.interceptors.response.use(
           console.error("Token refresh failed, logging out...");
           await AsyncStorage.clear();
           await AsyncStorage.removeItem("loggedIn");
-          return Promise.reject(error);
+          // Navigate to login screen if possible
+          return Promise.reject(new Error("Session expired. Please login again."));
         }
       } catch (refreshError) {
         console.error("Token refresh error:", refreshError);
         await AsyncStorage.clear();
         await AsyncStorage.removeItem("loggedIn");
-        return Promise.reject(error);
+        // Navigate to login screen if possible
+        return Promise.reject(new Error("Session expired. Please login again."));
       }
     }
 

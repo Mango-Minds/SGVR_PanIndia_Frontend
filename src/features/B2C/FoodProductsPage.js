@@ -11,10 +11,10 @@ import {
   FlatList,
   ActivityIndicator,
   Pressable,
-  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import apiClient from "../../store/apiClient";
 import { useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
@@ -29,14 +29,16 @@ import { debounce } from "lodash";
 import { decode } from "base-64";
 import { Dimensions } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
+import SortMenu from "./SortMenu";
 import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
-import SortMenu from "./SortMenu";
-import apiClient from "../../store/apiClient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
+import { useRealEstateSubscription } from "../../hooks/useRealEstateSubscription";
+import RealEstateSubscriptionModal from "../../components/modals/RealEstateSubscriptionModal";
+import PremiumBadge from "../../components/common/PremiumBadge";
 const { width } = Dimensions.get("window");
-const MyListingScreen = ({ route, navigation }) => {
-   const { t } = useTranslation();
+
+const FoodProductsScreen = ({ route, navigation }) => {
   const { category, items } = route.params;
   const isFocused = useIsFocused();
   const user = useSelector((state) => state.user.user);
@@ -46,14 +48,44 @@ const MyListingScreen = ({ route, navigation }) => {
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [products, setProducts] = useState([]);
   const [menuVisible, setMenuVisible] = useState(false);
-
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [noProductsFound, setNoProductsFound] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+  const { subscriptionStatus, fetchSubscriptionStatus } = useRealEstateSubscription();
   const [selectedSortOption, setSelectedSortOption] = useState(null);
-  const filteredItems = items.filter((item) => item.category === category);
+  const [sortMenuVisible, setSortMenuVisible] = useState(false);
+  const [sortOption, setSortOption] = useState(null);
+
   console.log("User: ", user);
-  
+  const renderItem = ({ item }) => (
+    <TouchableOpacity
+      style={style.card}
+      onPress={() =>
+        navigation.navigate("EachListing", {
+          itemId: item._id,
+          item: item,
+          fetchProducts: fetchProducts,
+        })
+      }
+    >
+      <Image
+        source={{ uri: `${item.images[0]}` }}
+        style={styles.eachJewelleryCardImg}
+      />
+
+      <Text style={style.price}>₹{item.price?.toLocaleString('en-IN')}</Text>
+      <Text style={style.title}>{item.name}</Text>
+    </TouchableOpacity>
+  );
+  const toggleSortMenu = () => {
+    setSortMenuVisible((prevState) => !prevState);
+  };
+
+  const sortOptions = [
+    { label: "Price: High to Low", value: "high" },
+    { label: "Price: Low to High", value: "low" },
+  ];
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -77,19 +109,18 @@ const MyListingScreen = ({ route, navigation }) => {
       setSelectedFiltersArray([]);
     }
   };
-  const [activeFilter, setActiveFilter] = useState("Category");
+  const [activeFilter, setActiveFilter] = useState("Condition");
   const [selectedOptions, setSelectedOptions] = useState([]);
 
   const filters = [
     {
-      name: "Category",
-      options: ["Furniture", "Electronics", "Vehicles", "Real Estate", "Food Products", "Other"],
-    },
-    {
       name: "Condition",
       options: ["New", "Like New", "Used", "Needs Repair"],
     },
-
+    {
+      name: "Price",
+      options: ["Below 2000", "3000-5000", "5000-7000", "Above 7000"],
+    },
   ];
 
   const handleFilterClick = (filterName) => {
@@ -133,197 +164,105 @@ const MyListingScreen = ({ route, navigation }) => {
     }
   };
 
-  const [sortMenuVisible, setSortMenuVisible] = useState(false);
-  const [sortOption, setSortOption] = useState(null);
-
-  const toggleSortMenu = () => {
-    setSortMenuVisible((prevState) => !prevState);
-  };
-
-  const sortOptions = [
-    { label: "Price: High to Low", value: "high" },
-    { label: "Price: Low to High", value: "low" },
-  ];
-
-
-
-
-  //correct one
-  // const fetchProducts = async (
-  //   searchTerm,
-  //   selectedFiltersArray,
-  //   sortOption
-  // ) => {
-  //   const queryParams = new URLSearchParams();
-  
-  //   selectedFiltersArray.forEach((filter) => {
-  //     if (filter["Filter name"] === "Category") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("category", option)
-  //       );
-  //     } else if (filter["Filter name"] === "Condition") {
-  //       filter.Options.forEach((option) =>
-  //         queryParams.append("condition", option)
-  //       );
-  //     } else if (filter["Filter name"] === "Price") {
-  //       filter.Options.forEach((option) => {
-  //         if (option.includes("Below")) {
-  //           const maxPrice = option.split(" ")[1];
-  //           queryParams.append("maxPrice", maxPrice);
-  //         } else if (option.includes("Above")) {
-  //           const minPrice = option.split(" ")[1];
-  //           queryParams.append("minPrice", minPrice);
-  //         } else {
-  //           const [minPrice, maxPrice] = option.split("-");
-  //           queryParams.append("minPrice", minPrice);
-  //           queryParams.append("maxPrice", maxPrice);
-  //         }
-  //       });
-  //     }
-  //   });
-  
-  //   if (searchTerm.trim() !== "") {
-  //     queryParams.append("search", searchTerm);
-  //   }
-  
-  //   if (sortOption) {
-  //     queryParams.append("priceSort", sortOption);
-  //   }
-  
-  //   const queryString = queryParams.toString();
-  //   const url = `/listings/all/${user._id}?${queryString}`;
-  
-  //   console.log("Fetching products with URL:", url);
-  
-  //   try {
-  //     const token = await AsyncStorage.getItem("token");
-  
-  //     if (!token) {
-  //       console.error("Authentication token is missing.");
-  //       Alert.alert("Error", "You are not authorized. Please log in again.");
-  //       return;
-  //     }
-  //     setLoadingAnimation(true);
-  //     const response = await apiClient.get(url, {
-  //       headers: {
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  
-  //     if (response.status === 200) {
-  //       console.log("Data:", response.data);
-  //       setProducts(response.data.listings);
-  //     } else {
-  //       throw new Error("Failed to fetch products");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching products:", error);
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
-  const fetchProducts = async (
-  searchTerm = "",
-  selectedFiltersArray = [],
-  sortOption = ""
-) => {
-  const queryParams = new URLSearchParams();
-
-  selectedFiltersArray.forEach((filter) => {
-    if (filter["Filter name"] === "Category") {
-      filter.Options.forEach((option) => queryParams.append("category", option));
-    } else if (filter["Filter name"] === "Condition") {
-      filter.Options.forEach((option) => queryParams.append("condition", option));
-    } else if (filter["Filter name"] === "Price") {
-      filter.Options.forEach((option) => {
-        if (option.includes("Below")) {
-          const maxPrice = option.split(" ")[1];
-          queryParams.append("maxPrice", maxPrice);
-        } else if (option.includes("Above")) {
-          const minPrice = option.split(" ")[1];
-          queryParams.append("minPrice", minPrice);
-        } else {
-          const [minPrice, maxPrice] = option.split("-");
-          queryParams.append("minPrice", minPrice);
-          queryParams.append("maxPrice", maxPrice);
-        }
-      });
-    }
-  });
-
-  if (searchTerm.trim() !== "") {
-    queryParams.append("search", searchTerm);
-  }
-
-  if (sortOption) {
-    queryParams.append("priceSort", sortOption);
-  }
-
-  const queryString = queryParams.toString();
-  const url = `/listings/all/${user._id}?${queryString}`;
-
-  console.log("Fetching products with URL:", url);
-
+  const fetchProducts = async (searchTerm, selectedFiltersArray, sortOption) => {
   try {
-    const token = await AsyncStorage.getItem("token");
-    const selectedLanguage = await AsyncStorage.getItem("user-language") || "en";
+    let token = await AsyncStorage.getItem("token");
 
     if (!token) {
-      console.error("Authentication token is missing.");
-      Alert.alert("Error", "You are not authorized. Please log in again.");
+      console.error("Bearer token not found");
+      Alert.alert("Error", "Authentication token is missing.");
       return;
     }
 
+    // Get target language from AsyncStorage (default to 'en' if not set)
+    let targetLang = await AsyncStorage.getItem("user-language") || "en";
+    if (!targetLang) targetLang = "en";
+
+    const queryParams = new URLSearchParams();
+
+    // Include category if available
+    if (category) {
+      queryParams.append("category", category.toLowerCase());
+    }
+
+    selectedFiltersArray.forEach((filter) => {
+      if (filter["Filter name"] === "Condition") {
+        filter.Options.forEach((option) =>
+          queryParams.append("condition", option.toLowerCase())
+        );
+      } else if (filter["Filter name"] === "Price") {
+        filter.Options.forEach((option) => {
+          if (option.includes("Below")) {
+            const maxPrice = option.split(" ")[1];
+            queryParams.append("maxPrice", maxPrice);
+          } else if (option.includes("Above")) {
+            const minPrice = option.split(" ")[1];
+            queryParams.append("minPrice", minPrice);
+          } else {
+            const [minPrice, maxPrice] = option.split("-");
+            queryParams.append("minPrice", minPrice);
+            queryParams.append("maxPrice", maxPrice);
+          }
+        });
+      }
+    });
+
+    if (searchTerm.trim() !== "") {
+      queryParams.append("search", searchTerm);
+    }
+    if (sortOption) {
+      queryParams.append("priceSort", sortOption);
+    }
+
+    const queryString = queryParams.toString();
+    console.log("Fetching products with query:", queryString);
+
     setLoadingAnimation(true);
 
-    const response = await apiClient.get(url, {
+    // Fetch products from your API
+    const response = await apiClient.get(`/listings?${queryString}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
 
-    if (response.status === 200) {
-      let fetchedProducts = response.data.listings;
+    const products = response.data.listings;
 
-      // 🌐 Translate the products dynamically
-      if (selectedLanguage !== "en" && fetchedProducts && fetchedProducts.length > 0) {
-        try {
-          const translateResponse = await apiClient.post("/translate", {
-            data: fetchedProducts,
-            targetLang: selectedLanguage,
-          });
-
-          if (translateResponse?.data?.success) {
-            fetchedProducts = translateResponse.data.translatedData;
-          }
-        } catch (translationError) {
-          console.error("Translation failed, using original data:", translationError);
-          // Continue with original data if translation fails
-        }
+    // Call your translation API route to translate the product fields
+    const translateResponse = await apiClient.post(
+      "/translate",
+      {
+        data: products,
+        targetLang: targetLang,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       }
+    );
 
-      setProducts(fetchedProducts || []);
-    } else {
-      throw new Error("Failed to fetch products");
-    }
+    const translatedProducts = translateResponse.data.translatedData;
+
+    console.log("Translated Products:", translatedProducts);
+
+    setProducts(translatedProducts);
   } catch (error) {
-    console.error("Error fetching products:", error);
-    // Set empty products array to prevent UI errors
-    setProducts([]);
+    console.error("Error fetching or translating products:", error);
+    Alert.alert("Error", "Failed to fetch or translate products.");
   } finally {
     setLoadingAnimation(false);
   }
 };
 
-  
-  useEffect(() => {
-    fetchProducts();
-  }, []);
-
   useEffect(() => {
     console.log("inside useEffect");
     setMenuVisible(false);
     fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+    // Refresh subscription status when screen comes into focus
+    if (isFocused) {
+      fetchSubscriptionStatus();
+    }
   }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
 
   const handleSortSelect = (option) => {
@@ -331,39 +270,57 @@ const MyListingScreen = ({ route, navigation }) => {
     setSortMenuVisible(false);
   };
 
-  const filteredUserItems = items.filter((item) => item.createdBy === user._id);
+  useEffect(() => {
+    console.log("Updated sortOption:", sortOption);
+  }, [sortOption]);
+
+  const filteredItems = products.filter((product) =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  console.log("Products: ", products);
+  console.log("FilteredItems: ", filteredItems);
   const [thumbnails, setThumbnails] = useState({});
 
-  useEffect(() => {
-    const generateThumbnails = async () => {
-      const newThumbnails = {};
-
-      await Promise.all(
-        products.map(async (item) => {
-          if (item.videos?.length > 0) {
-            try {
-              const { uri } = await VideoThumbnails.getThumbnailAsync(
-                `${item.videos[0]}`,
-                { time: 15000 }
-              );
-              newThumbnails[item._id] = uri;
-            } catch (e) {
-              console.warn("Could not generate thumbnail", e);
-            }
-          }
-        })
-      );
-
-      setThumbnails(newThumbnails);
-    };
-
-    if (products?.length > 0) {
-      generateThumbnails();
+  // Handle plus button click with subscription check
+  const handleAddProduct = () => {
+    if (category === "Real Estate" && !subscriptionStatus.isPremium) {
+      setShowSubscriptionModal(true);
+    } else {
+      navigation.navigate("AddProduct", { 
+        fetchProducts,
+        category: category
+      });
     }
-  }, [products]);
-
-  console.log("Products in my listings page: ", products);
+  };
   
+    useEffect(() => {
+      const generateThumbnails = async () => {
+        const newThumbnails = {};
+  
+        await Promise.all(
+          products.map(async (item) => {
+            if (item.videos?.length > 0) {
+              try {
+                const { uri } = await VideoThumbnails.getThumbnailAsync(
+                  `${item.videos[0]}`,
+                  { time: 15000 }
+                );
+                newThumbnails[item._id] = uri;
+              } catch (e) {
+                console.warn("Could not generate thumbnail", e);
+              }
+            }
+          })
+        );
+  
+        setThumbnails(newThumbnails);
+      };
+  
+      if (products?.length > 0) {
+        generateThumbnails();
+      }
+    }, [products]);
 
   return (
     <Container
@@ -377,15 +334,25 @@ const MyListingScreen = ({ route, navigation }) => {
       <RowBetween style={{ paddingTop: 24 }}>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          <TopText
-            style={{
-              color: Theme.themeColor,
-              fontSize: 20,
-              fontWeight: "bold",
-            }}
-          >
-          {t("my_listings")}
-          </TopText>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TopText
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
+            >
+              {category}
+            </TopText>
+            {category === "Real Estate" && subscriptionStatus.isPremium && (
+              <View style={{ marginLeft: 8 }}>
+                <PremiumBadge 
+                  size="small" 
+                  showExpiry={false}
+                />
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
@@ -395,10 +362,16 @@ const MyListingScreen = ({ route, navigation }) => {
             style={{ color: "grey", marginLeft: "auto" }}
             onPress={toggleSortMenu}
           />
+          <IconButton
+            icon="plus"
+            style={{ marginRight: 15, color: "grey" }}
+            onPress={handleAddProduct}
+          />
         </View>
       </RowBetween>
+
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder={t('search_placeholder')} onChangeText={handleSearch} />
+        <SearchField placeholder="Search" onChangeText={handleSearch} />
 
         <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
           <Icon name="search" size={24} />
@@ -419,7 +392,7 @@ const MyListingScreen = ({ route, navigation }) => {
         <ScrollView>
           <View style={{ padding: "2.5%", paddingTop: "1%", flex: 1 }}>
             <View style={styles.eachJewelleryCardContainer}>
-              {products.map((product, index) => (
+              {filteredItems.map((product, index) => (
                 <View
                   key={index}
                   style={[styles.shadowProp, styles.eachJewelleryCard]}
@@ -479,7 +452,7 @@ const MyListingScreen = ({ route, navigation }) => {
                         </Text>
                       </View>
                       <Text style={{ color: Theme.themeColor, marginTop: 10 }}>
-                       {t("view_details")}
+                        View Details
                       </Text>
                     </View>
                   </Pressable>
@@ -495,6 +468,7 @@ const MyListingScreen = ({ route, navigation }) => {
           <Text style={{ fontSize: 16, color: "gray" }}>No products found</Text>
         </View>
       )}
+
       <TouchableOpacity
         style={{
           position: "absolute",
@@ -527,7 +501,6 @@ const MyListingScreen = ({ route, navigation }) => {
         selectedFiltersArray={selectedFiltersArray}
         setSelectedFiltersArray={setSelectedFiltersArray}
       />
-
       <SortMenu
         menuVisible={sortMenuVisible}
         toggleMenu={toggleSortMenu}
@@ -545,6 +518,21 @@ const MyListingScreen = ({ route, navigation }) => {
         handleSortSelect={handleSortSelect}
       />
 
+      
+      <RealEstateSubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={async () => {
+          setShowSubscriptionModal(false);
+          // Refresh subscription status to update premium badge
+          await fetchSubscriptionStatus();
+          // Navigate to AddProduct after successful subscription
+          navigation.navigate("AddProduct", { 
+            fetchProducts,
+            category: category
+          });
+        }}
+      />
     </Container>
   );
 };
@@ -557,10 +545,9 @@ const style = StyleSheet.create({
   list: {
     paddingHorizontal: 10,
   },
-
   card: {
-    width: width / 2 - 30,
-    margin: 8,
+    width: width / 2 - 24, // Ensure two items fit in one row
+    margin: 10,
     backgroundColor: "#f8f8f8",
     borderRadius: 8,
     padding: 10,
@@ -588,4 +575,4 @@ const style = StyleSheet.create({
   },
 });
 
-export default MyListingScreen;
+export default FoodProductsScreen;

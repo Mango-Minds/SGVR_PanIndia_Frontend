@@ -25,7 +25,6 @@ import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "./BottomNavigation";
 import { fetchUserDetails } from "./B2CAPI";
 import { useTranslation } from "react-i18next";
 const MyB2CProfile = ({ route }) => {

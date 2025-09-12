@@ -404,7 +404,7 @@ const ChatScreenNew = ({ route }) => {
           isUserMessage ? styles.userMessage : styles.otherMessage,
         ]}
       >
-        {media && media.mimeType.startsWith("image/") && media.uri && (
+        {media && media.mimeType && media.mimeType.startsWith("image/") && media.uri && (
           <TouchableOpacity
             onPress={() => handleMediaPress(media)}
             onLongPress={() => handleLongPress(item)}
@@ -418,7 +418,7 @@ const ChatScreenNew = ({ route }) => {
           </TouchableOpacity>
         )}
 
-        {media && media.mimeType.startsWith("video/") && (
+        {media && media.mimeType && media.mimeType.startsWith("video/") && (
           <TouchableOpacity
             onPress={() => handleMediaPress(media)}
             onLongPress={() => handleLongPress(item)}
@@ -469,14 +469,14 @@ const ChatScreenNew = ({ route }) => {
           onRequestClose={handleCloseModal}
         >
           <View style={styles.previewmodalContainer}>
-            {modalContent && modalContent.mimeType.startsWith("image/") && (
+            {modalContent && modalContent.mimeType && modalContent.mimeType.startsWith("image/") && (
               <Image
                 source={{ uri: `${RENDERMEDIAURL}${modalContent.uri}` }}
                 style={{ height: "40%", width: "100%", resizeMode: "cover" }}
               />
             )}
 
-            {modalContent && modalContent.mimeType.startsWith("video/") && (
+            {modalContent && modalContent.mimeType && modalContent.mimeType.startsWith("video/") && (
               <Video
                 source={{ uri: `${RENDERMEDIAURL}${modalContent.uri}` }}
                 shouldPlay={true}
@@ -591,7 +591,7 @@ const ChatScreenNew = ({ route }) => {
       <FlatList
         data={chats}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.id || `chat-${index}`}
         contentContainerStyle={styles.chatContainer}
       />
       {uploadedImage && (

@@ -22,7 +22,6 @@ import { TopText } from "../../styles/social.styles";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Banner from "./B2C.banner";
-import BottomNavigation from "./BottomNavigation";
 import { Row } from "../../styles/dashboard.styles";
 import FilterMenu from "../../components/Jewellery/FilterMenu";
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
@@ -34,6 +33,9 @@ import SortMenu from "./SortMenu";
 import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { fetchAllProducts as apiFetchProducts } from "./B2CAPI";
+import { useRealEstateSubscription } from "../../hooks/useRealEstateSubscription";
+import RealEstateSubscriptionModal from "../../components/modals/RealEstateSubscriptionModal";
+import PremiumBadge from "../../components/common/PremiumBadge";
 const { width } = Dimensions.get("window");
 
 const FurnitureScreen = ({ route, navigation }) => {
@@ -48,6 +50,9 @@ const FurnitureScreen = ({ route, navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+  const { subscriptionStatus, fetchSubscriptionStatus } = useRealEstateSubscription();
   const [selectedSortOption, setSelectedSortOption] = useState(null);
   const [sortMenuVisible, setSortMenuVisible] = useState(false);
   const [sortOption, setSortOption] = useState(null);
@@ -69,7 +74,7 @@ const FurnitureScreen = ({ route, navigation }) => {
         style={styles.eachJewelleryCardImg}
       />
 
-      <Text style={style.price}>{item.price}</Text>
+      <Text style={style.price}>₹{item.price?.toLocaleString('en-IN')}</Text>
       <Text style={style.title}>{item.name}</Text>
     </TouchableOpacity>
   );
@@ -332,6 +337,10 @@ const FurnitureScreen = ({ route, navigation }) => {
     console.log("inside useEffect");
     setMenuVisible(false);
     fetchProducts(searchTerm, selectedFiltersArray, selectedSortOption);
+    // Refresh subscription status when screen comes into focus
+    if (isFocused) {
+      fetchSubscriptionStatus();
+    }
   }, [searchTerm, selectedFiltersArray, isFocused, selectedSortOption]);
 
   const handleSortSelect = (option) => {
@@ -350,6 +359,18 @@ const FurnitureScreen = ({ route, navigation }) => {
   console.log("Products: ", products);
   console.log("FilteredItems: ", filteredItems);
   const [thumbnails, setThumbnails] = useState({});
+
+  // Handle plus button click with subscription check
+  const handleAddProduct = () => {
+    if (category === "Real Estate" && !subscriptionStatus.isPremium) {
+      setShowSubscriptionModal(true);
+    } else {
+      navigation.navigate("AddProduct", { 
+        fetchProducts,
+        category: category
+      });
+    }
+  };
   
     useEffect(() => {
       const generateThumbnails = async () => {
@@ -391,15 +412,25 @@ const FurnitureScreen = ({ route, navigation }) => {
       <RowBetween style={{ paddingTop: 24 }}>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          <TopText
-            style={{
-              color: Theme.themeColor,
-              fontSize: 20,
-              fontWeight: "bold",
-            }}
-          >
-            {category}
-          </TopText>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TopText
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
+            >
+              {category}
+            </TopText>
+            {category === "Real Estate" && subscriptionStatus.isPremium && (
+              <View style={{ marginLeft: 8 }}>
+                <PremiumBadge 
+                  size="small" 
+                  showExpiry={false}
+                />
+              </View>
+            )}
+          </View>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
@@ -412,7 +443,7 @@ const FurnitureScreen = ({ route, navigation }) => {
           <IconButton
             icon="plus"
             style={{ marginRight: 15, color: "grey" }}
-            onPress={() => navigation.navigate("AddProduct", { fetchProducts })}
+            onPress={handleAddProduct}
           />
         </View>
       </RowBetween>
@@ -495,7 +526,7 @@ const FurnitureScreen = ({ route, navigation }) => {
                             fontSize: 13,
                           }}
                         >
-                          ₹{product.price}
+                          ₹{product.price?.toLocaleString('en-IN')}
                         </Text>
                       </View>
                       <Text style={{ color: Theme.themeColor, marginTop: 10 }}>
@@ -565,9 +596,21 @@ const FurnitureScreen = ({ route, navigation }) => {
         handleSortSelect={handleSortSelect}
       />
 
-      {!menuVisible && !sortMenuVisible && (
-        <BottomNavigation navigation={navigation} />
-      )}
+      
+      <RealEstateSubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={async () => {
+          setShowSubscriptionModal(false);
+          // Refresh subscription status to update premium badge
+          await fetchSubscriptionStatus();
+          // Navigate to AddProduct after successful subscription
+          navigation.navigate("AddProduct", { 
+            fetchProducts,
+            category: category
+          });
+        }}
+      />
     </Container>
   );
 };
@@ -607,26 +650,6 @@ const style = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     textAlign: "center",
-  },
-  floatingButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: Theme.themeColor,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  plus: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "bold",
   },
 });
 

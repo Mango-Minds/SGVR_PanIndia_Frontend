@@ -45,6 +45,7 @@ import { fetchSingleProduct, deleteSingleProduct } from "./B2CAPI";
 import { Container } from "../../styles/common.styles";
 import { connectToChat, reportPostApi } from "./B2CAPI";
 import { useTranslation } from "react-i18next";
+import DynamicProductInfo from "../../components/B2C/DynamicProductInfo";
 const WINDOW_WIDTH = Dimensions.get("window").width;
 const WINDOW_HEIGHT = Dimensions.get("window").height;
 
@@ -158,7 +159,9 @@ const EachListing = ({ route }) => {
         {
           text: "OK",
           onPress: () => {
-            fetchProducts(); // if passed via props or can be removed if not needed
+            if (fetchProducts && typeof fetchProducts === 'function') {
+              fetchProducts("", [], "");
+            }
             navigation.goBack();
           },
         },
@@ -583,7 +586,11 @@ const EachListing = ({ route }) => {
         </View>
       ) : (
         <>
-          <ScrollView style={styles.container}>
+          <ScrollView 
+            style={styles.container}
+            contentContainerStyle={{ paddingBottom: 100 }}
+            showsVerticalScrollIndicator={false}
+          >
             {Object.keys(productData).length > 0 && (
               <View style={styles.headerImageContainer}>
                 {mediaType === "image" ? (
@@ -806,26 +813,8 @@ const EachListing = ({ route }) => {
                 </View>
               </View>
             </View>
-            <View style={styles.eventInfoContainer}>
-              <View style={styles.eventDetails}>
-                <Text style={styles.priceText}>{t("product_info")}</Text>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>{t("product_condition")}</Text>
-                  <Text style={styles.infoValue}>{productData.condition}</Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text style={styles.infoLabel}>{t("product_age")}</Text>
-                  <Text style={styles.infoValue}>{productData.productAge}</Text>
-                </View>
-              </View>
-            </View>
-
-            <View style={styles.eventInfoContainer}>
-              <View style={styles.eventDetails}>
-                <Text style={styles.priceText}>{t("product_description")}</Text>
-                <Text style={styles.bioText}>{productData.description}</Text>
-              </View>
-            </View>
+            {/* Dynamic Product Information */}
+            <DynamicProductInfo productData={productData} />
           </ScrollView>
           <View style={styles.bottomBarContainer}>
             <View style={styles.bottomBar}>

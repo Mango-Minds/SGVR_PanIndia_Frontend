@@ -24,8 +24,6 @@ import { IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-import Banner from "./B2C.banner";
-import BottomNavigation from "./BottomNavigation";
 import { Row } from "../../styles/dashboard.styles";
 import FilterMenu from "../../components/Jewellery/FilterMenu";
 import { styles } from "../../features/jewellery/JewelleryMainScreen";
@@ -38,6 +36,9 @@ import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import SortMenu from "./SortMenu";
 import { fetchProducts } from "./B2CAPI";
+import { useRealEstateSubscription } from "../../hooks/useRealEstateSubscription";
+import RealEstateSubscriptionModal from "../../components/modals/RealEstateSubscriptionModal";
+import PremiumBadge from "../../components/common/PremiumBadge";
 const { width } = Dimensions.get("window");
 const AllListingScreen = ({ route, navigation }) => {
   const { category, items = []} = route.params;
@@ -53,10 +54,12 @@ const AllListingScreen = ({ route, navigation }) => {
   const [menuVisible, setMenuVisible] = useState(false);
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+
+  const { subscriptionStatus, fetchSubscriptionStatus } = useRealEstateSubscription();
   const [selectedSortOption, setSelectedSortOption] = useState(null);
 
   //const filteredItems = items.filter((item) => item.category === category);
-  console.log("User: ", user);
 
   const toggleMenu = () => {
     setMenuVisible(!menuVisible);
@@ -86,7 +89,7 @@ const AllListingScreen = ({ route, navigation }) => {
   const filters = [
     {
       name: "Category",
-      options: ["Furniture", "Electronics", "Vehicles", "Other"],
+      options: ["Furniture", "Electronics", "Vehicles", "Real Estate", "Food Products", "Other"],
     },
     {
       name: "Condition",
@@ -159,6 +162,10 @@ const AllListingScreen = ({ route, navigation }) => {
       setProducts,
       setLoadingAnimation
     );
+    // Refresh subscription status when screen comes into focus
+    if (isFocused) {
+      fetchSubscriptionStatus();
+    }
   }, [
     searchTerm,
     selectedFiltersArray,
@@ -238,6 +245,18 @@ const AllListingScreen = ({ route, navigation }) => {
     }
   };
 
+  // Handle plus button click with subscription check
+  const handleAddProduct = () => {
+    if (category === "Real Estate" && !subscriptionStatus.isPremium) {
+      setShowSubscriptionModal(true);
+    } else {
+      navigation.navigate("AddProduct", { 
+        fetchProducts,
+        category: category
+      });
+    }
+  };
+
   return (
     <Container
       style={{
@@ -250,15 +269,25 @@ const AllListingScreen = ({ route, navigation }) => {
       <RowBetween style={{ paddingTop: 24 }}>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          <TopText
-            style={{
-              color: Theme.themeColor,
-              fontSize: 20,
-              fontWeight: "bold",
-            }}
-          >
-           {t("all_listings")}
-          </TopText>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TopText
+              style={{
+                color: Theme.themeColor,
+                fontSize: 20,
+                fontWeight: "bold",
+              }}
+            >
+             {t("all_listings")}
+            </TopText>
+            {category === "Real Estate" && subscriptionStatus.isPremium && (
+              <View style={{ marginLeft: 8 }}>
+                <PremiumBadge 
+                  size="small" 
+                  showExpiry={false}
+                />
+              </View>
+            )}
+          </View>
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <Ionicons
@@ -266,11 +295,6 @@ const AllListingScreen = ({ route, navigation }) => {
             size={26}
             style={{ color: "grey", marginLeft: "auto" }}
             onPress={toggleSortMenu}
-          />
-          <IconButton
-            icon="plus"
-            style={{ marginRight: 15, color: "grey" }}
-            onPress={() => navigation.navigate("AddProduct", { fetchProducts })}
           />
         </View>
       </RowBetween>
@@ -339,29 +363,51 @@ const AllListingScreen = ({ route, navigation }) => {
                         />
                       )}
                     </View>
-                    <View style={{ marginLeft: "2%" }}>
+                    <View style={{ marginLeft: "2%", flex: 1, paddingRight: 6 }}>
                       <Text
                         style={{
-                          fontWeight: "700",
+                          fontWeight: "500",
                           marginTop: "1%",
-                          opacity: 1.5,
-                          flexWrap: "nowrap",
+                          color: "#333",
+                          fontSize: 14,
+                          lineHeight: 18,
                         }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                       >
                         {product.name}
                       </Text>
-                      <View style={{ marginTop: "3%", flexDirection: "row" }}>
+                      <View style={{ marginTop: "1%", flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
                         <Text
                           style={{
-                            opacity: 0.5,
-                            marginLeft: "0%",
-                            fontSize: 13,
+                            color: "#2c3e50",
+                            fontSize: 14,
+                            fontWeight: "600",
                           }}
                         >
-                          ₹{product.price}
+                          ₹{product.price?.toLocaleString('en-IN')}
                         </Text>
+                        {product?.condition && (
+                          <View style={{
+                            backgroundColor: "#e8f5e8",
+                            borderRadius: 10,
+                            paddingHorizontal: 6,
+                            paddingVertical: 2,
+                          }}>
+                            <Text style={{
+                              fontSize: 10,
+                              color: "#27ae60",
+                              fontWeight: "600",
+                            }}>{product.condition}</Text>
+                          </View>
+                        )}
                       </View>
-                      <Text style={{ color: Theme.themeColor, marginTop: 10 }}>
+                      <Text style={{ 
+                        color: Theme.themeColor, 
+                        marginTop: 6,
+                        fontSize: 12,
+                        fontWeight: "500",
+                      }}>
                         {t("view_details")}
                       </Text>
                     </View>
@@ -498,9 +544,21 @@ const AllListingScreen = ({ route, navigation }) => {
         handleSortSelect={handleSortSelect}
       />
 
-      {!menuVisible && !sortMenuVisible && (
-        <BottomNavigation navigation={navigation} />
-      )}
+      
+      <RealEstateSubscriptionModal
+        visible={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        onSubscribe={async () => {
+          setShowSubscriptionModal(false);
+          // Refresh subscription status to update premium badge
+          await fetchSubscriptionStatus();
+          // Navigate to AddProduct after successful subscription
+          navigation.navigate("AddProduct", { 
+            fetchProducts,
+            category: category
+          });
+        }}
+      />
     </Container>
   );
 };
@@ -541,26 +599,6 @@ const style = StyleSheet.create({
     fontSize: 14,
     color: "#555",
     textAlign: "center",
-  },
-  floatingButton: {
-    position: "absolute",
-    bottom: 20,
-    right: 20,
-    backgroundColor: Theme.themeColor,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 5,
-    elevation: 5,
-  },
-  plus: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "bold",
   },
 });
 
@@ -618,8 +656,7 @@ export default AllListingScreen;
 // import { TopText } from "../../styles/social.styles";
 // import Ionicons from 'react-native-vector-icons/Ionicons';
 // import { Container, RowBetween, SearchField } from "../../styles/common.styles";
-// import Banner from "./B2C.banner";
-// import BottomNavigation from "./BottomNavigation";
+// // import BottomNavigation from "./BottomNavigation";
 // import { Row } from "../../styles/dashboard.styles";
 // import FilterMenu from "../../components/Jewellery/FilterMenu";
 // import { styles } from "../../features/jewellery/JewelleryMainScreen";

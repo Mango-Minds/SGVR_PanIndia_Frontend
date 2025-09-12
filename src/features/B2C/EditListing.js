@@ -10,6 +10,7 @@ import {
   TextInput,
   Platform,
   Alert,
+  KeyboardAvoidingView,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -115,9 +116,9 @@ export default function EditListing({ route, navigation }) {
 
     console.log("Selected File:", name, "MIME Type:", fileType);
 
-    if (fileType?.startsWith("image")) {
+    if (fileType && fileType.startsWith("image")) {
       setUploadedImages((prev) => [...prev, { uri, name, type: fileType }]);
-    } else if (fileType?.startsWith("video")) {
+    } else if (fileType && fileType.startsWith("video")) {
       setUploadedVideos((prev) => [...prev, { uri, name, type: fileType }]);
     }
   };
@@ -152,6 +153,23 @@ export default function EditListing({ route, navigation }) {
     subcategory: listing.subcategory,
     condition: listing.condition,
     productAge: listing.productAge,
+    // Real Estate specific fields
+    propertyType: listing.propertyType || "",
+    bedrooms: listing.bedrooms || "",
+    bathrooms: listing.bathrooms || "",
+    area: listing.area || "",
+    furnished: listing.furnished || "",
+    floor: listing.floor || "",
+    totalFloors: listing.totalFloors || "",
+    // Vehicle specific fields
+    mileage: listing.mileage || "",
+    year: listing.year || "",
+    fuelType: listing.fuelType || "",
+    transmission: listing.transmission || "",
+    // Food Products specific fields
+    expiryDate: listing.expiryDate || "",
+    weight: listing.weight || "",
+    brand: listing.brand || "",
   });
   console.log("modified details", modifiedDetails);
 
@@ -280,23 +298,52 @@ export default function EditListing({ route, navigation }) {
     { label: t("furniture"), value: "Furniture" },
     { label: t("electronics"), value: "Electronics" },
     { label: t("vehicles"), value: "Vehicles" },
+    { label: t("real_estate"), value: "Real Estate" },
+    { label: t("food_products"), value: "Food Products" },
     { label: t("other"), value: "Other" },
   ];
 
+  // Filter subcategories based on selected category
   const SubCategoryData = [
-    { label: t("sofa"), value: "Sofa" },
-    { label: t("table"), value: "Table" },
-    { label: t("beds"), value: "Beds" },
-    { label: t("dining"), value: "Dining" },
-    { label: t("wardrobes"), value: "Wardrobes" },
-    { label: t("laptop"), value: "Laptop" },
-    { label: t("mobile"), value: "Mobile" },
-    { label: t("television"), value: "Television" },
-    { label: t("washing_machine"), value: "Washing Machine" },
-    { label: t("kitchen_appliances"), value: "Kitchen Appliances" },
-    { label: t("ac_cooler"), value: "Air Conditioner (A.C.) / Cooler" },
-    { label: t("other"), value: "Other" },
-  ];
+    // Furniture subcategories
+    { label: t("sofa"), value: "Sofa", category: "Furniture" },
+    { label: t("table"), value: "Table", category: "Furniture" },
+    { label: t("beds"), value: "Beds", category: "Furniture" },
+    { label: t("dining"), value: "Dining", category: "Furniture" },
+    { label: t("wardrobes"), value: "Wardrobes", category: "Furniture" },
+    
+    // Electronics subcategories
+    { label: t("laptop"), value: "Laptop", category: "Electronics" },
+    { label: t("mobile"), value: "Mobile", category: "Electronics" },
+    { label: t("television"), value: "Television", category: "Electronics" },
+    { label: t("washing_machine"), value: "Washing Machine", category: "Electronics" },
+    { label: t("kitchen_appliances"), value: "Kitchen Appliances", category: "Electronics" },
+    { label: t("ac_cooler"), value: "Air Conditioner (A.C.) / Cooler", category: "Electronics" },
+    
+    // Real Estate subcategories
+    { label: t("apartment"), value: "Apartment", category: "Real Estate" },
+    { label: t("house"), value: "House", category: "Real Estate" },
+    { label: t("villa"), value: "Villa", category: "Real Estate" },
+    { label: t("plot"), value: "Plot", category: "Real Estate" },
+    { label: t("commercial_property"), value: "Commercial Property", category: "Real Estate" },
+    
+    // Vehicle subcategories
+    { label: t("car"), value: "Car", category: "Vehicles" },
+    { label: t("bike"), value: "Bike", category: "Vehicles" },
+    { label: t("scooter"), value: "Scooter", category: "Vehicles" },
+    { label: t("truck"), value: "Truck", category: "Vehicles" },
+    { label: t("bus"), value: "Bus", category: "Vehicles" },
+    
+    // Food Products subcategories
+    { label: t("snacks"), value: "Snacks", category: "Food Products" },
+    { label: t("beverages"), value: "Beverages", category: "Food Products" },
+    { label: t("spices"), value: "Spices", category: "Food Products" },
+    { label: t("grains"), value: "Grains", category: "Food Products" },
+    { label: t("dairy_products"), value: "Dairy Products", category: "Food Products" },
+    
+    // Other subcategories
+    { label: t("other"), value: "Other", category: "Other" },
+  ].filter(sub => sub.category === modifiedDetails.category);
 
   const ConditionData = [
     { label: t("new"), value: "New" },
@@ -305,10 +352,48 @@ export default function EditListing({ route, navigation }) {
     { label: t("needs_repair"), value: "Needs Repair" },
   ];
 
+  // Real Estate specific data
+  const PropertyTypeData = [
+    { label: t("residential"), value: "Residential" },
+    { label: t("commercial"), value: "Commercial" },
+    { label: t("industrial"), value: "Industrial" },
+    { label: t("agricultural"), value: "Agricultural" },
+  ];
+
+  const FurnishedData = [
+    { label: t("furnished"), value: "Furnished" },
+    { label: t("semi_furnished"), value: "Semi-Furnished" },
+    { label: t("unfurnished"), value: "Unfurnished" },
+  ];
+
+  // Vehicle specific data
+  const FuelTypeData = [
+    { label: t("petrol"), value: "Petrol" },
+    { label: t("diesel"), value: "Diesel" },
+    { label: t("electric"), value: "Electric" },
+    { label: t("hybrid"), value: "Hybrid" },
+    { label: t("cng"), value: "CNG" },
+  ];
+
+  const TransmissionData = [
+    { label: t("manual"), value: "Manual" },
+    { label: t("automatic"), value: "Automatic" },
+    { label: t("semi_automatic"), value: "Semi-Automatic" },
+  ];
+
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        >
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ flexGrow: 1 }}
+            keyboardShouldPersistTaps="handled"
+          >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -728,27 +813,30 @@ export default function EditListing({ route, navigation }) {
                   });
                 }}
               /> */}
-              <SelectDropdown
-                data={ConditionData}
-                defaultButtonText={t("select_condition")}
-                defaultValue={ConditionData.find(
-                  (item) => item.value === modifiedDetails.condition
-                )}
-                onSelect={(selectedItem) =>
-                  setModifiedDetails({
-                    ...modifiedDetails,
-                    condition: selectedItem.value,
-                  })
-                }
-                buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
-                buttonTextStyle={{
-                  textAlign: "left",
-                  color: "#9B9B9B",
-                  fontSize: 16,
-                }}
-                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
-                rowTextForSelection={(item) => item.label}
-              />
+              {/* Condition field - not relevant for Food Products */}
+              {modifiedDetails.category !== "Food Products" && (
+                <SelectDropdown
+                  data={ConditionData}
+                  defaultButtonText={t("select_condition")}
+                  defaultValue={ConditionData.find(
+                    (item) => item.value === modifiedDetails.condition
+                  )}
+                  onSelect={(selectedItem) =>
+                    setModifiedDetails({
+                      ...modifiedDetails,
+                      condition: selectedItem.value,
+                    })
+                  }
+                  buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                  buttonTextStyle={{
+                    textAlign: "left",
+                    color: "#9B9B9B",
+                    fontSize: 16,
+                  }}
+                  buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                  rowTextForSelection={(item) => item.label}
+                />
+              )}
 
               <Text
                 style={{
@@ -864,20 +952,423 @@ export default function EditListing({ route, navigation }) {
               {t("product_age")}
               </Text>
 
-              <LoginInputField
-                color
-                selectionColor={Theme.themeColor}
-                activeUnderlineColor={Theme.themeColor}
-                style={[styles.input, { marginTop: 5 }]}
-                placeholder="Product Age*"
-                underlineColor="transparent"
-                // keyboardType="numeric"
-                placeholderTextColor="#9B9B9B"
-                value={modifiedDetails.productAge}
-                onChangeText={(text) =>
-                  setModifiedDetails({ ...modifiedDetails, productAge: text })
-                }
-              />
+              {/* Product Age field - not relevant for Food Products */}
+              {modifiedDetails.category !== "Food Products" && (
+                <LoginInputField
+                  color
+                  selectionColor={Theme.themeColor}
+                  activeUnderlineColor={Theme.themeColor}
+                  style={[styles.input, { marginTop: 5 }]}
+                  placeholder="Product Age*"
+                  underlineColor="transparent"
+                  // keyboardType="numeric"
+                  placeholderTextColor="#9B9B9B"
+                  value={modifiedDetails.productAge}
+                  onChangeText={(text) =>
+                    setModifiedDetails({ ...modifiedDetails, productAge: text })
+                  }
+                />
+              )}
+
+              {/* Real Estate specific fields */}
+              {modifiedDetails.category === "Real Estate" && (
+                <>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("property_type")}
+                  </Text>
+                  <SelectDropdown
+                    data={PropertyTypeData}
+                    defaultButtonText={t("select_property_type")}
+                    defaultValue={PropertyTypeData.find(
+                      (item) => item.value === modifiedDetails.propertyType
+                    )}
+                    onSelect={(selectedItem) =>
+                      setModifiedDetails({
+                        ...modifiedDetails,
+                        propertyType: selectedItem.value,
+                      })
+                    }
+                    buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                    buttonTextStyle={{
+                      textAlign: "left",
+                      color: "#9B9B9B",
+                      fontSize: 16,
+                    }}
+                    buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                    rowTextForSelection={(item) => item.label}
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("area_sq_ft")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("area_sq_ft") + "*"}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    value={modifiedDetails.area}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, area: text })
+                    }
+                  />
+
+                  {modifiedDetails.subcategory !== "Plot" && (
+                    <>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          marginLeft: 4,
+                          color: "grey",
+                          fontWeight: "600",
+                          marginTop: 20,
+                        }}
+                      >
+                        {t("bedrooms")}
+                      </Text>
+                      <LoginInputField
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
+                        style={[styles.input, { marginTop: 5 }]}
+                        placeholder={t("bedrooms") + "*"}
+                        underlineColor="transparent"
+                        placeholderTextColor="#9B9B9B"
+                        keyboardType="numeric"
+                        value={modifiedDetails.bedrooms}
+                        onChangeText={(text) =>
+                          setModifiedDetails({ ...modifiedDetails, bedrooms: text })
+                        }
+                      />
+
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          marginLeft: 4,
+                          color: "grey",
+                          fontWeight: "600",
+                          marginTop: 20,
+                        }}
+                      >
+                        {t("bathrooms")}
+                      </Text>
+                      <LoginInputField
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
+                        style={[styles.input, { marginTop: 5 }]}
+                        placeholder={t("bathrooms") + "*"}
+                        underlineColor="transparent"
+                        placeholderTextColor="#9B9B9B"
+                        keyboardType="numeric"
+                        value={modifiedDetails.bathrooms}
+                        onChangeText={(text) =>
+                          setModifiedDetails({ ...modifiedDetails, bathrooms: text })
+                        }
+                      />
+
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          marginLeft: 4,
+                          color: "grey",
+                          fontWeight: "600",
+                          marginTop: 20,
+                        }}
+                      >
+                        {t("furnished_status")}
+                      </Text>
+                      <SelectDropdown
+                        data={FurnishedData}
+                        defaultButtonText={t("select_furnished_status")}
+                        defaultValue={FurnishedData.find(
+                          (item) => item.value === modifiedDetails.furnished
+                        )}
+                        onSelect={(selectedItem) =>
+                          setModifiedDetails({
+                            ...modifiedDetails,
+                            furnished: selectedItem.value,
+                          })
+                        }
+                        buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                        buttonTextStyle={{
+                          textAlign: "left",
+                          color: "#9B9B9B",
+                          fontSize: 16,
+                        }}
+                        buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                        rowTextForSelection={(item) => item.label}
+                      />
+                    </>
+                  )}
+
+                  {modifiedDetails.subcategory === "Apartment" && (
+                    <>
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          marginLeft: 4,
+                          color: "grey",
+                          fontWeight: "600",
+                          marginTop: 20,
+                        }}
+                      >
+                        {t("floor")}
+                      </Text>
+                      <LoginInputField
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
+                        style={[styles.input, { marginTop: 5 }]}
+                        placeholder={t("floor") + "*"}
+                        underlineColor="transparent"
+                        placeholderTextColor="#9B9B9B"
+                        value={modifiedDetails.floor}
+                        onChangeText={(text) =>
+                          setModifiedDetails({ ...modifiedDetails, floor: text })
+                        }
+                      />
+
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          marginLeft: 4,
+                          color: "grey",
+                          fontWeight: "600",
+                          marginTop: 20,
+                        }}
+                      >
+                        {t("total_floors")}
+                      </Text>
+                      <LoginInputField
+                        selectionColor={Theme.themeColor}
+                        activeUnderlineColor={Theme.themeColor}
+                        style={[styles.input, { marginTop: 5 }]}
+                        placeholder={t("total_floors") + "*"}
+                        underlineColor="transparent"
+                        placeholderTextColor="#9B9B9B"
+                        keyboardType="numeric"
+                        value={modifiedDetails.totalFloors}
+                        onChangeText={(text) =>
+                          setModifiedDetails({ ...modifiedDetails, totalFloors: text })
+                        }
+                      />
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Vehicle specific fields */}
+              {modifiedDetails.category === "Vehicles" && (
+                <>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("mileage_km")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("mileage_km") + "*"}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    keyboardType="numeric"
+                    value={modifiedDetails.mileage}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, mileage: text })
+                    }
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("year")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("year") + "*"}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    keyboardType="numeric"
+                    value={modifiedDetails.year}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, year: text })
+                    }
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("fuel_type")}
+                  </Text>
+                  <SelectDropdown
+                    data={FuelTypeData}
+                    defaultButtonText={t("select_fuel_type")}
+                    defaultValue={FuelTypeData.find(
+                      (item) => item.value === modifiedDetails.fuelType
+                    )}
+                    onSelect={(selectedItem) =>
+                      setModifiedDetails({
+                        ...modifiedDetails,
+                        fuelType: selectedItem.value,
+                      })
+                    }
+                    buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                    buttonTextStyle={{
+                      textAlign: "left",
+                      color: "#9B9B9B",
+                      fontSize: 16,
+                    }}
+                    buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                    rowTextForSelection={(item) => item.label}
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("transmission")}
+                  </Text>
+                  <SelectDropdown
+                    data={TransmissionData}
+                    defaultButtonText={t("select_transmission")}
+                    defaultValue={TransmissionData.find(
+                      (item) => item.value === modifiedDetails.transmission
+                    )}
+                    onSelect={(selectedItem) =>
+                      setModifiedDetails({
+                        ...modifiedDetails,
+                        transmission: selectedItem.value,
+                      })
+                    }
+                    buttonStyle={{ width: "100%", height: 50, marginTop: 5 }}
+                    buttonTextStyle={{
+                      textAlign: "left",
+                      color: "#9B9B9B",
+                      fontSize: 16,
+                    }}
+                    buttonTextAfterSelection={(selectedItem) => selectedItem.label}
+                    rowTextForSelection={(item) => item.label}
+                  />
+                </>
+              )}
+
+              {/* Food Products specific fields */}
+              {modifiedDetails.category === "Food Products" && (
+                <>
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("expiry_date")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("expiry_date") + "*"}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    value={modifiedDetails.expiryDate}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, expiryDate: text })
+                    }
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("weight_quantity")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("weight_quantity") + "*"}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    value={modifiedDetails.weight}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, weight: text })
+                    }
+                  />
+
+                  <Text
+                    style={{
+                      fontSize: 16,
+                      marginLeft: 4,
+                      color: "grey",
+                      fontWeight: "600",
+                      marginTop: 20,
+                    }}
+                  >
+                    {t("brand")}
+                  </Text>
+                  <LoginInputField
+                    selectionColor={Theme.themeColor}
+                    activeUnderlineColor={Theme.themeColor}
+                    style={[styles.input, { marginTop: 5 }]}
+                    placeholder={t("brand")}
+                    underlineColor="transparent"
+                    placeholderTextColor="#9B9B9B"
+                    value={modifiedDetails.brand}
+                    onChangeText={(text) =>
+                      setModifiedDetails({ ...modifiedDetails, brand: text })
+                    }
+                  />
+                </>
+              )}
 
               <FormButton onPress={() => handleUpdate(productId)}>
                 <Text
@@ -902,7 +1393,8 @@ export default function EditListing({ route, navigation }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

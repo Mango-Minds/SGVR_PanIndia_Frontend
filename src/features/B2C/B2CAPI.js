@@ -34,13 +34,76 @@ export const addProductAPI = async ({
     formData.append("category", registerDetails.productCategory);
     formData.append("subcategory", registerDetails.productSubCategory);
     formData.append("description", registerDetails.productDescription);
-    formData.append("condition", registerDetails.productCondition);
-    formData.append("productAge", registerDetails.productAge);
+    
+    // Only append condition if it's not empty (not required for Food Products)
+    if (registerDetails.productCondition && registerDetails.productCondition.trim() !== "") {
+      formData.append("condition", registerDetails.productCondition);
+    }
+    
+    // Only append productAge if it's not empty (not required for Food Products)
+    if (registerDetails.productAge && registerDetails.productAge.trim() !== "") {
+      formData.append("productAge", registerDetails.productAge);
+    }
+    
     formData.append("address", registerDetails.address);
     formData.append("phone", registerDetails.phone);
     // Only append address_link if it's not empty
     if (registerDetails.address_link && registerDetails.address_link.trim()) {
       formData.append("address_link", registerDetails.address_link);
+    }
+
+    // Add real estate specific fields
+    if (registerDetails.productCategory === "Real Estate") {
+      if (registerDetails.propertyType) {
+        formData.append("propertyType", registerDetails.propertyType);
+      }
+      if (registerDetails.bedrooms) {
+        formData.append("bedrooms", parseInt(registerDetails.bedrooms));
+      }
+      if (registerDetails.bathrooms) {
+        formData.append("bathrooms", parseInt(registerDetails.bathrooms));
+      }
+      if (registerDetails.area) {
+        formData.append("area", registerDetails.area);
+      }
+      if (registerDetails.furnished) {
+        formData.append("furnished", registerDetails.furnished);
+      }
+      if (registerDetails.floor) {
+        formData.append("floor", registerDetails.floor);
+      }
+      if (registerDetails.totalFloors) {
+        formData.append("totalFloors", parseInt(registerDetails.totalFloors));
+      }
+    }
+
+    // Add vehicle specific fields
+    if (registerDetails.productCategory === "Vehicles") {
+      if (registerDetails.mileage) {
+        formData.append("mileage", registerDetails.mileage);
+      }
+      if (registerDetails.year) {
+        formData.append("year", registerDetails.year);
+      }
+      if (registerDetails.fuelType) {
+        formData.append("fuelType", registerDetails.fuelType);
+      }
+      if (registerDetails.transmission) {
+        formData.append("transmission", registerDetails.transmission);
+      }
+    }
+
+    // Add food products specific fields
+    if (registerDetails.productCategory === "Food Products") {
+      if (registerDetails.expiryDate) {
+        formData.append("expiryDate", registerDetails.expiryDate);
+      }
+      if (registerDetails.weight) {
+        formData.append("weight", registerDetails.weight);
+      }
+      if (registerDetails.brand) {
+        formData.append("brand", registerDetails.brand);
+      }
     }
 
 
@@ -600,57 +663,30 @@ export const connectToChat = async ({
       return;
     }
 
-    // Step 1: Create chat room
-    const response = await apiClient.post(
-      "/chat/room/",
-      { userIds: [owner_id, business_id] },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
-
-    console.log("Chat room creation response:", response);
-
-    // Step 2: Fetch all chat rooms
-    const roomResponse = await apiClient.get("/chat/rooms/", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+    // Get the target user's name from productData
+    let targetUserName = '';
+    if (productData?.sellerName) {
+      targetUserName = productData.sellerName;
+    } else if (productData?.createdBy?.firstName || productData?.createdBy?.lastName) {
+      targetUserName = `${productData?.createdBy?.firstName || ''} ${productData?.createdBy?.lastName || ''}`.trim();
+    } else {
+      targetUserName = 'Seller';
+    }
+    
+    // Generate conversation ID from current user and target user
+    const conversationId = [owner_id, business_id].sort().join('_');
+    
+    // Navigate to chat screen with the target user's information (same as matrimony)
+    navigation.navigate("ChatScreen", {
+      toid: business_id,
+      toName: targetUserName,
+      index: 0, // Default index for new chat
+      conversationId: conversationId, // Pass the conversation ID
     });
 
-    if (roomResponse.data && roomResponse.data.rooms.length > 0) {
-      const room_with_user = roomResponse.data.rooms.find(
-        (room) => room?.participants[0]?.id === business_id
-      );
-
-      if (!room_with_user) {
-        Alert.alert("Error", "No chat room found for this user.");
-        return;
-      }
-
-      const initialMessage = `Hi, I have a query about this product: ${productData?.name}\n Price: Rs. ${productData.price} \n\nCan you provide more details?`;
-
-      Alert.alert("OK", "Chat Room Created", [
-        {
-          text: "OK",
-          onPress: () => {
-            navigation.navigate("ChatScreenNew", {
-              user_auth_token: token,
-              room: room_with_user,
-              participant_name: `${room_with_user.participants[0].firstName} ${room_with_user.participants[0].lastName}`,
-              initialMessage,
-            });
-          },
-        },
-      ]);
-    } else {
-      Alert.alert("No rooms found");
-    }
   } catch (error) {
     console.error("Error connecting to chat:", error);
-    Alert.alert("Error", "Something went wrong while creating the chat room.");
+    Alert.alert("Error", "Something went wrong while connecting to chat.");
   }
 };
 export const updateListing = async ({

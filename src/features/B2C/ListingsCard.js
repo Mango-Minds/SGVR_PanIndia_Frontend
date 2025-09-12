@@ -1,20 +1,15 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   View,
   Text,
   Image,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import { BASEAPIURL } from "../../infrastructure/constants";
 import Theme from "../../styles/theme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import apiClient from "../../store/apiClient";
 const ListingCard = ({ items, fetchProducts, loadingAnimation }) => {
-  console.log("Items in card: ", items);
   const navigation = useNavigation();
 
   const firstTwoItems = items?.slice(0, 2);
@@ -50,23 +45,31 @@ const ListingCard = ({ items, fetchProducts, loadingAnimation }) => {
                   source={{ uri: `${product.images[0]}` }}
                   resizeMode="cover"
                 />
+                <View style={styles.productInfoContainer}>
+                  <Text
+                    style={styles.productName}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {product?.name}
+                  </Text>
+                  <View style={styles.priceConditionRow}>
+                    <Text
+                      style={styles.productPrice}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                    >
+                      ₹{product?.price?.toLocaleString('en-IN')}
+                    </Text>
+                    {product?.condition && (
+                      <View style={styles.conditionBadge}>
+                        <Text style={styles.conditionText}>{product.condition}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.viewDetailsText}>View Details</Text>
+                </View>
               </View>
-              <View style={styles.priceCard}>
-                <Text
-                  style={styles.productPrice}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {product?.price}
-                </Text>
-              </View>
-              <Text
-                style={styles.productName}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {product?.name}
-              </Text>
             </TouchableOpacity>
           ))
         ) : (
@@ -95,39 +98,66 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#fff",
-    borderRadius: 5,
-    padding: 10,
+    borderRadius: 8,
+    padding: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    //   elevation: 1,
+    shadowRadius: 4,
+    elevation: 2,
     width: "100%",
-  },
-  priceCard: {
-    backgroundColor: "#F0F0F0",
-    borderRadius: 7,
-    marginLeft: 8,
-    marginTop: 5,
-    width: "92%",
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    overflow: "hidden",
+    minHeight: 200,
   },
   productImage: {
     width: "100%",
-    height: 250,
-    borderRadius: 8,
+    height: 100,
+    borderRadius: 6,
+    backgroundColor: "#f5f5f5",
   },
   productName: {
-    fontSize: 16,
-    fontWeight: "400",
+    fontSize: 14,
+    fontWeight: "500",
     marginTop: 6,
-    maxWidth: "100%",
-    marginLeft: 15,
+    color: "#333",
+    lineHeight: 18,
+    textAlign: "left",
   },
   productPrice: {
     fontSize: 14,
-    color: "black",
-    marginTop: 8,
-    marginLeft: 5,
+    color: "#2c3e50",
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  productInfoContainer: {
+    marginTop: 6,
+    paddingHorizontal: 4,
+    flex: 1,
+  },
+  priceConditionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    justifyContent: "space-between",
+  },
+  conditionBadge: {
+    backgroundColor: "#e8f5e8",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  conditionText: {
+    fontSize: 10,
+    color: "#27ae60",
+    fontWeight: "600",
+  },
+  viewDetailsText: {
+    color: Theme.themeColor,
+    fontSize: 12,
+    fontWeight: "500",
+    marginTop: 6,
   },
 });
 export default ListingCard;
