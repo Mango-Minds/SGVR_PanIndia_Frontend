@@ -197,6 +197,12 @@ console.log("Selected Module:", selectedModule);
       // Navigate to the specific module after successful onboarding
       if (selectedModule === "Matrimony") {
         navigation.navigate("Matrimony");
+      } else if (selectedModule === "Temple") {
+        // Since we're already in the Temple stack, navigate to TempleHome
+        // Use setTimeout to ensure navigation happens after state updates
+        setTimeout(() => {
+          navigation.navigate("TempleHome");
+        }, 100);
       } else {
         navigation.navigate(selectedModule);
       }
@@ -210,7 +216,15 @@ console.log("Selected Module:", selectedModule);
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+          >
           <MainContainer style={{ paddingBottom: 10 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -385,7 +399,8 @@ console.log("Selected Module:", selectedModule);
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

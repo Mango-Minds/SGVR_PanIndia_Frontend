@@ -21,11 +21,10 @@ import { styles } from "../../features/jewellery/JewelleryMainScreen";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { useIsFocused } from "@react-navigation/native";
-import FilterMenu from "./FilterMenu";
+// import FilterMenu from "./FilterMenu"; // Commented out as filter component is disabled
 import Theme from "../../styles/theme";
 import apiClient from "../../store/apiClient";
 import { debounce } from "lodash";
-import BottomNavigation from "./BottomNavigation";
   import { useTranslation } from "react-i18next";
 
 const AllProductsScreen = ({ route }) => {
@@ -36,7 +35,7 @@ const AllProductsScreen = ({ route }) => {
   const user = useSelector((state) => state.user.user);
 
   const navigation = useNavigation();
-  const [isloading, setIsloading] = React.useState(true);
+  const [isloading, setIsloading] = useState(true);
 
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -194,7 +193,7 @@ const AllProductsScreen = ({ route }) => {
             {t("AllProducts")}
           </TopText>
         </View>
-        {user.userType[0] === "templeShopOwner" && (
+        {user.userType.includes("templeShopOwner") && (
           <IconButton
             icon="plus"
             style={{ marginLeft: "auto", marginRight: "auto" }}
@@ -309,7 +308,6 @@ const AllProductsScreen = ({ route }) => {
         setSelectedFiltersArray={setSelectedFiltersArray}
       /> */}
 
-      {!menuVisible && <BottomNavigation navigation={navigation} />}
     </Container>
   );
 };

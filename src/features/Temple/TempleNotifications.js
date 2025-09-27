@@ -18,25 +18,25 @@ import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "./BottomNavigation";
-import TempleShops from "./TempleShops";
 import SelectDropdown from "react-native-select-dropdown";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 function TempleNotifications({ navigation, route }) {
-  const [selectedTab, setSelectedTab] = useState("Requests");
+  const [selectedTab, setSelectedTab] = useState("All Requests");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const handleTabPress = (tab) => {
     setSelectedTab(tab);
   };
   const { t } = useTranslation();
-  const { templeinfo } = route.params;
+  const { templeinfo, onRequestAccepted } = route.params;
   console.log("Notifications temple info: ", templeinfo);
   const templeId = templeinfo._id;
   console.log("Temple ID: ", templeId);
-  const [pandits, setPandits] = useState([]);
-  const [shops, setShops] = useState([]);
+  const [panditRequestsFromPandits, setPanditRequestsFromPandits] = useState([]);
+  const [panditRequestsFromTemple, setPanditRequestsFromTemple] = useState([]);
+  const [shopRequestsFromShops, setShopRequestsFromShops] = useState([]);
+  const [shopRequestsFromTemple, setShopRequestsFromTemple] = useState([]);
 
   const token = useSelector((state) => state.user.token);
 
@@ -193,48 +193,76 @@ function TempleNotifications({ navigation, route }) {
   //   }
   // };
 
-  const fetchPanditToTempleRequest = async () => {
+  const fetchPanditRequests = async () => {
     console.log("Temple ID in request:", templeId);
     try {
       setLoadingAnimation(true);
 
-      const response = await apiClient.get(
-        `/panditToTempleReqList/${templeId}`
+      // Fetch requests initiated by pandits (temple admin can accept/reject)
+      const panditInitiatedResponse = await apiClient.get(
+        `/panditInitiatedRequests/${templeId}`
       );
-      if (response.status === 200) {
-        const notificationData = response.data.requests;
-        console.log("shopsData in fetchShops Details: ", notificationData);
+      
+      // Fetch requests initiated by temple admin (temple admin can withdraw)
+      const templeInitiatedResponse = await apiClient.get(
+        `/templeInitiatedRequests/${templeId}`
+      );
+
         const selectedLanguage =
           (await AsyncStorage.getItem("user-language")) || "en";
-        if (selectedLanguage !== "en" && Array.isArray(notificationData)) {
+
+      // Process pandit-initiated requests
+      if (panditInitiatedResponse.status === 200) {
+        let panditInitiatedData = panditInitiatedResponse.data.requests;
+        console.log("Pandit initiated requests: ", panditInitiatedData);
+        
+        if (selectedLanguage !== "en" && Array.isArray(panditInitiatedData)) {
+          try {
           const translationResponse = await apiClient.post("/translate", {
-            data: notificationData,
+              data: panditInitiatedData,
             targetLang: selectedLanguage,
           });
 
           if (translationResponse?.data?.translatedData?.length) {
-            setPandits(translationResponse.data.translatedData);
-            console.log(
-              "Translated response fetchShops: ",
-              translationResponse?.data
-            );
-          } else {
-            setPandits(notificationData);
+              panditInitiatedData = translationResponse.data.translatedData;
+            }
+          } catch (translationError) {
+            console.log("Translation failed, using original data:", translationError);
           }
-        } else {
-          setPandits(notificationData);
         }
+        setPanditRequestsFromPandits(panditInitiatedData);
       }
-      console.log("PanditToTempleRequest List", response.data);
 
-      // setPandits(response.data.requests || []);
+      // Process temple-initiated requests
+      if (templeInitiatedResponse.status === 200) {
+        let templeInitiatedData = templeInitiatedResponse.data.requests;
+        console.log("Temple initiated requests: ", templeInitiatedData);
+        
+        if (selectedLanguage !== "en" && Array.isArray(templeInitiatedData)) {
+          try {
+            const translationResponse = await apiClient.post("/translate", {
+              data: templeInitiatedData,
+              targetLang: selectedLanguage,
+            });
+
+            if (translationResponse?.data?.translatedData?.length) {
+              templeInitiatedData = translationResponse.data.translatedData;
+            }
+          } catch (translationError) {
+            console.log("Translation failed, using original data:", translationError);
+          }
+        }
+        setPanditRequestsFromTemple(templeInitiatedData);
+      }
+
     } catch (error) {
       console.error("Error fetching PanditToTemple requests:", error);
     } finally {
       setLoadingAnimation(false);
     }
   };
-  console.log("pandits: ", pandits);
+  console.log("panditRequestsFromPandits: ", panditRequestsFromPandits);
+  console.log("panditRequestsFromTemple: ", panditRequestsFromTemple);
   const removeAcceptedRequest = (requestId, setStateFunc) => {
     setStateFunc((prevRequests) =>
       prevRequests.filter((request) => request._id !== requestId)
@@ -255,7 +283,12 @@ function TempleNotifications({ navigation, route }) {
 
       if (response.status === 200) {
        Alert.alert(t("requestAccepted"));
-        removeAcceptedRequest(requestId, setPandits);
+        removeAcceptedRequest(requestId, setPanditRequestsFromPandits);
+        
+        // Refresh the temple details page if callback is provided
+        if (onRequestAccepted) {
+          onRequestAccepted();
+        }
       } else {
         console.error("Failed to accept request:", response.data);
          throw new Error(t("failedAcceptRequest"));
@@ -276,7 +309,7 @@ function TempleNotifications({ navigation, route }) {
 
       if (response.status === 200) {
         Alert.alert(t("requestDeleted"));
-        fetchPanditToTempleRequest();
+        fetchPanditRequests();
       } else {
         console.error("Failed to delete request:", response.data);
           throw new Error(t("failedDeleteRequest"));
@@ -286,130 +319,185 @@ function TempleNotifications({ navigation, route }) {
     }
   };
 
-  const fetchShopToTempleRequest = async () => {
-    console.log("Temple ID in request:", templeId);
+  const handleWithdrawRequest = async (requestId) => {
+    try {
+      const response = await apiClient.delete(
+        `/panditToTempleRequest/${requestId}/withdraw`
+      );
+
+      if (response.status === 200) {
+        Alert.alert(t("success"), t("requestWithdrawnSuccessfully"));
+        removeAcceptedRequest(requestId, setPanditRequestsFromTemple);
+      } else {
+        console.error("Failed to withdraw request:", response.data);
+        Alert.alert(t("error"), t("failedToWithdrawRequest"));
+      }
+    } catch (error) {
+      console.error("Error withdrawing request:", error);
+      Alert.alert(t("error"), t("failedToWithdrawRequest"));
+    }
+  };
+
+  const fetchShopRequests = async () => {
     try {
       setLoadingAnimation(true);
+      const selectedLanguage = await AsyncStorage.getItem("selectedLanguage");
 
-      const response = await apiClient.get(
-        `/templeConnections/requests/${templeId}`
-      );
-      console.log("ShopToTempleRequest List", response.data);
+      // Fetch shop-initiated requests (incoming requests)
+      const shopInitiatedResponse = await apiClient.get(`/shopInitiatedRequests/${templeId}`);
+      let shopInitiatedRequests = shopInitiatedResponse.data.requests || [];
 
-      setShops(response.data || []);
+      // Fetch temple-initiated requests (outgoing requests)
+      const templeInitiatedResponse = await apiClient.get(`/templeInitiatedShopRequests/${templeId}`);
+      let templeInitiatedRequests = templeInitiatedResponse.data.requests || [];
+
+      // Translate if needed
+      if (selectedLanguage && selectedLanguage !== 'en') {
+        try {
+          // Translate shop-initiated requests
+          if (shopInitiatedRequests.length > 0) {
+            const shopTranslationResponse = await apiClient.post("/translate", {
+              data: shopInitiatedRequests,
+              language: selectedLanguage,
+            });
+            if (shopTranslationResponse?.data?.translatedData?.length) {
+              shopInitiatedRequests = shopTranslationResponse.data.translatedData;
+            }
+          }
+
+          // Translate temple-initiated requests  
+          if (templeInitiatedRequests.length > 0) {
+            const templeTranslationResponse = await apiClient.post("/translate", {
+              data: templeInitiatedRequests,
+              language: selectedLanguage,
+            });
+            if (templeTranslationResponse?.data?.translatedData?.length) {
+              templeInitiatedRequests = templeTranslationResponse.data.translatedData;
+            }
+          }
+        } catch (translationError) {
+          console.error("Translation error for shop requests:", translationError);
+        }
+      }
+
+      setShopRequestsFromShops(shopInitiatedRequests);
+      setShopRequestsFromTemple(templeInitiatedRequests);
+
+      console.log("Shop initiated requests:", shopInitiatedRequests.length);
+      console.log("Temple initiated shop requests:", templeInitiatedRequests.length);
     } catch (error) {
-      console.error("Error fetching ShopToTemple requests:", error);
+      console.error("Error fetching shop requests:", error);
+      setShopRequestsFromShops([]);
+      setShopRequestsFromTemple([]);
     } finally {
       setLoadingAnimation(false);
     }
   };
-  // const handleShopAcceptRequest = async (requestId) => {
-  //   try {
-  //     console.log("S req id: ", requestId);
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/templeConnections/action/${requestId}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ status: "accepted" }),
-  //       }
-  //     );
-  //     const responseData = await response.json();
-
-  //     if (response.ok) {
-  //       Alert.alert("Request Accept Successfully.");
-  //       removeAcceptedRequest(requestId, setShops);
-  //     } else {
-  //       console.error("Failed to accept Shop to temple request:", responseData);
-  //       throw new Error("Failed to accept Shop to temple request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error accepting Shop to temple request:", error);
-  //   }
-  // };
-  // const handleShopDeleteRequest = async (requestId) => {
-  //   try {
-  //     const response = await fetch(
-  //       `${BASEAPIURL}/templeConnections/action/${requestId}`,
-  //       {
-  //         method: "PATCH",
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //           Authorization: `Bearer ${token}`,
-  //         },
-  //         body: JSON.stringify({ status: "rejected" }),
-  //       }
-  //     );
-  //     const responseData = await response.json();
-
-  //     if (response.ok) {
-  //       Alert.alert("Request Deleted Successfully.");
-  //       fetchShopToTempleRequest();
-  //     } else {
-  //       console.error("Failed to delete Shop to temple request:", responseData);
-  //       throw new Error("Failed to delete Shop to temple request");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error deleting Shop to temple request:", error);
-  //   }
-  // };
-
+  // Shop request handlers
   const handleShopAcceptRequest = async (requestId) => {
-    try {
-      console.log("S req id: ", requestId);
-
-      const response = await apiClient.patch(
-        `/templeConnections/action/${requestId}`,
+    Alert.alert(
+      t("confirmAccept"),
+      t("confirmAcceptShopRequest"),
+      [
         {
-          status: "accepted",
-        }
+          text: t("cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("accept"),
+          style: "default",
+          onPress: async () => {
+            try {
+              const response = await apiClient.post(
+                `/shopToTempleRequest/${requestId}`,
+                { action: "accept" }
       );
 
       if (response.status === 200) {
-       Alert.alert(t("requestAccepted"));
-        removeAcceptedRequest(requestId, setShops);
-      } else {
-        console.error(
-          "Failed to accept Shop to temple request:",
-          response.data
-        );
-        throw new Error(t("failedShopAcceptRequest"));
+                Alert.alert(t("success"), t("shopRequestAcceptedSuccessfully"));
+                removeAcceptedRequest(requestId, setShopRequestsFromShops);
+                
+                // Refresh the temple details page if callback is provided
+                if (onRequestAccepted) {
+                  onRequestAccepted();
+                }
       }
     } catch (error) {
-      console.error("Error accepting Shop to temple request:", error);
+              console.error("Error accepting shop request:", error);
+              Alert.alert(t("error"), t("failedToAcceptShopRequest"));
     }
+          },
+        },
+      ]
+    );
   };
 
   const handleShopDeleteRequest = async (requestId) => {
-    try {
-      const response = await apiClient.patch(
-        `/templeConnections/action/${requestId}`,
+    Alert.alert(
+      t("confirmReject"),
+      t("confirmRejectShopRequest"),
+      [
         {
-          status: "rejected",
-        }
+          text: t("cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("reject"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await apiClient.post(
+                `/shopToTempleRequest/${requestId}`,
+                { action: "reject" }
       );
 
       if (response.status === 200) {
-       Alert.alert(t("requestDeleted"));
-        fetchShopToTempleRequest();
-      } else {
-        console.error(
-          "Failed to delete Shop to temple request:",
-          response.data
-        );
-        throw new Error(t("failedShopDeleteRequest"));
+                Alert.alert(t("success"), t("shopRequestRejectedSuccessfully"));
+                removeAcceptedRequest(requestId, setShopRequestsFromShops);
+              }
+            } catch (error) {
+              console.error("Error rejecting shop request:", error);
+              Alert.alert(t("error"), t("failedToRejectShopRequest"));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleWithdrawShopRequest = async (requestId) => {
+    Alert.alert(
+      t("confirmWithdraw"),
+      t("confirmWithdrawShopRequest"),
+      [
+        {
+          text: t("cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("withdraw"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await apiClient.delete(`/shopToTempleRequest/${requestId}/withdraw`);
+
+              if (response.status === 200) {
+                Alert.alert(t("success"), t("shopRequestWithdrawnSuccessfully"));
+                removeAcceptedRequest(requestId, setShopRequestsFromTemple);
       }
     } catch (error) {
-      console.error("Error deleting Shop to temple request:", error);
+              console.error("Error withdrawing shop request:", error);
+              Alert.alert(t("error"), t("failedToWithdrawShopRequest"));
     }
+          },
+        },
+      ]
+    );
   };
 
   useEffect(() => {
-    fetchPanditToTempleRequest();
-    fetchShopToTempleRequest();
+    fetchPanditRequests();
+    fetchShopRequests();
   }, []);
 
   return (
@@ -441,7 +529,7 @@ function TempleNotifications({ navigation, route }) {
       </View>
 
       <View style={styles.tabsContainer}>
-        {["Requests", "Notifications"].map((tab) => (
+        {["All Requests"].map((tab) => (
           <TouchableOpacity
             key={tab}
             onPress={() => handleTabPress(tab)}
@@ -476,14 +564,7 @@ function TempleNotifications({ navigation, route }) {
         )} */}
       </View>
 
-      {selectedTab === "Requests" && (
-        <>
-          <TempleShops templeinfo={templeinfo} />
-          <BottomNavigation navigation={navigation} />
-        </>
-      )}
-      {selectedTab === "Notifications" && (
-        <>
+      {selectedTab === "All Requests" && (
           <ScrollView style={{ flex: 1 }}>
             <View
               style={{
@@ -493,7 +574,7 @@ function TempleNotifications({ navigation, route }) {
                 flexDirection: "column",
               }}
             >
-              {pandits.length === 0 && shops.length === 0 ? (
+            {panditRequestsFromPandits.length === 0 && panditRequestsFromTemple.length === 0 && shopRequestsFromShops.length === 0 && shopRequestsFromTemple.length === 0 ? (
                 <View
                   style={{
                     flex: 1,
@@ -508,28 +589,24 @@ function TempleNotifications({ navigation, route }) {
                 </View>
               ) : (
                 <>
-                  {pandits.length > 0 && (
+                {/* Requests Received from Pandits Section */}
+                {panditRequestsFromPandits.length > 0 && (
                     <>
-                      {pandits.map((pandit, index) => (
+                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, color: "#333" }}>
+                      {t("requestsFromPandits")}
+                    </Text>
+                    {panditRequestsFromPandits.map((pandit, index) => (
                         <TouchableOpacity key={index}>
                           <View
                             style={{
                               marginVertical: "4%",
                               flexDirection: "row",
                               alignItems: "center",
-                            }}
-                          >
-                            {/* <Image
-                              style={{
-                                width: 60,
-                                height: 65,
+                            backgroundColor: "#f9f9f9",
+                            padding: 12,
                                 borderRadius: 8,
-                                marginRight: "5%",
                               }}
-                              source={{
-                                uri: pandit.image,
-                              }}
-                            /> */}
+                        >
                             <Image
                               style={{
                                 width: 60,
@@ -538,8 +615,8 @@ function TempleNotifications({ navigation, route }) {
                                 marginRight: "6%",
                               }}
                               source={
-                                pandit.image
-                                  ? { uri: `${pandit.image}` }
+                              pandit.requestByPanditId?.image
+                                ? { uri: `${pandit.requestByPanditId.image}` }
                                   : UserImg
                               }
                             />
@@ -562,7 +639,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginTop: "2%",
                                 }}
                               >
-                                {t("pandit")}
+                              {t("pandit")} • {t("pending")}
                               </Text>
                             </View>
 
@@ -577,7 +654,7 @@ function TempleNotifications({ navigation, route }) {
                                 style={{
                                   width: 75,
                                   height: 35,
-                                  backgroundColor: "#E9ECEF",
+                                backgroundColor: "#7AB163",
                                   borderRadius: 8,
                                   paddingHorizontal: 4,
                                   margin: 0,
@@ -601,17 +678,17 @@ function TempleNotifications({ navigation, route }) {
                                   <Icon
                                     name="checkmark-circle"
                                     size={15}
-                                    color="#7AB163"
+                                  color="white"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>{t("accept")}</Text>
+                                <Text style={{ color: "white", fontSize: 12 }}>{t("accept")}</Text>
                                 </View>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={{
                                   width: 75,
                                   height: 35,
-                                  backgroundColor: "#E9ECEF",
+                                backgroundColor: "#ff4444",
                                   borderRadius: 8,
                                   paddingHorizontal: 4,
                                   margin: 0,
@@ -630,18 +707,15 @@ function TempleNotifications({ navigation, route }) {
                                   style={{
                                     flexDirection: "row",
                                     alignItems: "center",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 12,
-                                    borderRadius: 5,
                                   }}
                                 >
                                   <Icon
                                     name="close-circle"
                                     size={15}
-                                    color="#ff0000"
+                                  color="white"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>{t("delete")}</Text>
+                                <Text style={{ color: "white", fontSize: 12 }}>{t("reject")}</Text>
                                 </View>
                               </TouchableOpacity>
                             </View>
@@ -651,15 +725,24 @@ function TempleNotifications({ navigation, route }) {
                     </>
                   )}
 
-                  {shops.length > 0 && (
-                    <>
-                      {shops.map((shop) => (
-                        <TouchableOpacity key={shop._id}>
+                {/* Requests Sent to Pandits Section */}
+                {panditRequestsFromTemple.length > 0 && (
+                  <>
+                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, marginTop: 20, color: "#333" }}>
+                      {t("requestsSentToPandits")}
+                    </Text>
+                    {panditRequestsFromTemple.map((pandit, index) => (
+                      <TouchableOpacity key={index}>
                           <View
                             style={{
                               marginVertical: "4%",
                               flexDirection: "row",
                               alignItems: "center",
+                            backgroundColor: "#fff3cd",
+                            padding: 12,
+                            borderRadius: 8,
+                            borderLeftWidth: 4,
+                            borderLeftColor: "#ffc107",
                             }}
                           >
                             <Image
@@ -670,10 +753,106 @@ function TempleNotifications({ navigation, route }) {
                                 marginRight: "6%",
                               }}
                               source={
-                                shop.image ? { uri: `${shop.image}` } : UserImg
-                              }
-                            />
+                              pandit.requestByPanditId?.image
+                                ? { uri: `${pandit.requestByPanditId.image}` }
+                                : UserImg
+                            }
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontWeight: "bold",
+                                opacity: 0.7,
+                                fontSize: 17,
+                              }}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {pandit.requestByPanditId?.panditName}
+                            </Text>
+                            <Text
+                              style={{
+                                fontWeight: "600",
+                                opacity: 0.4,
+                                marginTop: "2%",
+                              }}
+                            >
+                              {t("pandit")} • {t("awaitingResponse")}
+                            </Text>
+                          </View>
 
+                          <TouchableOpacity
+                            style={{
+                              width: 85,
+                              height: 35,
+                              backgroundColor: "#ff9800",
+                              borderRadius: 8,
+                              paddingHorizontal: 4,
+                              margin: 0,
+                              marginBottom: 0,
+                              justifyContent: "center",
+                              alignItems: "center",
+                            }}
+                            onPress={() => {
+                              const requestId = pandit._id;
+                              console.log("Withdraw request: ", requestId);
+                              handleWithdrawRequest(requestId);
+                            }}
+                          >
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Icon
+                                name="arrow-back-circle"
+                                size={15}
+                                color="white"
+                                style={{ marginRight: 5 }}
+                              />
+                              <Text style={{ color: "white", fontSize: 12 }}>{t("withdraw")}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
+
+                {/* Shop Requests Received from Shops */}
+                {shopRequestsFromShops.length > 0 && (
+                  <>
+                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, marginTop: 20, color: "#333" }}>
+                      {t("requestsReceivedFromShops")}
+                    </Text>
+                    {shopRequestsFromShops.map((request, index) => (
+                      <TouchableOpacity key={index}>
+                        <View
+                          style={{
+                            marginVertical: "4%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#e8f5e8",
+                            padding: 12,
+                            borderRadius: 8,
+                            borderLeftWidth: 4,
+                            borderLeftColor: "#4CAF50",
+                          }}
+                        >
+                          <Image
+                            style={{
+                              width: 60,
+                              height: 65,
+                              borderRadius: 8,
+                              marginRight: "6%",
+                            }}
+                            source={
+                              request.requestByShopId?.image
+                                ? { uri: `${request.requestByShopId.image}` }
+                                : UserImg
+                            }
+                          />
                             <View style={{ flex: 1 }}>
                               <Text
                                 style={{
@@ -684,7 +863,7 @@ function TempleNotifications({ navigation, route }) {
                                 numberOfLines={1}
                                 ellipsizeMode="tail"
                               >
-                                {shop.name}
+                              {request.requestByShopId?.name}
                               </Text>
                               <Text
                                 style={{
@@ -693,7 +872,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginTop: "2%",
                                 }}
                               >
-                                {t("shop")}
+                              {t("shop")} • {t("pending")}
                               </Text>
                             </View>
 
@@ -708,7 +887,7 @@ function TempleNotifications({ navigation, route }) {
                                 style={{
                                   width: 75,
                                   height: 35,
-                                  backgroundColor: "#E9ECEF",
+                                backgroundColor: "#7AB163",
                                   borderRadius: 8,
                                   paddingHorizontal: 4,
                                   margin: 0,
@@ -718,7 +897,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginRight: 5,
                                 }}
                                 onPress={() => {
-                                  const requestId = shop._id;
+                                const requestId = request._id;
                                   console.log("OnReq shop: ", requestId);
                                   handleShopAcceptRequest(requestId);
                                 }}
@@ -732,17 +911,17 @@ function TempleNotifications({ navigation, route }) {
                                   <Icon
                                     name="checkmark-circle"
                                     size={15}
-                                    color="#7AB163"
+                                  color="white"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>{t("accept")}</Text>
+                                <Text style={{ color: "white", fontSize: 12 }}>{t("accept")}</Text>
                                 </View>
                               </TouchableOpacity>
                               <TouchableOpacity
                                 style={{
                                   width: 75,
                                   height: 35,
-                                  backgroundColor: "#E9ECEF",
+                                backgroundColor: "#ff4444",
                                   borderRadius: 8,
                                   paddingHorizontal: 4,
                                   margin: 0,
@@ -752,7 +931,7 @@ function TempleNotifications({ navigation, route }) {
                                   marginRight: 0,
                                 }}
                                 onPress={() => {
-                                  const requestId = shop._id;
+                                const requestId = request._id;
                                   console.log("OnReq shop: ", requestId);
                                   handleShopDeleteRequest(requestId);
                                 }}
@@ -761,18 +940,15 @@ function TempleNotifications({ navigation, route }) {
                                   style={{
                                     flexDirection: "row",
                                     alignItems: "center",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 12,
-                                    borderRadius: 5,
                                   }}
                                 >
                                   <Icon
                                     name="close-circle"
                                     size={15}
-                                    color="#ff0000"
+                                  color="white"
                                     style={{ marginRight: 5 }}
                                   />
-                                  <Text>{t("delete")}</Text>
+                                <Text style={{ color: "white", fontSize: 12 }}>{t("reject")}</Text>
                                 </View>
                               </TouchableOpacity>
                             </View>
@@ -781,13 +957,103 @@ function TempleNotifications({ navigation, route }) {
                       ))}
                     </>
                   )}
+
+                {/* Shop Requests Sent to Shops */}
+                {shopRequestsFromTemple.length > 0 && (
+                  <>
+                    <Text style={{ fontSize: 18, fontWeight: "bold", marginBottom: 10, marginTop: 20, color: "#333" }}>
+                      {t("requestsSentToShops")}
+                    </Text>
+                    {shopRequestsFromTemple.map((request, index) => (
+                      <TouchableOpacity key={index}>
+                        <View
+                          style={{
+                            marginVertical: "4%",
+                            flexDirection: "row",
+                            alignItems: "center",
+                            backgroundColor: "#fff3e0",
+                            padding: 12,
+                            borderRadius: 8,
+                            borderLeftWidth: 4,
+                            borderLeftColor: "#FF9800",
+                          }}
+                        >
+                          <Image
+                            style={{
+                              width: 60,
+                              height: 65,
+                              borderRadius: 8,
+                              marginRight: "6%",
+                            }}
+                            source={
+                              request.requestByShopId?.image
+                                ? { uri: `${request.requestByShopId.image}` }
+                                : UserImg
+                            }
+                          />
+                          <View style={{ flex: 1 }}>
+                            <Text
+                              style={{
+                                fontWeight: "bold",
+                                opacity: 0.7,
+                                fontSize: 17,
+                              }}
+                              numberOfLines={1}
+                              ellipsizeMode="tail"
+                            >
+                              {request.requestByShopId?.name}
+                            </Text>
+                            <Text
+                              style={{
+                                fontWeight: "600",
+                                opacity: 0.4,
+                                marginTop: "2%",
+                              }}
+                            >
+                              {t("shop")} • {t("pending")}
+                            </Text>
+                          </View>
+
+                          <TouchableOpacity
+                            style={{
+                              width: 80,
+                              height: 35,
+                              backgroundColor: "#ff4444",
+                              borderRadius: 8,
+                              paddingHorizontal: 4,
+                              justifyContent: "center",
+                              alignItems: "center",
+                              marginLeft: 10,
+                            }}
+                            onPress={() => {
+                              const requestId = request._id;
+                              handleWithdrawShopRequest(requestId);
+                            }}
+                          >
+                            <View
+                              style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                              }}
+                            >
+                              <Icon
+                                name="arrow-back-circle"
+                                size={15}
+                                color="white"
+                                style={{ marginRight: 5 }}
+                              />
+                              <Text style={{ color: "white", fontSize: 12 }}>{t("withdraw")}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        </View>
+                      </TouchableOpacity>
+                    ))}
+                  </>
+                )}
                 </>
               )}
             </View>
           </ScrollView>
-
-          <BottomNavigation navigation={navigation} />
-        </>
       )}
     </SafeAreaView>
   );

@@ -2,6 +2,7 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import { useSelector } from "react-redux";
 import TempleHome from "../../features/Temple/Temple.home";
+import OnboardModuleForm from "../../features/OnBoardModuleForm";
 import TempleDetails from "../../features/Temple/Temple.Details";
 import MyTempleProfile from "../../features/Temple/TempleProfile";
 import TempleEditAdminRegisterScreen from "../../features/Temple/EditProfile";
@@ -35,15 +36,24 @@ import ChatHome from "../../features/chat/chat.home";
 import AddGod from "../../features/Temple/AddGod";
 import EditGod from "../../features/Temple/EditGod";
 import TemplePanditDetails from "../../features/Temple/PanditDetails";
+import AddPandits from "../../features/Temple/AddPandits";
+import PanditNotifications from "../../features/Temple/PanditNotifications";
+import ShopNotifications from "../../features/Temple/ShopNotifications";
 const Stack = createStackNavigator();
 
 export const TempleStackNavigator = () => {
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const user = useSelector((state) => state.user.user);
+  const userType = useSelector((state) => state.user.user?.userType || []);
   
-  let initialRouteName = "TempleHome";
-
-  if (userType === "superadmin") {
-    initialRouteName = "TempleSuperAdminHome";
+  // Determine initial route based on onboarding status
+  let initialRouteName = "OnboardModuleForm";
+  
+  if (user?.isTempleOnboarded) {
+    if (userType.includes("superadmin")) {
+      initialRouteName = "TempleSuperAdminHome";
+    } else {
+      initialRouteName = "TempleHome";
+    }
   }
 
   return (
@@ -53,10 +63,25 @@ export const TempleStackNavigator = () => {
     >
       <Stack.Screen name="TempleSuperAdminHome" component={TempleSuperAdminHome} />
       <Stack.Screen name="AddGod" component={AddGod} />
-    <Stack.Screen name="EditGod" component={EditGod} />
-    
-    <Stack.Screen name="TemplePanditDetails" component={TemplePanditDetails} />
+      <Stack.Screen name="EditGod" component={EditGod} />
+      <Stack.Screen name="TemplePanditDetails" component={TemplePanditDetails} />
+      <Stack.Screen name="AddPandits" component={AddPandits} />
+      <Stack.Screen name="PanditNotifications" component={PanditNotifications} />
+      <Stack.Screen name="ShopNotifications" component={ShopNotifications} />
       <Stack.Screen name="TempleHome" component={TempleHome} />
+      <Stack.Screen name="OnboardModuleForm">
+        {(props) => (
+          <OnboardModuleForm 
+            {...props} 
+            route={{
+              params: {
+                userId: user?._id,
+                redirectTo: "Temple"
+              }
+            }}
+          />
+        )}
+      </Stack.Screen>
       <Stack.Screen name="TempleDetails" component={TempleDetails} />
       <Stack.Screen name="MyTempleProfile" component={MyTempleProfile} />
       <Stack.Screen name="EditProfile" component={TempleEditAdminRegisterScreen} />

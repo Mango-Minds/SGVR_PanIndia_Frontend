@@ -53,10 +53,10 @@ export const Navigation = () => {
 
   const { token, loading, error, user } = userState;
 
-  const errorsize = Platform.OS === "ios" ? 16 : 12;
-  const errorVerticalPadding = Platform.OS === "ios" ? 5 : 0;
-  const errorMarginBottom = Platform.OS === "ios" ? 0 : 40;
-  const errorPaddingTop = Platform.OS === "ios" ? 10 : 0;
+  const errorsize = Platform.OS === "ios" ? 16 : 14;
+  const errorVerticalPadding = Platform.OS === "ios" ? 12 : 8;
+  const errorMarginBottom = Platform.OS === "ios" ? 20 : 40;
+  const errorPaddingTop = Platform.OS === "ios" ? 8 : 0;
 
  
   const IsLoggedIn = async () => {
@@ -170,10 +170,13 @@ export const Navigation = () => {
               )
             }
             action={{
-              label: <Icons name="close" size={22} color="white" />,
-              color: "white",
+              label: "✕",
+              labelStyle: { 
+                color: "white", 
+                fontSize: 18, 
+                fontWeight: "bold" 
+              },
               onPress: () => {
-                // Do something
                 dispatch(
                   ErrorToggle({
                     toggle: false,
@@ -183,41 +186,37 @@ export const Navigation = () => {
                 );
               },
             }}
-            duration={2000}
+            duration={3000}
             style={{
-              backgroundColor: "#364135",
-              color: "white",
+              backgroundColor: error.type === "Success" ? "#4CAF50" : "#364135",
               marginBottom: errorMarginBottom,
-              paddingVertical: errorVerticalPadding,
-              display: "flex",
-              alignSelf: "center",
-              alignItems: "center",
-              paddingHorizontal: 5,
-              paddingTop: errorPaddingTop,
+              borderRadius: 8,
+            }}
+            wrapperStyle={{
+              bottom: errorMarginBottom,
+              left: 16,
+              right: 16,
             }}
           >
-            {/* Add Success Icon */}
             <View
               style={{
-                display: "flex",
                 flexDirection: "row",
                 alignItems: "center",
+                paddingVertical: Platform.OS === "ios" ? 4 : 2,
               }}
             >
               <Icons
-                name="info"
-                size={errorsize + 5}
+                name={error.type === "Success" ? "check-circle" : "info"}
+                size={20}
                 color="white"
-                // style={{ marginTop: 50 }}
+                style={{ marginRight: 8 }}
               />
               <Text
                 style={{
                   color: "white",
                   fontSize: errorsize,
-                  textTransform: "capitalize",
-                  marginLeft: 10,
-                  width: "95%",
-                  flexWrap: "wrap",
+                  fontWeight: Platform.OS === "ios" ? "600" : "normal",
+                  flex: 1,
                 }}
               >
                 {error.msg}

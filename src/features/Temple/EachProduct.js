@@ -185,7 +185,7 @@ const EachProduct = ({ route }) => {
   const decodedPayload = JSON.parse(decode(tokenPayload));
   const fromVendorId = decodedPayload.id;
 
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
 
   return (
     <Container
@@ -205,7 +205,7 @@ const EachProduct = ({ route }) => {
           </TopText>
         </View>
 
-        {userType === "templeShopOwner" && (
+        {userType.includes("templeShopOwner") && (
           <>
             <IconButton
               icon="trash-can-outline"

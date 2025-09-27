@@ -8,6 +8,9 @@ import {
   View,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider,ActivityIndicator } from "react-native-paper";
@@ -69,7 +72,7 @@ const styles = StyleSheet.create({
 export default function EditShopProduct({ route, navigation }) {
   const { loadingInBtn } = useSelector((state) => state.user);
   registerTranslation("en", en);
-  const { productId, product, fetchProduct } = route.params;
+  const { productId, product, fetchProduct, shopId, onProductUpdated } = route.params;
   console.log("product to edit", product);
   const token = useSelector((state) => state.user.token);
   console.log(token);
@@ -80,7 +83,7 @@ export default function EditShopProduct({ route, navigation }) {
       ? product.pictures.map((image) => `${image}`)
       : [];
 
-  const [selectedImages, setSelectedImages] = React.useState(initialImages);
+  const [selectedImages, setSelectedImages] = useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
 
   const _pickDocument = async () => {
@@ -197,43 +200,64 @@ export default function EditShopProduct({ route, navigation }) {
       dispatch(setLoadingInBtn(false));
   
       console.log("Updated Product:", response.data);
-      alert("Product updated successfully");
+      Alert.alert("Success", "Product updated successfully", [
+        { text: "OK", onPress: () => {} }
+      ]);
   
-      fetchProduct();
+      // Call the callback to refresh the product list
+      if (onProductUpdated && typeof onProductUpdated === 'function') {
+        onProductUpdated();
+      }
+      
+      // Fallback to fetchProduct if it exists
+      if (fetchProduct && typeof fetchProduct === 'function') {
+        fetchProduct();
+      }
+      
       navigation.goBack();
     } catch (error) {
       console.error("Error updating product:", error);
       dispatch(setLoadingInBtn(false));
+      Alert.alert("Error", "Failed to update product. Please try again.", [
+        { text: "OK", onPress: () => {} }
+      ]);
     }
   };
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
-            <View style={{ alignItems: "center", flexDirection: "row" }}>
-              <IconButton
-                icon="arrow-left"
-                size={28}
-                onPress={() => navigation.goBack()}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "500",
-                  color: "#000",
-                }}
-              >
-                Edit Product
-              </Text>
-            </View>
-          </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
+            contentInsetAdjustmentBehavior="automatic"
           >
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row" }}>
+                <IconButton
+                  icon="arrow-left"
+                  size={28}
+                  onPress={() => navigation.goBack()}
+                />
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "500",
+                    color: "#000",
+                  }}
+                >
+                  Edit Product
+                </Text>
+              </View>
+            </RowBetween>
+            <MainContainer
+              style={{ paddingBottom: 100 }}
+            >
             <Text
               style={{
                 fontSize: 16,
@@ -419,8 +443,9 @@ export default function EditShopProduct({ route, navigation }) {
                 </Text>
               </FormButton>
             </FormSection>
-          </MainContainer>
-        </ScrollView>
+            </MainContainer>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

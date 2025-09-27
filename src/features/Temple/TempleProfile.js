@@ -24,7 +24,6 @@ import { decode } from "base-64";
 import ActivityIndicator from "react-native-paper";
 import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "./BottomNavigation";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
@@ -33,7 +32,7 @@ const MyTempleProfile = ({ route }) => {
 const { t } = useTranslation();
   console.log("Pandits in profile: ", pandits);
   const navigation = useNavigation();
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
 
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
@@ -218,11 +217,11 @@ const { t } = useTranslation();
   //     : userType === "pandit"
   //     ? "Edit Pandit Profile"
   //     : "Edit Profile";
-  const heading = userType === "templeAdmin"
+  const heading = userType.includes("templeAdmin")
   ? t("editTempleAdminProfile")
-  : userType === "templeShopOwner"
+  : userType.includes("templeShopOwner")
     ? t("editShopProfile")
-    : userType === "pandit"
+    : userType.includes("pandit")
       ? t("editPanditProfile")
       : t("editProfile");
 <Text>{t(heading)}</Text>
@@ -296,7 +295,7 @@ const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
 
   const getProfileImage = () => {
-    if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
+    if (userType.includes("templeShopOwner") && loggedInShop && loggedInShop.image) {
       return { uri: `${loggedInShop.image}` };
     } else {
       return UserImg;
@@ -337,7 +336,7 @@ const { t } = useTranslation();
             )}
           </ImageBackground>
           <View style={style.whiteContainer}>
-            {userType === "templeShopOwner" && loggedInShop && (
+            {userType.includes("templeShopOwner") && loggedInShop && (
               <Text key={loggedInShop._id}>
                 <Text style={style.loginText}>{loggedInShop.name}</Text>
               </Text>
@@ -400,7 +399,7 @@ const { t } = useTranslation();
           </View>
           <View style={style.contactButtonDetails}>
             {/* {(userType === "templeShopOwner" ) && ( */}
-            {(userType === "templeShopOwner" || userType === "pandit") && (
+            {(userType.includes("templeShopOwner") || userType.includes("pandit")) && (
               <TouchableOpacity
                 style={style.EditButton}
                 onPress={() => {
@@ -422,7 +421,7 @@ const { t } = useTranslation();
                 <Text style={style.EditButtonText}>{heading}</Text>
               </TouchableOpacity>
             )}
-            {userType === "pandit" && (
+            {userType.includes("pandit") && (
               <TouchableOpacity
                 style={style.EditButton}
                 onPress={() => {
@@ -447,7 +446,7 @@ const { t } = useTranslation();
       )}
       <Divider />
 
-      {userType === "templeShopOwner" && (
+      {userType.includes("templeShopOwner") && (
         <>
           <View
             style={{

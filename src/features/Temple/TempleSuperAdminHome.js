@@ -35,7 +35,12 @@ const TempleSuperAdminHome = ({ navigation }) => {
   const fetchTempleData = async () => {
     try {
       const response = await axios.get(`${BASEAPIURL}/temple`);
-      setTemples(Array.isArray(response.data) ? response.data : []);
+      const templesData = Array.isArray(response.data) ? response.data : [];
+      // Sort temples by creation date (newest first)
+      const sortedTemples = templesData.sort((a, b) => 
+        new Date(b.createdAt) - new Date(a.createdAt)
+      );
+      setTemples(sortedTemples);
     } catch (error) {
       console.error("Error fetching temple data:", error);
       setTemples([]);

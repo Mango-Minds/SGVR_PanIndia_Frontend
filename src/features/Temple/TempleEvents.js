@@ -48,7 +48,6 @@ const TempleEvents = ({ navigation }) => {
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
   const decodedPayload = JSON.parse(decode(tokenPayload));
-  console.log(decodedPayload);
   const userId = decodedPayload.id;
   const isFocused = useIsFocused();
   const route = useRoute();
@@ -67,7 +66,6 @@ const TempleEvents = ({ navigation }) => {
   const handleTabPress = (tab) => {
     setSelectedTab(tab);
   };
-  console.log("Temple pandits", templePandits);
 
   // search with hide functionality.
   const [isSearchVisible, setIsSearchVisible] = useState(false);
@@ -181,12 +179,16 @@ const TempleEvents = ({ navigation }) => {
       setLoadingAnimation(true);
   
       const response = await apiClient.get(url);
-      console.log("Temple events data:", response.data);
-  
       setEvents(response.data);
     } catch (error) {
-      console.error("Error fetching temple events:", error);
-      setEvents([]);
+      // Handle 404 gracefully - it just means no events for this date
+      if (error.response?.status === 404) {
+        console.log("No events found for this date");
+        setEvents([]);
+      } else {
+        console.warn("Error fetching temple events:", error.message);
+        setEvents([]);
+      }
     } finally {
       setLoadingAnimation(false);
     }
@@ -199,12 +201,16 @@ const TempleEvents = ({ navigation }) => {
       setLoadingAnimation(true);
   
       const response = await apiClient.get(url);
-      console.log("Slot bookings data:", response.data);
-  
       setBookings(response.data);
     } catch (error) {
-      console.error("Error fetching temple events:", error);
-      setBookings([]);
+      // Handle 404 gracefully - it just means no bookings for this date
+      if (error.response?.status === 404) {
+        console.log("No bookings found for this date");
+        setBookings([]);
+      } else {
+        console.warn("Error fetching bookings:", error.message);
+        setBookings([]);
+      }
     } finally {
       setLoadingAnimation(false);
     }
@@ -635,9 +641,10 @@ const TempleEvents = ({ navigation }) => {
             />
           </TouchableOpacity>
 
-          <TouchableOpacity>
+          {/* Filter button commented out for all roles */}
+          {/* <TouchableOpacity>
             <Iconicons name="filter" size={24} color="black" />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
 
           {/* <IconButton
               icon="bell-outline"
@@ -704,7 +711,7 @@ const TempleEvents = ({ navigation }) => {
                       <View style={styles.iconAndDurationContainer}>
                         {(item.createdBy == userId ||
                           userId == templeAdmin ||
-                          decodedPayload.userType === "SA") && (
+                          decodedPayload.userType.includes("SA")) && (
                           <>
                             <TouchableOpacity
                               onPress={() =>
@@ -858,7 +865,7 @@ const TempleEvents = ({ navigation }) => {
                     )}
 
                     {item.eventType === "puja" 
-                       && user.userType==="basicUser" &&
+                       && user.userType.includes("basicUser") &&
                      ( <View>
                         <TouchableOpacity
                           onPress={() => {

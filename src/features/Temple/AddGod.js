@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
@@ -97,8 +99,8 @@ export default function AddGod({ navigation, route }) {
   const templeId = templeinfo._id;
   console.log("Temple id in gods page: ", templeId);
   const { loadingInBtn } = useSelector((state) => state.user);
-  const [selectedImages, setSelectedImages] = React.useState([]);
-  const [registerDetails, setRegisterDetails] = React.useState({
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [registerDetails, setRegisterDetails] = useState({
     godName: "",
     godDescription: "",
     godSymbol: "",
@@ -124,7 +126,7 @@ export default function AddGod({ navigation, route }) {
     newArray.splice(index, 1);
     setSelectedImages(newArray);
   };
-  const query = new useQueryClient();
+  const query = useQueryClient();
 
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -266,6 +268,10 @@ export default function AddGod({ navigation, route }) {
       const data = response.data;
       console.log("Added god:", data);
   
+      // Invalidate queries to refresh temple details
+      query.invalidateQueries(['temples']);
+      query.invalidateQueries(['temple', templeId]);
+      
       Alert.alert(
         "Success",
         "God Added Successfully",
@@ -294,8 +300,12 @@ export default function AddGod({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
                 icon="arrow-left"
@@ -424,7 +434,7 @@ export default function AddGod({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Symbols*"
+                placeholder="Symbols"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.godSymbol}
@@ -436,7 +446,7 @@ export default function AddGod({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Festivals*"
+                placeholder="Festivals"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.godFestivals}
@@ -451,7 +461,7 @@ export default function AddGod({ navigation, route }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder="Related Deities*"
+                placeholder="Related Deities"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.godRelatedDeities}
@@ -484,7 +494,8 @@ export default function AddGod({ navigation, route }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

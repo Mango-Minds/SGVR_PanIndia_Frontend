@@ -14,6 +14,7 @@ import {
   PanResponder,
   TouchableWithoutFeedback,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import Theme from "../../styles/theme";
 import Temp1 from "../../assets/images/Temple/temp1.jpg";
@@ -38,12 +39,9 @@ import TempleShops from "./TempleShops";
 import { decode } from "base-64";
 import { useIsFocused } from "@react-navigation/native";
 import GodCard from "./GodsCard";
-import BottomNavigation from "./BottomNavigation";
 import UserImg from "../../assets/images/general/user.png";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
-import * as Location from "expo-location";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
@@ -61,7 +59,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
   const isFocused = useIsFocused();
 
 
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
   const { panditinfo } = route.params;
   console.log("Pandit info: ", panditinfo);
   const [loadingDates, setLoadingDates] = useState(true);
@@ -70,30 +68,22 @@ const TemplePanditDetails = ({ route, navigation }) => {
   const [month, setMonth] = useState(new Date().toISOString().slice(5, 7)); // 05/02/2022
   const today = moment().format("YYYY-MM-DD");
   useEffect(() => {
-    // Simulate fetching data
-    const updateMarkedDates = () => {
-      const today = moment();
-      const nextDay = moment(today).add(1, "days");
-      const dayAfterNext = moment(today).add(2, "days");
-
-      const newMarkedDates = {
-        [today.format("YYYY-MM-DD")]: { marked: true, dotColor: "#D8AE25" },
-        [nextDay.format("YYYY-MM-DD")]: { marked: false, dotColor: "#D8AE25" },
-        [dayAfterNext.format("YYYY-MM-DD")]: {
-          marked: false,
-          dotColor: "#D8AE25",
+    // Initialize with today's marker while loading real event data
+    const initializeCalendar = () => {
+      const today = moment().format("YYYY-MM-DD");
+      const initialMarkedDates = {
+        [today]: { 
+          marked: true, 
+          dotColor: "#FF6B35",
+          dots: [{ key: "today", color: "#FF6B35" }],
         },
       };
-
-      setMarkedDates(newMarkedDates);
+      setMarkedDates(initialMarkedDates);
     };
 
-    updateMarkedDates();
-    setLoadingDates(false);
+    initializeCalendar();
   }, []);
-  console.log("PanditInfo in pandit page: ", panditinfo);
   const [panditDetails, setPanditDetails] = useState(panditinfo);
-  console.log("PanditDetails: ", panditDetails);
 
   const fetchPandit = async () => {
     try {
@@ -105,7 +95,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
       // console.log("panditinfo._id: ", panditinfo._id);
 
       const response = await apiClient.get(
-        `/panditcrud/${panditDetails.data._id || panditinfo._id}`,
+        `/panditcrud/${panditDetails?.data?._id || panditinfo?._id}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -127,14 +117,11 @@ const TemplePanditDetails = ({ route, navigation }) => {
       }
       //console.log("translateResponse: ",translateResponse.data);
 
-      console.log("Translated pandit response data:", panditData);
       setPanditDetails(panditData);
     } catch (error) {
-      console.error("Error fetching or translating pandit:", error);
+      console.warn("Error fetching pandit details:", error.message);
     }
   };
-
-  console.log("PanditDetails: ", panditDetails);
 
   useEffect(() => {
     if (isFocused) {
@@ -156,11 +143,12 @@ const TemplePanditDetails = ({ route, navigation }) => {
       templeAdmin: temple?.createdBy,
       templeId: temple._id,
       templePandits: temple.pandits,
-      panditId: panditDetails._id,
-      onMarkedDatesUpdate: (updatedDates) => {
-        setMarkedDates(updatedDates);
-        setLoadingDates(false);
-      },
+      panditId: panditDetails?._id,
+      // Remove the function from params to avoid navigation warning
+      // onMarkedDatesUpdate: (updatedDates) => {
+      //   setMarkedDates(updatedDates);
+      //   setLoadingDates(false);
+      // },
     });
   };
 
@@ -230,49 +218,81 @@ const TemplePanditDetails = ({ route, navigation }) => {
         (await AsyncStorage.getItem("user-language")) || "en";
 
       const response = await apiClient.get(
-        `/templeEvents/eventsByMonth?panditId=${panditDetails._id}&month=${month}&year=${year}`
+        `/templeEvents/eventsByMonth?panditId=${panditDetails?._id}&month=${month}&year=${year}`
       );
 
       if (response.status === 200) {
-        let dates = response.data.dates;
-
-        // Optional: translate event-related data if any (not needed here since only dates are returned)
+        let dates = response.data.dates || [];
 
         let updatedMarkedDates = {};
 
-        const today = new Date().toISOString().slice(0, 10);
-        console.log("Today's Date:", today);
+        const today = moment().format("YYYY-MM-DD");
 
-        if (!dates.includes(today)) {
-          updatedMarkedDates[today] = {
-            marked: true,
-            dotColor: Theme.themeColor,
-            dots: [
-              { key: "dot1", color: Theme.themeColor },
-              { key: "dot2", color: Theme.themeColor },
-            ],
-          };
-        }
+        // Mark today with a special indicator
+        updatedMarkedDates[today] = {
+          marked: true,
+          dotColor: '#FF6B35', // Orange color for today
+          selectedColor: '#FF6B35',
+          selected: dates.includes(today), // Highlight if today has events
+          selectedTextColor: dates.includes(today) ? 'white' : '#333',
+          dots: dates.includes(today) 
+            ? [
+                { key: "today", color: '#FF6B35' },
+                { key: "event", color: Theme.themeColor }
+              ]
+            : [{ key: "today", color: '#FF6B35' }],
+        };
 
+        // Mark event dates with enhanced visual indicators
         dates.forEach((date) => {
           if (date !== today) {
             updatedMarkedDates[date] = {
               marked: true,
               dotColor: Theme.themeColor,
-              dots: [{ key: "dot1", color: Theme.themeColor }],
+              selectedColor: Theme.themeColor,
+              dots: [
+                { key: "event", color: Theme.themeColor },
+                { key: "event2", color: '#4CAF50' } // Green accent for variety
+              ],
             };
           }
         });
 
-        setMarkedDates((prevDates) => ({
-          ...prevDates,
-          ...updatedMarkedDates,
-        }));
+        // Also fetch temple events for this pandit's temples
+        if (templeDetails && templeDetails.length > 0) {
+          for (const temple of templeDetails) {
+            try {
+              const templeResponse = await apiClient.get(
+                `/templeEvents/eventsByMonth?templeId=${temple._id}&month=${month}&year=${year}`
+              );
+              
+              if (templeResponse.status === 200) {
+                const templeDates = templeResponse.data.dates || [];
+                
+                templeDates.forEach((date) => {
+                  if (date !== today && !dates.includes(date)) {
+                    // Mark temple events that pandit is not directly involved in
+                    updatedMarkedDates[date] = {
+                      marked: true,
+                      dotColor: '#9E9E9E', // Gray for temple events
+                      dots: [{ key: "temple", color: '#9E9E9E' }],
+                    };
+                  }
+                });
+              }
+            } catch (templeError) {
+              // Silently handle temple event fetch errors - they're optional
+              console.warn(`Temple events unavailable for ${temple._id}`);
+            }
+          }
+        }
+
+        setMarkedDates(updatedMarkedDates);
       } else {
-        console.error(t("errors.failedToFetchPanditEvents")); // Use translation key
+        console.warn("Failed to fetch pandit events");
       }
     } catch (error) {
-      console.error(t("errors.errorFetchingPanditEventDates"), error); // Use translation key
+      console.warn("Error fetching pandit event dates:", error.message);
     } finally {
       setLoadingDates(false);
     }
@@ -285,21 +305,18 @@ const TemplePanditDetails = ({ route, navigation }) => {
     fetchPanditEventDates(month, year); // Fetch pandit events
   };
   useEffect(() => {
-    const currentMonth = new Date().getMonth() + 1;
-    const currentYear = new Date().getFullYear();
-    fetchPanditEventDates(currentMonth, currentYear);
-  }, []);
-  console.log("Marked dates in pandits tab: ", markedDates);
-
-  useEffect(() => {
-    fetchPanditEventDates();
-  }, [month, year]);
+    if (panditDetails?._id) {
+      const currentMonth = new Date().getMonth() + 1;
+      const currentYear = new Date().getFullYear();
+      fetchPanditEventDates(currentMonth, currentYear);
+    }
+  }, [panditDetails?._id]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const HEADER_EXPANDED_HEIGHT = 400;
   const HEADER_COLLAPSED_HEIGHT = 60;
-  const [showViewer, setShowViewer] = React.useState(false);
+  const [showViewer, setShowViewer] = useState(false);
   let scrollY = new Animated.Value(0);
 
   const headerHeight = scrollY.interpolate({
@@ -593,21 +610,123 @@ const TemplePanditDetails = ({ route, navigation }) => {
               ></Image>
             )}
           </View>
+          
+          {/* Add Event Button for Pandits */}
+          <View style={{
+            flexDirection: 'row', 
+            justifyContent: 'space-between', 
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingVertical: 12
+          }}>
+            <Text style={{
+              fontSize: 18,
+              fontWeight: 'bold',
+              color: Theme.themeColor
+            }}>
+              {t('Scheduled Events')}
+            </Text>
+            {userType && userType.includes('pandit') && templeDetails && templeDetails.length > 0 && (
+              <TouchableOpacity
+                style={{
+                  backgroundColor: Theme.themeColor,
+                  paddingHorizontal: 16,
+                  paddingVertical: 8,
+                  borderRadius: 20,
+                  flexDirection: 'row',
+                  alignItems: 'center'
+                }}
+                onPress={() => Navigation.navigate('TempleEventsCreate', {
+                  date: moment().format('YYYY-MM-DD'),
+                  templeId: templeDetails[0]._id,
+                  templeAdmin: templeDetails[0].createdBy,
+                  templePandits: templeDetails[0].pandits
+                })}
+              >
+                <Icon name="plus" size={16} color="white" style={{ marginRight: 4 }} />
+                <Text style={{
+                  color: 'white',
+                  fontSize: 14,
+                  fontWeight: 'bold'
+                }}>
+                  {t('Add Event')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          
           <View style={styles.calender}>
+            {/* Calendar Legend */}
+            <View style={{
+              flexDirection: 'row',
+              justifyContent: 'space-around',
+              paddingVertical: 8,
+              paddingHorizontal: 16,
+              backgroundColor: '#FFF8E1',
+              borderRadius: 8,
+              marginBottom: 8
+            }}>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <View style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: Theme.themeColor,
+                  marginRight: 4
+                }} />
+                <Text style={{fontSize: 12, color: '#666'}}>My Events</Text>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <View style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: '#9E9E9E',
+                  marginRight: 4
+                }} />
+                <Text style={{fontSize: 12, color: '#666'}}>Temple Events</Text>
+              </View>
+              <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                <View style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 4,
+                  backgroundColor: '#FF6B35',
+                  marginRight: 4
+                }} />
+                <Text style={{fontSize: 12, color: '#666'}}>Today</Text>
+              </View>
+              {loadingDates && (
+                <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                  <ActivityIndicator size="small" color={Theme.themeColor} style={{marginRight: 4}} />
+                  <Text style={{fontSize: 12, color: '#666'}}>Loading...</Text>
+                </View>
+              )}
+            </View>
+
             <Calendar
               minDate={today}
               markingType={"multi-dot"}
               style={{
-                marginTop: "3%",
+                marginTop: "1%",
                 borderRadius: 6,
                 backgroundColor: "#F7EFD5",
                 height: 380,
               }}
               theme={{
-                arrowColor: "#D8AE25",
+                arrowColor: Theme.themeColor,
                 calendarBackground: "#f7f7f7",
                 todayTextColor: "#000000",
-                todayBackgroundColor: "#f7f7f7",
+                todayBackgroundColor: "transparent",
+                selectedDayBackgroundColor: Theme.themeColor,
+                selectedDayTextColor: 'white',
+                dayTextColor: '#333',
+                textDisabledColor: '#ccc',
+                monthTextColor: '#333',
+                textDayFontWeight: '600',
+                textMonthFontWeight: 'bold',
+                textDayHeaderFontWeight: '600',
+                textSectionTitleColor: '#666',
               }}
               markedDates={markedDates}
               onMonthChange={handleMonthChange}
@@ -705,12 +824,15 @@ const TemplePanditDetails = ({ route, navigation }) => {
         </View>
       </RowBetween>
 
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+      >
         {renderBackground()}
         {renderContentBackground()}
       </ScrollView>
 
-      <BottomNavigation navigation={navigation} />
     </SafeArea>
   );
 };

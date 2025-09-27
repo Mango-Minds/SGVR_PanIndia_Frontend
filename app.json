@@ -2,7 +2,7 @@
   "expo": {
     "name": "Me Maratha",
     "slug": "mimaratha",
-    "version": "1.3.7",
+    "version": "1.3.8",
     "orientation": "portrait",
     "icon": "./assets/icon.jpg",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mimaratha.app",
-      "buildNumber": "10",
+      "buildNumber": "11",
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
       },

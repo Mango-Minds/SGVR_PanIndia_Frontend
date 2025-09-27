@@ -10,8 +10,6 @@ import {
   Dimensions,
   ScrollView,
   SafeAreaView,
-  PanResponder,
-  TouchableWithoutFeedback,
   FlatList,
   ActivityIndicator,
   Pressable,
@@ -34,9 +32,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import ImageViewerScreen from "../../components/matrimony/ImageViewerScreen";
 import { useIsFocused } from "@react-navigation/native";
 import { RowBetween } from "../../styles/common.styles";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
-import * as Location from "expo-location";
 import { VideoView, useVideoPlayer } from "expo-video";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import { TopText } from "../../styles/social.styles";
@@ -67,8 +63,7 @@ const EachListing = ({ route }) => {
 
   const loggedInUserId = decodedPayload.id;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [isRepostModalVisible, setRepostModalVisible] = useState(false);
-  const pan = useRef(new Animated.ValueXY()).current;
+  // Location modal functionality removed
 
   const [productData, setProductData] = useState({});
   const [modalVisible, setModalVisible] = useState(false);
@@ -191,225 +186,13 @@ const EachListing = ({ route }) => {
     setSelectedMediaIndex(index);
     setMediaType(type);
   };
-  const closeRepostModal = () => {
-    setRepostModalVisible(false);
-    pan.setValue({ x: 0, y: 0 });
-  };
-  const openRepostModal = () => {
-    setRepostModalVisible(true);
-  };
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: Animated.event([null, { dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          closeRepostModal();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  // Location modal functions removed
 
-  const extractCoordinates = (url) => {
-    if (!url) return null;
-
-    const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
-    const match = url.match(regex);
-
-    if (match) {
-      const latitude = parseFloat(match[1]);
-      const longitude = parseFloat(match[2]);
-      const zoom = parseInt(match[3]);
-
-      let latitudeDelta, longitudeDelta;
-      switch (zoom) {
-        case 19:
-          latitudeDelta = 0.0001;
-          longitudeDelta = 0.0001;
-          break;
-        case 15:
-          latitudeDelta = 0.01;
-          longitudeDelta = 0.01;
-          break;
-        case 10:
-          latitudeDelta = 0.1;
-          longitudeDelta = 0.1;
-          break;
-        default:
-          latitudeDelta = 0.1;
-          longitudeDelta = 0.1;
-      }
-
-      return {
-        latitude,
-        longitude,
-        latitudeDelta,
-        longitudeDelta,
-      };
-    } else {
-      return null;
-    }
-  };
+  // All map and location functionality removed
   const url = productData?.address_link;
-  const coordinates = extractCoordinates(url);
 
-  const [mapReady, setMapReady] = useState(false);
-  const [layout, setLayout] = useState({
-    width: Dimensions.get("window").width,
-    height: 200,
-  });
-  const [locationPermissionGranted, setLocationPermissionGranted] =
-    useState(false);
-
-  useEffect(() => {
-    if (layout.width > 0 && layout.height > 0 && coordinates) {
-      setMapReady(true);
-    }
-  }, [layout, coordinates]);
-
-  const requestLocationPermission = async () => {
-    const { status } = await Location.requestForegroundPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Denied",
-        "Permission to access location was denied. The map feature may not work as expected."
-      );
-      setLocationPermissionGranted(false);
-      return false;
-    }
-    setLocationPermissionGranted(true);
-    return true;
-  };
   console.log("ProductData: ", productData);
-
-  useEffect(() => {
-    requestLocationPermission(); // Request location permissions on component mount
-  }, []);
-  const renderContentBackground = (user) => {
-    console.log("Pd in content background: ", productData);
-
-    return (
-      <View style={styles.scrollContainer}>
-        <RowBetween>
-          <Modal
-            transparent={true}
-            visible={isRepostModalVisible}
-            animationType="slide"
-            onRequestClose={closeRepostModal}
-          >
-            <TouchableWithoutFeedback onPress={closeRepostModal}>
-              <View style={styles.modalOverlay}>
-                <Animated.View
-                  style={[
-                    styles.modalContainer,
-                    { transform: [{ translateY: pan.y }] },
-                  ]}
-                  {...panResponder.panHandlers}
-                >
-                  <TouchableOpacity style={styles.modalOption}>
-                    <View style={styles.iconTextContainer}>
-                      <Text style={styles.modalText}>
-                        {t("product")}: {productData.name}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Map Section */}
-                  <TouchableOpacity style={styles.mapModalOption}>
-                    <View
-                      style={styles.mapContainer}
-                      onLayout={(event) => {
-                        const { width, height } = event.nativeEvent.layout;
-                        if (width > 0 && height > 0) {
-                          setLayout({ width, height });
-                        }
-                      }}
-                    >
-                      {coordinates && mapReady && locationPermissionGranted ? (
-                        <MapView
-                          style={{ width: layout.width, height: layout.height }}
-                          provider={PROVIDER_GOOGLE}
-                          initialRegion={{
-                            latitude: coordinates.latitude,
-                            longitude: coordinates.longitude,
-                            latitudeDelta: coordinates.latitudeDelta,
-                            longitudeDelta: coordinates.longitudeDelta,
-                          }}
-                          showsUserLocation
-                          showsMyLocationButton
-                          scrollEnabled={true}
-                          zoomEnabled={true}
-                          rotateEnabled={true}
-                        >
-                          <Marker
-                            coordinate={{
-                              latitude: coordinates.latitude,
-                              longitude: coordinates.longitude,
-                            }}
-                          />
-                        </MapView>
-                      ) : (
-                        <View style={styles.noMapContainer}>
-                          <Text style={{ textAlign: "center", padding: 10 }}>
-                            {coordinates === null
-                              ? t("map_preview_not_available")
-                              : t("location_not_available")}
-                          </Text>
-                          {url && (
-                            <TouchableOpacity
-                              onPress={() => Linking.openURL(url)}
-                            >
-                              <Text
-                                style={{ textAlign: "center", color: "blue" }}
-                              >
-                                {t("open_in_google_maps")}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Address Section */}
-                  <View style={styles.locationText}>
-                    <View style={styles.iconTextContainer}>
-                      <Text style={styles.modalSubText}>
-                        {productData.address || t("address_not_available")}
-                      </Text>
-
-                      {url && (
-                        <Ionicons
-                          name="navigate"
-                          size={24}
-                          style={styles.navigateIcon}
-                          onPress={() => {
-                            Linking.openURL(url).catch((err) =>
-                              console.error(
-                                "Error opening location link: ",
-                                err
-                              )
-                            );
-                          }}
-                        />
-                      )}
-                    </View>
-                  </View>
-                </Animated.View>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-        </RowBetween>
-      </View>
-    );
-  };
+  // Location modal rendering function removed
 
   const businessId = productData?.createdBy;
 
@@ -682,9 +465,8 @@ const EachListing = ({ route }) => {
               </View>
             )}
             <View style={styles.eventInfoContainer}>
-              <View style={styles.nameAndLocationContainer}>
-                <Text style={styles.headerTitle}>{productData.name}</Text>
-                <TouchableOpacity onPress={openRepostModal}>
+                <View style={styles.nameAndLocationContainer}>
+                  <Text style={styles.headerTitle}>{productData.name}</Text>
                   <View style={styles.locationContainer}>
                     <MaterialIcon
                       name="location-on"
@@ -693,7 +475,6 @@ const EachListing = ({ route }) => {
                     />
                     <Text style={styles.homeTown}>{productData.address}</Text>
                   </View>
-                </TouchableOpacity>
 
                 {/* <TouchableOpacity
                   style={{
@@ -769,9 +550,7 @@ const EachListing = ({ route }) => {
                   </TouchableOpacity>
                 </View>
               </Modal>
-              <ScrollView style={{ flex: 1 }}>
-                {renderContentBackground()}
-              </ScrollView>
+               {/* Location modal content removed */}
 
               <View style={styles.eventDetails}>
                 <Text style={styles.detailItem}>

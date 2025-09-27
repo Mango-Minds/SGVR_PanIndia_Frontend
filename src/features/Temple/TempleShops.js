@@ -55,7 +55,7 @@ export default function TempleShops({ templeinfo }) {
   console.log("Temple id in shops: ", templeinfo._id);
   const templeId = templeinfo._id;
 
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
 
@@ -304,7 +304,7 @@ export default function TempleShops({ templeinfo }) {
                   </Text>
                 </View>
                 {/* {userType === "templeAdmin" && ( */}
-                {userType === "templeAdmin" &&
+                {userType.includes("templeAdmin") &&
                   templeDetails.createdBy === userId && (
                     <View
                       style={{

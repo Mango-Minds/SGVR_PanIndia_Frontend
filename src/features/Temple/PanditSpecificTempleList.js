@@ -32,7 +32,7 @@ import { useDispatch, useSelector } from "react-redux";
 const PanditSpecificTempleList = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
   const token = useSelector((state) => state.user.token);
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
   const user_pandit_id = user.roleData?.pandit?._id;
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [panditTemples, setPanditTemples] = useState([]);
@@ -85,7 +85,11 @@ const PanditSpecificTempleList = ({ navigation }) => {
       const response = await apiClient.get(url); 
   
       console.log("Temples data:", response.data);
-      setPanditTemples(response.data);
+      // Sort temples by creation date (newest first)
+      const sortedTemples = Array.isArray(response.data) ? 
+        response.data.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)) : 
+        response.data;
+      setPanditTemples(sortedTemples);
       
     } catch (error) {
       console.error("Error fetching temples:", error);

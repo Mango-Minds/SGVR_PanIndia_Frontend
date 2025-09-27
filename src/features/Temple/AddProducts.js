@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
@@ -78,11 +80,11 @@ const styles = StyleSheet.create({
 export default function AddShopProduct({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
-  const { userId, shopId, loggedInShop } = route.params;
+  const { userId, shopId, loggedInShop, onProductAdded } = route.params;
 const { t } = useTranslation()
   const { loadingInBtn } = useSelector((state) => state.user);
-  const [selectedImages, setSelectedImages] = React.useState([]);
-  const [registerDetails, setRegisterDetails] = React.useState({
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [registerDetails, setRegisterDetails] = useState({
     productName: "",
     productPrice: "",
     productQuantity: "",
@@ -107,7 +109,7 @@ const { t } = useTranslation()
     newArray.splice(index, 1);
     setSelectedImages(newArray);
   };
-  const query = new useQueryClient();
+  const query = useQueryClient();
 
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -235,9 +237,18 @@ const { t } = useTranslation()
   
       const data = response.data;
       console.log("Added Product:", data);
+      
+      // Invalidate queries to refresh shop products
+      query.invalidateQueries(['temples']);
+      query.invalidateQueries(['products']);
+      query.invalidateQueries(['shop', shopId]);
   
-     Alert.alert(t("successTitle"), t("productCreatedSuccess"),
+      // Call the callback to refresh the product list
+      if (onProductAdded && typeof onProductAdded === 'function') {
+        onProductAdded();
+      }
 
+     Alert.alert(t("successTitle"), t("productCreatedSuccess"),
         [
           {
             text:t("ok"),
@@ -262,31 +273,38 @@ const { t } = useTranslation()
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
-            <View style={{ alignItems: "center", flexDirection: "row" }}>
-              <IconButton
-                icon="arrow-left"
-                size={28}
-                onPress={() => navigation.goBack()}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "500",
-                  color: "#000",
-                }}
-              >
-              { t("addProduct")}
-              </Text>
-            </View>
-          </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
+            contentInsetAdjustmentBehavior="automatic"
           >
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row" }}>
+                <IconButton
+                  icon="arrow-left"
+                  size={28}
+                  onPress={() => navigation.goBack()}
+                />
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "500",
+                    color: "#000",
+                  }}
+                >
+                { t("addProduct")}
+                </Text>
+              </View>
+            </RowBetween>
+            <MainContainer
+              style={{ paddingBottom: 100 }}
+            >
             <Text
               style={{
                 fontSize: 16,
@@ -443,8 +461,9 @@ const { t } = useTranslation()
                 </Text>
               </FormButton>
             </FormSection>
-          </MainContainer>
-        </ScrollView>
+            </MainContainer>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { IconButton, Provider } from "react-native-paper";
@@ -96,8 +98,8 @@ export default function AddMembers({ navigation, route }) {
   const templeId = templeinfo._id;
   console.log("Temple id in members page: ", templeId);
   const { loadingInBtn } = useSelector((state) => state.user);
-  const [selectedImages, setSelectedImages] = React.useState([]);
-  const [registerDetails, setRegisterDetails] = React.useState({
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [registerDetails, setRegisterDetails] = useState({
     memberName: "",
     memberDesignation: "",
     memberEmail: "",
@@ -124,7 +126,7 @@ export default function AddMembers({ navigation, route }) {
     newArray.splice(index, 1);
     setSelectedImages(newArray);
   };
-  const query = new useQueryClient();
+  const query = useQueryClient();
 
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -270,6 +272,10 @@ export default function AddMembers({ navigation, route }) {
       const data = response.data;
       console.log("Added Member:", data);
   
+      // Invalidate queries to refresh temple details
+      query.invalidateQueries(['temples']);
+      query.invalidateQueries(['temple', templeId]);
+      
       Alert.alert(
         "Success",
         "Member Added successfully",
@@ -303,7 +309,10 @@ export default function AddMembers({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -511,7 +520,7 @@ export default function AddMembers({ navigation, route }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

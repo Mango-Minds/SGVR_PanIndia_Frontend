@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import { useNavigation } from "@react-navigation/native";
 import Theme from "../../styles/theme";
 const MyProfile = ({route}) => {
   const navigation = useNavigation();
-  const [screen, setScreen] = React.useState("Product");
+  const [screen, setScreen] = useState("Product");
   const {pandits, fetchPandits} = route.params;
   return (
     <>

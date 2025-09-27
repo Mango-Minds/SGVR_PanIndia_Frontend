@@ -91,11 +91,14 @@ const slice = createSlice({
       state.temple.keyword = "";
       state.loading = false;
       state.loadingInBtn = false;
-      state.error = {
-        msg: "",
-        toggle: false,
-        type: "",
-      };
+      // Only clear error if it's not a success message
+      if (state.error.type !== "Success") {
+        state.error = {
+          msg: "",
+          toggle: false,
+          type: "",
+        };
+      }
     },
     setInitialUser: (state, action) => {
       state.user = action.payload.user;
@@ -479,7 +482,7 @@ export const signup = (userData) => async (dispatch) => {
     if (error.response) {
       const status = error.response.status;
       const errorMsg =
-        error.response.data?.msg || "An error occurred during signup.";
+        error.response.data?.message || error.response.data?.msg || "An error occurred during signup.";
 
       if (status === 400) {
         await dispatch(
@@ -493,6 +496,15 @@ export const signup = (userData) => async (dispatch) => {
         await dispatch(
           setError({
             msg: "Unauthorized. Please check your credentials.",
+            toggle: true,
+            type: "error",
+          })
+        );
+      } else if (status === 409) {
+        // Handle duplicate email case
+        await dispatch(
+          setError({
+            msg: "This email is already registered. Please use a different email or try logging in.",
             toggle: true,
             type: "error",
           })

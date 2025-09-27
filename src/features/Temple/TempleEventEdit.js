@@ -12,6 +12,8 @@ import {
   Alert,
   ActivityIndicator,
   Modal,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
@@ -376,7 +378,10 @@ const TempleEventEdit = ({ navigation }) => {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -858,7 +863,7 @@ const TempleEventEdit = ({ navigation }) => {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

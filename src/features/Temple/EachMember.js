@@ -121,7 +121,7 @@ const EachMember = ({ route }) => {
             {t("memberDetails")}
           </TopText>
         </View>
-        {userType === "templeAdmin" &&
+        {userType.includes("templeAdmin") &&
           templeinfo.createdBy === decodedPayload.id && (
             <>
               <IconButton

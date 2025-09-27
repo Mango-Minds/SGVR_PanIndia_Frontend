@@ -14,7 +14,6 @@ import { RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native-gesture-handler";
-import BottomNavigation from "./BottomNavigation";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
@@ -192,7 +191,7 @@ const DetailsScreen = ({ route, navigation }) => {
               God Details
             </TopText>
           </View>
-          {userType === "templeAdmin" && (
+          {userType.includes("templeAdmin") && (
             <>
               <IconButton
                 icon="trash-can-outline"
@@ -244,7 +243,6 @@ const DetailsScreen = ({ route, navigation }) => {
             : "No related deities available"}
         </Text>
       </ScrollView>
-      <BottomNavigation navigation={navigation} />
     </SafeAreaView>
   );
 };

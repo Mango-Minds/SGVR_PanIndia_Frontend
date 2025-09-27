@@ -8,6 +8,8 @@ import {
   View,
   TouchableOpacity,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -127,9 +129,9 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
 
   const userType = useSelector((state) => state.user.user.userType);
   const heading =
-    userType === "templeAdmin"
+    userType.includes("templeAdmin")
       ? "Edit Temple Admin Profile"
-      : userType === "templeShopOwner"
+      : userType.includes("templeShopOwner")
       ? "Edit Shop Profile"
       : "Edit Profile";
 
@@ -185,7 +187,11 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView>
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -341,7 +347,8 @@ export default function TempleEditAdminRegisterScreen({ navigation, route }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

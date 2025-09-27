@@ -10,6 +10,8 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -73,7 +75,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   const { loadingInBtn } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
 
   const tokenPayload = token.split(".")[1];
   const user = useSelector((state) => state.user.user);
@@ -87,14 +89,14 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   const [initialAbout, setInitialAbout] = useState("");
 
   const heading =
-    userType === "templeAdmin"
+    userType.includes("templeAdmin")
       ? "Edit Temple Admin Profile"
-      : userType === "templeShopOwner"
+      : userType.includes("templeShopOwner")
       ? "Edit Shop Profile"
       : "Edit Profile";
 
   const [selectedImage, setSelectedImage] = useState(() => {
-    if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
+    if (userType.includes("templeShopOwner") && loggedInShop && loggedInShop.image) {
       return { uri: `${loggedInShop.image}` };
     } else {
       return null;
@@ -102,7 +104,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   });
 
   useEffect(() => {
-    if (userType === "templeShopOwner" && loggedInShop && loggedInShop.image) {
+    if (userType.includes("templeShopOwner") && loggedInShop && loggedInShop.image) {
       setSelectedImage({ uri: `${loggedInShop.image}` });
     } else {
       setSelectedImage(null);
@@ -140,13 +142,13 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   //     let apiUrl;
   //     let fetchFunction;
 
-  //     if (userType === "templeShopOwner") {
+  //     if (userType.includes("templeShopOwner")) {
   //       apiUrl = `${BASEAPIURL}/templeShops/${shopId}`;
   //       fetchFunction = fetchShops;
   //     }
 
   //     const requestBody = {};
-  //     if (userType === "templeShopOwner") {
+  //     if (userType.includes("templeShopOwner")) {
   //       if (shopName !== initialUserName) {
   //         requestBody.name = shopName;
   //       }
@@ -217,7 +219,7 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
     try {
       console.log("shopId: ", shopId);
       
-      if (userType !== "templeShopOwner") return; 
+      if (!userType.includes("templeShopOwner")) return; 
   
       const apiUrl = `/templeShops/${shopId}`;
   
@@ -274,7 +276,11 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView>
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -383,7 +389,8 @@ export default function TempleEditRoleRegisterScreen({ navigation, route }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

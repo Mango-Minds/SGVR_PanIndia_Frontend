@@ -76,8 +76,8 @@ export default function AddEvents({ navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
   const { loadingInBtn } = useSelector((state) => state.user);
-  const [selectedImages, setSelectedImages] = React.useState([]);
-  const [registerDetails, setRegisterDetails] = React.useState({
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [registerDetails, setRegisterDetails] = useState({
     productName: "",
     productPrice: "",
     productCategory: "",
@@ -121,7 +121,7 @@ export default function AddEvents({ navigation }) {
     newArray.splice(index, 1);
     setSelectedImages(newArray);
   };
-  const query = new useQueryClient();
+  const query = useQueryClient();
 
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -266,6 +266,10 @@ export default function AddEvents({ navigation }) {
 
       const data = await response.json();
       console.log("Added Product:", data);
+
+      // Invalidate queries to refresh temple details
+      query.invalidateQueries(['temples']);
+      query.invalidateQueries(['temple', templeId]);
 
       // fetchData();
 

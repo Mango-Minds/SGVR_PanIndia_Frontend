@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
@@ -79,7 +81,7 @@ export default function EditTemple({ route, navigation }) {
   const initialImages =
     temple && temple.images ? temple.images.map((image) => `${image}`) : [];
 
-  const [selectedImages, setSelectedImages] = React.useState(initialImages);
+  const [selectedImages, setSelectedImages] = useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
   const { loadingInBtn } = useSelector((state) => state.user);
 
@@ -294,7 +296,11 @@ export default function EditTemple({ route, navigation }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -673,7 +679,8 @@ export default function EditTemple({ route, navigation }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

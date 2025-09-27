@@ -11,9 +11,8 @@ import {
   Animated,
   Modal,
   TouchableOpacity,
-  PanResponder,
-  TouchableWithoutFeedback,
   Dimensions,
+  ActivityIndicator,
 } from "react-native";
 import Theme from "../../styles/theme";
 import Temp1 from "../../assets/images/Temple/temp1.jpg";
@@ -34,16 +33,12 @@ import moment from "moment";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import { Ionicons } from "@expo/vector-icons";
-import TempleShops from "./TempleShops";
 import { decode } from "base-64";
 import { useIsFocused } from "@react-navigation/native";
 import GodCard from "./GodsCard";
-import BottomNavigation from "./BottomNavigation";
 import UserImg from "../../assets/images/general/user.png";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
 import { Linking } from "react-native";
-import * as Location from "expo-location";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
@@ -55,15 +50,74 @@ const TempleDetails = ({ route, navigation }) => {
   const outeruser = useSelector((state) => state.user);
   const isFocused = useIsFocused();
 
+  // Early return if user is not loaded yet
+  if (!user) {
+    return (
+      <SafeArea>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={Theme.themeColor} />
+          <Text style={{ marginTop: 10, color: '#666' }}>Loading...</Text>
+        </View>
+      </SafeArea>
+    );
+  }
+
   const token = useSelector((state) => state.user.token);
   console.log("temple details page usertoken: ", token);
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user?.userType);
   const { templeinfo, fromPandits } = route.params;
   const ShopId = user?.roleData?._id;
   console.log("Shopid: ", ShopId);
 
   const [templeDetails, setTempleDetails] = useState(templeinfo);
   const [isRequestSent, setIsRequestSent] = useState(false);
+  const [hasAcceptedConnection, setHasAcceptedConnection] = useState(false);
+  const [isCheckingConnection, setIsCheckingConnection] = useState(true);
+
+  // Check if there's already a pending or accepted connection
+  useEffect(() => {
+    const checkConnectionStatus = async () => {
+      if (user?.userType?.includes("pandit") && user?.roleData?.pandit?._id) {
+        try {
+          setIsCheckingConnection(true);
+          const response = await apiClient.get(`/panditRequests/${user.roleData.pandit._id}`);
+          if (response.status === 200) {
+            const allRequests = response.data.requests || [];
+            
+            // Find any request related to this temple
+            const templeRequest = allRequests.find(
+              req => req.requestToTempleId._id === templeinfo._id
+            );
+            
+            if (templeRequest) {
+              if (templeRequest.status === 'pending') {
+                setIsRequestSent(true);
+                setHasAcceptedConnection(false);
+              } else if (templeRequest.status === 'accepted') {
+                setIsRequestSent(false);
+                setHasAcceptedConnection(true);
+              }
+            } else {
+              // No request found, reset states
+              setIsRequestSent(false);
+              setHasAcceptedConnection(false);
+            }
+          }
+        } catch (error) {
+          console.log("Error checking connection status:", error);
+          // On error, reset states
+          setIsRequestSent(false);
+          setHasAcceptedConnection(false);
+        } finally {
+          setIsCheckingConnection(false);
+        }
+      } else {
+        setIsCheckingConnection(false);
+      }
+    };
+
+    checkConnectionStatus();
+  }, [user, templeinfo._id]);
   console.log("templeDetails in details page: ", templeDetails);
   const tokenPayload = token?.split(".")[1];
 
@@ -96,7 +150,7 @@ const TempleDetails = ({ route, navigation }) => {
 
   const HEADER_EXPANDED_HEIGHT = 400;
   const HEADER_COLLAPSED_HEIGHT = 60;
-  const [showViewer, setShowViewer] = React.useState(false);
+  const [showViewer, setShowViewer] = useState(false);
   let scrollY = new Animated.Value(0);
 
   const [members, setMembers] = useState(templeinfo ? templeinfo.members : []);
@@ -105,8 +159,11 @@ const TempleDetails = ({ route, navigation }) => {
   // const gods = templeinfo ? templeinfo.gods : [];
   console.log("Gods: ", gods);
 
-  const pandits = templeinfo ? templeinfo.pandits : [];
+  const [pandits, setPandits] = useState(templeinfo ? templeinfo.pandits : []);
   console.log("Pandits: ", pandits);
+
+  const [shops, setShops] = useState(templeinfo ? templeinfo.templeShops : []);
+  console.log("Shops: ", shops);
 
   // const fetchTemple = async () => {
   //   try {
@@ -133,52 +190,67 @@ const TempleDetails = ({ route, navigation }) => {
   //   }
   // };
 
-  const fetchTemple = async () => {
+  const fetchTempleDetails = async () => {
     try {
-      const response = await fetch(`${BASEAPIURL}/temple/${templeDetails._id}`);
-      console.log("Temple Data: ", response.data);
-
-      const selectedLanguage =
+      const token = await AsyncStorage.getItem("token");
+      const selectedLanguage = 
         (await AsyncStorage.getItem("user-language")) || "en";
 
+      const response = await apiClient.get(`/temple/${templeDetails._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log("Temple Data: ", response.data);
+
       if (response.status === 200) {
-        const templeData = response.data;
+        let templeData = response.data;
         console.log("templeData in Details: ", templeData);
 
-        if (selectedLanguage !== "en" && Array.isArray(templeData)) {
+        // Translate if not English
+        if (selectedLanguage !== "en" && templeData) {
           const translationResponse = await apiClient.post("/translate", {
-            data: templeData,
+            data: [templeData], // Wrap in array for translation
             targetLang: selectedLanguage,
           });
 
           if (translationResponse?.data?.translatedData?.length) {
-            setTempleDetails(translationResponse.data.translatedData);
-            console.log(
-              "Translated response fetchTemple: ",
-              translationResponse?.data
-            );
-          } else {
-            setTempleDetails(translationResponse.data.translatedData);
+            templeData = translationResponse.data.translatedData[0];
+            console.log("Translated response fetchTemple: ", templeData);
           }
-          console.log(
-            "temple Data in Details 2: ",
-            translationResponse.data.translatedData
-          );
-
-          setMembers(data.members);
-          setGods(data.gods);
-        } else {
-          setTempleDetails(templeData);
         }
+
+        setTempleDetails(templeData);
+        setMembers(templeData.members || []);
+        setGods(templeData.gods || []);
+        setPandits(templeData.pandits || []);
+        setShops(templeData.templeShops || []);
+        
+        return templeData;
       }
     } catch (error) {
       console.error("Error fetching temple:", error);
+      throw error;
+    }
+  };
+
+  // Manual temple details refresh function
+  const refetchTemple = async () => {
+    try {
+      const updatedTempleData = await fetchTempleDetails();
+      if (updatedTempleData) {
+        setPandits(updatedTempleData.pandits || []);
+        setShops(updatedTempleData.templeShops || []);
+      }
+    } catch (error) {
+      console.error("Error refreshing temple:", error);
     }
   };
 
   useEffect(() => {
-    if (isFocused) {
-      fetchTemple();
+    if (isFocused && templeDetails._id) {
+      refetchTemple();
     }
   }, [isFocused]);
 
@@ -361,35 +433,71 @@ const TempleDetails = ({ route, navigation }) => {
     try {
       let url = "";
       let requestBody = {};
+      console.log("=== HANDLE CONNECT DEBUG START ===");
       console.log("templeinfo._id: ", templeinfo._id);
       console.log("user?.roleData?.pandit?._id: ", user?.roleData?.pandit?._id);
       console.log("templeShopId: ", templeShopId);
+      console.log("userType: ", userType);
+      console.log("BASEAPIURL: ", apiClient.defaults.baseURL);
       
 
-      if (userType === "templeShopOwner") {
+      if (userType.includes("templeShopOwner")) {
         url = "/templeConnections/request";
         requestBody = {
           templeId: templeinfo._id,
           templeShopId,
         };
          console.log("Request body: ", requestBody);
-      } else if (userType === "pandit") {
+      } else if (userType.includes("pandit")) {
         url = "/panditToTempleRequest";
         requestBody = {
           requestToTempleId: templeinfo._id,
           requestByPanditId: user?.roleData?.pandit?._id,
+          initiatedBy: "pandit",
         };
         console.log("Request body: ", requestBody);
       }
 
-      await apiClient.post(url, requestBody);
+      console.log("Making API call to:", apiClient.defaults.baseURL + url);
+      console.log("Full request payload:", JSON.stringify(requestBody, null, 2));
+      
+      const response = await apiClient.post(url, requestBody);
+      console.log("API Response:", response.status, response.data);
+      
       setIsRequestSent(true);
       Alert.alert(t("success"), t("connectionReqSentSuccessfully"), [
         { text: t("ok") },
       ]);
+      console.log("=== HANDLE CONNECT DEBUG END (SUCCESS) ===");
     } catch (error) {
-      console.error("Error connecting to user:", error);
-       Alert.alert(t("error"), t("connectionReqFailed"), [{ text: t("ok") }]);
+      console.error("=== HANDLE CONNECT DEBUG END (ERROR) ===");
+      console.error("Error details:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        config: {
+          url: error.config?.url,
+          method: error.config?.method,
+          baseURL: error.config?.baseURL,
+          data: error.config?.data
+        }
+      });
+      
+      if (error.response?.status === 409) {
+        const errorMessage = error.response?.data?.message || "";
+        if (errorMessage.includes("connection already established")) {
+          // Connection already exists, set as connected
+          setHasAcceptedConnection(true);
+          setIsRequestSent(false);
+          Alert.alert(t("info"), t("alreadyConnected"), [{ text: t("ok") }]);
+        } else {
+          // Request already exists, treat as pending
+          setIsRequestSent(true);
+          Alert.alert(t("info"), t("requestAlreadyPending"), [{ text: t("ok") }]);
+        }
+      } else {
+        Alert.alert(t("error"), t("connectionReqFailed"), [{ text: t("ok") }]);
+      }
     }
   };
 
@@ -406,6 +514,92 @@ const TempleDetails = ({ route, navigation }) => {
         setLoadingDates(false);
       },
     });
+  };
+
+  const handleRemovePandit = async (panditId) => {
+    Alert.alert(
+      t("confirmRemoval"),
+      t("confirmRemovePandit"),
+      [
+        {
+          text: t("cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("remove"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete("/removePanditFromTemple", {
+                data: {
+                  templeId: templeDetails._id,
+                  panditId: panditId,
+                },
+              });
+              
+              Alert.alert(t("success"), t("panditRemovedSuccessfully"));
+              // Refresh temple details
+              try {
+                const updatedTempleData = await fetchTempleDetails();
+                if (updatedTempleData) {
+                  setPandits(updatedTempleData.pandits || []);
+                  setShops(updatedTempleData.templeShops || []);
+                }
+              } catch (error) {
+                console.error("Error refreshing temple data:", error);
+              }
+            } catch (error) {
+              console.error("Error removing pandit:", error);
+              Alert.alert(t("error"), t("failedToRemovePandit"));
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
+  };
+
+  const handleRemoveShop = async (shopId) => {
+    Alert.alert(
+      t("confirmRemoval"),
+      t("confirmRemoveShop"),
+      [
+        {
+          text: t("cancel"),
+          style: "cancel",
+        },
+        {
+          text: t("remove"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete("/removeShopFromTemple", {
+                data: {
+                  templeId: templeDetails._id,
+                  shopId: shopId,
+                },
+              });
+              
+              Alert.alert(t("success"), t("shopRemovedSuccessfully"));
+              // Refresh temple details
+              try {
+                const updatedTempleData = await fetchTempleDetails();
+                if (updatedTempleData) {
+                  setPandits(updatedTempleData.pandits || []);
+                  setShops(updatedTempleData.templeShops || []);
+                }
+              } catch (error) {
+                console.error("Error refreshing temple data:", error);
+              }
+            } catch (error) {
+              console.error("Error removing shop:", error);
+              Alert.alert(t("error"), t("failedToRemoveShop"));
+            }
+          },
+        },
+      ],
+      { cancelable: false }
+    );
   };
 
   console.log("templeDetails.createdBy: ", templeDetails.createdBy);
@@ -465,37 +659,40 @@ const TempleDetails = ({ route, navigation }) => {
     outputRange: [HEADER_EXPANDED_HEIGHT, HEADER_COLLAPSED_HEIGHT],
     extrapolate: "clamp",
   });
-  const isPanditWithTemples =
-    user.userType === "pandit" && user.roleData.temples.length > 0;
-  console.log("ispandit: ", isPanditWithTemples);
+  const isPanditAlreadyConnected =
+    user?.userType?.includes("pandit") && 
+    (hasAcceptedConnection || 
+     (user?.roleData?.pandit?.temples && 
+      user.roleData.pandit.temples.some(templeId => templeId === templeinfo._id)));
+  console.log("isPanditAlreadyConnected: ", isPanditAlreadyConnected);
+  console.log("hasAcceptedConnection from API: ", hasAcceptedConnection);
 
-  const [isRepostModalVisible, setRepostModalVisible] = useState(false);
-  const pan = useRef(new Animated.ValueXY()).current;
-  const closeRepostModal = () => {
-    setRepostModalVisible(false);
-    pan.setValue({ x: 0, y: 0 });
-  };
-  const openRepostModal = () => {
-    setRepostModalVisible(true);
-  };
-  const panResponder = useRef(
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: Animated.event([null, { dy: pan.y }], {
-        useNativeDriver: false,
-      }),
-      onPanResponderRelease: (_, gestureState) => {
-        if (gestureState.dy > 100) {
-          closeRepostModal();
-        } else {
-          Animated.spring(pan, {
-            toValue: { x: 0, y: 0 },
-            useNativeDriver: false,
-          }).start();
-        }
-      },
-    })
-  ).current;
+  // Check if shop is already connected to this temple
+  // Try multiple ways to get the current user's shop ID
+  const currentUserShopId = user?.roleData?.templeShopOwner?._id || 
+                           loggedInShop?._id ||
+                           shops.find(shop => shop.owner === userId || shop.owner.id === userId || shop.owner._id === userId)?._id;
+  
+  const isShopAlreadyConnected =
+    user?.userType?.includes("templeShopOwner") &&
+    (shops.some(shop => 
+      shop._id === currentUserShopId ||
+      shop.owner === userId ||
+      shop.owner?.id === userId ||
+      shop.owner?._id === userId
+    ));
+  
+  console.log("isShopAlreadyConnected: ", isShopAlreadyConnected);
+  console.log("Current user shop ID: ", currentUserShopId);
+  console.log("User ID: ", userId);
+  console.log("Temple shops: ", shops.map(shop => ({id: shop._id, owner: shop.owner})));
+  console.log("Shop found in temple list: ", shops.some(shop => 
+    shop._id === currentUserShopId ||
+    shop.owner === userId ||
+    shop.owner?.id === userId ||
+    shop.owner?._id === userId
+  ));
+
 
   const renderBackground = () => {
     return (
@@ -513,149 +710,118 @@ const TempleDetails = ({ route, navigation }) => {
 
   const renderContentBackground = (user) => {
     const url = templeDetails?.templeLocationLink;
-    const [mapReady, setMapReady] = useState(false);
-    const [layout, setLayout] = useState({
-      width: Dimensions.get("window").width,
-      height: 200,
-    });
-    const [locationPermissionGranted, setLocationPermissionGranted] =
-      useState(false);
-    const requestLocationPermission = async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(
-          "Permission Denied",
-          "Permission to access location was denied. The map feature may not work as expected."
-        );
-        setLocationPermissionGranted(false);
-        return false;
-      }
-      setLocationPermissionGranted(true);
-      return true;
-    };
-
-    const extractCoordinates = (url) => {
-      if (!url) return null;
-
-      const regex = /@(-?\d+\.\d+),(-?\d+\.\d+),(\d+)z/;
-      const match = url.match(regex);
-
-      if (match) {
-        const latitude = parseFloat(match[1]);
-        const longitude = parseFloat(match[2]);
-        const zoom = parseInt(match[3]);
-
-        let latitudeDelta, longitudeDelta;
-        switch (zoom) {
-          case 19:
-            latitudeDelta = 0.0001;
-            longitudeDelta = 0.0001;
-            break;
-          case 15:
-            latitudeDelta = 0.01;
-            longitudeDelta = 0.01;
-            break;
-          case 10:
-            latitudeDelta = 0.1;
-            longitudeDelta = 0.1;
-            break;
-          default:
-            latitudeDelta = 0.1;
-            longitudeDelta = 0.1;
-        }
-
-        return {
-          latitude,
-          longitude,
-          latitudeDelta,
-          longitudeDelta,
-        };
-      } else {
-        return null;
-      }
-    };
-
-    const coordinates = extractCoordinates(url);
-
-    useEffect(() => {
-      requestLocationPermission(); // Request location permissions on component mount
-    }, []);
-    console.log("coordinates: ", coordinates);
-    console.log("Layout: ", layout);
-    console.log("Map Ready: ", mapReady);
-    console.log("Location Granted: ", locationPermissionGranted);
-
-    useEffect(() => {
-      if (layout.width > 0 && layout.height > 0 && coordinates) {
-        setMapReady(true);
-      }
-    }, [layout, coordinates]);
+    // All map and location functionality removed
 
     const fetchEventDates = async (month, year) => {
       setLoadingDates(true); // Show loading indicator while fetching
 
       try {
-        const response = await apiClient.get(
-          `templeEvents/eventsByMonth?templeId=${templeDetails._id}&month=${month}&year=${year}`,
-          {}
-        );
+        // First try the eventsByMonth endpoint
+        let dates = [];
+        try {
+          const response = await apiClient.get(
+            `templeEvents/eventsByMonth?templeId=${templeDetails._id}&month=${month}&year=${year}`
+          );
+          dates = response.data.dates || [];
+          console.log("Events fetched from eventsByMonth:", dates);
+        } catch (monthError) {
+          console.warn("eventsByMonth failed, trying alternative approach:", monthError.message);
+          
+          // Fallback: fetch all temple events and filter by month
+          try {
+            const allEventsResponse = await apiClient.get(`templeEvents/temple/${templeDetails._id}`);
+            const allEvents = allEventsResponse.data || [];
+            
+            // Filter events for the current month/year
+            dates = allEvents
+              .filter(event => {
+                const eventDate = moment(event.eventDate);
+                return eventDate.month() === (month - 1) && eventDate.year() === year;
+              })
+              .map(event => moment(event.eventDate).format('YYYY-MM-DD'));
+            
+            console.log("Events fetched from temple endpoint:", dates);
+          } catch (templeError) {
+            console.warn("Temple events fetch also failed:", templeError.message);
+          }
+        }
 
-        const dates = response.data.dates || [];
         let updatedMarkedDates = {};
         const today = new Date().toISOString().slice(0, 10);
 
-        if (!dates.includes(today)) {
-          updatedMarkedDates[today] = {
-            marked: true,
-            dotColor: Theme.themeColor,
-            dots: [
-              { key: "dot1", color: Theme.themeColor },
-              { key: "dot2", color: Theme.themeColor },
-            ],
-          };
-        }
+        // Mark today with a special indicator
+        updatedMarkedDates[today] = {
+          marked: true,
+          dotColor: '#FF6B35', // Orange color for today
+          selectedColor: '#FF6B35',
+          selected: dates.includes(today), // Highlight if today has events
+          selectedTextColor: dates.includes(today) ? 'white' : '#333',
+          dots: dates.includes(today) 
+            ? [
+                { key: "today", color: '#FF6B35' },
+                { key: "event", color: Theme.themeColor }
+              ]
+            : [{ key: "today", color: '#FF6B35' }],
+        };
 
-        // Process event dates
+        // Mark event dates with enhanced visual indicators
         dates.forEach((date) => {
           if (date !== today) {
             updatedMarkedDates[date] = {
               marked: true,
               dotColor: Theme.themeColor,
-              dots: [{ key: "dot1", color: Theme.themeColor }],
+              selectedColor: Theme.themeColor,
+              dots: [
+                { key: "event", color: Theme.themeColor },
+                { key: "event2", color: '#4CAF50' } // Green accent for variety
+              ],
             };
           }
         });
 
-        console.log("Updated marked dates:", updatedMarkedDates);
-
-        setMarkedDates((prevDates) => ({
-          ...prevDates,
-          ...updatedMarkedDates,
-        }));
+        console.log("Final marked dates:", updatedMarkedDates);
+        setMarkedDates(updatedMarkedDates);
       } catch (error) {
-        console.error("Error fetching event dates:", error);
+        console.warn("Error fetching event dates:", error.message);
+        // Initialize with today's marker on error
+        const today = new Date().toISOString().slice(0, 10);
+        setMarkedDates({
+          [today]: {
+            marked: true,
+            dotColor: '#FF6B35',
+            dots: [{ key: "today", color: '#FF6B35' }],
+          }
+        });
       } finally {
         setLoadingDates(false);
       }
     };
-    console.log("Marked dates: ", markedDates);
 
     // On calendar month change, fetch and mark dates
     const handleMonthChange = (data) => {
       const month = parseInt(data.dateString.slice(5, 7));
       const year = parseInt(data.year);
+      console.log("Calendar month changed to:", month, year);
       fetchEventDates(month, year); // Fetch and mark dates for the new month
     };
 
     useEffect(() => {
+      // Initialize markedDates with today's marker
+      const today = new Date().toISOString().slice(0, 10);
+      setMarkedDates({
+        [today]: {
+          marked: true,
+          dotColor: '#FF6B35',
+          dots: [{ key: "today", color: '#FF6B35' }],
+        }
+      });
+
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
+      console.log("Initial fetch for month/year:", currentMonth, currentYear);
       fetchEventDates(currentMonth, currentYear); // Fetch events for the current month on load
-    }, []);
+    }, [templeDetails._id]);
 
-    useEffect(() => {
-      fetchEventDates();
-    }, [month, year]);
 
     return (
       <View style={styles.scrollContainer}>
@@ -663,125 +829,11 @@ const TempleDetails = ({ route, navigation }) => {
           <View>
             <Text style={styles.title}>{templeDetails.templeName}</Text>
           </View>
-          <TouchableOpacity onPress={openRepostModal}>
-            <View style={styles.infoContainer}>
-              <Ionicons name="location" size={16} color="gray" />
-              <Text style={styles.infoText}>{t("locationInfo")}</Text>
-            </View>
-          </TouchableOpacity>
+          <View style={styles.infoContainer}>
+            <Ionicons name="location" size={16} color="gray" />
+            <Text style={styles.infoText}>{templeDetails.city || "City not available"}</Text>
+          </View>
 
-          <Modal
-            transparent={true}
-            visible={isRepostModalVisible}
-            animationType="slide"
-            onRequestClose={closeRepostModal}
-          >
-            <TouchableWithoutFeedback onPress={closeRepostModal}>
-              <View style={styles.modalOverlay}>
-                <Animated.View
-                  style={[
-                    styles.modalContainer,
-                    { transform: [{ translateY: pan.y }] },
-                  ]}
-                  {...panResponder.panHandlers}
-                >
-                  {/* Temple Name */}
-                  <TouchableOpacity style={styles.modalOption}>
-                    <View style={styles.iconTextContainer}>
-                      <Text style={styles.modalText}>
-                        {t("TempleName")} : {templeDetails.templeName}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Map Section */}
-                  <TouchableOpacity style={styles.mapModalOption}>
-                    <View
-                      style={styles.mapContainer}
-                      onLayout={(event) => {
-                        const { width, height } = event.nativeEvent.layout;
-                        if (width > 0 && height > 0) {
-                          setLayout({ width, height });
-                        }
-                      }}
-                    >
-                      {coordinates && mapReady && locationPermissionGranted ? (
-                        <MapView
-                          style={{ width: layout.width, height: layout.height }}
-                          provider={PROVIDER_GOOGLE}
-                          initialRegion={{
-                            latitude: coordinates.latitude,
-                            longitude: coordinates.longitude,
-                            latitudeDelta: coordinates.latitudeDelta,
-                            longitudeDelta: coordinates.longitudeDelta,
-                          }}
-                          showsUserLocation
-                          showsMyLocationButton
-                          scrollEnabled={true}
-                          zoomEnabled={true}
-                          rotateEnabled={true}
-                        >
-                          <Marker
-                            coordinate={{
-                              latitude: coordinates.latitude,
-                              longitude: coordinates.longitude,
-                            }}
-                            title={templeDetails.templeName}
-                            description={templeDetails.address}
-                          />
-                        </MapView>
-                      ) : (
-                        <View style={styles.noMapContainer}>
-                          <Text style={{ textAlign: "center", padding: 10 }}>
-                            {coordinates === null
-                              ? t('mapPreviewNotAvailable')
-                              : t('locationNotAvailable')}
-                          </Text>
-                          {url && (
-                            <TouchableOpacity
-                              onPress={() => Linking.openURL(url)}
-                            >
-                              <Text
-                                style={{ textAlign: "center", color: "blue" }}
-                              >
-                                {t("OpeninGoogleMaps")}
-                              </Text>
-                            </TouchableOpacity>
-                          )}
-                        </View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Address Section */}
-                  <View style={styles.locationText}>
-                    <View style={styles.iconTextContainer}>
-                      <Ionicons name="location" size={24} style={styles.icon} />
-                      <Text style={styles.modalSubText}>
-                        {templeDetails.address || "Address not available"}
-                      </Text>
-
-                      {url && (
-                        <Ionicons
-                          name="navigate"
-                          size={24}
-                          style={styles.navigateIcon}
-                          onPress={() => {
-                            Linking.openURL(url).catch((err) =>
-                              console.error(
-                                "Error opening location link: ",
-                                err
-                              )
-                            );
-                          }}
-                        />
-                      )}
-                    </View>
-                  </View>
-                </Animated.View>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
         </RowBetween>
         <Text style={{ marginTop: 16, fontSize: 14, fontWeight: "bold" }}>
           {t("Temple'sGallery")}
@@ -933,9 +985,9 @@ const TempleDetails = ({ route, navigation }) => {
                 justifyContent: "center",
               }}
             >
-              {(userType === "templeAdmin" &&
+              {(userType.includes("templeAdmin") &&
                 templeDetails?.createdBy === userId) ||
-              userType === "superadmin" ? (
+              userType.includes("superadmin") ? (
                 <IconButton
                   icon="plus"
                   style={{ marginRight: 10 }}
@@ -986,6 +1038,32 @@ const TempleDetails = ({ route, navigation }) => {
                           : UserImg
                       }
                     />
+                    
+                    {/* Edit button for temple admins */}
+                    {userType.includes("templeAdmin") && (
+                      <TouchableOpacity
+                        style={{
+                          position: "absolute",
+                          top: 5,
+                          right: 5,
+                          backgroundColor: "rgba(0,0,0,0.6)",
+                          borderRadius: 12,
+                          padding: 4,
+                        }}
+                        onPress={() =>
+                          navigation.navigate("EditGod", {
+                            god: god,
+                            templeinfo: templeinfo,
+                            fetchTempleGods: () => {
+                              // Refresh the temple details after editing using React Query
+                              refetchTemple();
+                            },
+                          })
+                        }
+                      >
+                        <Icon name="pencil" size={16} color="white" />
+                      </TouchableOpacity>
+                    )}
 
                     <Text style={{ fontWeight: "600", opacity: 0.4 }}>
                       {god.godName}
@@ -1055,31 +1133,248 @@ const TempleDetails = ({ route, navigation }) => {
             </View>
             <View style={styles.calender}>
               {!fromPandits && (
-                <Calendar
-                  minDate={today}
-                  markingType={"multi-dot"}
-                  style={{
-                    marginTop: "3%",
-                    borderRadius: 6,
-                    backgroundColor: "#F7EFD5",
-                    height: 380,
-                  }}
-                  theme={{
-                    arrowColor: "#D8AE25",
-                    calendarBackground: "#f7f7f7",
-                    todayTextColor: "#000000",
-                    todayBackgroundColor: "#f7f7f7",
-                  }}
-                  markedDates={markedDates}
-                  onMonthChange={handleMonthChange}
-                  onDayPress={(day) => goToEvents(day.dateString)}
-                />
+                <>
+                  {/* Add Event Button for Temple Admin */}
+                  {userType && userType.includes('templeAdmin') && user?._id === templeDetails.createdBy && (
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: Theme.themeColor,
+                        paddingHorizontal: 16,
+                        paddingVertical: 8,
+                        borderRadius: 20,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        alignSelf: 'flex-start',
+                        marginTop: 8,
+                        marginBottom: 8
+                      }}
+                      onPress={() => Navigation.navigate('TempleEventsCreate', {
+                        date: moment().format('YYYY-MM-DD'),
+                        templeId: templeDetails._id,
+                        templeAdmin: templeDetails.createdBy,
+                        templePandits: templeDetails.pandits
+                      })}
+                    >
+                      <Icon name="plus" size={16} color="white" style={{ marginRight: 4 }} />
+                      <Text style={{
+                        color: 'white',
+                        fontSize: 14,
+                        fontWeight: 'bold'
+                      }}>
+                        {t('Add Event')}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Calendar Legend */}
+                  <View style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-around',
+                    paddingVertical: 8,
+                    paddingHorizontal: 16,
+                    backgroundColor: '#FFF8E1',
+                    borderRadius: 8,
+                    marginTop: 8,
+                    marginBottom: 8
+                  }}>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <View style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: Theme.themeColor,
+                        marginRight: 4
+                      }} />
+                      <Text style={{fontSize: 12, color: '#666'}}>{t('Events')}</Text>
+                    </View>
+                    <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                      <View style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: 4,
+                        backgroundColor: '#FF6B35',
+                        marginRight: 4
+                      }} />
+                      <Text style={{fontSize: 12, color: '#666'}}>{t('Today')}</Text>
+                    </View>
+                    {loadingDates && (
+                      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <ActivityIndicator size="small" color={Theme.themeColor} style={{marginRight: 4}} />
+                        <Text style={{fontSize: 12, color: '#666'}}>{t('Loading...')}</Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <Calendar
+                    minDate={today}
+                    markingType={"multi-dot"}
+                    style={{
+                      marginTop: "1%",
+                      borderRadius: 6,
+                      backgroundColor: "#F7EFD5",
+                      height: 380,
+                    }}
+                    theme={{
+                      arrowColor: Theme.themeColor,
+                      calendarBackground: "#f7f7f7",
+                      todayTextColor: "#000000",
+                      todayBackgroundColor: "transparent",
+                      selectedDayBackgroundColor: Theme.themeColor,
+                      selectedDayTextColor: 'white',
+                      dayTextColor: '#333',
+                      textDisabledColor: '#ccc',
+                      monthTextColor: '#333',
+                      textDayFontWeight: '600',
+                      textMonthFontWeight: 'bold',
+                      textDayHeaderFontWeight: '600',
+                      textSectionTitleColor: '#666',
+                    }}
+                    markedDates={markedDates}
+                    onMonthChange={handleMonthChange}
+                    onDayPress={(day) => goToEvents(day.dateString)}
+                  />
+                </>
               )}
             </View>
           </View>
         )}
 
-        {selectedTab === "Shops" && <TempleShops templeinfo={templeinfo} />}
+        {selectedTab === "Shops" && (
+          <ScrollView style={{ flex: 1, position: "relative" }}>
+            <View
+              style={{
+                padding: "2%",
+                margin: "2%",
+                display: "flex",
+                flexDirection: "column",
+                marginTop: 20,
+              }}
+            >
+              {shops.map((shop, index) => (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    Navigation.navigate("EachShopProfile", {
+                      shop: shop,
+                      shopId: shop._id,
+                    });
+                  }}
+                >
+                  <View
+                    style={{
+                      paddingVertical: "4%",
+                      flexDirection: "row",
+                      alignItems: "center",
+                      borderBottomWidth: 0.5,
+                      borderBottomColor: "grey",
+                    }}
+                  >
+                    <Image
+                      style={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: 40,
+                        marginRight: "3%",
+                      }}
+                      source={
+                        shop.image
+                          ? {
+                              uri: `${shop.image}`,
+                            }
+                          : UserImg
+                      }
+                    />
+                    <View style={{ flex: 1 }}>
+                      <Text
+                        style={{
+                          fontWeight: "600",
+                          fontSize: 20,
+                          textTransform: "capitalize",
+                        }}
+                      >
+                        {shop.name}
+                      </Text>
+                      <Text
+                        style={{
+                          fontWeight: "600",
+                          opacity: 0.4,
+                          marginTop: "2%",
+                        }}
+                      >
+                        {shop.address}
+                      </Text>
+                    </View>
+                    
+                    {/* Remove button for temple admin */}
+                    {userType.includes("templeAdmin") && templeDetails.createdBy === userId ? (
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: "#ff4444",
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 15,
+                          marginLeft: 10,
+                        }}
+                        onPress={() => handleRemoveShop(shop._id)}
+                      >
+                        <Text style={{ color: "white", fontSize: 12 }}>
+                          {t("remove")}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ color: "grey", fontStyle: "italic" }}>
+                        {t("shop")}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              ))}
+
+              {shops.length === 0 && (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    minHeight: 400,
+                  }}
+                >
+                  <Text style={{ fontSize: 18, color: "grey" }}>
+                    {t("noShopFound")}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Add Shop button for temple admin */}
+            {selectedTab === "Shops" &&
+              userType.includes("templeAdmin") &&
+              templeDetails.createdBy === userId && (
+                <TouchableOpacity
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 0,
+                    backgroundColor: Theme.themeColor,
+                    paddingHorizontal: 8,
+                    paddingVertical: 8,
+                    borderRadius: 5,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    elevation: 10,
+                  }}
+                  onPress={() => {
+                    Navigation.navigate("AddShops", { 
+                      templeinfo: templeinfo,
+                      onShopAdded: refetchTemple
+                    });
+                  }}
+                >
+                  <Ionicons name="add" size={24} color="white" />
+                </TouchableOpacity>
+              )}
+          </ScrollView>
+        )}
 
         {selectedTab === "Members" && (
           <ScrollView style={{ flex: 1, position: "relative" }}>
@@ -1172,7 +1467,7 @@ const TempleDetails = ({ route, navigation }) => {
             </View>
 
             {selectedTab === "Members" &&
-              userType === "templeAdmin" &&
+              userType.includes("templeAdmin") &&
               templeDetails.createdBy === userId && (
                 <TouchableOpacity
                   style={{
@@ -1205,6 +1500,7 @@ const TempleDetails = ({ route, navigation }) => {
                 margin: "2%",
                 display: "flex",
                 flexDirection: "column",
+                marginTop: 20,
               }}
             >
               {/* Pandits Section */}
@@ -1263,14 +1559,33 @@ const TempleDetails = ({ route, navigation }) => {
                         {pandit.address}
                       </Text>
                     </View>
-                    <Text style={{ color: "grey", fontStyle: "italic" }}>
-                      {t("pandit")}
-                    </Text>
+                    
+                    {/* Remove button for temple admin */}
+                    {userType.includes("templeAdmin") && templeDetails.createdBy === userId ? (
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: "#ff4444",
+                          paddingHorizontal: 12,
+                          paddingVertical: 6,
+                          borderRadius: 15,
+                          marginLeft: 10,
+                        }}
+                        onPress={() => handleRemovePandit(pandit._id)}
+                      >
+                        <Text style={{ color: "white", fontSize: 12 }}>
+                          {t("remove")}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <Text style={{ color: "grey", fontStyle: "italic" }}>
+                        {t("pandit")}
+                      </Text>
+                    )}
                   </View>
                 </TouchableOpacity>
               ))}
 
-              {pandits.length === 0 && pandits.length === 0 && (
+              {pandits.length === 0 && (
                 <View
                   style={{
                     flex: 1,
@@ -1285,6 +1600,34 @@ const TempleDetails = ({ route, navigation }) => {
                 </View>
               )}
             </View>
+
+            {/* Add Pandit button for temple admin */}
+            {selectedTab === "Pandits" &&
+              userType.includes("templeAdmin") &&
+              templeDetails.createdBy === userId && (
+                <TouchableOpacity
+                  style={{
+                    position: "absolute",
+                    top: 2,
+                    right: 0,
+                    backgroundColor: Theme.themeColor,
+                    paddingHorizontal: 8,
+                    paddingVertical: 8,
+                    borderRadius: 5,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    elevation: 10,
+                  }}
+                  onPress={() => {
+                    Navigation.navigate("AddPandits", { 
+                      templeinfo: templeinfo,
+                      onPanditAdded: refetchTemple
+                    });
+                  }}
+                >
+                  <Ionicons name="add" size={24} color="white" />
+                </TouchableOpacity>
+              )}
           </ScrollView>
         )}
       </View>
@@ -1309,8 +1652,8 @@ const TempleDetails = ({ route, navigation }) => {
           </TopText>
         </View>
 
-        {((userType === "templeAdmin" && templeDetails.createdBy === userId) ||
-          userType === "superadmin") && (
+        {((userType.includes("templeAdmin") && templeDetails.createdBy === userId) ||
+          userType.includes("superadmin")) && (
           <>
             <IconButton
               icon="trash-can-outline"
@@ -1323,7 +1666,10 @@ const TempleDetails = ({ route, navigation }) => {
                 navigation.navigate("EditTemple", {
                   temple: templeDetails,
                   members: members,
-                  fetchTemple: fetchTemple,
+                  fetchTemple: () => {
+                    // Use React Query refetch for temple details
+                    refetchTemple();
+                  },
                 })
               }
             />
@@ -1332,28 +1678,33 @@ const TempleDetails = ({ route, navigation }) => {
               onPress={() =>
                 navigation.navigate("TempleNotifications", {
                   templeinfo: templeinfo,
+                  onRequestAccepted: refetchTemple,
                 })
               }
             ></IconButton>
           </>
         )}
-        {(userType === "templeShopOwner" || userType === "pandit") && (
+        {(userType.includes("templeShopOwner") || userType.includes("pandit")) && (
           <TouchableOpacity
             style={{
               width: 125,
               height: 35,
-              backgroundColor: !isPanditWithTemples
-                ? Theme.themeColor
-                : "#E0E0E0",
+              backgroundColor: isCheckingConnection
+                ? "#B0BEC5"  // Gray for loading
+                : (userType.includes("templeShopOwner") ? !isShopAlreadyConnected : !isPanditAlreadyConnected) && !isRequestSent
+                  ? Theme.themeColor
+                  : (userType.includes("templeShopOwner") ? isShopAlreadyConnected : isPanditAlreadyConnected)
+                    ? "#4CAF50"  // Green for connected
+                    : "#FFA726", // Orange for pending
               borderRadius: 8,
               paddingHorizontal: 4,
               justifyContent: "center",
               alignItems: "center",
-              opacity: !isPanditWithTemples ? 1 : 0.9,
+              opacity: isCheckingConnection || (userType.includes("templeShopOwner") ? !isShopAlreadyConnected : !isPanditAlreadyConnected) && !isRequestSent ? 1 : 0.9,
               marginRight: 5,
             }}
             onPress={handleConnect}
-            disabled={isPanditWithTemples}
+            disabled={isCheckingConnection || (userType.includes("templeShopOwner") ? isShopAlreadyConnected : isPanditAlreadyConnected) || isRequestSent}
           >
             <View
               style={{
@@ -1365,15 +1716,15 @@ const TempleDetails = ({ route, navigation }) => {
               }}
             >
               <Icon
-                name="send"
+                name={isCheckingConnection ? "loading" : (userType.includes("templeShopOwner") ? isShopAlreadyConnected : isPanditAlreadyConnected) ? "check" : isRequestSent ? "check-circle" : "send"}
                 size={15}
-                color={!isPanditWithTemples ? "white" : "#B0B0B0"}
+                color="white"
                 style={{ marginRight: 5 }}
               />
               <Text
-                style={{ color: !isPanditWithTemples ? "white" : "#B0B0B0" }}
+                style={{ color: "white" }}
               >
-                {t("sendRequest")}
+                {isCheckingConnection ? t("loading") : (userType.includes("templeShopOwner") ? isShopAlreadyConnected : isPanditAlreadyConnected) ? t("connected") : isRequestSent ? t("pending") : t("sendRequest")}
               </Text>
             </View>
           </TouchableOpacity>
@@ -1394,12 +1745,15 @@ const TempleDetails = ({ route, navigation }) => {
         </Modal>
       ) : null}
 
-      <ScrollView style={{ flex: 1 }}>
+      <ScrollView 
+        style={{ flex: 1 }}
+        nestedScrollEnabled={true}
+        showsVerticalScrollIndicator={false}
+      >
         {renderBackground()}
         {renderContentBackground()}
       </ScrollView>
 
-      <BottomNavigation navigation={navigation} />
     </SafeArea>
   );
 };

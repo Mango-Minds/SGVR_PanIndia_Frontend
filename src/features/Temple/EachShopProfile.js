@@ -21,7 +21,6 @@ import { getEachShopData } from "../../services/jewellery.services";
 import { useIsFocused } from "@react-navigation/native";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
-import BottomNavigation from "./BottomNavigation";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
 const EachShopProfile = ({ route }) => {
@@ -31,16 +30,61 @@ const EachShopProfile = ({ route }) => {
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [shopProducts, setShopProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [currentShop, setCurrentShop] = useState(null);
 
   const { shop, shopId } = route.params;
+  
+  // Use currentShop if available, otherwise fall back to route params shop
+  const displayShop = currentShop || shop;
   console.log("each shop profile screen", shop);
   console.log("Shopid: ", shopId);
-  const tokenPayload = token.split(".")[1];
+  
+  // Validate shop data
+  if (!shop || !shopId) {
+    console.error("Invalid shop data or shopId");
+    return (
+      <Container style={{ padding: 20, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ fontSize: 16, color: "red" }}>Error: Invalid shop data</Text>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()}
+          style={{ marginTop: 20, padding: 10, backgroundColor: Theme.themeColor, borderRadius: 5 }}
+        >
+          <Text style={{ color: "white" }}>Go Back</Text>
+        </TouchableOpacity>
+      </Container>
+    );
+  }
+  
+  // Add error handling for token parsing
+  let fromVendorId = null;
+  let decodedPayload = null;
+  
+  try {
+    if (token) {
+      const tokenPayload = token.split(".")[1];
+      decodedPayload = JSON.parse(decode(tokenPayload));
+      fromVendorId = decodedPayload.id;
+    }
+  } catch (error) {
+    console.error("Error parsing token:", error);
+  }
 
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const fromVendorId = decodedPayload.id;
-
- const userType = useSelector((state) => state.user.user.userType[0]);
+ const userType = useSelector((state) => state.user.user.userType);
+ 
+ // Check if current user is the shop owner with better error handling
+  const isShopOwner = fromVendorId && displayShop?.owner && (
+  displayShop.owner === fromVendorId ||
+  displayShop.owner.id === fromVendorId || 
+  displayShop.owner.id?._id === fromVendorId ||
+  displayShop.owner._id === fromVendorId
+);
+ 
+ console.log("Shop owner check:", {
+   fromVendorId,
+   shopOwner: displayShop?.owner,
+   isShopOwner
+ });
 
   
   
@@ -97,27 +141,44 @@ const EachShopProfile = ({ route }) => {
   const fetchShop = async () => {
     try {
       const response = await apiClient.get(`/templeShops/${shopId}`);
-  
+      
+      if (response.data) {
+        // Update the shop state with fresh data from backend
+        const updatedShop = { ...shop, ...response.data };
+        setCurrentShop(updatedShop);
+        console.log("Shop updated with fresh data:", updatedShop);
+      }
+      
       console.log("Fetched shop:", response.data);
-      console.log("Products for logged-in worker:", shopProducts);
     } catch (error) {
       console.error("Error fetching shop:", error);
+      Alert.alert("Error", "Failed to refresh shop data. Please try again.");
     }
   };
   
   const fetchShopProducts = async () => {
     try {
+      setIsLoading(true);
       const response = await apiClient.get("/products");
   
-      const filteredProducts = response.data.filter(
-        (product) => product.shop._id === shopId
-      );
-  
-      setShopProducts(filteredProducts);
+      if (response.data && Array.isArray(response.data)) {
+        const filteredProducts = response.data.filter(
+          (product) => product.shop && product.shop._id === shopId
+        );
+        setShopProducts(filteredProducts);
+      } else {
+        console.warn("Invalid response data for products");
+        setShopProducts([]);
+      }
     } catch (error) {
       console.error("Error fetching products:", error);
+      setShopProducts([]);
+      // Show user-friendly error message for temple admins
+      if (userType.includes("templeAdmin")) {
+        Alert.alert("Error", "Failed to load shop products. Please try again.");
+      }
     } finally {
-      setIsloading(false);
+      setIsLoading(false);
     }
   };
   
@@ -164,25 +225,46 @@ const EachShopProfile = ({ route }) => {
   //   }
   // };
   const deleteShop = async () => {
-    try {
-      await apiClient.delete(`/templeShops/${shopId}`);
-  
-      Alert.alert(
-        "Success",
-        "Shop deleted successfully",
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              navigation.goBack();
-            },
-          },
-        ],
-        { cancelable: false }
-      );
-    } catch (error) {
-      console.error("Error deleting shop:", error);
-    }
+    // Confirm delete action first
+    Alert.alert(
+      "Confirm Delete",
+      "Are you sure you want to delete this shop? This action cannot be undone.",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await apiClient.delete(`/templeShops/${shopId}`);
+          
+              Alert.alert(
+                "Success",
+                "Shop deleted successfully",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => {
+                      navigation.goBack();
+                    },
+                  },
+                ],
+                { cancelable: false }
+              );
+            } catch (error) {
+              console.error("Error deleting shop:", error);
+              Alert.alert(
+                "Error", 
+                error.response?.data?.message || "Failed to delete shop. Please try again."
+              );
+            }
+          }
+        }
+      ]
+    );
   };
   
   return (
@@ -203,20 +285,20 @@ const EachShopProfile = ({ route }) => {
             {t("shopDetails")}
           </TopText>
         </View>
-        {userType === "templeAdmin" || userType === "SA" && (
+        {(isShopOwner || userType.includes("SA")) && (
           <>
             <IconButton
               icon="trash-can-outline"
               style={{ marginLeft: "auto" }}
-            onPress={deleteShop}
+              onPress={deleteShop}
             />
             <IconButton
               icon="pencil-outline"
-            onPress={() =>
-              navigation.navigate("EditShop",{
-               shop: shop,
-              })
-            }
+              onPress={() =>
+                navigation.navigate("EditShop",{
+                 shop: displayShop,
+                })
+              }
             />
           </>
         )}
@@ -225,17 +307,37 @@ const EachShopProfile = ({ route }) => {
         <View
           style={{ padding: "3%", marginTop: "2%", flexDirection: "column" }}
         >
-          <Image
-            source={
-              shop.image
-                ? {
-                  uri: `${shop.image}`,
-                }
-                : UserImg
-            }
-            style={style.ImageStyle}
-            resizeMode="contain"
-          />
+          <View style={{ position: "relative" }}>
+            <Image
+              source={
+                displayShop.image
+                  ? {
+                    uri: `${displayShop.image}`,
+                  }
+                  : UserImg
+              }
+              style={style.ImageStyle}
+              resizeMode="cover"
+            />
+            {!displayShop.image && (
+              <View style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                justifyContent: "center",
+                alignItems: "center",
+                backgroundColor: "rgba(0,0,0,0.1)",
+                borderRadius: 20,
+              }}>
+                <MaterialIcon name="store" size={40} color={Theme.themeColor} />
+                <Text style={{ color: Theme.themeColor, marginTop: 5, fontWeight: "bold" }}>
+                  {displayShop.name}
+                </Text>
+              </View>
+            )}
+          </View>
           <View style={{ flexDirection: "column" }}>
             <Text
               style={{
@@ -245,7 +347,7 @@ const EachShopProfile = ({ route }) => {
                 marginTop: "3%",
               }}
             >
-              {shop.name}
+              {displayShop.name}
             </Text>
             <View
               style={{
@@ -263,23 +365,45 @@ const EachShopProfile = ({ route }) => {
               >
                 {t("aboutUs")} :
               </Text>
-              <Text style={style.description}>{shop.description}</Text>
+              <Text style={style.description}>
+                {displayShop.description || t("noDescriptionAvailable")}
+              </Text>
             </View>
             <View>
               <View style={style.contactDetails}>
                 <MaterialIcon name="email" size={18} color={Theme.themeColor}/>
-                <Text style={style.contact}>{shop.owner.id?.email}</Text>
+                <Text style={style.contact}>
+                  {displayShop.email || t("emailNotAvailable")}
+                </Text>
               </View>
               <View style={style.contactDetails}>
                 <MaterialIcon name="phone" size={18} color={Theme.themeColor} />
-                <Text style={style.contact}>{shop.owner.id?.phone}</Text>
-              </View>
-              <View style={[style.contactDetails, { marginBottom: 20 }]}>
-                <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
                 <Text style={style.contact}>
-                  {shop?.address}, {shop?.city}
+                  {displayShop.phone || t("phoneNotAvailable")}
                 </Text>
               </View>
+              <View style={[style.contactDetails, { marginBottom: 10 }]}>
+                <MaterialIcon name="location-on" size={18} color={Theme.themeColor} />
+                <Text style={style.contact}>
+                  {[displayShop?.address, displayShop?.city, displayShop?.state].filter(Boolean).join(", ") || t("addressNotAvailable")}
+                </Text>
+              </View>
+              
+              {/* Shop Statistics */}
+              <View style={style.contactDetails}>
+                <MaterialIcon name="inventory" size={18} color={Theme.themeColor} />
+                <Text style={style.contact}>
+                  {t("totalProducts")}: {shopProducts?.length || 0}
+                </Text>
+              </View>
+              
+              <View style={[style.contactDetails, { marginBottom: 20 }]}>
+                <MaterialIcon name="store" size={18} color={Theme.themeColor} />
+                <Text style={style.contact}>
+                  {t("status")}: {displayShop.status === "accepted" ? t("active") : t("pending")}
+                </Text>
+              </View>
+              
               <Divider />
             </View>
           </View>
@@ -287,10 +411,10 @@ const EachShopProfile = ({ route }) => {
         <View
           style={{
             flexDirection: "row",
-
             marginBottom: 10,
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: isShopOwner ? "space-between" : "center",
+            paddingHorizontal: 10,
           }}
         >
           <TouchableOpacity
@@ -298,6 +422,7 @@ const EachShopProfile = ({ route }) => {
               borderBottomColor:Theme.themeColor,
               borderBottomWidth: 2,
               paddingVertical: 5,
+              flex: isShopOwner ? 0.6 : 1,
             }}
             // onPress={() => setScreen("Product")}
           >
@@ -313,6 +438,36 @@ const EachShopProfile = ({ route }) => {
               {t("ourCatalog")}
             </Text>
           </TouchableOpacity>
+          
+          {isShopOwner && (
+            <TouchableOpacity
+              style={{
+                backgroundColor: Theme.themeColor,
+                borderRadius: 5,
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+                flex: 0.35,
+              }}
+              onPress={() => {
+                navigation.navigate("AddShopProduct", {
+                  shopId: shopId,
+                  shop: displayShop,
+                  onProductAdded: () => fetchShopProducts(),
+                });
+              }}
+            >
+              <Text
+                style={{
+                  textAlign: "center",
+                  fontSize: 14,
+                  fontWeight: "600",
+                  color: "white",
+                }}
+              >
+                {t("addProduct")}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
         {/* <View style={{ padding: "2.5%", paddingTop: "1%" }}>
             <View style={styles.eachJewelleryCardContainer}>
@@ -447,6 +602,29 @@ const EachShopProfile = ({ route }) => {
                       </Text>
                     </View>
                   </Pressable>
+                  
+                  {isShopOwner && (
+                    <TouchableOpacity
+                      style={{
+                        position: "absolute",
+                        top: 8,
+                        right: 8,
+                        backgroundColor: "rgba(0,0,0,0.7)",
+                        borderRadius: 15,
+                        padding: 6,
+                      }}
+                      onPress={() => {
+                        navigation.navigate("EditShopProduct", {
+                          productId: product._id,
+                          product: product,
+                          shopId: shopId,
+                          onProductUpdated: () => fetchShopProducts(),
+                        });
+                      }}
+                    >
+                      <MaterialIcon name="edit" size={16} color="white" />
+                    </TouchableOpacity>
+                  )}
                 </View>
               ))
             )}
@@ -487,7 +665,6 @@ const EachShopProfile = ({ route }) => {
 
         </View>
       </ScrollView>
-      <BottomNavigation navigation={navigation} />
     </Container>
   );
 };
@@ -605,3 +782,4 @@ export const styles = StyleSheet.create({
     elevation: 2,
   },
 });
+

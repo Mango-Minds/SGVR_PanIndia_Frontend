@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
 import Theme from "../../styles/theme";
@@ -73,8 +75,9 @@ const styles = StyleSheet.create({
 export default function EditGod({ route, navigation }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
+  const queryClient = useQueryClient();
 
-  const { god, templeinfo, setGodDetails, fetchTempleGods } = route.params;
+  const { god, templeinfo, fetchTempleGods } = route.params;
   console.log("God: ", god);
 
   const token = useSelector((state) => state.user.token);
@@ -82,6 +85,7 @@ export default function EditGod({ route, navigation }) {
   const [selectedImage, setSelectedImage] = useState({
     uri: god.godImage ? `${god.godImage}` : null,
   });
+  const [imageChanged, setImageChanged] = useState(false);
 
   const { loadingInBtn } = useSelector((state) => state.user);
   const isFocused = useIsFocused();
@@ -97,6 +101,7 @@ export default function EditGod({ route, navigation }) {
 
     if (result.canceled === true) return;
     setSelectedImage(result.assets[0]);
+    setImageChanged(true);
   };
   const [modifiedDetails, setModifiedDetails] = useState({
     godName: god.godName,
@@ -176,15 +181,24 @@ export default function EditGod({ route, navigation }) {
       }
       const formData = new FormData();
 
-      // Append modified details
+      // Append modified details (handle empty strings and different data types)
       Object.keys(modifiedDetails).forEach((key) => {
-        if (modifiedDetails[key] !== god[key]) {
-          formData.append(key, modifiedDetails[key]);
+        let newValue = modifiedDetails[key];
+        let originalValue = god[key];
+        
+        // Handle arrays (festivals, relatedDeities) vs strings
+        if (Array.isArray(originalValue)) {
+          originalValue = originalValue.join(", ");
+        }
+        
+        // Handle empty strings - should be sent if user cleared the field
+        if (newValue !== originalValue) {
+          formData.append(key, newValue || ""); // Send empty string if cleared
         }
       });
 
-      // Append selected image if available
-      if (selectedImage && selectedImage.uri) {
+      // Only append image if user selected a new one
+      if (imageChanged && selectedImage && selectedImage.uri) {
         let localUri = selectedImage.uri;
         let filename = localUri.split("/").pop();
         let match = /\.(\w+)$/.exec(filename);
@@ -198,6 +212,12 @@ export default function EditGod({ route, navigation }) {
       }
 
       console.log("formdata--", formData);
+      console.log("imageChanged:", imageChanged);
+      console.log("modified fields:", Object.keys(modifiedDetails).filter(key => {
+        let newValue = modifiedDetails[key];
+        let originalValue = Array.isArray(god[key]) ? god[key].join(", ") : god[key];
+        return newValue !== originalValue;
+      }));
 
       const response = await apiClient.patch(
         `/temple/${templeinfo._id}/gods/${god._id}`,
@@ -215,30 +235,37 @@ export default function EditGod({ route, navigation }) {
 
     
       const data = response.data;
-      setGodDetails(data);
       fetchTempleGods();
+      
+      // Invalidate queries to refresh temple details
+      queryClient.invalidateQueries(['temples']);
+      queryClient.invalidateQueries(['temple', templeinfo._id]);
+      
       alert("God Updated Successfully");
       console.log("edit data: ", data);
-      // Handle token expiration and refresh
-      if (error.response?.status === 1) {
-        console.error("Token expired, trying to refresh...");
-        await getUpdatedTokens(await AsyncStorage.getItem("refresh_token"));
-        token = await AsyncStorage.getItem("token");
-
-        if (token) {
-          return handleUpdate(); // Retry request with new token
-        }
-      }
+      
+      // Navigate back after successful update
       navigation.goBack();
     } catch (error) {
       console.error("Error updating god:", error);
+      await dispatch(setLoadingInBtn(false));
+      
+      Alert.alert(
+        "Error",
+        "Failed to update god details. Please try again.",
+        [{ text: "OK" }]
+      );
     }
   };
 
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
           <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
@@ -259,6 +286,7 @@ export default function EditGod({ route, navigation }) {
           </RowBetween>
           <MainContainer
             style={{ paddingBottom: 56 }}
+            showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
             contentInsetAdjustmentBehavior="always"
@@ -475,7 +503,7 @@ export default function EditGod({ route, navigation }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

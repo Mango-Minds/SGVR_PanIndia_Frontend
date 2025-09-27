@@ -21,116 +21,116 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const AddShops = ({ route, navigation }) => {
+const AddPandits = ({ route, navigation }) => {
   const { t } = useTranslation();
-  const { templeinfo, onShopAdded } = route.params;
-  const [availableShops, setAvailableShops] = useState([]);
+  const { templeinfo, onPanditAdded } = route.params;
+  const [availablePandits, setAvailablePandits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
   const [sendingRequests, setSendingRequests] = useState({});
 
   const { user } = useSelector((state) => state.user);
 
-  const fetchAvailableShops = async () => {
+  const fetchAvailablePandits = async () => {
     try {
       setLoading(true);
       const selectedLanguage = 
         (await AsyncStorage.getItem("user-language")) || "en";
 
-      const response = await apiClient.get(`/availableShops/${templeinfo._id}`);
+      const response = await apiClient.get(`/availablePandits/${templeinfo._id}`);
 
       if (response.status === 200) {
-        let shopsData = response.data.shops || [];
+        let panditsData = response.data.pandits || [];
 
         // Translate if not English
-        if (selectedLanguage !== "en" && Array.isArray(shopsData)) {
+        if (selectedLanguage !== "en" && Array.isArray(panditsData)) {
           try {
             const translationResponse = await apiClient.post("/translate", {
-              data: shopsData,
+              data: panditsData,
               targetLang: selectedLanguage,
             });
 
             if (translationResponse?.data?.translatedData?.length) {
-              shopsData = translationResponse.data.translatedData;
+              panditsData = translationResponse.data.translatedData;
             }
           } catch (translationError) {
             console.log("Translation failed, using original data:", translationError);
           }
         }
 
-        setAvailableShops(shopsData);
+        setAvailablePandits(panditsData);
       }
     } catch (error) {
-      console.error("Error fetching available shops:", error);
-      Alert.alert(t("error"), t("failedToFetchShops"));
+      console.error("Error fetching available pandits:", error);
+      Alert.alert(t("error"), t("failedToFetchPandits"));
     } finally {
       setLoading(false);
     }
   };
 
-  const sendShopRequest = async (shopId) => {
+  const sendPanditRequest = async (panditId) => {
     try {
-      setSendingRequests(prev => ({ ...prev, [shopId]: true }));
+      setSendingRequests(prev => ({ ...prev, [panditId]: true }));
 
-      const response = await apiClient.post("/shopToTempleRequest", {
+      const response = await apiClient.post("/panditToTempleRequest", {
         requestToTempleId: templeinfo._id,
-        requestByShopId: shopId,
+        requestByPanditId: panditId,
         initiatedBy: "temple"
       });
 
       if (response.status === 201) {
         Alert.alert(t("success"), t("requestSentSuccessfully"));
         
-        // Remove the shop from available list since request is sent
-        setAvailableShops(prev => 
-          prev.filter(shop => shop._id !== shopId)
+        // Remove the pandit from available list since request is sent
+        setAvailablePandits(prev => 
+          prev.filter(pandit => pandit._id !== panditId)
         );
         
         // Call the callback to refresh the temple details
-        if (onShopAdded) {
-          onShopAdded();
+        if (onPanditAdded) {
+          onPanditAdded();
         }
       }
     } catch (error) {
-      console.error("Error sending shop request:", error);
+      console.error("Error sending pandit request:", error);
       if (error.response?.status === 409) {
         Alert.alert(t("info"), t("requestAlreadySent"));
         
-        // Remove the shop from available list since a request already exists
-        setAvailableShops(prev => 
-          prev.filter(shop => shop._id !== shopId)
+        // Remove the pandit from available list since a request already exists
+        setAvailablePandits(prev => 
+          prev.filter(pandit => pandit._id !== panditId)
         );
         
         // Call the callback to refresh the temple details
-        if (onShopAdded) {
-          onShopAdded();
+        if (onPanditAdded) {
+          onPanditAdded();
         }
       } else {
         Alert.alert(t("error"), t("failedToSendRequest"));
       }
     } finally {
-      setSendingRequests(prev => ({ ...prev, [shopId]: false }));
+      setSendingRequests(prev => ({ ...prev, [panditId]: false }));
     }
   };
 
   useEffect(() => {
-    fetchAvailableShops();
+    fetchAvailablePandits();
   }, []);
 
   // Refresh when screen gains focus
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      fetchAvailableShops();
+      fetchAvailablePandits();
     });
 
     return unsubscribe;
   }, [navigation]);
 
-  const filteredShops = availableShops.filter(shop =>
-    shop.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-    shop.owner?.name?.toLowerCase().includes(searchText.toLowerCase()) ||
-    shop.address?.toLowerCase().includes(searchText.toLowerCase()) ||
-    shop.city?.toLowerCase().includes(searchText.toLowerCase())
+  const filteredPandits = availablePandits.filter(pandit =>
+    pandit.panditName?.toLowerCase().includes(searchText.toLowerCase()) ||
+    pandit.owner?.firstName?.toLowerCase().includes(searchText.toLowerCase()) ||
+    pandit.owner?.lastName?.toLowerCase().includes(searchText.toLowerCase()) ||
+    pandit.owner?.city?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   return (
@@ -139,14 +139,14 @@ const AddShops = ({ route, navigation }) => {
         <View style={styles.headerLeft}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText style={styles.headerTitle}>
-            {t("addShops")}
+            {t("addPandits")}
           </TopText>
         </View>
       </RowBetween>
 
       <View style={styles.searchContainer}>
         <SearchField
-          placeholder={t("searchShops")}
+          placeholder={t("searchPandits")}
           value={searchText}
           onChangeText={setSearchText}
         />
@@ -164,49 +164,49 @@ const AddShops = ({ route, navigation }) => {
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.shopsContainer}>
-            {filteredShops.length === 0 ? (
+          <View style={styles.panditsContainer}>
+            {filteredPandits.length === 0 ? (
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>
-                  {searchText ? t("noShopsFoundForSearch") : t("noAvailableShops")}
+                  {searchText ? t("noPanditsFoundForSearch") : t("noAvailablePandits")}
                 </Text>
               </View>
             ) : (
-              filteredShops.map((shop, index) => (
-                <View key={shop._id} style={styles.shopCard}>
+              filteredPandits.map((pandit, index) => (
+                <View key={pandit._id} style={styles.panditCard}>
                   <Image
-                    style={styles.shopImage}
+                    style={styles.panditImage}
                     source={
-                      shop.image
-                        ? { uri: shop.image }
+                      pandit.image
+                        ? { uri: pandit.image }
                         : UserImg
                     }
                   />
                   
-                  <View style={styles.shopInfo}>
-                    <Text style={styles.shopName}>
-                      {shop.name}
+                  <View style={styles.panditInfo}>
+                    <Text style={styles.panditName}>
+                      {pandit.panditName}
                     </Text>
-                    <Text style={styles.shopDetails}>
-                      {shop.owner?.name}
+                    <Text style={styles.panditDetails}>
+                      {pandit.owner?.firstName} {pandit.owner?.lastName}
                     </Text>
-                    <Text style={styles.shopLocation}>
-                      {shop.address}
+                    <Text style={styles.panditLocation}>
+                      {pandit.owner?.city}, {pandit.owner?.state}
                     </Text>
-                    <Text style={styles.shopContact}>
-                      {shop.owner?.phone}
+                    <Text style={styles.panditContact}>
+                      {pandit.owner?.phone}
                     </Text>
                   </View>
 
                   <TouchableOpacity
                     style={[
                       styles.sendButton,
-                      sendingRequests[shop._id] && styles.sendButtonDisabled
+                      sendingRequests[pandit._id] && styles.sendButtonDisabled
                     ]}
-                    onPress={() => sendShopRequest(shop._id)}
-                    disabled={sendingRequests[shop._id]}
+                    onPress={() => sendPanditRequest(pandit._id)}
+                    disabled={sendingRequests[pandit._id]}
                   >
-                    {sendingRequests[shop._id] ? (
+                    {sendingRequests[pandit._id] ? (
                       <ActivityIndicator size="small" color="white" />
                     ) : (
                       <>
@@ -271,7 +271,7 @@ const styles = StyleSheet.create({
     flex: 1,
     marginTop: 10,
   },
-  shopsContainer: {
+  panditsContainer: {
     padding: 16,
   },
   emptyContainer: {
@@ -285,7 +285,7 @@ const styles = StyleSheet.create({
     color: "grey",
     textAlign: "center",
   },
-  shopCard: {
+  panditCard: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 16,
@@ -296,34 +296,34 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     borderRadius: 8,
   },
-  shopImage: {
+  panditImage: {
     width: 60,
     height: 60,
     borderRadius: 30,
     marginRight: 12,
   },
-  shopInfo: {
+  panditInfo: {
     flex: 1,
   },
-  shopName: {
+  panditName: {
     fontWeight: "bold",
     fontSize: 16,
     color: "#333",
   },
-  shopDetails: {
+  panditDetails: {
     fontWeight: "600",
     opacity: 0.7,
     marginTop: 2,
     color: "#666",
   },
-  shopLocation: {
+  panditLocation: {
     fontWeight: "500",
     opacity: 0.6,
     marginTop: 2,
     color: "#666",
     fontSize: 12,
   },
-  shopContact: {
+  panditContact: {
     fontWeight: "500",
     opacity: 0.6,
     marginTop: 2,
@@ -353,4 +353,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AddShops;
+export default AddPandits;

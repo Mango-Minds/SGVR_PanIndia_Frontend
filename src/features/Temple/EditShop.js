@@ -8,6 +8,9 @@ import {
   View,
   TouchableOpacity,
   TextInput,
+  KeyboardAvoidingView,
+  Platform,
+  Alert,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { ActivityIndicator, IconButton, Provider } from "react-native-paper";
@@ -80,7 +83,7 @@ export default function EditShop({ route, navigation }) {
       ? shop.images.map((image) => `${image}`)
       : [];
 
-  const [selectedImages, setSelectedImages] = React.useState(initialImages);
+  const [selectedImages, setSelectedImages] = useState(initialImages);
   const [uploadedImages, setUploadedImages] = useState([]);
   const { loadingInBtn } = useSelector((state) => state.user);
   const isFocused = useIsFocused();
@@ -109,8 +112,8 @@ export default function EditShop({ route, navigation }) {
     city: shop.city,
     address: shop.address,
     description: shop.description,
-    // email: shop.email,
-    // phoneNumber: shop.phoneNumber,
+    email: shop.email || '',
+    phone: shop.phone || '',
     pincode: shop.pincode,
     state: shop.state,
   });
@@ -222,31 +225,38 @@ export default function EditShop({ route, navigation }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
-            <View style={{ alignItems: "center", flexDirection: "row" }}>
-              <IconButton
-                icon="arrow-left"
-                size={28}
-                onPress={() => navigation.goBack()}
-              />
-              <Text
-                style={{
-                  fontSize: 20,
-                  fontWeight: "500",
-                  color: "#000",
-                }}
-              >
-                Edit Shop
-              </Text>
-            </View>
-          </RowBetween>
-          <MainContainer
-            style={{ paddingBottom: 56 }}
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+        >
+          <ScrollView 
+            showsVerticalScrollIndicator={false}
             keyboardDismissMode="on-drag"
             keyboardShouldPersistTaps="handled"
-            contentInsetAdjustmentBehavior="always"
+            contentInsetAdjustmentBehavior="automatic"
           >
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row" }}>
+                <IconButton
+                  icon="arrow-left"
+                  size={28}
+                  onPress={() => navigation.goBack()}
+                />
+                <Text
+                  style={{
+                    fontSize: 20,
+                    fontWeight: "500",
+                    color: "#000",
+                  }}
+                >
+                  Edit Shop
+                </Text>
+              </View>
+            </RowBetween>
+            <MainContainer
+              style={{ paddingBottom: 100 }}
+            >
             
             <FormSection style={{ paddingTop: 0 }}>
               <Text
@@ -422,6 +432,58 @@ export default function EditShop({ route, navigation }) {
                 }
               />
               
+              <Text
+                style={{
+                  fontSize: 16,
+                  marginLeft: 4,
+                  color: "grey",
+                  fontWeight: "600",
+                  marginTop: 20,
+                }}
+              >
+                Email
+              </Text>
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={[styles.input, { marginTop: 5 }]}
+                placeholder="Email Address"
+                underlineColor="transparent"
+                keyboardType="email-address"
+                placeholderTextColor="#9B9B9B"
+                value={modifiedDetails.email}
+                onChangeText={(text) =>
+                  setModifiedDetails({ ...modifiedDetails, email: text })
+                }
+              />
+              
+              <Text
+                style={{
+                  fontSize: 16,
+                  marginLeft: 4,
+                  color: "grey",
+                  fontWeight: "600",
+                  marginTop: 20,
+                }}
+              >
+                Phone Number
+              </Text>
+
+              <LoginInputField
+                selectionColor={Theme.themeColor}
+                activeUnderlineColor={Theme.themeColor}
+                style={[styles.input, { marginTop: 5 }]}
+                placeholder="Phone Number"
+                underlineColor="transparent"
+                keyboardType="phone-pad"
+                placeholderTextColor="#9B9B9B"
+                value={modifiedDetails.phone}
+                onChangeText={(text) =>
+                  setModifiedDetails({ ...modifiedDetails, phone: text })
+                }
+              />
+              
               <FormButton onPress={handleUpdate}>
                 <Text
                   style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
@@ -444,8 +506,9 @@ export default function EditShop({ route, navigation }) {
                 </Text>
               </FormButton>
             </FormSection>
-          </MainContainer>
-        </ScrollView>
+            </MainContainer>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );

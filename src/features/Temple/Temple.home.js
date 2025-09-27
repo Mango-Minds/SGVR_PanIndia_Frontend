@@ -32,7 +32,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
-import FilterMenu from "./FilterMenu";
+// import FilterMenu from "./FilterMenu"; // Commented out as filter component is disabled
 import UserImg from "../../assets/images/general/user.png";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -46,7 +46,7 @@ const TempleHome = ({ navigation }) => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
 
   console.log("Usertype in temple: ", userType);
   const [selectedTab, setSelectedTab] = useState("Temples");
@@ -207,12 +207,24 @@ const TempleHome = ({ navigation }) => {
           });
 
           if (translationResponse?.data?.translatedData?.length) {
-            setTemples(translationResponse.data.translatedData);
+            // Sort translated temples by creation date (newest first)
+            const sortedTranslatedTemples = translationResponse.data.translatedData.sort((a, b) => 
+              new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setTemples(sortedTranslatedTemples);
           } else {
-            setTemples(templesData);
+            // Sort temples by creation date (newest first) as fallback
+            const sortedTemples = templesData.sort((a, b) => 
+              new Date(b.createdAt) - new Date(a.createdAt)
+            );
+            setTemples(sortedTemples);
           }
         } else {
-          setTemples(templesData);
+          // Sort temples by creation date (newest first)
+          const sortedTemples = templesData.sort((a, b) => 
+            new Date(b.createdAt) - new Date(a.createdAt)
+          );
+          setTemples(sortedTemples);
         }
       } else {
         throw new Error("Network response was not ok");
@@ -323,7 +335,7 @@ const TempleHome = ({ navigation }) => {
           >
             {selectedTab === "Temples" && (
               <>
-                {user.userType[0] === "templeAdmin" && (
+                {user.userType.includes("templeAdmin") && (
                   <IconButton
                     icon="plus"
                     style={{ marginRight: 10 }}
@@ -337,6 +349,24 @@ const TempleHome = ({ navigation }) => {
                   onPress={toggleSearch}
                 />
               </>
+            )}
+
+            {/* Notification bell for pandits */}
+            {user.userType.includes("pandit") && (
+              <IconButton
+                icon="bell-outline"
+                style={{ marginRight: 10 }}
+                onPress={() => navigation.navigate("PanditNotifications")}
+              />
+            )}
+
+            {/* Notification bell for shop owners */}
+            {user.userType.includes("templeShopOwner") && (
+              <IconButton
+                icon="bell-outline"
+                style={{ marginRight: 10 }}
+                onPress={() => navigation.navigate("ShopNotifications")}
+              />
             )}
 
             <TouchableOpacity
@@ -542,7 +572,8 @@ const TempleHome = ({ navigation }) => {
         </View>
       )}
 
-      {selectedTab === "Temples" && (
+      {/* Filter button commented out for all roles */}
+      {/* {selectedTab === "Temples" && (
         <TouchableOpacity
           style={{
             position: "absolute",
@@ -563,9 +594,10 @@ const TempleHome = ({ navigation }) => {
             <Ionicons name="funnel" size={20} color="white" />
           </View>
         </TouchableOpacity>
-      )}
+      )} */}
 
-      {menuVisible && (
+      {/* FilterMenu component commented out for all roles */}
+      {/* {menuVisible && (
         <FilterMenu
           menuVisible={menuVisible}
           toggleMenu={toggleMenu}
@@ -578,7 +610,7 @@ const TempleHome = ({ navigation }) => {
           selectedFiltersArray={selectedFiltersArray}
           setSelectedFiltersArray={setSelectedFiltersArray}
         />
-      )}
+      )} */}
 
       {selectedTab === "Pandits" && (
         <View style={{ flex: 1 }}>

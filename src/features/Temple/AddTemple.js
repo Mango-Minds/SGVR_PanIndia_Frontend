@@ -10,6 +10,8 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { Picker } from "@react-native-picker/picker";
@@ -79,13 +81,13 @@ export default function AddTemple({ navigation }) {
   const dispatch = useDispatch();
   const token = useSelector((state) => state.user.token);
   const { t } = useTranslation();
-  const userType = useSelector((state) => state.user.user.userType[0]);
+  const userType = useSelector((state) => state.user.user.userType);
   console.log("User Type:", userType);
   console.log("Token:", token);
 
   const { loadingInBtn } = useSelector((state) => state.user);
-  const [selectedImages, setSelectedImages] = React.useState([]);
-  const [registerDetails, setRegisterDetails] = React.useState({
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [registerDetails, setRegisterDetails] = useState({
     templeName: "",
     address: "",
     city: "",
@@ -121,6 +123,33 @@ export default function AddTemple({ navigation }) {
 
   const addTemple = async () => {
     try {
+      // Validate required fields
+      const requiredFields = {
+        templeName: "Temple Name",
+        address: "Address", 
+        city: "City",
+        state: "State",
+        pincode: "Pincode",
+        phoneNumber: "Phone Number",
+        email: "Email"
+      };
+
+      const missingFields = [];
+      for (const [field, label] of Object.entries(requiredFields)) {
+        if (!registerDetails[field] || registerDetails[field].trim() === "") {
+          missingFields.push(label);
+        }
+      }
+
+      if (missingFields.length > 0) {
+        Alert.alert(
+          "Required Fields Missing",
+          `Please fill in the following required fields:\n${missingFields.join(", ")}`,
+          [{ text: "OK" }]
+        );
+        return;
+      }
+
       let token = await AsyncStorage.getItem("token");
       console.log("Async token: ", token);
       if (!token) {
@@ -131,7 +160,7 @@ export default function AddTemple({ navigation }) {
       const formData = new FormData();
       formData.append("templeName", registerDetails.templeName);
       formData.append("address", registerDetails.address);
-      formData.append("city", registerDetails.city);
+      formData.append("city", (registerDetails.city || "").replace("*", ""));
       formData.append("state", registerDetails.state);
       formData.append("pincode", registerDetails.pincode);
       formData.append("description", registerDetails.description);
@@ -197,9 +226,20 @@ export default function AddTemple({ navigation }) {
         }
       }
 
+      let errorMessage = t("templeCreationFailed");
+      
+      // Show specific error message if available from backend
+      if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error.response?.status === 400) {
+        errorMessage = "Invalid data provided. Please check all required fields.";
+      }
+
+      await dispatch(setLoadingInBtn(false));
+      
       Alert.alert(
         t("error"),
-        t("templeCreationFailed"),
+        errorMessage,
         [{ text: t("ok"), onPress: () => console.log("OK Pressed") }],
         { cancelable: false }
       );
@@ -209,8 +249,12 @@ export default function AddTemple({ navigation }) {
   return (
     <SafeArea>
       <Provider>
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+        >
+          <ScrollView showsVerticalScrollIndicator={false}>
+            <RowBetween style={{ paddingTop: 24, paddingRight: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row" }}>
               <IconButton
                 icon="arrow-left"
@@ -366,7 +410,7 @@ export default function AddTemple({ navigation }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("taddress")}
+                placeholder={`${t("taddress")}*`}
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.address}
@@ -431,19 +475,14 @@ export default function AddTemple({ navigation }) {
                   color: "#9B9B9B",
                   fontSize: 16,
                 }}
-                data={Object.keys(statesData).map((key) => ({
-                  key,
-                  label: t(`states.${key}`),
-                }))}
+                data={Object.keys(statesData)}
                 defaultButtonText={t("selectState")}
-                onSelect={(selected) =>
+                onSelect={(selectedItem) =>
                   setRegisterDetails({
                     ...registerDetails,
-                    state: selected.key,
+                    state: selectedItem,
                   })
                 }
-                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
-                rowTextForSelection={(item) => item.label}
               />
               <SelectDropdown
                buttonStyle={{ width: "100%", height: 50, marginTop: 24 }}
@@ -452,16 +491,11 @@ export default function AddTemple({ navigation }) {
                   color: "#9B9B9B",
                   fontSize: 16,
                 }}
-                data={(statesData[registerDetails.state] || []).map((key) => ({
-                  key,
-                  label: t(`cities.${key}`),
-                }))}
+                data={statesData[registerDetails.state] || []}
                 defaultButtonText={t("selectCity")}
-                onSelect={(selected) =>
-                  setRegisterDetails({ ...registerDetails, city: selected.key })
+                onSelect={(selectedItem) =>
+                  setRegisterDetails({ ...registerDetails, city: selectedItem })
                 }
-                buttonTextAfterSelection={(selectedItem) => selectedItem.label}
-                rowTextForSelection={(item) => item.label}
               />
 
               <LoginInputField
@@ -501,7 +535,8 @@ export default function AddTemple({ navigation }) {
               </FormButton>
             </FormSection>
           </MainContainer>
-        </ScrollView>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Provider>
     </SafeArea>
   );
