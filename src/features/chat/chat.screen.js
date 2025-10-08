@@ -10,6 +10,12 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   SafeAreaView,
+  Image,
+  Linking,
+  View as RNView,
+  Alert,
+  ActionSheetIOS,
+  FlatList,
 } from "react-native";
 import { IconButton, TextInput } from "react-native-paper";
 import {
@@ -33,8 +39,9 @@ import {
 } from "../../store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { cloneDeep } from "lodash";
-import { SOCKETURL } from "../../infrastructure/constants";
-import { BASEAPIURL } from "../../infrastructure/constants";
+import { BASEAPIURL, BASEIMGURL, RENDERMEDIAURL, SOCKETURL } from "../../infrastructure/constants";
+import * as ImagePicker from 'expo-image-picker';
+import { uploadChatMedia, saveSingleChat as saveSingleChatApi, editMessage as editMessageApi, deleteMessage as deleteMessageApi } from '../../services/chat.services';
 import DeleteModal from "../../components/modals/DeleteChat";
 
 const ChatScreen = ({ navigation, route }) => {
@@ -51,11 +58,210 @@ const ChatScreen = ({ navigation, route }) => {
 
   const socket = React.useRef();
   const scrollViewRef = React.useRef();
+  const flatListRef = React.useRef(null);
   const focusref = React.useRef();
   const { toid, toName, index } = route.params;
   const [cindex, setCindex] = useState(index);
   const deleteRef = React.useRef(null);
   const chatindex = useRef(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const suppressAutoScrollRef = useRef(false);
+
+  // Function to format date for display
+  const formatDate = (date) => {
+    if (!date) return '';
+    
+    const messageDate = new Date(date);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    // Use local timezone for comparison
+    const messageDateStr = messageDate.toDateString();
+    const todayStr = today.toDateString();
+    const yesterdayStr = yesterday.toDateString();
+    
+    if (messageDateStr === todayStr) {
+      return 'TODAY';
+    } else if (messageDateStr === yesterdayStr) {
+      return 'YESTERDAY';
+    } else {
+      return messageDate.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      }).toUpperCase();
+    }
+  };
+
+  // Function to format time for display
+  const formatTime = (date) => {
+    if (!date) return '';
+    
+    const messageDate = new Date(date);
+    return messageDate.toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit',
+      hour12: true,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+    });
+  };
+
+  // Function to group messages by date
+  const groupMessagesByDate = (messages) => {
+    if (!messages || messages.length === 0) return [];
+    
+    const grouped = [];
+    let currentDate = null;
+    
+    messages.forEach((message, index) => {
+      if (!message.time) return; // Skip messages without time
+      
+      const messageDate = new Date(message.time);
+      const dateStr = messageDate.toDateString();
+      
+      if (currentDate !== dateStr) {
+        currentDate = dateStr;
+        grouped.push({
+          type: 'dateHeader',
+          date: messageDate,
+          id: `date-${dateStr}`,
+        });
+      }
+      
+      grouped.push({
+        ...message,
+        type: 'message',
+        originalIndex: index,
+      });
+    });
+    
+    return grouped;
+  };
+
+  const isOutgoing = (chat) => {
+    try {
+      if (chat.sender) return chat.sender === user._id;
+      if (chat.userId) return chat.userId === user._id;
+      if (typeof chat.receiver !== 'undefined') return chat.receiver !== user._id;
+      if (Array.isArray(chat.conversation)) {
+        const [first] = chat.conversation;
+        if (first) return first === user._id;
+      }
+      return false;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const getRoomId = () => [user._id, toid].sort().join('_');
+
+  const startEditingMessage = (chat) => {
+    setIsEditing(true);
+    setEditingMessageId(chat._id);
+    setMessage(chat.msg || "");
+    suppressAutoScrollRef.current = true;
+  };
+
+  const cancelEditing = () => {
+    setIsEditing(false);
+    setEditingMessageId(null);
+    setMessage("");
+    // Re-enable autoscroll shortly after edit mode exits
+    setTimeout(() => { suppressAutoScrollRef.current = false; }, 300);
+  };
+
+  const saveEditedMessage = async () => {
+    if (!isEditing || !editingMessageId) return;
+    try {
+      await editMessageApi({ roomId: getRoomId(), messageId: editingMessageId, newMessage: message });
+      const updated = chattings.map((c) => (c._id === editingMessageId ? { ...c, msg: message } : c));
+      setChattings(updated);
+      cancelEditing();
+    } catch (e) {
+      console.error('Failed to edit message', e);
+    }
+  };
+
+  const confirmDeleteMessage = (chat, opts = {}) => {
+    const { skipConfirm = false } = opts;
+    const performDelete = async () => {
+      try {
+        suppressAutoScrollRef.current = true; // Prevent auto-scroll during delete
+        await deleteMessageApi({ roomId: getRoomId(), messageId: chat._id });
+        setChattings(chattings.filter((c) => c._id !== chat._id));
+        // Re-enable autoscroll after delete
+        setTimeout(() => { suppressAutoScrollRef.current = false; }, 300);
+      } catch (e) {
+        console.error('Failed to delete message', e);
+        suppressAutoScrollRef.current = false; // Reset on error
+      }
+    };
+
+    if (skipConfirm) {
+      performDelete();
+      return;
+    }
+
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'Delete'],
+          destructiveButtonIndex: 1,
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) performDelete();
+        }
+      );
+    } else {
+      Alert.alert('Delete', 'Delete this message?', [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete', style: 'destructive', onPress: performDelete },
+      ]);
+    }
+  };
+
+  const showMessageOptions = (chat) => {
+    if (!isOutgoing(chat)) return;
+    const hasText = !!chat.msg;
+    const options = hasText ? ['Cancel', 'Edit', 'Delete'] : ['Cancel', 'Delete'];
+    const cancelIndex = 0;
+    const destructiveIndex = hasText ? 2 : 1;
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options,
+          cancelButtonIndex: cancelIndex,
+          destructiveButtonIndex: destructiveIndex,
+        },
+        (index) => {
+          if (hasText) {
+            if (index === 1) startEditingMessage(chat);
+            if (index === 2) confirmDeleteMessage(chat, { skipConfirm: true });
+          } else if (index === 1) {
+            confirmDeleteMessage(chat, { skipConfirm: true });
+          }
+        }
+      );
+    } else {
+      if (hasText) {
+        Alert.alert('Message options', '', [
+          { text: 'Edit', onPress: () => startEditingMessage(chat) },
+          { text: 'Delete', style: 'destructive', onPress: () => confirmDeleteMessage(chat, { skipConfirm: true }) },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      } else {
+        Alert.alert('Delete media?', '', [
+          { text: 'Delete', style: 'destructive', onPress: () => confirmDeleteMessage(chat, { skipConfirm: true }) },
+          { text: 'Cancel', style: 'cancel' },
+        ]);
+      }
+    }
+  };
 
   // if(socialData.friends.indexOf(toid) !== -1){
   //   console.log("got it")
@@ -122,6 +328,17 @@ const ChatScreen = ({ navigation, route }) => {
     chatFun();
   }, []);
 
+  // Scroll to bottom when chat data is initially loaded
+  React.useEffect(() => {
+    if (chattings && chattings.length > 0 && flatListRef.current) {
+      // Use a small delay to ensure the FlatList has rendered
+      setTimeout(() => {
+        flatListRef.current.scrollToEnd({ animated: false });
+        animated.current = true;
+      }, 100);
+    }
+  }, [chattings.length > 0 ? chattings[0] : null]); // Trigger when first message is loaded
+
   if (socket.current) {
     socket.current.on("connectedUsers", ({ active }) => {
       if (active && active.length > 0) {
@@ -136,6 +353,12 @@ const ChatScreen = ({ navigation, route }) => {
     });
     socket.current.on("newMsgReceived", ({ obj }) => {
       setChattings([...chattings, obj]);
+      // Scroll to bottom when new message is received
+      setTimeout(() => {
+        if (flatListRef.current && !suppressAutoScrollRef.current) {
+          flatListRef.current.scrollToEnd({ animated: true });
+        }
+      }, 100);
       let flag = false;
       let updatedData;
 
@@ -220,20 +443,25 @@ const ChatScreen = ({ navigation, route }) => {
       console.error("Error creating chat room:", error);
     }
     
+    const currentTime = new Date().toISOString();
+    
     const obj = {
       msg: message,
       sender: user._id,
       receiver: toid,
-      time: `${new Date()}`,
+      time: currentTime,
       conversation: [user._id, toid],
     };
 
-    saveSingleChat({
+    const saveRes = await saveSingleChat({
       msg: message,
       sender: user._id,
       receiver: toid,
-      time: new Date(),
+      time: currentTime,
     });
+    if (saveRes && saveRes.messageId) {
+      obj._id = saveRes.messageId;
+    }
 
     if (socket.current) {
       socket.current.emit("sendNewMsg", {
@@ -242,6 +470,12 @@ const ChatScreen = ({ navigation, route }) => {
     }
     setChattings([...chattings, obj]);
     setMessage("");
+    // Scroll to bottom after sending message
+    setTimeout(() => {
+      if (flatListRef.current) {
+        flatListRef.current.scrollToEnd({ animated: true });
+      }
+    }, 100);
 
     // let flag = false;
     let updatedData;
@@ -294,33 +528,112 @@ const ChatScreen = ({ navigation, route }) => {
     }
   };
 
+  const pickAndSendFile = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        alert("Permission to access camera roll is required!");
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        allowsMultipleSelection: true,
+        quality: 1,
+      });
+
+      if (result.canceled) return;
+      const assets = (result.assets || []).slice(0, 5);
+      if (!assets.length) return;
+
+      // Ensure chat room exists
+      await fetch(`${BASEAPIURL}/chat/room`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ userIds: [user._id, toid] })
+      });
+
+      const roomId = getRoomId();
+      const newMessages = [];
+      for (const file of assets) {
+        const name = file.fileName || (file.uri ? file.uri.split('/').pop() : 'media');
+        const mimeFromAsset = file.mimeType || file.type || '';
+        const type = mimeFromAsset || (name.match(/\.(\w+)$/)?.[1] ? `image/${name.split('.').pop()}` : 'application/octet-stream');
+
+        const uploaded = await uploadChatMedia(roomId, {
+          uri: file.uri,
+          name,
+          type,
+        });
+
+        if (uploaded && uploaded.uri) {
+          const currentTime = new Date().toISOString();
+          
+          const saveRes = await saveSingleChatApi({
+            msg: '',
+            sender: user._id,
+            receiver: toid,
+            time: currentTime,
+            media: {
+              mimeType: type || null,
+              name: uploaded.name,
+              size: uploaded.size || null,
+              uri: uploaded.uri,
+            }
+          });
+
+          newMessages.push({
+            _id: saveRes && saveRes.messageId ? saveRes.messageId : undefined,
+            msg: '',
+            sender: user._id,
+            receiver: toid,
+            time: currentTime,
+            conversation: [user._id, toid],
+            media: {
+              mimeType: type || null,
+              name: uploaded.name,
+              size: uploaded.size || null,
+              uri: uploaded.uri,
+            }
+          });
+        }
+      }
+
+      if (newMessages.length) setChattings([...chattings, ...newMessages]);
+    } catch (err) {
+      console.error('File send failed', err);
+    }
+  };
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -10}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      style={{ flex: 1, backgroundColor: "#FFFFFF" }}
+      keyboardVerticalOffset={Platform.OS === "ios" ? 0 : -10}
+    >
+      <Container
+        style={{
+          paddingRight: 0,
+          paddingLeft: 0,
+          backgroundColor: "white",
+          flex: 1,
+        }}
       >
-        <Container
-          style={{
-            margin: 0,
-            marginTop: 0,
-            paddingLeft: 0,
-            paddingRight: 0,
-            backgroundColor: "#FFFFFF",
-            flex: 1,
-          }}
-        >
       <RowBetween
         style={{
           flexDirection: "row",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: 16,
+          paddingTop: 24,
+          paddingHorizontal: 16,
+          paddingBottom: 10,
           backgroundColor: "#FFFFFF",
           borderBottomWidth: 1,
           borderBottomColor: "#E8ECF2",
-          paddingBottom: 10,
         }}
       >
         <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -429,66 +742,227 @@ const ChatScreen = ({ navigation, route }) => {
         </View>
       )}
       <View style={{ flex: 1, paddingHorizontal: 0, flexDirection: "column", backgroundColor: "#FFFFFF" }}>
-        <ScrollView
-          showsVerticalScrollIndicator={false}
-          ref={scrollViewRef}
+        <FlatList
+          ref={flatListRef}
+          data={groupMessagesByDate(chattings)}
+          keyExtractor={(item, index) => item.id || item._id || `${item.sender || item.userId || 'u'}-${(item.time && new Date(item.time).getTime()) || index}-${index}`}
+          contentContainerStyle={{ paddingHorizontal: 10, backgroundColor: '#FFFFFF', paddingBottom: 12 }}
           onContentSizeChange={() => {
-            scrollViewRef.current.scrollToEnd({
-              animated: animated.current,
-            });
-            animated.current = true;
+            if (!isEditing && !suppressAutoScrollRef.current && flatListRef.current && chattings && chattings.length) {
+              // Use a small delay to ensure the content has been rendered
+              setTimeout(() => {
+                if (flatListRef.current) {
+                  flatListRef.current.scrollToEnd({ animated: animated.current });
+                  animated.current = true;
+                }
+              }, 50);
+            }
           }}
-          style={{
-            paddingHorizontal: 10,
-            backgroundColor: "#FFFFFF",
-          }}
-        >
-            {chattings &&
-              chattings.length > 0 &&
-              chattings.map((chat, index) => {
-                return (
-                  <React.Fragment key={index}>
-                    {/* <ChatDateLabel>YESTERDAY, 2:30 PM</ChatDateLabel> */}
-                    {chat.sender === user._id ? (
-                      <View
-                        key={index}
+          renderItem={({ item, index }) => {
+            // Render date header
+            if (item.type === 'dateHeader') {
+              return (
+                <ChatDateLabel style={{ marginVertical: 8, textAlign: 'center' }}>
+                  {formatDate(item.date)}
+                </ChatDateLabel>
+              );
+            }
+            
+            // Render message
+            const chat = item;
+            const isMe = isOutgoing(chat);
+            return (
+              <React.Fragment>
+                    {isMe ? (
+                      <RNView
                         style={{
                           alignItems: "flex-end",
                           flex: 1,
+                          width: '100%',
                           justifyContent: "flex-end",
                           BorderRadius: 10,
                         }}
                       >
-                        <SendChatBlock>
-                          <Text>{chat.msg}</Text>
-                        </SendChatBlock>
-                      </View>
+                        {(() => {
+                          const media = chat.media;
+                          if (media && media.uri) {
+                            const mime = (media.mimeType || '').toLowerCase();
+                            const uri = media.uri;
+                            const isImage = mime.startsWith('image') || /\.(png|jpe?g|gif|webp)$/i.test(uri);
+                            const isVideo = mime.startsWith('video') || /\.(mp4|mov|m4v|3gp|avi)$/i.test(uri);
+                            const url = uri.startsWith('http') ? uri : `${BASEIMGURL}${uri.replace(/^\//, '')}`;
+
+                            if (isImage) {
+                              return (
+                                <RNView style={{ alignItems: 'flex-end', marginVertical: 5, alignSelf: 'flex-end' }}>
+                                  <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <IconButton icon="dots-vertical" size={18} onPress={() => showMessageOptions(chat)} />
+                                    <RNView style={{ alignSelf: 'flex-end' }}>
+                                      <Image
+                                        source={{ uri: url }}
+                                        style={{ width: 200, height: 200, borderRadius: 12 }}
+                                        resizeMode="cover"
+                                      />
+                                    </RNView>
+                                  </RNView>
+                                  <Text style={{ 
+                                    fontSize: 11, 
+                                    color: '#78849e', 
+                                    marginTop: 2, 
+                                    marginRight: 8,
+                                    opacity: 0.7 
+                                  }}>
+                                    {formatTime(chat.time)}
+                                  </Text>
+                                </RNView>
+                              );
+                            }
+                            if (isVideo) {
+                              return (
+                                <RNView style={{ alignItems: 'flex-end', marginVertical: 5, alignSelf: 'flex-end' }}>
+                                  <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                    <IconButton icon="dots-vertical" size={18} onPress={() => showMessageOptions(chat)} />
+                                    <RNView style={{ alignSelf: 'flex-end' }}>
+                                      <TouchableOpacity
+                                        onPress={() => Linking.openURL(url)}
+                                        style={{ width: 220, height: 140, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', borderRadius: 12 }}
+                                      >
+                                        <Text style={{ color: '#fff' }}>Tap to play video</Text>
+                                      </TouchableOpacity>
+                                    </RNView>
+                                  </RNView>
+                                  <Text style={{ 
+                                    fontSize: 11, 
+                                    color: '#78849e', 
+                                    marginTop: 2, 
+                                    marginRight: 8,
+                                    opacity: 0.7 
+                                  }}>
+                                    {formatTime(chat.time)}
+                                  </Text>
+                                </RNView>
+                              );
+                            }
+                          }
+                          return (
+                            <RNView style={{ alignItems: 'flex-end', alignSelf: 'flex-end' }}>
+                              <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' }}>
+                                <IconButton icon="dots-vertical" size={18} onPress={() => showMessageOptions(chat)} />
+                                <SendChatBlock>{chat.msg}</SendChatBlock>
+                              </RNView>
+                              <Text style={{ 
+                                fontSize: 11, 
+                                color: '#78849e', 
+                                marginTop: 2, 
+                                marginRight: 8,
+                                opacity: 0.7 
+                              }}>
+                                {formatTime(chat.time)}
+                              </Text>
+                            </RNView>
+                          );
+                        })()}
+                      </RNView>
                     ) : (
-                      <RecieveChatBlock key={index}>
-                        <Text>{chat.msg}</Text>
-                      </RecieveChatBlock>
+                      <RNView style={{ width: '100%', alignItems: 'flex-start' }}>
+                      {(() => {
+                        const media = chat.media;
+                        if (media && media.uri) {
+                          const mime = (media.mimeType || '').toLowerCase();
+                          const uri = media.uri;
+                          const isImage = mime.startsWith('image') || /\.(png|jpe?g|gif|webp)$/i.test(uri);
+                          const isVideo = mime.startsWith('video') || /\.(mp4|mov|m4v|3gp|avi)$/i.test(uri);
+                          const url = uri.startsWith('http') ? uri : `${BASEIMGURL}${uri.replace(/^\//, '')}`;
+
+                          if (isImage) {
+                              return (
+                              <RNView style={{ alignItems: 'flex-start', marginVertical: 5, alignSelf: 'flex-start', marginRight: 'auto' }}>
+                                <Image
+                                  source={{ uri: url }}
+                                  style={{ width: 200, height: 200, borderRadius: 12 }}
+                                  resizeMode="cover"
+                                />
+                                <Text style={{ 
+                                  fontSize: 11, 
+                                  color: '#78849e', 
+                                  marginTop: 2, 
+                                  marginLeft: 8,
+                                  opacity: 0.7 
+                                }}>
+                                  {formatTime(chat.time)}
+                                </Text>
+                              </RNView>
+                            );
+                          }
+                          if (isVideo) {
+                            return (
+                              <RNView style={{ alignItems: 'flex-start', marginVertical: 5, alignSelf: 'flex-start', marginRight: 'auto' }}>
+                                <TouchableOpacity
+                                  onPress={() => Linking.openURL(url)}
+                                  style={{ width: 220, height: 140, justifyContent: 'center', alignItems: 'center', backgroundColor: '#000', borderRadius: 12 }}
+                                >
+                                  <Text style={{ color: '#fff' }}>Tap to play video</Text>
+                                </TouchableOpacity>
+                                <Text style={{ 
+                                  fontSize: 11, 
+                                  color: '#78849e', 
+                                  marginTop: 2, 
+                                  marginLeft: 8,
+                                  opacity: 0.7 
+                                }}>
+                                  {formatTime(chat.time)}
+                                </Text>
+                              </RNView>
+                            );
+                          }
+                        }
+                        return (
+                          <RNView style={{ alignItems: 'flex-start' }}>
+                            <RecieveChatBlock>{chat.msg}</RecieveChatBlock>
+                            <Text style={{ 
+                              fontSize: 11, 
+                              color: '#78849e', 
+                              marginTop: 2, 
+                              marginLeft: 8,
+                              opacity: 0.7 
+                            }}>
+                              {formatTime(chat.time)}
+                            </Text>
+                          </RNView>
+                        );
+                      })()}
+                      </RNView>
                     )}
-                  </React.Fragment>
-                );
-              })}
-          </ScrollView>
+              </React.Fragment>
+            );
+          }}
+        />
       </View>
       <TextInput
           placeholder="Type your message"
           placeholderTextColor="#78849E"
           selectionColor="#B98C13"
           value={message}
+          left={
+            <TextInput.Icon
+              icon="paperclip"
+              style={{ marginTop: 15 }}
+              onPress={pickAndSendFile}
+            />
+          }
           right={
             <TextInput.Icon
-              icon="send"
+              icon={isEditing ? 'content-save' : 'send'}
               style={{ marginTop: 15 }}
               onPress={() => {
-                console.log("Send button pressed, message:", message);
-                if (message !== "") {
-                  sendMessage();
-                  scrollViewRef.current.scrollToEnd({ animated: true });
+                if (message === "") return;
+                if (isEditing) {
+                  saveEditedMessage();
                 } else {
-                  console.log("Message is empty, cannot send");
+                  sendMessage();
+                  if (flatListRef.current && flatListRef.current.scrollToEnd) {
+                    flatListRef.current.scrollToEnd({ animated: true });
+                  }
                 }
               }}
             />
@@ -517,12 +991,22 @@ const ChatScreen = ({ navigation, route }) => {
             setMessage(text);
           }}
           onSubmitEditing={() => {
-            if (message !== "") sendMessage();
-            scrollViewRef.current.scrollToEnd({ animated: true });
+            if (message === "") return;
+            if (isEditing) {
+              saveEditedMessage();
+            } else {
+              sendMessage();
+              if (flatListRef.current && flatListRef.current.scrollToEnd) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
+            }
           }}
           onFocus={() => {
+            if (isEditing || suppressAutoScrollRef.current) return; // preserve position while editing/saving
             setTimeout(() => {
-              scrollViewRef.current.scrollToEnd({ animated: true });
+              if (flatListRef.current && flatListRef.current.scrollToEnd) {
+                flatListRef.current.scrollToEnd({ animated: true });
+              }
             }, 100);
           }}
           ref={focusref}
@@ -538,7 +1022,6 @@ const ChatScreen = ({ navigation, route }) => {
           />
         </Container>
       </KeyboardAvoidingView>
-    </SafeAreaView>
   );
 };
 

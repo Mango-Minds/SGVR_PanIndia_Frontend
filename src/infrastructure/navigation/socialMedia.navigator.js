@@ -54,6 +54,7 @@ import EditUserEducationInfo from "../../features/SocialMediaNew/EditAboutEducat
 import EditJobPost from "../../features/SocialMediaNew/EditJobPost.js";
 import JobApplicantForRecruiter from "../../features/SocialMediaNew/JobApplicantForRecruiter.js";
 import FollowersFollowing from "../../features/SocialMediaNew/FollowersFollowing.js";
+import MomentViewer from "../../features/SocialMediaNew/MomentViewer.js";
 
 const Tab = createBottomTabNavigator();
 
@@ -111,6 +112,7 @@ export const SocialMediaStackNavigator = () => (
       component={EditUserEducationInfo}
     />
     <Stack.Screen name="FollowersFollowing" component={FollowersFollowing} />
+    <Stack.Screen name="MomentViewer" component={MomentViewer} />
   </Stack.Navigator>
 );
 

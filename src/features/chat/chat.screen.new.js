@@ -43,6 +43,8 @@ import * as DocumentPicker from "expo-document-picker";
 import * as VideoThumbnails from "expo-video-thumbnails";
 import * as FileSystem from "expo-file-system";
 import { shareAsync } from "expo-sharing";
+import * as ImagePicker from 'expo-image-picker';
+import { uploadChatMedia } from '../../services/chat.services';
 
 const ChatScreenNew = ({ route }) => {
   //data from chat home
@@ -240,16 +242,15 @@ const ChatScreenNew = ({ route }) => {
             size: uploaded_media.size,
           });
   
-          const response = await apiClient.post(`/upload/${chat_room_id}`, formData, {
-            headers: {
-              Authorization: `Bearer ${auth_token}`,
-              "Content-Type": "multipart/form-data",
-            },
+          const response = await uploadChatMedia(chat_room_id, {
+            uri: uploaded_media.uri,
+            name: uploaded_media.name,
+            type: uploaded_media.mimeType,
           });
   
           let data_media = null;
-          if (response.status === 200) {
-            data_media = response.data;
+          if (response && response.uri) {
+            data_media = response;
   
             const media_object = {
               mimeType: data_media.mimeType,
@@ -363,7 +364,7 @@ const ChatScreenNew = ({ route }) => {
       if (item.userId !== userId) {
         const filename = media.name.slice(18);
         const result = await FileSystem.downloadAsync(
-          `${RENDERMEDIAURL}${media.uri}`,
+          `${BASEIMGURL}${media.uri.replace(/^\//, '')}`,
           FileSystem.documentDirectory + filename
         );
         save(result.uri, filename, result.headers["Content-Type"]);
@@ -410,7 +411,7 @@ const ChatScreenNew = ({ route }) => {
             onLongPress={() => handleLongPress(item)}
           >
             <Image
-              source={{ uri: `${RENDERMEDIAURL}${media.uri}` }}
+              source={{ uri: `${BASEIMGURL}${media.uri.replace(/^\//, '')}` }}
               style={styles.chatImage}
               resizeMode="cover"
             />
@@ -425,7 +426,7 @@ const ChatScreenNew = ({ route }) => {
           >
             <View>
               <Video
-                source={{ uri: `${RENDERMEDIAURL}${media.uri}` }}
+                source={{ uri: `${BASEIMGURL}${media.uri.replace(/^\//, '')}` }}
                 style={styles.chatVideoThumbnail}
                 resizeMode={ResizeMode.COVER}
                 usePoster={true}
@@ -471,14 +472,14 @@ const ChatScreenNew = ({ route }) => {
           <View style={styles.previewmodalContainer}>
             {modalContent && modalContent.mimeType && modalContent.mimeType.startsWith("image/") && (
               <Image
-                source={{ uri: `${RENDERMEDIAURL}${modalContent.uri}` }}
+                source={{ uri: `${BASEIMGURL}${modalContent.uri.replace(/^\//, '')}` }}
                 style={{ height: "40%", width: "100%", resizeMode: "cover" }}
               />
             )}
 
             {modalContent && modalContent.mimeType && modalContent.mimeType.startsWith("video/") && (
               <Video
-                source={{ uri: `${RENDERMEDIAURL}${modalContent.uri}` }}
+                source={{ uri: `${BASEIMGURL}${modalContent.uri.replace(/^\//, '')}` }}
                 shouldPlay={true}
                 resizeMode="contain"
                 style={styles.previewmodalVideo}
@@ -501,8 +502,19 @@ const ChatScreenNew = ({ route }) => {
   // upload image for chat
   const pickImage = async () => {
     try {
-      let result = await DocumentPicker.getDocumentAsync({
-        type: "*/*",
+      // Request permissions for media library
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        alert("Permission to access camera roll is required!");
+        return;
+      }
+
+      // Open gallery to select image
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        aspect: [4, 3],
+        quality: 1,
       });
 
       if (!result.canceled) {
@@ -512,7 +524,7 @@ const ChatScreenNew = ({ route }) => {
         setDocModalVisible(false);
       }
     } catch (error) {
-      console.log("error doc:", error);
+      console.log("error picking image:", error);
     }
   };
 
@@ -550,8 +562,19 @@ const ChatScreenNew = ({ route }) => {
 
   const pickVideo = async () => {
     try {
-      let result = await DocumentPicker.getDocumentAsync({
-        type: "video/*",
+      // Request permissions for media library
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (permissionResult.granted === false) {
+        alert("Permission to access camera roll is required!");
+        return;
+      }
+
+      // Open gallery to select video
+      let result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        allowsEditing: false,
+        aspect: [4, 3],
+        quality: 1,
       });
 
       if (!result.canceled) {
@@ -562,7 +585,7 @@ const ChatScreenNew = ({ route }) => {
         setDocModalVisible(false);
       }
     } catch (error) {
-      console.log("error doc:", error);
+      console.log("error picking video:", error);
     }
   };
 

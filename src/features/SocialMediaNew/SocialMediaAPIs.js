@@ -85,6 +85,42 @@ export const submitNewPost = async (description, list) => {
   }
 };
 
+// Moments API
+export const uploadMoment = async (caption, media) => {
+  const token = await getToken();
+  const formData = new FormData();
+  if (caption) formData.append("caption", caption);
+  formData.append("media", {
+    uri: media.uri,
+    name: media.name,
+    type: media.mimeType || (media.type === "image" ? "image/jpeg" : "video/mp4"),
+  });
+  return apiClient.post("/social/moments/create", formData, {
+    headers: { "Content-Type": "multipart/form-data", Authorization: `Bearer ${token}` },
+  });
+};
+
+export const getMyMoments = async () => {
+  const token = await getToken();
+  return apiClient.get("/social/moments/my", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const deleteMoment = async (momentId) => {
+  const token = await getToken();
+  return apiClient.delete(`/social/moments/delete/${momentId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
+export const getVisibleMoments = async () => {
+  const token = await getToken();
+  return apiClient.get(`/social/moments/visible`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+};
+
 // Fetch follow status
 export const fetchFollowStatusAPI = async (userId) => {
   try {

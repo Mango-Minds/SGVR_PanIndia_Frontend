@@ -18,6 +18,8 @@ import { SOCKETURL } from "../../infrastructure/constants";
 export default function MessageScreenNew({ navigation }) {
   const { conversations, user } = useSelector((state) => state.user);
   const [chatsUser, setChatsUser] = useState([]);
+  const [showArchived, setShowArchived] = useState(false);
+  const [allChats, setAllChats] = useState([]);
   const dispatch = useDispatch();
   const socket = useRef();
 
@@ -35,20 +37,27 @@ export default function MessageScreenNew({ navigation }) {
     }
   };
 
-  const getChatUsers = async () => {
+  const getChatUsers = async (includeArchived = false) => {
     try {
       console.log("MessageScreenNew - Fetching conversations...");
-      const data = await getAllUserChats();
+      const data = await getAllUserChats(includeArchived);
       console.log("MessageScreenNew - API response:", data);
-      dispatch(updateConversation(data || []));
+      setAllChats(data || []);
+      if (!includeArchived) {
+        dispatch(updateConversation(data || []));
+      }
     } catch (error) {
       console.error("MessageScreenNew - Error fetching conversations:", error);
     }
   };
 
   useEffect(() => {
-    setChatsUser(conversations);
-  }, [conversations]);
+    if (showArchived) {
+      setChatsUser(allChats);
+    } else {
+      setChatsUser(conversations);
+    }
+  }, [conversations, allChats, showArchived]);
 
   useEffect(() => {
     if (!socket.current) {
@@ -68,8 +77,8 @@ export default function MessageScreenNew({ navigation }) {
         socket.current.emit("join", { userId: user._id });
       }
       updateStorageConvo();
-      getChatUsers();
-    }, [user])
+      getChatUsers(showArchived);
+    }, [user, showArchived])
   );
 
   useEffect(() => {
@@ -95,8 +104,23 @@ export default function MessageScreenNew({ navigation }) {
       <RowBetween style={{ paddingTop: 24 }}>
         <View style={{ alignItems: "center" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          <TopText style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}>Message</TopText>
+          <TopText style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}>
+            {showArchived ? "Archived Chats" : "Message"}
+          </TopText>
         </View>
+        <TouchableOpacity
+          onPress={() => {
+            setShowArchived(!showArchived);
+            getChatUsers(!showArchived);
+          }}
+          style={{ padding: 8 }}
+        >
+          <Icon 
+            name={showArchived ? "archive-arrow-up" : "archive-arrow-down"} 
+            size={24} 
+            color="#666" 
+          />
+        </TouchableOpacity>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         <SearchField placeholder="NewSearch" />
@@ -112,12 +136,19 @@ export default function MessageScreenNew({ navigation }) {
           data={chatsUser}
           renderItem={({ item, index }) => <MessageCard {...item} key={item._id} index={index} />}
           keyExtractor={(item) => item._id}
-          // refreshControl={<RefreshControl refreshing={false} onRefresh={getChatUsers} />}
+          refreshControl={
+            <RefreshControl 
+              refreshing={false} 
+              onRefresh={() => getChatUsers(showArchived)} 
+            />
+          }
         />
       ) : (
         <View style={styles.noMessages}>
           <Ionicons name="chatbubbles-outline" size={100} color="#0000001A" />
-          <Text style={styles.noMessagesText}>No Messages</Text>
+          <Text style={styles.noMessagesText}>
+            {showArchived ? "No Archived Chats" : "No Messages"}
+          </Text>
         </View>
       )}
     </Container>

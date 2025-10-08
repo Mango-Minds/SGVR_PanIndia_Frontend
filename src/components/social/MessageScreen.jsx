@@ -38,6 +38,8 @@ export default function MessageScreen({ navigation }) {
     (state) => state.user
   );
   const [chatsUser, setChatsUser] = useState([]);
+  const [showArchived, setShowArchived] = useState(false);
+  const [allChats, setAllChats] = useState([]);
   const dispatch = useDispatch();
   const socket = useRef();
 
@@ -61,27 +63,39 @@ export default function MessageScreen({ navigation }) {
     }
   };
 
-  const getChatUsers = async () => {
+  const getChatUsers = async (includeArchived = false) => {
     try {
       console.log("MessageScreen - Fetching conversations...");
-      const data = await getAllUserChats();
+      const data = await getAllUserChats(includeArchived);
       console.log("MessageScreen - API response:", data);
-      if (data && data.length > 0) {
-        await dispatch(updateConversation(data));
-        // setChatsUser(conversations);
+      setAllChats(data || []);
+      if (!includeArchived) {
+        if (data && data.length > 0) {
+          await dispatch(updateConversation(data));
+        } else {
+          await dispatch(updateConversation([]));
+        }
       } else {
-        await dispatch(updateConversation([]));
-        // setChatsUser(conversations);
+        // When showing archived, update chatsUser directly
+        setChatsUser(data || []);
       }
     } catch (error) {
       console.error("MessageScreen - Error fetching conversations:", error);
     }
   };
 
+  const refreshChats = async () => {
+    await getChatUsers(showArchived);
+  };
+
   useEffect(() => {
     console.log("MessageScreen - conversations updated:", conversations);
-    setChatsUser(conversations);
-  }, [conversations]);
+    if (showArchived) {
+      setChatsUser(allChats);
+    } else {
+      setChatsUser(conversations);
+    }
+  }, [conversations, allChats, showArchived]);
 
   useEffect(() => {
     const initializeScreen = async () => {
@@ -109,11 +123,11 @@ export default function MessageScreen({ navigation }) {
           socket.current.emit("join", { userId: user._id });
         }
         await updateStorageConvo();
-        await getChatUsers();
+        await getChatUsers(showArchived);
       };
       
       initializeScreen();
-    }, [socket])
+    }, [socket, showArchived])
   );
 
   useEffect(() => {
@@ -151,9 +165,22 @@ export default function MessageScreen({ navigation }) {
           <TopText
             style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
           >
-            Message
+            {showArchived ? "Archived Chats" : "Message"}
           </TopText>
         </View>
+        <TouchableOpacity
+          onPress={() => {
+            setShowArchived(!showArchived);
+            getChatUsers(!showArchived);
+          }}
+          style={{ padding: 8 }}
+        >
+          <Icon 
+            name={showArchived ? "archive-arrow-up" : "archive-arrow-down"} 
+            size={24} 
+            color="#666" 
+          />
+        </TouchableOpacity>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         <SearchField placeholder="Search" />
@@ -168,15 +195,13 @@ export default function MessageScreen({ navigation }) {
         <FlatList
           data={chatsUser}
           renderItem={({ item, index }) => {
-            return <MessageCard {...item} key={item._id} index={index} />;
+            return <MessageCard {...item} key={item._id} index={index} onRefresh={refreshChats} />;
           }}
           keyExtractor={(item) => item._id}
           refreshControl={
             <RefreshControl
               refreshing={false}
-              onRefresh={async () => {
-                await getChatUsers();
-              }}
+              onRefresh={refreshChats}
             />
           }
         />
@@ -199,7 +224,7 @@ export default function MessageScreen({ navigation }) {
               color: "#0000001A",
             }}
           >
-            No Messages
+            {showArchived ? "No Archived Chats" : "No Messages"}
           </Text>
         </View>
       )}

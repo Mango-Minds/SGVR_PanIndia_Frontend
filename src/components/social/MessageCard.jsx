@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useSelector, useDispatch } from "react-redux";
 import { getImageUrl } from "../../services/socialMedia.services";
 import { deleteChat } from "../../services/socialMedia.services";
+import { archiveChat, unarchiveChat } from "../../services/chat.services";
 import { updateConversation } from "../../store/user";
 import Icons from "react-native-vector-icons/Ionicons";
 
@@ -51,14 +52,19 @@ export default function MessageCard(props) {
               if (res.success) {
                 console.log("Conversation deleted successfully");
                 
-                // Remove the conversation from Redux state
-                const updatedConversations = conversations.filter(conv => {
-                  // Check if this conversation matches the deleted one
-                  if (conv._id === conversationId) return false;
-                  if (conv.lastmsg && conv.lastmsg.conversation && conv.lastmsg.conversation.sort().join('_') === conversationId) return false;
-                  return true;
-                });
-                dispatch(updateConversation(updatedConversations));
+                // Call the refresh function to update the UI
+                if (props.onRefresh) {
+                  props.onRefresh();
+                } else {
+                  // Fallback: Remove the conversation from Redux state
+                  const updatedConversations = conversations.filter(conv => {
+                    // Check if this conversation matches the deleted one
+                    if (conv._id === conversationId) return false;
+                    if (conv.lastmsg && conv.lastmsg.conversation && conv.lastmsg.conversation.sort().join('_') === conversationId) return false;
+                    return true;
+                  });
+                  dispatch(updateConversation(updatedConversations));
+                }
                 
                 // Navigate back to previous page
                 navigation.goBack();
@@ -69,6 +75,71 @@ export default function MessageCard(props) {
             } catch (error) {
               console.error("Error deleting conversation:", error);
               Alert.alert("Error", "Failed to delete conversation");
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleArchiveToggle = async () => {
+    const action = props.archived ? "Unarchive" : "Archive";
+    const message = props.archived
+      ? "Are you sure you want to unarchive this conversation?"
+      : "Are you sure you want to archive this conversation?";
+
+    Alert.alert(
+      `${action} Chat`,
+      message,
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: action,
+          onPress: async () => {
+            try {
+              let conversationId = props._id;
+              if (!conversationId && props.lastmsg && props.lastmsg.conversation) {
+                conversationId = props.lastmsg.conversation.sort().join('_');
+              }
+              if (!conversationId) {
+                Alert.alert("Error", "Conversation ID not found.");
+                return;
+              }
+
+              let res;
+              if (props.archived) {
+                res = await unarchiveChat(conversationId);
+              } else {
+                res = await archiveChat(conversationId);
+              }
+
+              if (res.success) {
+                // Call the refresh function to update the UI
+                if (props.onRefresh) {
+                  props.onRefresh();
+                } else {
+                  // Fallback: Update the conversation list based on the action
+                  if (props.archived) {
+                    // Unarchiving: add back to active conversations
+                    const updated = conversations.map((c) =>
+                      c._id === props._id ? { ...c, archived: false } : c
+                    );
+                    dispatch(updateConversation(updated));
+                  } else {
+                    // Archiving: remove from active conversations
+                    const updated = conversations.filter((c) => c._id !== props._id);
+                    dispatch(updateConversation(updated));
+                  }
+                }
+              } else {
+                Alert.alert("Error", res.message || `Failed to ${action.toLowerCase()} chat.`);
+              }
+            } catch (e) {
+              console.error(`${action} failed:`, e);
+              Alert.alert("Error", "An unexpected error occurred.");
             }
           }
         }
@@ -162,9 +233,14 @@ export default function MessageCard(props) {
               />
             );
           }}
-          // right={(props) => {
-          //   return <NotificationAlertCircle />;
-          // }}
+          right={(p) => (
+            <Icons
+              name={props.archived ? 'archive-outline' : 'archive'}
+              size={20}
+              color="#78849E"
+              onPress={handleArchiveToggle}
+            />
+          )}
         />
         <Divider style={{ marginTop: 5 }} />
       </Card>

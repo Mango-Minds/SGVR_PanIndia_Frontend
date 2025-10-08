@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -19,6 +20,7 @@ import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import Theme from "../../styles/theme";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import * as ImagePicker from "expo-image-picker";
 import BottomNavigation from "../../components/social/BottomNavigation";
 
 import { useSelector } from "react-redux";
@@ -27,7 +29,7 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import NewSocialCard from "./NewSocialCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
-import { fetchAllPosts } from "./SocialMediaAPIs";
+import { fetchAllPosts, getMyMoments, uploadMoment, deleteMoment, getVisibleMoments } from "./SocialMediaAPIs";
 // import { FlatList } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import { useFollowStatus } from "./FollowStatusContext";
@@ -39,6 +41,9 @@ const { t } = useTranslation();
   //   "https://media.istockphoto.com/id/2143311599/photo/a-cheerful-asian-woman-enjoys-a-walk-during-a-summer-night.webp?a=1&b=1&s=612x612&w=0&k=20&c=D7Yb-GG6xR5vPDF40d5pL8OtDGHbav2AOZmg9q6nEXg=";
 
   const [posts, setPosts] = useState([]);
+  const [myMoments, setMyMoments] = useState([]);
+  const [isUploadingMoment, setIsUploadingMoment] = useState(false);
+  const [visibleMoments, setVisibleMoments] = useState([]);
   const [page, setPage] = useState(1); // Track the current page
   const [allLoaded, setAllLoaded] = useState(false);
   const [loadingAnimation, setLoadingAnimation] = useState(true);
@@ -137,6 +142,8 @@ const { t } = useTranslation();
 
   useEffect(() => {
     fetchPosts();
+    loadMyMoments();
+    loadVisibleMoments();
   }, []);
 
   // Handle search when searchTerm changes
@@ -173,6 +180,8 @@ const { t } = useTranslation();
     const unsubscribe = navigation.addListener('focus', () => {
       // Refresh posts when screen comes into focus
       fetchPosts(true);
+      loadMyMoments();
+      loadVisibleMoments();
     });
 
     return unsubscribe;
@@ -203,6 +212,66 @@ const { t } = useTranslation();
       setRefreshing(false); // Stop the refreshing animation
     }
   };
+  const loadMyMoments = async () => {
+    try {
+      const res = await getMyMoments();
+      setMyMoments(res.data?.moments || []);
+    } catch (e) {
+      console.error("Failed to load moments", e.response?.data || e.message);
+    }
+  };
+
+  const loadVisibleMoments = async () => {
+    try {
+      const res = await getVisibleMoments();
+      setVisibleMoments(res.data?.moments || []);
+    } catch (e) {
+      console.error("Failed to load visible moments", e.response?.data || e.message);
+    }
+  };
+
+  const pickMomentMedia = async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'We need access to your gallery.');
+        return;
+      }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: false,
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        const a = result.assets[0];
+        const media = {
+          uri: a.uri,
+          name: a.fileName || `moment_${Date.now()}.${a.type === 'video' ? 'mp4' : 'jpg'}`,
+          mimeType: a.type === 'video' ? 'video/mp4' : 'image/jpeg',
+          type: a.type,
+        };
+        setIsUploadingMoment(true);
+        try {
+          await uploadMoment('', media);
+          await loadMyMoments();
+        } finally {
+          setIsUploadingMoment(false);
+        }
+      }
+    } catch (err) {
+      console.error('pickMomentMedia error', err);
+    }
+  };
+
+  const handleDeleteMoment = async (id) => {
+    try {
+      await deleteMoment(id);
+      await loadMyMoments();
+    } catch (e) {
+      console.error('deleteMoment error', e.response?.data || e.message);
+    }
+  };
+
   return (
     <Container style={{ backgroundColor: "white", paddingBottom: 0 }}>
       <View style={styles.container}>
@@ -278,6 +347,31 @@ const { t } = useTranslation();
         </View>
 
         <SafeAreaView style={styles.socialFeedContainer}>
+          {/* Moments bar */}
+          <View style={styles.momentsContainer}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+              {/* Add moment button */}
+              <TouchableOpacity style={styles.momentAdd} onPress={pickMomentMedia} disabled={isUploadingMoment}>
+                <Ionicons name="add-circle-outline" size={28} color={Theme.themeColor} />
+                <Text style={styles.momentLabel}>{isUploadingMoment ? t("uploading") || 'Uploading...' : t("add") || 'Add'}</Text>
+              </TouchableOpacity>
+              {myMoments.map((m) => (
+                <TouchableOpacity key={m._id} style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
+                  <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
+                  <TouchableOpacity style={styles.momentDelete} onPress={() => handleDeleteMoment(m._id)}>
+                    <Ionicons name="close" size={16} color="#fff" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+              {visibleMoments
+                .filter((m) => !myMoments.some((mine) => mine._id === m._id))
+                .map((m) => (
+                  <TouchableOpacity key={m._id} style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
+                    <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
+                  </TouchableOpacity>
+                ))}
+            </ScrollView>
+          </View>
           {loadingAnimation === true ? (
             <ActivityIndicator
               style={{
@@ -438,6 +532,48 @@ const styles = StyleSheet.create({
   socialFeedContainer: {
     flex: 1,
     backgroundColor: "#fff",
+  },
+  momentsContainer: {
+    paddingVertical: 8,
+    paddingLeft: 8,
+    borderBottomColor: '#eee',
+    borderBottomWidth: 1,
+  },
+  momentAdd: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: Theme.themeColor,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+    backgroundColor: '#fff',
+  },
+  momentLabel: {
+    fontSize: 10,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  momentItem: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+    marginRight: 10,
+    position: 'relative',
+  },
+  momentThumb: {
+    width: '100%',
+    height: '100%',
+  },
+  momentDelete: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderBottomLeftRadius: 10,
+    padding: 2,
   },
   bottomMenuContainer: {
     flexDirection: "row",

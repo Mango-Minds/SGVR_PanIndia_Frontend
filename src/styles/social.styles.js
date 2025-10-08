@@ -84,12 +84,12 @@ export const ChatDateLabel = styled.Text`
 `;
 
 export const SendChatBlock = styled.Text`
-  background-color: #FF6B35;
-  color: white;
-  padding: 13px;
+  background-color: #EFEFEF;
+  color: #111827;
+  padding: 10px 12px;
   font-size: 14px;
   text-align: left;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   margin: 5px 0px;
   max-width: 80%;
@@ -98,17 +98,19 @@ export const SendChatBlock = styled.Text`
 `;
 
 export const RecieveChatBlock = styled.Text`
-  background-color: #E8F4FD;
-  color: #1E3A8A;
-  padding: 13px;
+  background-color: #FFFFFF;
+  color: #111827;
+  padding: 10px 12px;
   font-size: 14px;
   text-align: left;
-  border-radius: 18px;
+  border-radius: 14px;
   overflow: hidden;
   margin: 5px 0px;
   max-width: 80%;
   align-self: flex-start;
   border-bottom-left-radius: 6px;
+  border-width: 1px;
+  border-color: #E5E7EB;
 `;
 
 export const ChatTextInput = styled(TextInput)`
