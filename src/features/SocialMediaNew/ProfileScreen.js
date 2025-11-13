@@ -48,11 +48,13 @@ import { decode } from "base-64";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { fetchPostsAPI, fetchUserProfileAPI } from "./SocialMediaAPIs";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const Tab = createBottomTabNavigator();
 
 export default function ProfileNewScreen() {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const token = useSelector((state) => state.user.token);
   const user = useState(useSelector((state) => state.user.user));
   const isFocused = useIsFocused();
@@ -898,7 +900,7 @@ export default function ProfileNewScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top * 0.5, 8) : 8 }]}>
         <TouchableOpacity style={styles.iconButton}>
           <Icon
             name="arrow-back"
@@ -1081,7 +1083,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingBottom: 8,
     backgroundColor: "#f8f8f8",
   },
   iconButton: {

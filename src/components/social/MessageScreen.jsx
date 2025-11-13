@@ -5,6 +5,8 @@ import {
   ScrollView,
   Text,
   TouchableOpacity,
+  Image,
+  StyleSheet,
 } from "react-native";
 import io from "socket.io-client";
 import { Divider, IconButton } from "react-native-paper";
@@ -20,6 +22,7 @@ import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MessageCard from "./MessageCard";
+import { getImageUrl, getSocialMediaProfile } from "../../services/socialMedia.services";
 import { listUsers } from "../../Backup/queries";
 import { useDispatch, useSelector } from "react-redux";
 import { getAllUserChats } from "../../services/chat.services";
@@ -42,6 +45,7 @@ export default function MessageScreen({ navigation }) {
   const [allChats, setAllChats] = useState([]);
   const dispatch = useDispatch();
   const socket = useRef();
+  const [userDp, setUserDp] = useState(null);
 
   const updateStorageConvo = async () => {
     const convodata = await AsyncStorage.getItem("conversation");
@@ -105,6 +109,32 @@ export default function MessageScreen({ navigation }) {
       } else {
         socket.current.emit("join", { userId: user._id });
       }
+      // load header avatar (supports direct URLs and storage keys)
+      try {
+        const dpCandidate = user?.dp || user?.image;
+        if (dpCandidate) {
+          if (typeof dpCandidate === 'string' && /^(http|https):\/\//i.test(dpCandidate)) {
+            setUserDp(dpCandidate);
+          } else {
+            const res = await getImageUrl(dpCandidate);
+            if (res.status === 0 && res.url) setUserDp(res.url);
+          }
+        } else {
+          // Fallback: fetch profile like social posts
+          const prof = await getSocialMediaProfile(user?._id);
+          const profCandidate = prof?.result?.dp || prof?.result?.image;
+          if (profCandidate) {
+            if (typeof profCandidate === 'string' && /^(http|https):\/\//i.test(profCandidate)) {
+              setUserDp(profCandidate);
+            } else {
+              const img = await getImageUrl(profCandidate);
+              if (img.status === 0 && img.url) setUserDp(img.url);
+            }
+          }
+        }
+      } catch (e) {
+        // ignore avatar load errors
+      }
       await updateStorageConvo();
       await getChatUsers();
     };
@@ -154,42 +184,51 @@ export default function MessageScreen({ navigation }) {
     <Container
       style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}
     >
-      <RowBetween style={{ paddingTop: 24 }}>
-        <View style={{ alignItems: "center" }}>
+      {/* Header - replicate mock: avatar, name, status and actions */}
+      <RowBetween style={{ paddingTop: 24, paddingHorizontal: 12, paddingBottom: 12 }}>
+        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
           <IconButton
             icon="arrow-left"
             onPress={() => {
               navigation.goBack();
             }}
           />
-          <TopText
-            style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
-          >
-            {showArchived ? "Archived Chats" : "Message"}
-          </TopText>
-        </View>
-        <TouchableOpacity
-          onPress={() => {
-            setShowArchived(!showArchived);
-            getChatUsers(!showArchived);
-          }}
-          style={{ padding: 8 }}
-        >
-          <Icon 
-            name={showArchived ? "archive-arrow-up" : "archive-arrow-down"} 
-            size={24} 
-            color="#666" 
+          <Image
+            source={userDp ? { uri: userDp } : require("../../assets/images/general/user.png")}
+            style={styles.headerAvatar}
           />
-        </TouchableOpacity>
-      </RowBetween>
-      <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder="Search" />
-        <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
-          <TouchableOpacity>
-            <Icon name="magnify" size={24} />
+          <View style={{ marginLeft: 10, flex: 1 }}>
+            <Text style={styles.headerName} numberOfLines={1} ellipsizeMode="tail">
+              {(user?.firstName || user?.fname || "") + (user?.lastName || user?.lname ? " " + (user?.lastName || user?.lname) : "")}
+            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Ionicons name="ellipse" size={10} color="#2AC769" style={{ marginLeft: 4 }} />
+            </View>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", alignItems: "center", marginLeft: "auto", justifyContent: "flex-end" }}>
+          <Ionicons
+            name="create-outline"
+            size={22}
+            color="#000"
+            style={{ marginHorizontal: 8 }}
+            onPress={() => navigation.navigate("NewMessageScreen")}
+          />
+          <TouchableOpacity
+            onPress={() => {
+              setShowArchived(!showArchived);
+              getChatUsers(!showArchived);
+            }}
+            style={{ padding: 4, marginLeft: 4 }}
+          >
+            <Icon
+              name={showArchived ? "archive-arrow-up" : "archive-arrow-down"}
+              size={22}
+              color="#666"
+            />
           </TouchableOpacity>
         </View>
-      </Row>
+      </RowBetween>
 
       {chatsUser && chatsUser.length > 0 && (
         <FlatList
@@ -231,3 +270,29 @@ export default function MessageScreen({ navigation }) {
     </Container>
   );
 }
+
+const styles = StyleSheet.create({
+  headerAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginLeft: 6,
+  },
+  headerName: {
+    color: "#111",
+    fontSize: 16,
+    fontWeight: "700",
+    textTransform: "capitalize",
+  },
+  headerStatus: {
+    marginLeft: 6,
+    color: "#7C8A9A",
+    fontSize: 12,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#2AC769",
+  },
+});

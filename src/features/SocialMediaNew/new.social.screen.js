@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -19,9 +19,11 @@ import { Container, RowBetween } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import messageIcon from "../../assets/images/social/message.png";
 import Theme from "../../styles/theme";
+import { LinearGradient } from 'expo-linear-gradient';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from "expo-image-picker";
 import BottomNavigation from "../../components/social/BottomNavigation";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
@@ -29,7 +31,7 @@ import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
 import NewSocialCard from "./NewSocialCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
-import { fetchAllPosts, getMyMoments, uploadMoment, deleteMoment, getVisibleMoments } from "./SocialMediaAPIs";
+import { fetchAllPosts, getMyMoments, uploadMoment, deleteMoment, getVisibleMoments, getPopularHashtags, searchHashtags } from "./SocialMediaAPIs";
 // import { FlatList } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import { useFollowStatus } from "./FollowStatusContext";
@@ -49,7 +51,25 @@ const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [popularTags, setPopularTags] = useState([]);
+  const [tagQuery, setTagQuery] = useState('');
+  const [tagSuggestions, setTagSuggestions] = useState([]);
+  const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const flatListRef = useRef(null);
   const { getFollowStatus, updateFollowStatus } = useFollowStatus();
+  const insets = useSafeAreaInsets();
+  const topBarPaddingTop = Math.max(6, Math.min(22, insets.top * 0.6));
+
+  // Safe translation helper: uses fallback when key is missing
+  const tr = (key, fallback) => {
+    try {
+      const val = t(key);
+      return val === key ? fallback : val;
+    } catch (e) {
+      return fallback;
+    }
+  };
 
 
   // const fetchPosts = async (isRefresh = false) => {
@@ -88,7 +108,8 @@ const { t } = useTranslation();
 
     const pageToFetch = isRefresh ? 1 : page;
 
-    const response = await fetchAllPosts(pageToFetch, 10, searchTerm);
+    const hashtagsCsv = selectedTags.join(',');
+    const response = await fetchAllPosts(pageToFetch, 10, searchTerm, hashtagsCsv);
     const data = response.data;
 
     // Get user's selected language (default to 'en')
@@ -144,15 +165,19 @@ const { t } = useTranslation();
     fetchPosts();
     loadMyMoments();
     loadVisibleMoments();
+    // Load popular tags initially
+    getPopularHashtags(20)
+      .then((res) => setPopularTags(res.data?.tags || []))
+      .catch(() => setPopularTags([]));
   }, []);
 
   // Handle search when searchTerm changes
   useEffect(() => {
     const debouncedSearch = debounce(() => {
-      if (searchTerm.trim()) {
+      if (searchTerm.trim() || selectedTags.length > 0) {
         setIsSearching(true);
         fetchPosts(true);
-      } else if (searchTerm === '') {
+      } else if (searchTerm === '' && selectedTags.length === 0) {
         // Reset to show all posts when search is cleared
         setIsSearching(true);
         fetchPosts(true);
@@ -164,7 +189,29 @@ const { t } = useTranslation();
     return () => {
       debouncedSearch.cancel();
     };
-  }, [searchTerm]);
+  }, [searchTerm, selectedTags]);
+
+  // Debounced hashtag suggestions search
+  useEffect(() => {
+    const d = debounce(() => {
+      if (tagQuery.trim()) {
+        searchHashtags(tagQuery, 10)
+          .then((res) => setTagSuggestions(res.data?.tags || []))
+          .catch(() => setTagSuggestions([]));
+      } else {
+        setTagSuggestions([]);
+      }
+    }, 300);
+    d();
+    return () => d.cancel();
+  }, [tagQuery]);
+
+  const toggleTag = (tag) => {
+    const normalized = String(tag).toLowerCase();
+    setSelectedTags((prev) =>
+      prev.includes(normalized) ? prev.filter((t) => t !== normalized) : [...prev, normalized]
+    );
+  };
 
   // Handle refresh when returning from CreateNewPost
   useEffect(() => {
@@ -205,12 +252,42 @@ const { t } = useTranslation();
   const onRefresh = async () => {
     setRefreshing(true); // Start the refreshing animation
     try {
-      await fetchPosts(true); // Fetch the latest posts
+      await Promise.all([
+        fetchPosts(true), // latest posts
+        (async () => {
+          try { await loadMyMoments(); } catch (e) { console.error('refresh loadMyMoments', e?.response?.data || e.message); }
+        })(),
+        (async () => {
+          try { await loadVisibleMoments(); } catch (e) { console.error('refresh loadVisibleMoments', e?.response?.data || e.message); }
+        })(),
+        (async () => {
+          try {
+            const res = await getPopularHashtags(20);
+            setPopularTags(res.data?.tags || []);
+          } catch (e) {
+            console.error('refresh getPopularHashtags', e?.response?.data || e.message);
+          }
+        })(),
+      ]);
     } catch (error) {
       console.error("Failed to refresh posts:", error);
     } finally {
       setRefreshing(false); // Stop the refreshing animation
     }
+  };
+
+  const handleScrollToTop = async () => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToOffset({ offset: 0, animated: true });
+      // Refresh posts when scrolling to top
+      await onRefresh();
+    }
+  };
+
+  const handleScroll = (event) => {
+    const offsetY = event.nativeEvent.contentOffset.y;
+    // Show button when scrolled down more than 300 pixels
+    setShowScrollToTop(offsetY > 300);
   };
   const loadMyMoments = async () => {
     try {
@@ -275,103 +352,89 @@ const { t } = useTranslation();
   return (
     <Container style={{ backgroundColor: "white", paddingBottom: 0 }}>
       <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            style={{ flexShrink: 0 }}
-            onPress={() => {
-              if (navigation.canGoBack()) {
-                navigation.goBack();
-              } else {
-                navigation.navigate("MainHome");
-              }
-            }}
-          >
-            <Icon name="arrow-back" size={20} color="black" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ProfileNewScreen")}
-          >
-            <Image
-              style={styles.userProfileImage}
-              source={ profileImageUrl ? { uri: profileImageUrl } : UserImg}
-            />
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchBar}
-              placeholder={t("search")}
-              placeholderTextColor="#888"
-              value={searchTerm}
-              onChangeText={setSearchTerm}
-              onSubmitEditing={() => {
-                setIsSearching(true);
-                fetchPosts(true);
-              }}
-              returnKeyType="search"
-            />
-            {searchTerm.length > 0 && (
+        {/* Top bar only; composer moved below stories */}
+        <View style={[styles.topBar, { paddingTop: topBarPaddingTop }]}>
+          {/* Left cluster: back (if available) + logo pinned left */}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            {navigation.canGoBack() && (
               <TouchableOpacity
-                style={styles.clearButton}
-                onPress={() => setSearchTerm('')}
+                style={{ paddingRight: 8, marginLeft: 14, marginTop: 6 }}
+                onPress={() => {
+                  if (navigation.canGoBack()) navigation.goBack();
+                  else navigation.navigate("MainHome");
+                }}
               >
-                <Icon name="close-circle" size={20} color="#888" />
+                <Icon name="arrow-back" size={20} color="black" />
               </TouchableOpacity>
             )}
           </View>
-          <View style={styles.iconsContainer}>
-            <TouchableOpacity
-              onPress={() => navigation.navigate("CreateNewPost")}
-            >
-              <Ionicons name="add-circle-outline" size={24} color="black" />
-            </TouchableOpacity>
+          {/* Centered text logo */}
+          <View style={styles.centerTitleContainer}>
+            <Text style={styles.centerTitle}>Me Maratha</Text>
           </View>
+          <View style={{ flex: 1 }} />
+          <TouchableOpacity 
+            style={[styles.notificationIconContainer, { marginRight: 10 }]}
+            onPress={() => navigation.navigate("NotificationsScreen")}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#000" />
+          </TouchableOpacity>
           <TouchableOpacity 
             style={styles.notificationIconContainer}
-            onPress={() => {
-              console.log("Message icon clicked - ENVELOPE");
-              try {
-                console.log("Attempting to navigate to MessageScreen");
-                navigation.navigate("MessageScreen");
-              } catch (error) {
-                console.error("Navigation error:", error);
-              }
-            }}
+            onPress={() => navigation.navigate("MessageScreen")}
           >
-            <FontAwesomeIcon
-              name="envelope"
-              size={20}
-              color="#000"
-              marginLeft="auto"
-            />
+            <FontAwesomeIcon name="envelope" size={20} color="#000" marginLeft="auto" />
           </TouchableOpacity>
         </View>
 
         <SafeAreaView style={styles.socialFeedContainer}>
-          {/* Moments bar */}
-          <View style={styles.momentsContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {/* Add moment button */}
-              <TouchableOpacity style={styles.momentAdd} onPress={pickMomentMedia} disabled={isUploadingMoment}>
-                <Ionicons name="add-circle-outline" size={28} color={Theme.themeColor} />
-                <Text style={styles.momentLabel}>{isUploadingMoment ? t("uploading") || 'Uploading...' : t("add") || 'Add'}</Text>
-              </TouchableOpacity>
-              {myMoments.map((m) => (
-                <TouchableOpacity key={m._id} style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
-                  <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
-                  <TouchableOpacity style={styles.momentDelete} onPress={() => handleDeleteMoment(m._id)}>
-                    <Ionicons name="close" size={16} color="#fff" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-              {visibleMoments
-                .filter((m) => !myMoments.some((mine) => mine._id === m._id))
-                .map((m) => (
-                  <TouchableOpacity key={m._id} style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
-                    <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
-                  </TouchableOpacity>
-                ))}
-            </ScrollView>
-          </View>
+          {/* Composer directly under top bar */}
+          <LinearGradient
+            colors={[
+              'rgba(255,153,51,0.40)',   // deep orange
+              'rgba(255,183,102,0.30)',  // mid peach
+              'rgba(255,210,153,0.20)'   // light peach
+            ]}
+            locations={[0, 0.55, 1]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              borderRadius: 14,
+              marginHorizontal: 12,
+              padding: 16,
+              marginBottom: 8,
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 12,
+              borderWidth: 0,
+              borderColor: 'transparent',
+              shadowColor: 'transparent',
+              shadowOpacity: 0,
+              shadowRadius: 0,
+              shadowOffset: { width: 0, height: 0 },
+              elevation: 0,
+            }}
+          >
+            <TouchableOpacity onPress={() => navigation.navigate("ProfileNewScreen")}>
+              <Image
+                style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: 'transparent' }}
+                source={ profileImageUrl ? { uri: profileImageUrl } : UserImg}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ flex: 1, paddingVertical: 10, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+              onPress={() => navigation.navigate("CreateNewPost")}
+            >
+              <Text style={{ color: '#2B2B2B', fontSize: 16, fontWeight: '600', flex: 1 }} numberOfLines={1}>
+                {tr("whats_on_your_mind", "What’s on your mind?")}
+              </Text>
+              <Ionicons name="image-outline" size={22} color="#2B2B2B" style={{ marginRight: 6 }} />
+              <Ionicons name="videocam-outline" size={22} color="#2B2B2B" />
+            </TouchableOpacity>
+          </LinearGradient>
+
+          {/* Category tabs moved below moments - now rendered inside FlatList header to scroll with feed */}
+          {/* Composer removed from below stories */}
           {loadingAnimation === true ? (
             <ActivityIndicator
               style={{
@@ -399,9 +462,13 @@ const { t } = useTranslation();
                   </TouchableOpacity>
                 </View>
               ) : (
+                <>
                 <FlatList
+                  ref={flatListRef}
                   data={filteredPosts}
-                  renderItem={({ item }) => {
+                  onScroll={handleScroll}
+                  scrollEventThrottle={16}
+                  renderItem={({ item, index }) => {
                     // Handle deleted users by providing fallback values
                     const createdBy = item.createdBy || {};
                     const profileImageUri = createdBy.image
@@ -413,6 +480,7 @@ const { t } = useTranslation();
                     return (
                       <NewSocialCard
                         post={item}
+                        isFirst={index === 0}
                         userId={createdBy?._id || 'unknown'}
                         posts={posts}
                         firstName={createdBy?.firstName || "Deleted"}
@@ -431,6 +499,129 @@ const { t } = useTranslation();
                     );
                   }}
                   keyExtractor={(item, index) => `${item?._id || 'post'}_${index}`}
+                  contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 0, paddingBottom: 12 }}
+                  ListHeaderComponent={() => (
+                    <>
+                      {/* Hashtag search box (now scrollable with feed) */}
+                      <View style={{ paddingHorizontal: 12, paddingTop: 8, paddingBottom: 8 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                          <TextInput
+                            style={{ flex: 1, height: 36, backgroundColor: '#f5f5f5', borderRadius: 8, paddingHorizontal: 10, fontSize: 13 }}
+                            placeholder={tr('search_tags', 'Search tags (e.g. travel, food)')}
+                            value={tagQuery}
+                            onChangeText={setTagQuery}
+                            returnKeyType="search"
+                          />
+                          {(selectedTags.length > 0 || tagQuery.trim()) && (
+                            <TouchableOpacity
+                              onPress={() => { setSelectedTags([]); setTagQuery(''); setTagSuggestions([]); fetchPosts(true); }}
+                              style={{ marginLeft: 8, paddingHorizontal: 10, height: 36, borderRadius: 8, backgroundColor: Theme.themeBackgroundColor, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: Theme.themeColor }}
+                            >
+                              <Text style={{ color: Theme.themeColor, fontSize: 12, fontWeight: '600' }}>{tr('clear', 'Clear')}</Text>
+                            </TouchableOpacity>
+                          )}
+                        </View>
+                        
+                        {/* Show tag suggestions while typing */}
+                        {tagSuggestions.length > 0 && (
+                          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 8 }}>
+                            {tagSuggestions.map((s) => (
+                              <TouchableOpacity
+                                key={s.tag}
+                                onPress={() => { toggleTag(s.tag); setTagQuery(''); setTagSuggestions([]); }}
+                                style={{ height: 30, paddingHorizontal: 10, borderRadius: 15, marginRight: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: '#eef6ff', borderWidth: 1, borderColor: '#cce4ff' }}
+                              >
+                                <Text style={{ color: '#2563eb', fontSize: 12, fontWeight: '600' }}>#{s.tag}</Text>
+                              </TouchableOpacity>
+                            ))}
+                          </ScrollView>
+                        )}
+
+                        {/* Show selected tags with 'x' button */}
+                        {selectedTags.length > 0 && (
+                          <ScrollView 
+                            horizontal 
+                            showsHorizontalScrollIndicator={false} 
+                            style={{ marginTop: 4 }}
+                            contentContainerStyle={{ paddingRight: 8 }}
+                          >
+                            {selectedTags.map((tag) => (
+                              <View key={tag} style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#eee', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16, marginRight: 8 }}>
+                                <Text style={{ marginRight: 6, color: '#444', fontWeight: '600' }}>#{tag}</Text>
+                                <TouchableOpacity onPress={() => toggleTag(tag)}>
+                                  <Ionicons name="close" size={14} color="#444" />
+                                </TouchableOpacity>
+                              </View>
+                            ))}
+                          </ScrollView>
+                        )}
+                      </View>
+                      {/* Moments bar */}
+                      <View style={styles.momentsContainer}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {/* Add Story */}
+                          <View style={{ alignItems: 'center', marginRight: 10 }}>
+                            <TouchableOpacity style={styles.momentAdd} onPress={pickMomentMedia} disabled={isUploadingMoment}>
+                              <Ionicons name="add" size={20} color={Theme.themeColor} />
+                            </TouchableOpacity>
+                            <Text style={styles.momentLabel}>{tr("add_story", "Add Story")}</Text>
+                          </View>
+                          {myMoments.map((m) => (
+                            <View key={m._id} style={{ alignItems: 'center', marginRight: 10 }}>
+                              <TouchableOpacity style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
+                                {m?.mediaType === 'image' && m?.mediaUrl ? (
+                                  <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
+                                ) : (
+                                  <View style={[styles.momentThumb, styles.momentVideoThumb]}>
+                                    <Ionicons name="play" size={20} color="#fff" />
+                                  </View>
+                                )}
+                                <TouchableOpacity style={styles.momentDelete} onPress={() => handleDeleteMoment(m._id)}>
+                                  <Ionicons name="close" size={16} color="#fff" />
+                                </TouchableOpacity>
+                              </TouchableOpacity>
+                              <Text numberOfLines={1} style={styles.momentLabel}>{tr("you", "You")}</Text>
+                            </View>
+                          ))}
+                          {visibleMoments
+                            .filter((m) => !myMoments.some((mine) => mine._id === m._id))
+                            .map((m) => (
+                              <View key={m._id} style={{ alignItems: 'center', marginRight: 10 }}>
+                                <TouchableOpacity style={styles.momentItem} onPress={() => navigation.navigate('MomentViewer', { moment: m })}>
+                                  {m?.mediaType === 'image' && m?.mediaUrl ? (
+                                    <Image source={{ uri: m.mediaUrl }} style={styles.momentThumb} />
+                                  ) : (
+                                    <View style={[styles.momentThumb, styles.momentVideoThumb]}>
+                                      <Ionicons name="play" size={20} color="#fff" />
+                                    </View>
+                                  )}
+                                </TouchableOpacity>
+                                <Text numberOfLines={1} style={styles.momentLabel}>{m?.createdBy?.firstName || ''}</Text>
+                              </View>
+                            ))}
+                        </ScrollView>
+                      </View>
+                      {/* Category tabs (Trending/News/Ads/Shared Videos) */}
+                      <View style={{ paddingLeft: 0, paddingRight: 0, paddingTop: 12, paddingBottom: 12 }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
+                          {[
+                            tr("trending", "Trending"),
+                            tr("news", "News"),
+                            tr("ads", "Ads"),
+                            tr("shared_videos", "Shared Videos"),
+                          ].map((label, idx) => (
+                            <View key={idx} style={{ marginRight: 12 }}>
+                              <TouchableOpacity style={{ height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: idx === 0 ? Theme.themeBackgroundColor : "#f2f2f2", borderWidth: 1, borderColor: idx === 0 ? Theme.themeColor : "#e6e6e6", alignItems: "center", justifyContent: "center" }}>
+                                <Text style={{ color: idx === 0 ? Theme.themeColor : "#555", fontSize: 14, fontWeight: "600", includeFontPadding: false }}>{label}</Text>
+                              </TouchableOpacity>
+                            </View>
+                          ))}
+                        </ScrollView>
+                      </View>
+
+                      {/* Hashtag chips removed from ListHeaderComponent to keep input focus */}
+                    </>
+                  )}
                   onEndReached={fetchPosts}
                   onEndReachedThreshold={0.5}
                   refreshControl={
@@ -440,6 +631,17 @@ const { t } = useTranslation();
                     />
                   }
                 />
+                {/* Scroll to top button */}
+                {showScrollToTop && (
+                  <TouchableOpacity
+                    style={[styles.scrollToTopButton, { bottom: 80 + insets.bottom }]}
+                    onPress={handleScrollToTop}
+                    activeOpacity={0.8}
+                  >
+                    <Ionicons name="arrow-up" size={24} color="#fff" />
+                  </TouchableOpacity>
+                )}
+                </>
               )}
             </>
           )}
@@ -462,11 +664,27 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginTop: 6,
+    marginBottom: 6,
     paddingHorizontal: 3,
     marginHorizontal: 3,
     paddingVertical: 8,
     gap: 8, // Add consistent gap between elements
+  },
+  centerTitleContainer: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none", // allow taps to pass through
+  },
+  centerTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Theme.themeColor,
   },
   userProfileImage: {
     width: 35,
@@ -534,38 +752,59 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   momentsContainer: {
-    paddingVertical: 8,
-    paddingLeft: 8,
+    paddingTop: 12,
+    paddingBottom: 12,
+    paddingLeft: 12,
+    paddingRight: 12,
     borderBottomColor: '#eee',
     borderBottomWidth: 1,
   },
   momentAdd: {
     width: 60,
     height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: Theme.themeColor,
+    borderRadius: 12, // square with subtle rounding
+    borderWidth: 4,
+    borderColor: 'rgba(255,153,51,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 8,
     backgroundColor: '#fff',
+    shadowColor: Theme.themeColor,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   momentLabel: {
-    fontSize: 10,
+    fontSize: 9,
     textAlign: 'center',
     marginTop: 4,
   },
   momentItem: {
     width: 60,
     height: 60,
-    borderRadius: 30,
+    borderRadius: 12, // square with subtle rounding
     overflow: 'hidden',
-    marginRight: 10,
+    marginRight: 8,
     position: 'relative',
+    borderWidth: 4,
+    borderColor: 'rgba(255,153,51,0.6)',
+    shadowColor: Theme.themeColor,
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    backgroundColor: 'transparent',
   },
   momentThumb: {
     width: '100%',
     height: '100%',
+    borderRadius: 8,
+  },
+  momentVideoThumb: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#000',
   },
   momentDelete: {
     position: 'absolute',
@@ -654,6 +893,26 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  scrollToTopButton: {
+    position: "absolute",
+    left: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: Theme.themeColor,
+    opacity: 0.85,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+    zIndex: 1000,
   },
 });
 

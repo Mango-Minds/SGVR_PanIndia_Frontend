@@ -7,7 +7,9 @@ import {
   Keyboard,
   Text,
   RefreshControl,
+  Platform,
 } from "react-native";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Divider, IconButton } from "react-native-paper";
 import {
   Container,
@@ -32,7 +34,7 @@ import SearchScreenUserThumb from "./SearchScreenUserThumb";
 
 export default function SearchScreen({ navigation }) {
   const { socialData } = useSelector((state) => state.user);
-
+  const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
 
   const queryclient = useQueryClient();
@@ -95,7 +97,7 @@ export default function SearchScreen({ navigation }) {
     <Container
       style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}
     >
-      <RowBetween style={{ paddingTop: 24 }}>
+      <RowBetween style={{ paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 8) : Platform.OS === 'android' ? 24 : 24 }}>
         <View style={{ alignItems: "center" }}>
           <IconButton
             icon="arrow-left"

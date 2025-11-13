@@ -112,7 +112,7 @@ export const SocialMediaStackNavigator = () => (
       component={EditUserEducationInfo}
     />
     <Stack.Screen name="FollowersFollowing" component={FollowersFollowing} />
-    <Stack.Screen name="MomentViewer" component={MomentViewer} />
+    <Stack.Screen name="MomentViewer" component={MomentViewer} options={{ headerShown: false }} />
   </Stack.Navigator>
 );
 

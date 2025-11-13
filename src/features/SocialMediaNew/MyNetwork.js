@@ -26,6 +26,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
 import { Container } from "../../styles/common.styles";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { 
   getFriendRequests, 
   getSentFriendRequests, 
@@ -40,6 +41,7 @@ import { GetAllFriends } from "../../services/socialMedia.services";
 
 const MyNetwork = ({ navigation }) => {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const [selectedTab, setSelectedTab] = useState("Friends");
   const [requests, setRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
@@ -538,7 +540,7 @@ const MyNetwork = ({ navigation }) => {
   return (
     <Container style={{ backgroundColor: "white", paddingBottom: 0 }}>
       {/* Header with Back Arrow and Tabs */}
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top * 0.5, 8) : 8 }]}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
@@ -548,28 +550,34 @@ const MyNetwork = ({ navigation }) => {
 
         <View style={styles.tabContainer}>
           <TouchableOpacity onPress={() => setSelectedTab("Friends")}>
-            <Text
-              style={[styles.tab, selectedTab === "Friends" && styles.activeTab]}
-            >
-              {t("friends")}
-            </Text>
+            <View style={[styles.tabWrapper, selectedTab === "Friends" && styles.activeTabWrapper]}>
+              <Text
+                style={[styles.tab, selectedTab === "Friends" && styles.activeTab]}
+              >
+                {t("friends")}
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedTab("Add Friend")}>
-            <Text
-              style={[styles.tab, selectedTab === "Add Friend" && styles.activeTab]}
-            >
-              {t("addFriendTab")}
-            </Text>
+            <View style={[styles.tabWrapper, selectedTab === "Add Friend" && styles.activeTabWrapper]}>
+              <Text
+                style={[styles.tab, selectedTab === "Add Friend" && styles.activeTab]}
+              >
+                {t("addFriendTab")}
+              </Text>
+            </View>
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setSelectedTab("Requests")}>
-            <Text
-              style={[
-                styles.tab,
-                selectedTab === "Requests" && styles.activeTab,
-              ]}
-            >
-              {t("requests")}
-            </Text>
+            <View style={[styles.tabWrapper, selectedTab === "Requests" && styles.activeTabWrapper]}>
+              <Text
+                style={[
+                  styles.tab,
+                  selectedTab === "Requests" && styles.activeTab,
+                ]}
+              >
+                {t("requests")}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
       </View>
@@ -639,7 +647,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingBottom: 8,
     backgroundColor: "white",
   },
   backButton: {
@@ -657,17 +665,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: 2,
   },
-  tab: {
-    fontSize: 16,
+  tabWrapper: {
     paddingVertical: 8,
     paddingHorizontal: 20,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  activeTabWrapper: {
+    backgroundColor: Theme.themeColor,
+  },
+  tab: {
+    fontSize: 16,
     color: "#333",
   },
   activeTab: {
     color: "#fff",
-    backgroundColor: Theme.themeColor,
-    borderRadius: 20,
-    paddingHorizontal: 20,
   },
   itemContainer: {
     flexDirection: "row",

@@ -11,6 +11,7 @@ import {
   TextInput,
   ActivityIndicator,
   Alert,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
@@ -31,9 +32,11 @@ import { FlatList } from "react-native-gesture-handler";
 import { debounce } from "lodash";
 import { useFollowStatus } from "./FollowStatusContext";
 import { getFollowing, getFollowers, unfollowUserAPI } from "./SocialMediaAPIs";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FollowersFollowing = ({ navigation, route }) => {
   const { type } = route.params; // 'Followers' or 'Following'
+  const insets = useSafeAreaInsets();
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState(null);
@@ -54,7 +57,7 @@ const FollowersFollowing = ({ navigation, route }) => {
 
   const Header = () => {
     return (
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top * 0.5, 8) : 12 }]}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.headerLeftIcon}
@@ -370,7 +373,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingBottom: 12,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",

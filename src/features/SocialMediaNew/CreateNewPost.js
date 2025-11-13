@@ -158,10 +158,11 @@ const CreateNewPost = ({ navigation }) => {
     console.log(list);
   };
 
-  // Function to handle adding tags
+  // Function to handle adding hashtags
   const addTag = () => {
-    if (tagInput && !tags.includes(tagInput)) {
-      setTags([...tags, tagInput]);
+    const normalized = tagInput?.trim().replace(/^#+/, '').toLowerCase();
+    if (normalized && !tags.includes(normalized)) {
+      setTags([...tags, normalized]);
       setTagInput("");
     }
   };
@@ -306,7 +307,7 @@ const CreateNewPost = ({ navigation }) => {
       console.log("Submitting post with description:", description);
       console.log("Media list:", list);
       
-      const response = await submitNewPost(description, list);
+      const response = await submitNewPost(description, list, tags);
       console.log("response of add post", response);
   
       dispatch(setLoadingInBtn(false));
@@ -411,11 +412,26 @@ const CreateNewPost = ({ navigation }) => {
            />
 
          
+          {/* Hashtag input */}
+          <View style={styles.tagContainer}>
+            <TextInput
+              style={styles.tagInput}
+              placeholder={t("addHashtagsPlaceHolder") || "Add hashtag (e.g. travel)"}
+              value={tagInput}
+              onChangeText={setTagInput}
+              onSubmitEditing={addTag}
+              returnKeyType="done"
+            />
+            <TouchableOpacity style={styles.addTagButton} onPress={addTag}>
+              <Text style={styles.addTagText}>{t("add") || "Add"}</Text>
+            </TouchableOpacity>
+          </View>
+
           {/* Tag List */}
           <View style={styles.tagList}>
             {tags.map((tag, index) => (
               <View key={index} style={styles.tagItem}>
-                <Text style={styles.tagText}>{tag}</Text>
+                <Text style={styles.tagText}>#{tag}</Text>
                 <TouchableOpacity onPress={() => removeTag(tag)}>
                   <Ionicons name="close" size={16} color="red" />
                 </TouchableOpacity>

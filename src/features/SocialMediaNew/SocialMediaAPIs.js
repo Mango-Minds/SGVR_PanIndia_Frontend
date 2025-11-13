@@ -19,7 +19,7 @@ export const submitNewJob = async (jobData) => {
   return response;
 };
 
-export const submitNewPost = async (description, list) => {
+export const submitNewPost = async (description, list, hashtags = []) => {
   try {
     const token = await getToken();
     console.log("Token obtained:", token ? "Yes" : "No");
@@ -66,6 +66,15 @@ export const submitNewPost = async (description, list) => {
       // Text-only post
       formData.append("type", "text");
       console.log("Text-only post, type set to 'text'");
+    }
+
+    // Append hashtags (array) for backend parsing
+    if (Array.isArray(hashtags) && hashtags.length > 0) {
+      hashtags.forEach((tag) => {
+        if (typeof tag === 'string' && tag.trim()) {
+          formData.append('hashtags', tag.trim());
+        }
+      });
     }
 
     console.log("FormData prepared, making API call...");
@@ -411,9 +420,20 @@ export const unfollowUserAPI = async (toUserId) => {
   }
 };
 
-export const fetchAllPosts = (page = 1, limit = 10, search = '') => {
+export const fetchAllPosts = (page = 1, limit = 10, search = '', hashtagsCsv = '') => {
   const searchParam = search && search.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
-  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}${searchParam}`);
+  const tagsParam = hashtagsCsv && hashtagsCsv.trim() ? `&hashtags=${encodeURIComponent(hashtagsCsv.trim())}` : '';
+  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}${searchParam}${tagsParam}`);
+};
+
+export const getPopularHashtags = (limit = 20) => {
+  return apiClient.get(`/social/post/hashtags/popular?limit=${limit}`);
+};
+
+export const searchHashtags = (q, limit = 20) => {
+  const query = (q || '').trim();
+  if (!query) return Promise.resolve({ data: { tags: [] } });
+  return apiClient.get(`/social/post/hashtags/search?q=${encodeURIComponent(query)}&limit=${limit}`);
 };
 
 // Legacy function - use followUserAPI instead
@@ -451,6 +471,22 @@ export const addComment = (postId, content) => {
 
 export const deleteComment = (postId, commentId) => {
   return apiClient.delete(`/social/post/comment/${postId}/${commentId}`);
+};
+
+export const likeComment = (postId, commentId) => {
+  return apiClient.post(`/social/post/comment/like/${postId}/${commentId}`);
+};
+
+export const unlikeComment = (postId, commentId) => {
+  return apiClient.post(`/social/post/comment/unlike/${postId}/${commentId}`);
+};
+
+export const replyToComment = (postId, commentId, content) => {
+  return apiClient.post(`/social/post/comment/reply/${postId}/${commentId}`, { content });
+};
+
+export const deleteReply = (postId, commentId, replyId) => {
+  return apiClient.delete(`/social/post/comment/reply/${postId}/${commentId}/${replyId}`);
 };
 
 export const reportPostApi = (postId, reason) => {

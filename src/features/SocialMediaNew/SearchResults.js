@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert, TextInput } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Image, ActivityIndicator, Alert, TextInput, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { debounce } from "lodash";
@@ -10,6 +11,7 @@ import { getSearchUsers } from '../../services/socialMedia.services';
 const SearchResults = () => {
   const searchInputRef = useRef(null);
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [loadingAnimation, setLoadingAnimation] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState([]);
@@ -107,7 +109,7 @@ const SearchResults = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
+      <View style={[styles.headerContainer, { paddingTop: Platform.OS === 'ios' ? Math.max(insets.top, 8) : Platform.OS === 'android' ? 24 : 8 }]}>
         <TouchableOpacity 
           style={styles.iconButton}
           onPress={() => navigation.goBack()}
@@ -167,13 +169,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f0f0",
-    marginTop: 30,
   },
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 10,
-    paddingVertical: 8,
+    paddingBottom: 8,
     backgroundColor: "#f8f8f8",
   },
   iconButton: {

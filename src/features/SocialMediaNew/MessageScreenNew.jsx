@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState, useRef } from "react";
-import { FlatList, RefreshControl, Text, TouchableOpacity } from "react-native";
+import { FlatList, RefreshControl, Text, TouchableOpacity, Platform } from "react-native";
 import io from "socket.io-client";
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Divider, IconButton } from "react-native-paper";
 import { Container, RowBetween, SearchField, View } from "../../styles/common.styles";
 import { Row } from "../../styles/dashboard.styles";
@@ -17,6 +18,7 @@ import { SOCKETURL } from "../../infrastructure/constants";
 
 export default function MessageScreenNew({ navigation }) {
   const { conversations, user } = useSelector((state) => state.user);
+  const insets = useSafeAreaInsets();
   const [chatsUser, setChatsUser] = useState([]);
   const [showArchived, setShowArchived] = useState(false);
   const [allChats, setAllChats] = useState([]);
@@ -101,7 +103,7 @@ export default function MessageScreenNew({ navigation }) {
 
   return (
     <Container style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}>
-      <RowBetween style={{ paddingTop: 24 }}>
+      <RowBetween style={{ paddingTop: Platform.OS === 'ios' ? Math.max(insets.top * 0.5, 8) : 24 }}>
         <View style={{ alignItems: "center" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}>

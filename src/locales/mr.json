@@ -239,6 +239,10 @@
   "showLess": "कमी दाखवा",
   "followers": "फॉलोअर्स",
   "following": "फॉलो करत आहे",
+  "search_tags": "टॅग शोधा (उदा. travel, food)",
+  "clear": "साफ करा",
+  "addHashtagsPlaceHolder": "हॅशटॅग जोडा (उदा. travel)",
+  "add": "जोडा",
  
   "document": "दस्तऐवज",
   "editUserProfile": "प्रोफाइल संपादित करा",

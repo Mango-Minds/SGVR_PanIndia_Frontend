@@ -187,37 +187,38 @@ const ChatHome = ({ navigation }) => {
         />
       ) : (
         <View style={styles.container}>
-          {userRooms?.rooms?.map((room) =>
-            room?.participants?.map((participant) => (
-              <TouchableOpacity
-                key={room.roomId}
-                onPress={() =>
-                  navigation.navigate("ChatScreenNew", {
-                    user_auth_token: token,
-                    room: room,
-                    participant_name:
-                      room.participants[0].firstName +
-                      " " +
-                      room.participants[0].lastName,
-                  })
-                }
-              >
-                <View style={styles.chatContainer}>
-                  <Image
-                    source={Profile} // Replace with participant's profile picture if available
-                    style={styles.avatar}
-                  />
-                  <View style={styles.chatInfo}>
-                    <Text style={styles.participantName}>
-                      {participant.firstName} {participant.lastName}
-                    </Text>
-                    <Text style={styles.lastMessage}>Last message preview...</Text>
-                  </View>
-                  <Text style={styles.timestamp}>2:45 PM</Text>
+          {userRooms?.rooms?.map((room) => (
+            <TouchableOpacity
+              key={room.roomId}
+              onPress={() =>
+                navigation.navigate("ChatScreenNew", {
+                  user_auth_token: token,
+                  room: room,
+                  participant_name: room.groupName
+                    ? room.groupName
+                    : room?.participants?.[0]
+                    ? `${room.participants[0].firstName} ${room.participants[0].lastName}`
+                    : 'Chat',
+                })
+              }
+            >
+              <View style={styles.chatContainer}>
+                <Image
+                  source={Profile}
+                  style={styles.avatar}
+                />
+                <View style={styles.chatInfo}>
+                  <Text style={styles.participantName}>
+                    {room.groupName
+                      ? room.groupName
+                      : room?.participants?.map(p => `${p.firstName} ${p.lastName}`).join(', ')}
+                  </Text>
+                  <Text style={styles.lastMessage}>Last message preview...</Text>
                 </View>
-              </TouchableOpacity>
-            ))
-          )}
+                <Text style={styles.timestamp}>2:45 PM</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
         </View>
       )}
     </View>

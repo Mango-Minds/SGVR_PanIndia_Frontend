@@ -17,6 +17,8 @@ import {
   Pressable,
   ActivityIndicator,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -41,6 +43,10 @@ import {
   getComments,
   addComment,
   deleteComment,
+  likeComment,
+  unlikeComment,
+  replyToComment,
+  deleteReply,
   reportPostApi,
   getUsers,
   getUserFriends,
@@ -49,6 +55,7 @@ import {
 import { generateShareUrl, generateShareMessage } from "../../utils/shareUtils";
 import * as Clipboard from 'expo-clipboard';
 import { useFollowStatus } from "./FollowStatusContext";
+import moment from "moment";
 
 const windowWidth = Dimensions.get("window").width;
 
@@ -78,6 +85,28 @@ const NewSocialCard = ({
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const { t } = useTranslation();
+  const tr = (key, fallback) => {
+    try {
+      const val = t(key);
+      return val === key ? fallback : val;
+    } catch (e) {
+      return fallback;
+    }
+  };
+
+  const formatTime = (timestamp) => {
+    if (!timestamp) return "";
+    const now = moment();
+    const time = moment(timestamp);
+    const diffMin = now.diff(time, 'minutes');
+    const diffHrs = now.diff(time, 'hours');
+    const diffDays = now.diff(time, 'days');
+    if (diffMin < 1) return tr('just_now', 'Just now');
+    if (diffMin < 60) return `${diffMin}m`;
+    if (diffHrs < 24) return `${diffHrs}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return time.format('MMM D');
+  };
   // Determine if photoUri is an array of images or a single image
 
   const images = Array.isArray(postImages) ? postImages : [postImages];
@@ -725,6 +754,74 @@ const NewSocialCard = ({
     );
   };
 
+  const isCommentLikedByMe = (comment) => {
+    if (!comment || !Array.isArray(comment.likes)) return false;
+    try {
+      return comment.likes.some((l) => {
+        const id = l?.user?._id || l?.user || l?._id;
+        return String(id) === String(fromUserId);
+      });
+    } catch {
+      return false;
+    }
+  };
+
+  const toggleLikeComment = async (commentId) => {
+    const target = comments?.find((c) => c._id === commentId);
+    const liked = isCommentLikedByMe(target);
+    if (liked) {
+      try {
+        const res = await unlikeComment(post._id, commentId);
+        setComments((prev) => prev.map((c) => c._id === commentId ? {
+          ...c,
+          likes: Array.isArray(c.likes) ? c.likes.filter((l) => String(l?.user?._id || l?.user || l?._id) !== String(fromUserId)) : [],
+          likesCount: res.data?.likesCount ?? Math.max((c.likesCount || 1) - 1, 0),
+        } : c));
+      } catch (e) {
+        console.error('unlikeComment error', e?.response?.data || e.message);
+      }
+      return;
+    }
+    try {
+      const res = await likeComment(post._id, commentId);
+      setComments((prev) => prev.map((c) => c._id === commentId ? {
+        ...c,
+        likes: Array.isArray(c.likes) ? [...c.likes, { user: fromUserId }] : [{ user: fromUserId }],
+        likesCount: res.data?.likesCount ?? (c.likesCount || 0) + 1,
+      } : c));
+    } catch (e) {
+      // If backend says "Already liked", flip to unlike behaviour to satisfy UX
+      if (e?.response?.data?.message && String(e.response.data.message).toLowerCase().includes('already liked')) {
+        await toggleLikeComment(commentId); // call again, will hit unlike branch
+      } else {
+        console.error('likeComment error', e?.response?.data || e.message);
+      }
+    }
+  };
+
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [openRepliesMap, setOpenRepliesMap] = useState({});
+  const submitReply = async () => {
+    if (!replyTarget || !replyText.trim()) return;
+    try {
+      const res = await replyToComment(post._id, replyTarget, replyText.trim());
+      const replies = res.data?.replies || [];
+      setComments(prev => prev.map(c => c._id === replyTarget ? { ...c, replies } : c));
+      setReplyText("");
+      setReplyTarget(null);
+    } catch (e) {
+      console.error('replyToComment error', e?.response?.data || e.message);
+    }
+  };
+
+  // Always fetch latest comments when comments modal opens
+  useEffect(() => {
+    if (isCommentsModalVisible) {
+      fetchComments();
+    }
+  }, [isCommentsModalVisible]);
+
   const renderItem = ({ item }) => {
     // Add null checks to prevent rendering errors
     if (!item || !item.userId) {
@@ -737,20 +834,17 @@ const NewSocialCard = ({
     const imageUri = item?.userId?.image ? `${item.userId?.image}` : UserImg;
 
     const isCommentOwner = String(item?.userId?._id) === String(fromUserId);
-    const isPostOwner = String(post?.createdBy?._id) === String(fromUserId);
-    const canDeleteComment = isCommentOwner || isPostOwner;
+    // UI requirement: only show menu for comment owner (not post owner)
+    const canDeleteComment = isCommentOwner;
 
 
 
     return (
-      <View style={styles.commentItem}>
+      <View style={styles.commentRowContainer}>
         <TouchableOpacity
           onPress={() => {
-            // Navigate to commenter's profile
             if (item?.userId?._id) {
-              navigation.navigate("EachProfile", {
-                userId: item.userId._id,
-              });
+              navigation.navigate("EachProfile", { userId: item.userId._id });
             }
           }}
         >
@@ -759,22 +853,99 @@ const NewSocialCard = ({
             style={styles.commentProfileImage}
           />
         </TouchableOpacity>
-        <View style={styles.commentContent}>
-          <Text style={styles.commentName}>
-            {item.userId.firstName || "Unknown"} {item.userId.lastName || "User"}
-          </Text>
-          <Text style={styles.commentText}>{item.content || ""}</Text>
-        </View>
+        <View style={{ flex: 1 }}>
+          <View style={styles.commentHeaderLine}>
+            <Text style={styles.commentName}>
+              {item.userId.firstName || "Unknown"} {item.userId.lastName || "User"}
+            </Text>
+            <Text style={styles.commentTime}> · {formatTime(item.createdAt)}</Text>
+          </View>
+          <View style={styles.commentBubble}>
+            <Text style={styles.commentText}>{item.content || ""}</Text>
+          </View>
+          <View style={styles.commentActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => toggleLikeComment(item._id)}>
+              <FontAwesome name="thumbs-o-up" size={14} color="#6B7280" />
+              <Text style={styles.actionLabel}>{(item.likesCount || 0)} {tr("likes", "likes")}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={() => setReplyTarget(item._id)}>
+              <Ionicons name="chatbubble-ellipses-outline" size={14} color="#6B7280" />
+              <Text style={styles.actionLabel}>{tr("reply", "Reply")}</Text>
+            </TouchableOpacity>
+          </View>
 
+          {replyTarget === item._id && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+              <View style={{ flex: 1, backgroundColor: '#F2F2F7', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}>
+                <TextInput value={replyText} onChangeText={setReplyText} placeholder={t('reply') || 'Reply...'} />
+              </View>
+              <TouchableOpacity onPress={submitReply} style={{ paddingHorizontal: 8, marginLeft: 6 }}>
+                <Text style={{ color: Theme?.themeColor || '#B98C13', fontWeight: '600' }}>{t('post') || 'Post'}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* View replies toggle */}
+          {Array.isArray(item.replies) && item.replies.length > 0 && (
+            <TouchableOpacity
+              onPress={() => setOpenRepliesMap(prev => ({ ...prev, [item._id]: !prev[item._id] }))}
+              style={styles.viewRepliesLink}
+            >
+              <Text style={styles.viewRepliesText}>
+                {openRepliesMap[item._id] ? tr('hide_replies', 'Hide replies') : `${tr('view_replies','View replies')} (${item.replies.length})`}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {/* Replies list */}
+          {openRepliesMap[item._id] && Array.isArray(item.replies) && item.replies.length > 0 && (
+            <View style={{ marginTop: 6 }}>
+              {item.replies.map((r) => {
+                const rImageUri = r?.userId?.image ? `${r.userId.image}` : UserImg;
+                return (
+                  <View key={r._id} style={styles.replyRow}>
+                    <Image source={typeof rImageUri === 'string' ? { uri: rImageUri } : rImageUri} style={styles.replyAvatar} />
+                    <View style={styles.replyBubble}>
+                      <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                        <Text style={styles.replyName}>{r?.userId?.firstName || 'User'} {r?.userId?.lastName || ''}</Text>
+                        <Text style={styles.replyTime}> · {formatTime(r?.createdAt)}</Text>
+                      </View>
+                      <Text style={styles.replyText}>{r?.content || ''}</Text>
+                    </View>
+                    {(() => {
+                      const replyOwnerId = r?.userId?._id || r?.userId;
+                      const isReplyOwner = String(replyOwnerId) === String(fromUserId);
+                      return isReplyOwner;
+                    })() && (
+                      <TouchableOpacity
+                        onPress={async () => {
+                          try {
+                            const res = await deleteReply(post._id, item._id, r._id);
+                            const replies = res.data?.replies || [];
+                            setComments(prev => prev.map(c => c._id === item._id ? { ...c, replies } : c));
+                          } catch (err) {
+                            console.error('deleteReply error', err?.response?.data || err.message);
+                          }
+                        }}
+                        style={{ paddingHorizontal: 6, paddingVertical: 4, marginLeft: 6 }}
+                      >
+                        <Icon name="trash" size={16} color="#EF4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </View>
         {canDeleteComment && (
           <View style={styles.menuContainer}>
             <TouchableOpacity
               style={styles.menuButton}
               onPress={() => toggleMenu(item?._id)}
             >
-              <Text style={styles.menuText}>⋮</Text>
+              <Icon name="ellipsis-vertical" size={18} color="#8E8E93" />
             </TouchableOpacity>
-
             {menuVisibleId === item._id && (
               <View style={styles.menuOptions}>
                 <TouchableOpacity
@@ -792,7 +963,7 @@ const NewSocialCard = ({
                 >
                   <Icon name="trash" size={18} color="red" />
                   <Text style={styles.menuOptionText}>
-                    {isCommentOwner ? t("delete") : t("deleteComment")}
+                    {t("delete")}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -865,6 +1036,7 @@ const NewSocialCard = ({
     <View style={styles.container}>
       {/* Each post card */}
       <View style={styles.card}>
+        {/* Card header to match clean layout */}
         <View style={styles.header}>
           <TouchableOpacity
             onPress={() => {
@@ -1125,21 +1297,14 @@ const NewSocialCard = ({
           </Modal>
         </View>
 
-        {renderDescription()}
-        <TouchableOpacity onPress={toggleDescription}>
-          <Text style={styles.readMore}>
-            {showFullDescription ? t("readLess") : t("readMore")}
-          </Text>
-        </TouchableOpacity>
-
         {/* video + reels */}
         {video && (
           <>
             <TouchableOpacity onPress={openReelModal}>
-              <View>
+              <View style={styles.squareMediaWrapper}>
                 <VideoView
                   source={{ uri: `${video.replace(/\\/g, "/")}` }}
-                  style={styles.chatVideoThumbnail}
+                  style={styles.squareMedia}
                   resizeMode="cover"
                   shouldPlay={false}
                   isLooping
@@ -1416,12 +1581,13 @@ const NewSocialCard = ({
             {images.length > 1 ? (
               <ScrollView
                 horizontal
+                pagingEnabled
                 showsHorizontalScrollIndicator={false}
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
-                snapToInterval={windowWidth}
                 decelerationRate="fast"
-                snapToAlignment="center"
+                style={{ marginLeft: -16, marginRight: -16 }}
+                contentContainerStyle={{ paddingHorizontal: 0 }}
               >
                 {images.map((image, index) => {
                   const imageUri = `${image}`;
@@ -1431,20 +1597,26 @@ const NewSocialCard = ({
                       key={index}
                       onPress={handleDoubleTap}
                     >
-                      <Image
-                        style={styles.bannerImage}
-                        source={{ uri: imageUri }}
-                      />
+                      <View style={styles.squareMediaWrapper}>
+                        <Image
+                          style={styles.squareMedia}
+                          source={{ uri: imageUri }}
+                          resizeMode="cover"
+                        />
+                      </View>
                     </TouchableWithoutFeedback>
                   );
                 })}
               </ScrollView>
             ) : (
               <TouchableWithoutFeedback onPress={handleDoubleTap}>
-                <Image
-                  style={styles.bannerSingleImage}
-                  source={{ uri: `${images[0]}` }}
-                />
+                <View style={styles.squareMediaWrapper}>
+                  <Image
+                    style={styles.squareMedia}
+                    source={{ uri: `${images[0]}` }}
+                    resizeMode="cover"
+                  />
+                </View>
               </TouchableWithoutFeedback>
             )}
 
@@ -1458,18 +1630,23 @@ const NewSocialCard = ({
           </View>
         )}
 
-        {/* Show "no images" message only for text-only posts (no video, no images) */}
-        {(!images || images.length === 0) && !video && (
-          <View style={styles.imageContainer}>
-            <Text>{t("no_images_visible")}</Text>
-          </View>
-        )}
+        {/* For text-only posts (no images, no video), show only the caption section below */}
 
         {heartVisible && (
           <View style={styles.likeIconContainer}>
             <Icon name="heart" size={50} color="red" style={styles.likeIcon} />
           </View>
         )}
+
+        {/* Caption below media */}
+        <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+          {renderDescription()}
+          <TouchableOpacity onPress={toggleDescription}>
+            <Text style={styles.readMore}>
+              {showFullDescription ? tr("readLess", "Read less") : tr("readMore", "Read more")}
+            </Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Social Info Section */}
         <View style={styles.socialInfo}>
@@ -1483,8 +1660,8 @@ const NewSocialCard = ({
             </View>
             <Text style={styles.socialText}>{likeCount}</Text>
           </View>
-                      <Text style={styles.socialText}>
-              {commentCount} {t("comments")} • {reposts} {t("reposts")}
+          <Text style={styles.socialText}>
+              {commentCount} {tr("comments", "comments")} • {reposts} {tr("reposts", "reposts")}
             </Text>
         </View>
 
@@ -1501,7 +1678,7 @@ const NewSocialCard = ({
                 textShadowOffset: { width: 1, height: 1 },
               }}
             />
-            <Text style={styles.actionText}>{t("like")}</Text>
+            <Text style={styles.actionText}>{tr("like", "Like")}</Text>
           </TouchableOpacity>
 
           <TouchableOpacity onPress={openCommentsModal}>
@@ -1511,11 +1688,11 @@ const NewSocialCard = ({
               marginLeft={10}
               color="black"
             />
-            <Text style={styles.actionText}>{t("comment")}</Text>
+            <Text style={styles.actionText}>{tr("comment", "Comment")}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openRepostModal}>
             <FontAwesomeIcon name="retweet" size={24} marginLeft={10} />
-            <Text style={styles.actionText}>{t("repost")}</Text>
+            <Text style={styles.actionText}>{tr("repost", "Repost")}</Text>
           </TouchableOpacity>
           <TouchableOpacity onPress={openShareModal}>
             <FontAwesomeIcon
@@ -1524,7 +1701,7 @@ const NewSocialCard = ({
               marginLeft={10}
               color="#000"
             />
-            <Text style={styles.actionText}>{t("share") || "Share"}</Text>
+            <Text style={styles.actionText}>{tr("share", "Share")}</Text>
           </TouchableOpacity>
         </View>
 
@@ -1576,173 +1753,65 @@ const NewSocialCard = ({
           </TouchableWithoutFeedback>
         </Modal>
 
-        {/* Modal for Comment */}
+        {/* Modal for Comment - Redesigned per mockup */}
         <Modal
           visible={isCommentsModalVisible}
           animationType="slide"
           transparent={false}
           onRequestClose={closeCommentsModal}
         >
-          <View style={styles.commentHeaderContainer}>
-            <TouchableOpacity
-              onPress={closeCommentsModal}
-              style={styles.backButton}
-            >
-              <Icon name="arrow-back" size={20} color="black" />
-            </TouchableOpacity>
-          </View>
-          <View style={styles.commentModalContainer}>
-            <FlatList
-              ref={flatListRef}
-              data={comments || []}
-              keyExtractor={(item) => item?._id || Math.random().toString()}
-              renderItem={renderItem}
-              style={{ flex: 1 }}
-              contentContainerStyle={{ paddingBottom: 60 }}
-              onScrollBeginDrag={closeMenu}
-              ListHeaderComponent={() => (
-                <View>
-                  <View style={styles.header}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        // Only navigate if user exists and has a valid ID
-                        if (userId) {
-                          navigation.navigate("EachProfile", {
-                            userId: userId,
-                          });
-                        }
-                      }}
-                    >
-                      <Image
-                        style={styles.profileImage}
-                        source={
-                          profileImageUri && profileImageUri.trim() !== ""
-                            ? { uri: profileImageUri }
-                            : UserImg
-                      }
-                    />
-                    </TouchableOpacity>
-                    <View style={styles.headerText}>
-                      <Text style={styles.name}>
-                        {" "}
-                        {post?.createdBy?.firstName} {post?.createdBy?.lastName}
-                      </Text>
-                    </View>
-                  </View>
+          <SafeAreaView style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+            {/* Header */}
+            <View style={{ flexDirection: "row", alignItems: "center", paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#ECECEC" }}>
+              <TouchableOpacity onPress={closeCommentsModal} style={{ padding: 8 }}>
+                <Icon name="close" size={20} color="#1A1A1A" />
+              </TouchableOpacity>
+              <Text style={{ flex: 1, textAlign: "center", fontSize: 16, fontWeight: "600", color: "#1A1A1A" }}>{t("comments") || "Comments"}</Text>
+              {/* Right spacer to center the title */}
+              <View style={{ width: 36 }} />
+            </View>
 
-                  {video && (
-                    <>
-                      <View>
-                        <VideoView
-                          source={{
-                            uri: `${video.replace(/\\/g, "/")}`,
-                          }}
-                          style={styles.chatVideoThumbnail}
-                          resizeMode="cover"
-                          shouldPlay={false}
-                          isLooping
-                          isMuted={isMuted}
-                        />
-                        <TouchableOpacity
-                          style={styles.muteButton}
-                          onPress={toggleMute}
-                        >
-                          {isMuted ? (
-                            <Ionicons name="volume-mute" size={15} color="white" />
-                          ) : (
-                            <Ionicons name="volume-high" size={15} color="white" />
-                          )}
-                        </TouchableOpacity>
-                      </View>
-                    </>
-                  )}
-
-                  {images && images.length > 0 && (
-                    <View style={styles.imageContainer}>
-                      {images.length > 1 ? (
-                        <ScrollView
-                          horizontal
-                          showsHorizontalScrollIndicator={false}
-                          onScroll={handleScroll}
-                          scrollEventThrottle={16}
-                          snapToInterval={windowWidth}
-                          decelerationRate="fast"
-                          snapToAlignment="center"
-                        >
-                          {images.map((image, index) => (
-                            <Image
-                              key={index}
-                              style={styles.bannerImage}
-                              source={{ uri: `${image}` }}
-                            />
-                          ))}
-                        </ScrollView>
-                      ) : (
-                        <Image
-                          style={styles.bannerSingleImage}
-                          source={{ uri: `${images}` }}
-                        />
-                      )}
-
-                      {images.length > 1 && (
-                        <View style={styles.indexContainer}>
-                          <Text style={styles.indexText}>
-                            {currentIndex + 1} / {images.length}
-                          </Text>
-                        </View>
-                      )}
-                    </View>
-                  )}
-                  <View style={styles.commentPostContent}>
-                    <Text style={styles.commentModalDescription}>
-                      {description}
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+              {/* List */}
+              <FlatList
+                ref={flatListRef}
+                data={comments || []}
+                keyExtractor={(item) => item?._id || Math.random().toString()}
+                renderItem={renderItem}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ paddingBottom: 80 }}
+                onScrollBeginDrag={closeMenu}
+                ListEmptyComponent={
+                  !loading ? (
+                    <Text style={{ textAlign: "center", marginTop: 20 }}>
+                      {t("no_comments_yet")}.
                     </Text>
-                  </View>
-                </View>
-              )}
-              ListEmptyComponent={
-                !loading ? (
-                  <Text style={{ textAlign: "center", marginTop: 20 }}>
-                    {t("no_comments_yet")}.
-                  </Text>
-                ) : (
-                  <ActivityIndicator
-                    style={{
-                      flex: 1,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                    size={"large"}
-                    color={"#b98c13"}
-                  />
-                )
-              }
-            />
-
-            <View style={styles.commentInputContainer}>
-              <Image
-                style={styles.commentProfileImage}
-                source={
-                  profileImageUrl && profileImageUrl.trim() !== ""
-                    ? { uri: profileImageUrl }
-                    : UserImg
+                  ) : (
+                    <ActivityIndicator style={{ marginTop: 32 }} size={"large"} color={Theme?.themeColor || "#B98C13"} />
+                  )
                 }
               />
-              <TextInput
-                style={styles.commentInput}
-                value={newCommentText}
-                onChangeText={setNewCommentText}
-                placeholder="Add a comment..."
-              />
 
-              <TouchableOpacity
-                onPress={handleAddComment}
-                style={styles.commentSendButton}
-              >
-                <Text style={styles.sendButtonText}>{t("send")}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+              {/* Input bar */}
+              <View style={{ flexDirection: "row", alignItems: "center", padding: 8, borderTopWidth: 1, borderTopColor: "#ECECEC", backgroundColor: "#FFF" }}>
+                <Image
+                  style={{ width: 32, height: 32, borderRadius: 16, marginRight: 8 }}
+                  source={ profileImageUrl && profileImageUrl.trim() !== "" ? { uri: profileImageUrl } : UserImg }
+                />
+                <View style={{ flex: 1, backgroundColor: "#F2F2F7", borderRadius: 18, paddingHorizontal: 12, paddingVertical: 6, marginRight: 8 }}>
+                  <TextInput
+                    style={{ minHeight: 32 }}
+                    value={newCommentText}
+                    onChangeText={setNewCommentText}
+                    placeholder={(t("say_something_nice") && t("say_something_nice") !== 'say_something_nice') ? t("say_something_nice") : "Say something nice..."}
+                  />
+                </View>
+                <TouchableOpacity onPress={handleAddComment} style={{ paddingHorizontal: 8 }}>
+                  <Text style={{ color: Theme?.themeColor || "#B98C13", fontWeight: "600" }}>{(t("post") && t("post") !== 'post') ? t("post") : "Post"}</Text>
+                </TouchableOpacity>
+              </View>
+            </KeyboardAvoidingView>
+          </SafeAreaView>
         </Modal>
 
         {/* Modal for Share */}
@@ -1933,15 +2002,29 @@ const NewSocialCard = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f2f2f2",
-    paddingVertical: 10,
+    backgroundColor: "transparent",
+    paddingVertical: 4,
     paddingHorizontal: 0,
     marginHorizontal: 0,
   },
 
   card: {
     backgroundColor: "#fff",
-    padding: 16,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingBottom: 12,
+    paddingTop: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#FFE7C2",
+    marginHorizontal: 0,
+    marginBottom: 6,
+    // Orange themed shadow/glow
+    shadowColor: Theme.themeColor,
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
   },
   header: {
     flexDirection: "row",
@@ -2030,33 +2113,48 @@ const styles = StyleSheet.create({
   },
   bannerImage: {
     width: windowWidth,
-    height: 400,
+    height: windowWidth,
     padding: 0,
     marginHorizontal: 0,
-    marginVertical: 10,
+    marginVertical: 6,
+    alignSelf: "center",
+    borderRadius: 0,
   },
   imageContainer: {
     width: "100%",
-    marginVertical: 10,
+    marginTop: 2,
+    marginBottom: 4,
   },
   bannerSingleImage: {
     width: "100%",
     height: 400,
     padding: 0,
     marginHorizontal: 0,
-    marginVertical: 10,
+    marginVertical: 6,
+  },
+  squareMediaWrapper: {
+    width: windowWidth,
+    height: windowWidth, // square edge-to-edge
+    alignSelf: "center",
+    overflow: "hidden",
+    borderRadius: 0,
+    backgroundColor: "#000",
+  },
+  squareMedia: {
+    width: "100%",
+    height: "100%",
   },
   readMore: {
     color: "black",
-    marginBottom: 8,
+    marginBottom: 4,
   },
   socialInfo: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 10,
+    paddingVertical: 6,
     borderBottomWidth: 1,
-    borderBottomColor: "#e0e0e0",
+    borderBottomColor: "#f1f1f1",
   },
   likeSection: {
     flexDirection: "row",
@@ -2096,8 +2194,11 @@ const styles = StyleSheet.create({
   },
   actions: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    paddingVertical: 10,
+    justifyContent: "space-between",
+    paddingVertical: 6,
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: "#f1f1f1",
   },
   actionText: {
     fontSize: 14,
@@ -2267,29 +2368,121 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     marginBottom: 10,
   },
+  commentRowContainer: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
   commentProfileImage: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    marginRight: 10,
   },
   commentContent: {
     flex: 1,
     marginLeft: 10,
   },
   commentName: {
-    fontWeight: "bold",
+    fontWeight: "600",
+    fontSize: 14,
+    color: "#111827",
   },
   commentRole: {
     color: "gray",
     fontSize: 12,
   },
+  commentHeaderLine: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  commentBubble: {
+    backgroundColor: "#F2F2F7",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 12,
+  },
   commentText: {
-    marginVertical: 5,
-    fontSize: 16,
+    fontSize: 14,
+    color: "#111827",
+  },
+  commentActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    marginBottom: 8,
+  },
+  actionButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginRight: 16,
+  },
+  actionLabel: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: "#6B7280",
+  },
+  viewRepliesLink: {
+    marginTop: 4,
+  },
+  viewRepliesText: {
+    fontSize: 12,
+    color: Theme?.themeColor || '#B98C13',
+    fontWeight: '600',
+  },
+  replyRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingTop: 6,
+    paddingLeft: 44,
+  },
+  replyAvatar: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    marginRight: 8,
+  },
+  replyBubble: {
+    backgroundColor: '#F8F8FA',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    maxWidth: '85%',
+  },
+  replyName: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  commentTime: {
+    marginLeft: 6,
+    fontSize: 12,
+    color: '#6B7280',
+    fontWeight: '400',
+  },
+  replyTime: {
+    marginLeft: 6,
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '400',
+  },
+  replyText: {
+    fontSize: 13,
+    color: '#111827',
   },
   reactionButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
+  },
+  replyInput: {
+    backgroundColor: '#F2F2F7',
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
   button: {
     padding: 5,
@@ -2393,7 +2586,7 @@ const styles = StyleSheet.create({
   },
   chatVideoThumbnail: {
     width: "100%",
-    height: 300,
+    height: Dimensions.get("window").width,
   },
   playIcon: {
     position: "absolute",

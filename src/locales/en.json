@@ -293,6 +293,10 @@
   "showLess": "Show Less",
   "followers": "Followers",
   "following": "Following",
+  "search_tags": "Search tags (e.g. travel, food)",
+  "clear": "Clear",
+  "addHashtagsPlaceHolder": "Add hashtag (e.g. travel)",
+  "add": "Add",
  
   "document": "Document",
   "editUserProfile": "Edit User Profile",

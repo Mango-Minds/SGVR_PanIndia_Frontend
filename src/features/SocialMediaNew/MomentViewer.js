@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Image, StyleSheet, TouchableOpacity, Text, SafeAreaView } from "react-native";
+import { View, Image, StyleSheet, Text, SafeAreaView, TouchableOpacity } from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
@@ -24,7 +24,7 @@ const MomentViewer = ({ navigation, route }) => {
     <View style={styles.container}>
       <SafeAreaView style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </TouchableOpacity>
       </SafeAreaView>
       {mediaType === "video" ? (
@@ -54,7 +54,14 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   backButton: {
-    padding: 12,
+    marginTop: 18,
+    marginLeft: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.45)'
   },
   media: {
     flex: 1,

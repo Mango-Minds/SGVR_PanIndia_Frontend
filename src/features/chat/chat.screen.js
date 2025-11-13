@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import { Container, RowBetween, View } from "../../styles/common.styles";
+import { Container, RowBetween, View, SearchField } from "../../styles/common.styles";
 import {
   Dimensions,
   ImageBackground,
@@ -16,8 +16,9 @@ import {
   Alert,
   ActionSheetIOS,
   FlatList,
+  Modal as RNModal,
 } from "react-native";
-import { IconButton, TextInput } from "react-native-paper";
+import { IconButton, TextInput, Button, Checkbox } from "react-native-paper";
 import {
   ChatDateLabel,
   RecieveChatBlock,
@@ -41,7 +42,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { cloneDeep } from "lodash";
 import { BASEAPIURL, BASEIMGURL, RENDERMEDIAURL, SOCKETURL } from "../../infrastructure/constants";
 import * as ImagePicker from 'expo-image-picker';
-import { uploadChatMedia, saveSingleChat as saveSingleChatApi, editMessage as editMessageApi, deleteMessage as deleteMessageApi } from '../../services/chat.services';
+import { uploadChatMedia, saveSingleChat as saveSingleChatApi, editMessage as editMessageApi, deleteMessage as deleteMessageApi, getRoomMessages, getRoomMembers, addRoomMembers, removeRoomMember } from '../../services/chat.services';
+import { GetAllFriends } from "../../services/socialMedia.services";
 import DeleteModal from "../../components/modals/DeleteChat";
 
 const ChatScreen = ({ navigation, route }) => {
@@ -60,13 +62,58 @@ const ChatScreen = ({ navigation, route }) => {
   const scrollViewRef = React.useRef();
   const flatListRef = React.useRef(null);
   const focusref = React.useRef();
-  const { toid, toName, index } = route.params;
+  const { toid, toName, index, isGroup, roomId: routeRoomId } = route.params;
   const [cindex, setCindex] = useState(index);
   const deleteRef = React.useRef(null);
   const chatindex = useRef(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const suppressAutoScrollRef = useRef(false);
+  const [membersVisible, setMembersVisible] = useState(false);
+  const [members, setMembers] = useState([]);
+  const [addMode, setAddMode] = useState(false);
+  const [friendsForAdd, setFriendsForAdd] = useState([]);
+  const [selectedAdd, setSelectedAdd] = useState([]);
+  const [searchAdd, setSearchAdd] = useState("");
+  const [removingMemberId, setRemovingMemberId] = useState(null);
+  const [creatorId, setCreatorId] = useState(null);
+
+  const loadFriendsForAdd = async () => {
+    try {
+      const res = await GetAllFriends({ userid: user?._id });
+      const list = Array.isArray(res?.friends)
+        ? res.friends.map((u) => ({ _id: u._id, firstName: u.firstName || "", lastName: u.lastName || "", email: u.email || "" }))
+        : [];
+      const memberIds = new Set((members || []).map((m) => String(m._id)));
+      memberIds.add(String(user?._id));
+      const filtered = list.filter((f) => !memberIds.has(String(f._id)));
+      setFriendsForAdd(filtered);
+    } catch (e) {
+      setFriendsForAdd([]);
+    }
+  };
+
+  const handleRemoveMember = async (memberId) => {
+    if (String(memberId) === String(user._id)) return; // safety guard
+    Alert.alert(
+      'Remove member',
+      'Are you sure you want to remove this member from the group?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Remove', style: 'destructive', onPress: async () => {
+            try {
+              setRemovingMemberId(memberId);
+              await removeRoomMember(getRoomId(), memberId);
+              const res = await getRoomMembers(getRoomId());
+              if (res && res.success) setMembers(res.members || []);
+            } catch (e) {
+            } finally {
+              setRemovingMemberId(null);
+            }
+        }}
+      ]
+    );
+  };
 
   // Function to format date for display
   const formatDate = (date) => {
@@ -157,7 +204,7 @@ const ChatScreen = ({ navigation, route }) => {
     }
   };
 
-  const getRoomId = () => [user._id, toid].sort().join('_');
+  const getRoomId = () => (isGroup && routeRoomId ? routeRoomId : [user._id, toid].sort().join('_'));
 
   const startEditingMessage = (chat) => {
     setIsEditing(true);
@@ -289,7 +336,7 @@ const ChatScreen = ({ navigation, route }) => {
         }
       }
 
-      const allChats = await getAllChats(toid, page);
+      const allChats = isGroup && routeRoomId ? await getRoomMessages(routeRoomId) : await getAllChats(toid, page);
       if (allChats && allChats.length > 0) {
         setChattings(allChats);
         let updatechatflag = false;
@@ -430,9 +477,7 @@ const ChatScreen = ({ navigation, route }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          userIds: [user._id, toid]
-        })
+        body: JSON.stringify(isGroup && routeRoomId ? { userIds: [user._id], groupName: toName } : { userIds: [user._id, toid] })
       });
       
       if (roomResponse.ok) {
@@ -448,16 +493,17 @@ const ChatScreen = ({ navigation, route }) => {
     const obj = {
       msg: message,
       sender: user._id,
-      receiver: toid,
+      receiver: isGroup ? null : toid,
       time: currentTime,
-      conversation: [user._id, toid],
+      conversation: isGroup ? [getRoomId()] : [user._id, toid],
     };
 
     const saveRes = await saveSingleChat({
       msg: message,
       sender: user._id,
-      receiver: toid,
+      receiver: isGroup ? null : toid,
       time: currentTime,
+      roomId: getRoomId(),
     });
     if (saveRes && saveRes.messageId) {
       obj._id = saveRes.messageId;
@@ -554,7 +600,7 @@ const ChatScreen = ({ navigation, route }) => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
-        body: JSON.stringify({ userIds: [user._id, toid] })
+        body: JSON.stringify(isGroup && routeRoomId ? { userIds: [user._id], groupName: toName } : { userIds: [user._id, toid] })
       });
 
       const roomId = getRoomId();
@@ -576,8 +622,9 @@ const ChatScreen = ({ navigation, route }) => {
           const saveRes = await saveSingleChatApi({
             msg: '',
             sender: user._id,
-            receiver: toid,
+            receiver: isGroup ? null : toid,
             time: currentTime,
+            roomId: getRoomId(),
             media: {
               mimeType: type || null,
               name: uploaded.name,
@@ -590,9 +637,9 @@ const ChatScreen = ({ navigation, route }) => {
             _id: saveRes && saveRes.messageId ? saveRes.messageId : undefined,
             msg: '',
             sender: user._id,
-            receiver: toid,
+            receiver: isGroup ? null : toid,
             time: currentTime,
-            conversation: [user._id, toid],
+            conversation: isGroup ? [getRoomId()] : [user._id, toid],
             media: {
               mimeType: type || null,
               name: uploaded.name,
@@ -668,7 +715,18 @@ const ChatScreen = ({ navigation, route }) => {
         </View>
         <IconButton
           icon="dots-vertical"
-          onPress={() => setMenu(!menu)}
+          onPress={async () => {
+            if (isGroup) {
+              try {
+                const res = await getRoomMembers(getRoomId());
+                if (res && res.success) {
+                  setMembers(res.members || []);
+                  setCreatorId(res.creator || null);
+                }
+              } catch {}
+            }
+            setMenu(!menu)
+          }}
         />
       </RowBetween>
       {menu && (
@@ -692,31 +750,53 @@ const ChatScreen = ({ navigation, route }) => {
             paddingVertical: 10,
           }}
         >
-          <TouchableOpacity
-            onPress={() => {
-              setMenu(false);
-              // Navigate to the user's profile
-              navigation.navigate("EachProfile", {
-                userId: toid,
-              });
-            }}
-          >
-            <Text
-              style={{
-                fontSize: Platform.OS === "android" ? 14 : 20,
-                color: "grey",
-                textTransform: "capitalize",
-                marginTop: 0,
-                backgroundColor: "white",
-                paddingVertical: Platform.OS === "android" ? 8 : 10,
-                letterSpacing: 0.5,
-                width: Platform.OS === "android" ? 170 : 200,
-                paddingLeft: 30,
+          {isGroup ? (
+            <TouchableOpacity
+              onPress={() => {
+                setMenu(false);
+                setMembersVisible(true);
               }}
             >
-              View User
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={{
+                  fontSize: Platform.OS === "android" ? 14 : 20,
+                  color: "grey",
+                  textTransform: "capitalize",
+                  marginTop: 0,
+                  backgroundColor: "white",
+                  paddingVertical: Platform.OS === "android" ? 8 : 10,
+                  letterSpacing: 0.5,
+                  width: Platform.OS === "android" ? 170 : 200,
+                  paddingLeft: 30,
+                }}
+              >
+                View group members
+              </Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              onPress={() => {
+                setMenu(false);
+                navigation.navigate("EachProfile", { userId: toid });
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: Platform.OS === "android" ? 14 : 20,
+                  color: "grey",
+                  textTransform: "capitalize",
+                  marginTop: 0,
+                  backgroundColor: "white",
+                  paddingVertical: Platform.OS === "android" ? 8 : 10,
+                  letterSpacing: 0.5,
+                  width: Platform.OS === "android" ? 170 : 200,
+                  paddingLeft: 30,
+                }}
+              >
+                View User
+              </Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             onPressIn={() => {
               setMenu(false);
@@ -740,6 +820,87 @@ const ChatScreen = ({ navigation, route }) => {
             </Text>
           </TouchableOpacity>
         </View>
+      )}
+      {isGroup && (
+        <RNModal visible={membersVisible} transparent animationType="fade" onRequestClose={() => setMembersVisible(false)}>
+          <RNView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.35)', justifyContent: 'center', alignItems: 'center' }}>
+          <RNView style={{ width: '90%', maxHeight: '80%', backgroundColor: 'white', borderRadius: 12, padding: 16, elevation: 16 }}>
+            {!addMode ? (
+              <>
+                <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Group members</Text>
+                <FlatList
+                  data={members}
+                  keyExtractor={(m) => m._id}
+                  renderItem={({ item }) => (
+                    <RNView style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 8 }}>
+                      <Text style={{ fontSize: 15 }}>
+                        {(item.firstName || '') + ' ' + (item.lastName || '')}
+                        {creatorId && String(item._id) === String(creatorId) ? ' (Admin)' : ''}
+                      </Text>
+                      {creatorId && String(item._id) === String(creatorId) ? null : (
+                    <TouchableOpacity disabled={removingMemberId === item._id} onPress={() => handleRemoveMember(item._id)}>
+                      <Text style={{ color: removingMemberId === item._id ? '#999' : '#d11' }}>{removingMemberId === item._id ? 'Removing...' : 'Remove'}</Text>
+                        </TouchableOpacity>
+                      )}
+                    </RNView>
+                  )}
+                />
+                <RowBetween style={{ marginTop: 12 }}>
+                  <Button onPress={() => setMembersVisible(false)}>Close</Button>
+                  <Button onPress={async () => { setAddMode(true); setSelectedAdd([]); await loadFriendsForAdd(); }}>Add members</Button>
+                </RowBetween>
+              </>
+            ) : (
+              <>
+                <Text style={{ fontSize: 18, fontWeight: '700', marginBottom: 12 }}>Add members</Text>
+                <SearchField placeholder="Search" value={searchAdd} onChangeText={setSearchAdd} />
+                <FlatList
+                  style={{ marginTop: 8 }}
+                  data={friendsForAdd.filter((f) => {
+                    const q = (searchAdd || '').trim().toLowerCase();
+                    if (!q) return true;
+                    return (
+                      (f.firstName || '').toLowerCase().includes(q) ||
+                      (f.lastName || '').toLowerCase().includes(q) ||
+                      (f.email || '').toLowerCase().includes(q)
+                    );
+                  })}
+                  keyExtractor={(m) => m._id}
+                  renderItem={({ item }) => {
+                    const checked = selectedAdd.includes(item._id);
+                    return (
+                      <TouchableOpacity
+                        onPress={() => setSelectedAdd((prev) => (prev.includes(item._id) ? prev.filter((id) => id !== item._id) : [...prev, item._id]))}
+                        style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10 }}
+                      >
+                        <Text style={{ fontSize: 15 }}>{(item.firstName || '') + ' ' + (item.lastName || '')}</Text>
+                        <Checkbox status={checked ? 'checked' : 'unchecked'} onPress={() => setSelectedAdd((prev) => (prev.includes(item._id) ? prev.filter((id) => id !== item._id) : [...prev, item._id]))} />
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+                <RowBetween style={{ marginTop: 12 }}>
+                  <Button onPress={() => { setAddMode(false); }}>Back</Button>
+                  <Button
+                    mode="contained"
+                    disabled={selectedAdd.length === 0}
+                    onPress={async () => {
+                      try {
+                        await addRoomMembers(getRoomId(), selectedAdd);
+                        const res = await getRoomMembers(getRoomId());
+                        if (res && res.success) setMembers(res.members || []);
+                        setAddMode(false);
+                      } catch (e) {}
+                    }}
+                  >
+                    Add
+                  </Button>
+                </RowBetween>
+              </>
+            )}
+          </RNView>
+          </RNView>
+        </RNModal>
       )}
       <View style={{ flex: 1, paddingHorizontal: 0, flexDirection: "column", backgroundColor: "#FFFFFF" }}>
         <FlatList

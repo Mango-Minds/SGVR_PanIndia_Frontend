@@ -14,8 +14,8 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         return "home-outline";
       case "myNetwork":
         return "people-outline";
-      case "notifications":
-        return "notifications-outline";
+      case "search":
+        return "search-outline";
       case "jobs":
         return "briefcase-outline";
       default:
@@ -29,8 +29,8 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         return "home";
       case "myNetwork":
         return "people";
-      case "notifications":
-        return "notifications";
+      case "search":
+        return "search";
       case "jobs":
         return "briefcase";
       default:
@@ -79,18 +79,18 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("NotificationsScreen")}
+          onPress={() => navigation.navigate("SearchResults")}
         >
           <Ionicons 
-            name={isActive("notifications") ? getFilledIconName("notifications") : getIconName("notifications")}
+            name={isActive("search") ? getFilledIconName("search") : getIconName("search")}
             size={24} 
-            color={isActive("notifications") ? Theme.themeColor : "#666"} 
+            color={isActive("search") ? Theme.themeColor : "#666"} 
           />
           <Text style={[
             styles.iconText, 
-            { color: isActive("notifications") ? Theme.themeColor : "#666" }
+            { color: isActive("search") ? Theme.themeColor : "#666" }
           ]}>
-            {t("notifications")}
+            {t("search")}
           </Text>
         </TouchableOpacity>
         
