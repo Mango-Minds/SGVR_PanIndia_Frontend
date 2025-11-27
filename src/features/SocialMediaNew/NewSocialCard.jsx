@@ -1411,15 +1411,15 @@ const NewSocialCard = ({
                                 : "checkmark"
                             }
                             size={18}
-                            color="#FF9933"
+                            color={Theme.themeColor}
                             style={{ marginRight: 8 }}
                           />
                           <Text
                             style={[
                               styles.reelFollowButtonText,
                               effectiveFollowStatus === "approved"
-                                ? { color: "#FF9933" }
-                                : { color: "#FF9933" },
+                                ? { color: Theme.themeColor }
+                                : { color: Theme.themeColor },
                             ]}
                           >
                             {effectiveFollowStatus === "none"

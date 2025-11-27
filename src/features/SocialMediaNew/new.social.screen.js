@@ -370,7 +370,7 @@ const { t } = useTranslation();
           </View>
           {/* Centered text logo */}
           <View style={styles.centerTitleContainer}>
-            <Text style={styles.centerTitle}>Me Maratha</Text>
+            <Text style={styles.centerTitle}>Pan India</Text>
           </View>
           <View style={{ flex: 1 }} />
           <TouchableOpacity 

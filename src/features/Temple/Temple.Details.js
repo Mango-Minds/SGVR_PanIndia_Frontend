@@ -752,13 +752,13 @@ const TempleDetails = ({ route, navigation }) => {
         // Mark today with a special indicator
         updatedMarkedDates[today] = {
           marked: true,
-          dotColor: '#FF6B35', // Orange color for today
-          selectedColor: '#FF6B35',
+          dotColor: Theme.themeColor, // Gold color for today
+          selectedColor: Theme.themeColor,
           selected: dates.includes(today), // Highlight if today has events
           selectedTextColor: dates.includes(today) ? 'white' : '#333',
           dots: dates.includes(today) 
             ? [
-                { key: "today", color: '#FF6B35' },
+                { key: "today", color: Theme.themeColor },
                 { key: "event", color: Theme.themeColor }
               ]
             : [{ key: "today", color: '#FF6B35' }],
@@ -788,7 +788,7 @@ const TempleDetails = ({ route, navigation }) => {
         setMarkedDates({
           [today]: {
             marked: true,
-            dotColor: '#FF6B35',
+            dotColor: Theme.themeColor,
             dots: [{ key: "today", color: '#FF6B35' }],
           }
         });
@@ -1192,7 +1192,7 @@ const TempleDetails = ({ route, navigation }) => {
                         width: 8,
                         height: 8,
                         borderRadius: 4,
-                        backgroundColor: '#FF6B35',
+                        backgroundColor: Theme.themeColor,
                         marginRight: 4
                       }} />
                       <Text style={{fontSize: 12, color: '#666'}}>{t('Today')}</Text>

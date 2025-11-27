@@ -98,6 +98,12 @@ const exploreData = [
     status: true,
     icon: "temple-hindu", // Icon name from Ionicons
   },
+  {
+    title: "Jewellery",
+    path: "Jewellery",
+    status: false,
+    icon: "shopping-bag", // Icon name from MaterialIcons
+  },
 ];
 // const exploreData = [
 //   {
@@ -382,11 +388,15 @@ export default function DashboardScreen({ navigation }) {
             redirectTo: moduleKey,
           });
         }
+      } else if (moduleKey === "Jewellery") {
+        // Navigate directly to the new jewelry module HomeScreen (no onboarding check)
+        navigation.navigate("Jewellery", {
+          screen: "HomeScreen"
+        });
       } else {
         // For other modules, use the existing logic
         const onboardFlags = {
           Matrimony: updatedUser?.isMatrimonyOnboarded,
-          Jewellery: updatedUser?.isJewelleryOnboarded,
           Temple: updatedUser?.isTempleOnboarded,
         };
 

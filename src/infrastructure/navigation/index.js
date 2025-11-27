@@ -27,6 +27,7 @@ import {
   GetSocialData,
 } from "../../store/Handlers/Reducer.Handler";
 import { logoutSuccess } from "../../store/user";
+import Theme from "../../styles/theme";
 export const Navigation = () => {
   // Use Redux hooks at the top level - hooks must be called consistently
   let userState, dispatch;
@@ -152,7 +153,7 @@ export const Navigation = () => {
           flex: 1,
         }}
         size={"large"}
-        color={"#FF9933"}
+        color={Theme.themeColor}
       />
     );
   else

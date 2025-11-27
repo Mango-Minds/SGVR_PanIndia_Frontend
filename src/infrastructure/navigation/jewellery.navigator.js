@@ -71,6 +71,15 @@ import DesignerHome from "../../features/jewellery/DesignerHome";
 import GemologistHome from "../../features/jewellery/GemologistHome";
 import MyAllToolProduct from "../../features/jewellery/Tools/AllmyTool";
 
+// New UI Screens
+import HomeScreen from "../../features/jewellery/HomeScreen";
+import BrowseScreen from "../../features/jewellery/BrowseScreen";
+import ShopsScreen from "../../features/jewellery/ShopsScreen";
+import ShopDetailScreen from "../../features/jewellery/ShopDetailScreen";
+import ProductDetailScreen from "../../features/jewellery/ProductDetailScreen";
+import PremiumAccessScreen from "../../features/jewellery/PremiumAccessScreen";
+import ProfileScreen from "../../features/jewellery/ProfileScreen";
+
 const Stack = createStackNavigator();
 
 export const JewelleryStackNavigator = () => {
@@ -78,7 +87,8 @@ export const JewelleryStackNavigator = () => {
   const user = useSelector((state) => state.user.user);
   console.log("logged in user data", user);
   // let initialRouteName = "SuperAdminHome";
-  let initialRouteName = "JewelleryHome";
+  // Use new HomeScreen as default, fallback to old JewelleryHome
+  let initialRouteName = "HomeScreen";
 
   if (userType === "worker") {
     initialRouteName = "WorkerHome";
@@ -213,6 +223,15 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="EachGemologist" component={EachGemologist} />
 
       <Stack.Screen name="EachDesigner" component={EachDesigner} />
+
+      {/* New UI Screens */}
+      <Stack.Screen name="HomeScreen" component={HomeScreen} />
+      <Stack.Screen name="BrowseScreen" component={BrowseScreen} />
+      <Stack.Screen name="ShopsScreen" component={ShopsScreen} />
+      <Stack.Screen name="ShopDetailScreen" component={ShopDetailScreen} />
+      <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} />
+      <Stack.Screen name="PremiumAccessScreen" component={PremiumAccessScreen} />
+      <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
 
       {/* <Stack.Screen name="CommunityProfile" component={CommunityProfileScreen} /> */}
     </Stack.Navigator>

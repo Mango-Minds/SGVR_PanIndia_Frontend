@@ -154,7 +154,7 @@ export default function DashboardSettingsScreen({ navigation }) {
         <TouchableOpacity 
           activeOpacity={0.25} 
           style={{
-            backgroundColor: "#FF6B35",
+            backgroundColor: Theme.themeColor,
             marginHorizontal: 16,
             borderRadius: 12,
             paddingVertical: 16,

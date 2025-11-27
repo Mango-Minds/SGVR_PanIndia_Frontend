@@ -630,8 +630,8 @@ export default function SocialCard({
                 postId: item._id,
                 userId: item.createdBy._id,
                 content: item.caption,
-                title: 'Me Maratha Post',
-                message: `Check out this post by ${item.createdBy.fname} ${item.createdBy.lname} on Me Maratha!`
+                title: 'Pan India Post',
+                message: `Check out this post by ${item.createdBy.fname} ${item.createdBy.lname} on Pan India!`
               };
               
               console.log("Setting share data:", shareData);

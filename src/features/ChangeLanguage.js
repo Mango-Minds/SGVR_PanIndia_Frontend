@@ -141,9 +141,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   selectedButton: {
-    backgroundColor: "#FF6B35",
+    backgroundColor: Theme.themeColor,
     borderWidth: 2,
-    borderColor: "#FF6B35",
+    borderColor: Theme.themeColor,
     elevation: 5,
   },
   selectedButtonLabel: {

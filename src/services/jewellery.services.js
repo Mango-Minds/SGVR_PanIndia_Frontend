@@ -96,3 +96,264 @@ export const editJewelleryData = async (id, formData) => {
   return res.data;
  };
 
+// New API methods for modern jewellery module
+
+// Shops
+export const getShops = async (params = {}) => {
+  const { page = 1, limit = 20, location, brand, rating } = params;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(location && { location }),
+    ...(brand && { brand }),
+    ...(rating && { rating }),
+  });
+  
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=shop&${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shops:', error);
+    throw error;
+  }
+};
+
+export const getShopDetails = async (id) => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/vendor/vendor-for-user?id=${id}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop details:', error);
+    throw error;
+  }
+};
+
+export const searchShops = async (params) => {
+  const { keyword, location, brand, rating } = params;
+  const queryParams = new URLSearchParams({
+    ...(keyword && { keyword }),
+    ...(location && { location }),
+    ...(brand && { brand }),
+    ...(rating && { rating }),
+  });
+  
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/vendor/vendor?role=shop&${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error searching shops:', error);
+    throw error;
+  }
+};
+
+// Products
+export const getProducts = async (params = {}) => {
+  const { page = 1, limit = 20, category, search } = params;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(category && { category }),
+    ...(search && { search }),
+  });
+  
+  try {
+    // Using jewellery-products endpoint if available, otherwise fallback
+    const res = await axios.get(
+      `${BASEAPIURL}/jewelry-products?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    // Return empty array if endpoint doesn't exist yet
+    return { data: [], pagination: { page, limit, total: 0 } };
+  }
+};
+
+export const getProductDetails = async (id) => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/jewelry-products/${id}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching product details:', error);
+    throw error;
+  }
+};
+
+export const searchProducts = async (params) => {
+  const { keyword, category } = params;
+  const queryParams = new URLSearchParams({
+    ...(keyword && { keyword }),
+    ...(category && { category }),
+  });
+  
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/jewelry-products?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error searching products:', error);
+    throw error;
+  }
+};
+
+// Wishlist
+export const getWishlist = async () => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/wishlists`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching wishlist:', error);
+    return { data: [] };
+  }
+};
+
+export const addToWishlist = async (productId) => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/wishlists/${productId}`,
+      {},
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error adding to wishlist:', error);
+    throw error;
+  }
+};
+
+export const removeFromWishlist = async (productId) => {
+  try {
+    const res = await axios.delete(`${BASEAPIURL}/wishlists/${productId}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error removing from wishlist:', error);
+    throw error;
+  }
+};
+
+// Subscriptions
+export const getSubscriptionPlans = async () => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/subscriptions/plans`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching subscription plans:', error);
+    // Return default plans if endpoint doesn't exist
+    return {
+      data: [
+        {
+          id: 'monthly',
+          name: 'Monthly',
+          price: 99,
+          period: 'month',
+          features: [
+            'Access to 100+ Verified Shops',
+            'Shop Contact Details',
+            'Shop Ratings & Reviews',
+            'Basic Support',
+          ],
+        },
+        {
+          id: 'quarterly',
+          name: 'Quarterly',
+          price: 299,
+          period: 'quarter',
+          features: [
+            'Access to 100+ Verified Shops',
+            'Shop Contact Details',
+            'Shop Ratings & Reviews',
+            'Priority Support',
+            'Exclusive Deals',
+          ],
+        },
+        {
+          id: 'yearly',
+          name: 'Yearly',
+          price: 1999,
+          period: 'year',
+          features: [
+            'Access to 100+ Verified Shops',
+            'Shop Contact Details',
+            'Shop Ratings & Reviews',
+            'Priority Support',
+            'Exclusive Deals',
+            'Early Access to New Shops',
+            'Premium Customer Service',
+          ],
+        },
+      ],
+    };
+  }
+};
+
+export const subscribeToPlan = async (planType) => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/subscriptions/subscribe`,
+      { planType },
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error subscribing to plan:', error);
+    throw error;
+  }
+};
+
+export const getCurrentSubscription = async () => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/subscriptions/current`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching current subscription:', error);
+    return null;
+  }
+};
+
+// QR Code
+export const getQRCode = async (shopId) => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/shops/${shopId}/qr-code`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error generating QR code:', error);
+    // Return a placeholder QR value if endpoint doesn't exist
+    return { qrValue: `shop-${shopId}`, qrImage: null };
+  }
+};
+

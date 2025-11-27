@@ -34,8 +34,8 @@ export default function ShareModal({ slideUpRef, friends, onShare, shareData: in
   const [currentShareData, setCurrentShareData] = useState(initialShareData || {
     type: 'content',
     id: 'default',
-    title: 'Me Maratha',
-    message: 'Check out this content on Me Maratha!'
+    title: 'Pan India',
+    message: 'Check out this content on Pan India!'
   });
 
   // Expose setShareData method through ref
@@ -88,10 +88,10 @@ export default function ShareModal({ slideUpRef, friends, onShare, shareData: in
   const handleShareUrl = async () => {
     try {
       const shareUrl = getShareUrl();
-      const shareMessage = currentShareData?.message || "Check out this content on Me Maratha!";
+      const shareMessage = currentShareData?.message || "Check out this content on Pan India!";
       
       const shareOptions = {
-        title: currentShareData?.title || "Me Maratha",
+        title: currentShareData?.title || "Pan India",
         message: generateShareMessage(shareMessage, shareUrl),
         url: shareUrl,
       };

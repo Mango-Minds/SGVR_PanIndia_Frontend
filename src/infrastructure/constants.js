@@ -13,16 +13,16 @@
 // export const BASEAPIURL = "https://api.eygds.in/api";
 
 // Local development URLs for local backend
-// export const BASEAPIURL = "http://192.168.1.3:5050/api";
-// export const BASEIMGURL = "http://192.168.1.3:5050/";
-// export const RENDERMEDIAURL = "http://192.168.1.3:5050";
-// export const SOCKETURL = "http://192.168.1.3:5050";
+export const BASEAPIURL = "http://192.168.1.4:5050/api";
+export const BASEIMGURL = "http://192.168.1.4:5050/";
+export const RENDERMEDIAURL = "http://192.168.1.4:5050";
+export const SOCKETURL = "http://192.168.1.4:5050";
 
 // Production URLs for deployed backend (inactive - commented out for local development)
-export const BASEAPIURL = "https://api.mimaratha.co.in/api";
-export const BASEIMGURL = "https://api.mimaratha.co.in/";
-export const RENDERMEDIAURL = "https://api.mimaratha.co.in";
-export const SOCKETURL = "https://api.mimaratha.co.in";
+// export const BASEAPIURL = "https://api.mimaratha.co.in/api";
+// export const BASEIMGURL = "https://api.mimaratha.co.in/";
+// export const RENDERMEDIAURL = "https://api.mimaratha.co.in";
+// export const SOCKETURL = "https://api.mimaratha.co.in";
 
 // Other development URLs (commented out)
 // export const BASEAPIURL = "http://192.168.0.159:2311/api";
