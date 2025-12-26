@@ -79,6 +79,7 @@ import ShopDetailScreen from "../../features/jewellery/ShopDetailScreen";
 import ProductDetailScreen from "../../features/jewellery/ProductDetailScreen";
 import PremiumAccessScreen from "../../features/jewellery/PremiumAccessScreen";
 import ProfileScreen from "../../features/jewellery/ProfileScreen";
+import LiveRatesScreen from "../../features/jewellery/LiveRatesScreen";
 
 const Stack = createStackNavigator();
 
@@ -232,6 +233,7 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} />
       <Stack.Screen name="PremiumAccessScreen" component={PremiumAccessScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <Stack.Screen name="LiveRatesScreen" component={LiveRatesScreen} />
 
       {/* <Stack.Screen name="CommunityProfile" component={CommunityProfileScreen} /> */}
     </Stack.Navigator>

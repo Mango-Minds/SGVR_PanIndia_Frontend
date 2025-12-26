@@ -1,30 +1,19 @@
-// export const BASEAPIURL = "https://sgvr-server.herokuapp.com/api";
-// export const SOCKETURL = "https://sgvr-server.herokuapp.com";
+// Development URLs (used when __DEV__ is true)
+const DEV_BASEAPIURL = "http://192.168.1.5:5050/api";
+const DEV_BASEIMGURL = "http://192.168.1.5:5050/";
+const DEV_RENDERMEDIAURL = "http://192.168.1.5:5050";
+const DEV_SOCKETURL = "http://192.168.1.5:5050";
 
-// export const BASEAPIURL = "https://server.one.daivajnyabrahmin.com/api";
-// export const BASEAPIURL = "http://172.20.10.6:5000/api";
-// export const BASEIMGURL = "http://172.20.10.6:5000//api";
-// export const RENDERMEDIAURL = "http://172.20.10.6:5000/";
-// export const BASEAPIURL = "https://api.daivajnyabrahmin.in/api";
-// export const BASEIMGURL = "https://api.daivajnyabrahmin.in/";
-// export const RENDERMEDIAURL = "https://api.daivajnyabrahmin.in";
+// Production URLs (used when __DEV__ is false)
+const PROD_BASEAPIURL = "https://api.mimaratha.co.in/api";
+const PROD_BASEIMGURL = "https://api.mimaratha.co.in/";
+const PROD_RENDERMEDIAURL = "https://api.mimaratha.co.in";
+const PROD_SOCKETURL = "https://api.mimaratha.co.in";
 
-// export const BASEIMGURL = "https://api.eygds.in/";
-// export const BASEAPIURL = "https://api.eygds.in/api";
-
-// Local development URLs for local backend
-export const BASEAPIURL = "http://192.168.1.4:5050/api";
-export const BASEIMGURL = "http://192.168.1.4:5050/";
-export const RENDERMEDIAURL = "http://192.168.1.4:5050";
-export const SOCKETURL = "http://192.168.1.4:5050";
-
-// Production URLs for deployed backend (inactive - commented out for local development)
-// export const BASEAPIURL = "https://api.mimaratha.co.in/api";
-// export const BASEIMGURL = "https://api.mimaratha.co.in/";
-// export const RENDERMEDIAURL = "https://api.mimaratha.co.in";
-// export const SOCKETURL = "https://api.mimaratha.co.in";
-
-// Other development URLs (commented out)
-// export const BASEAPIURL = "http://192.168.0.159:2311/api";
-// export const SOCKETURL = "http://192.168.0.159:2311";
+// Automatically use the right URLs based on __DEV__ flag
+// __DEV__ is true in development mode, false in production builds
+export const BASEAPIURL = __DEV__ ? DEV_BASEAPIURL : PROD_BASEAPIURL;
+export const BASEIMGURL = __DEV__ ? DEV_BASEIMGURL : PROD_BASEIMGURL;
+export const RENDERMEDIAURL = __DEV__ ? DEV_RENDERMEDIAURL : PROD_RENDERMEDIAURL;
+export const SOCKETURL = __DEV__ ? DEV_SOCKETURL : PROD_SOCKETURL;
 
