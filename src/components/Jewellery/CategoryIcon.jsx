@@ -19,7 +19,7 @@ const CategoryIcon = ({
       <View style={[styles.iconContainer, { backgroundColor: color }]}>
         <Icon name={icon} size={size * 0.4} color="#FFFFFF" />
       </View>
-      <Text style={styles.label}>{name}</Text>
+      <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>{name}</Text>
     </TouchableOpacity>
   );
 };
@@ -35,13 +35,14 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: spacing.xs,
+    marginBottom: 1,
   },
   label: {
     ...typography.bodySmall,
     fontWeight: '500',
-    marginTop: spacing.xs,
+    marginTop: 2,
     textAlign: 'center',
+    width: '100%',
   },
 });
 

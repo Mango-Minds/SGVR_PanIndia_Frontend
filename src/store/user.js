@@ -104,6 +104,7 @@ const slice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.refresh_token = action.payload.refreshToken;
+      state.loading = false; // Ensure loading is set to false after restoring user
     },
     updateTokens: (state, action) => {
       state.token = action.payload.accessToken;
@@ -621,18 +622,25 @@ export const initialUser = () => async (dispatch) => {
     console.log("loggedIn: ", loggedIn);
 
     // If no loggedIn flag or it's false, clear everything and logout
+    // Don't set loading to true if we're already logged out
     if (loggedIn !== "true") {
       console.log("User not logged in, clearing data");
       await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
+      dispatch(logoutSuccess());
+      return;
     }
 
     // If missing essential data, clear everything and logout
+    // Don't set loading to true if we're already logged out
     if (!token || !refreshToken || !userData) {
       console.log("Missing essential data, clearing everything");
       await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
+      dispatch(logoutSuccess());
+      return;
     }
+
+    // Only set loading to true if we have valid data and are going to restore session
+    dispatch(Isloading(true));
 
     try {
       const user = JSON.parse(userData);
@@ -641,7 +649,8 @@ export const initialUser = () => async (dispatch) => {
       if (!user || !user._id || !user.email) {
         console.log("Invalid user data format, clearing everything");
         await AsyncStorage.clear();
-        return dispatch(logoutSuccess());
+        dispatch(logoutSuccess());
+        return;
       }
 
       dispatch(
@@ -656,7 +665,7 @@ export const initialUser = () => async (dispatch) => {
     } catch (parseError) {
       console.error("Error parsing user data:", parseError);
       await AsyncStorage.clear();
-      return dispatch(logoutSuccess());
+      dispatch(logoutSuccess());
     }
   } catch (error) {
     console.error("Error loading user session:", error);
@@ -722,8 +731,12 @@ export const logout = () => async (dispatch) => {
     await AsyncStorage.removeItem("firsttime");
     await AsyncStorage.removeItem("user-language");
 
-    // Clear Redux state
+    // Clear Redux state - logoutSuccess already sets loading to false
     dispatch(logoutSuccess());
+    
+    // CRITICAL: Ensure loading is explicitly set to false after logout
+    // This prevents any race conditions, especially when navigating from jewelry module
+    dispatch(Isloading(false));
     
     // Show success message
     dispatch(

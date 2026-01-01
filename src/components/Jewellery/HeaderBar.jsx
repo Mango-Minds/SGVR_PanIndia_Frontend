@@ -7,7 +7,7 @@ import { jewelleryColors, typography, spacing } from '../../styles/jewellery.sty
 const HeaderBar = ({ 
   title, 
   showBack = false, 
-  showNotification = true, 
+  showNotification = false, 
   showShare = false,
   onNotificationPress,
   onSharePress,

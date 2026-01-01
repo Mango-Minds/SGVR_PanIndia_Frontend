@@ -1,84 +1,181 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import ShopCard from '../../components/Jewellery/ShopCard';
 import FilterDropdown from '../../components/Jewellery/FilterDropdown';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
+import { getShopData } from '../../services/jewellery.services';
+import { BASEIMGURL } from '../../infrastructure/constants';
 
 const ShopsScreen = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('home');
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [locationFilter, setLocationFilter] = useState(null);
   const [brandFilter, setBrandFilter] = useState(null);
   const [shopFilter, setShopFilter] = useState(null);
 
-  // Mock shop data - replace with actual API call
-  const shops = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop',
-      name: 'Royal Gems',
-      owner: 'Suresh Patel',
-      rating: 4.8,
-      reviewCount: 125,
-      address: 'MG Road, Hyderabad',
-      hours: '10:00 AM - 07:00 PM',
-      isVerified: true,
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-      name: 'Krishna Jewellers',
-      owner: 'Anil Reddy',
-      rating: 4.8,
-      reviewCount: 125,
-      address: 'MG Road, Hyderabad',
-      hours: '10:00 AM - 07:00 PM',
-      isVerified: true,
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=400&h=400&fit=crop',
-      name: 'Rajshree Jewellers',
-      owner: 'Rajesh Kumar',
-      rating: 4.9,
-      reviewCount: 203,
-      address: 'Banjara Hills, Hyderabad',
-      hours: '09:30 AM - 08:00 PM',
-      isVerified: true,
-    },
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=400&fit=crop',
-      name: 'KISNA DIAMOND & GOLD JEWELLER',
-      owner: 'Vikram Singh',
-      rating: 4.7,
-      reviewCount: 98,
-      address: 'Secunderabad, Hyderabad',
-      hours: '10:00 AM - 07:30 PM',
-      isVerified: true,
-    },
-  ];
+  const handleBackPress = () => {
+    navigation.navigate('HomeScreen');
+  };
 
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveTab('home');
+    }, [])
+  );
+
+  // Fetch shops from API
+  const fetchShops = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Use getShopData service function
+      const response = await getShopData();
+      
+      console.log('Shops API Response:', JSON.stringify(response, null, 2));
+      
+      // Handle different response structures
+      let shopsData = [];
+      if (Array.isArray(response)) {
+        shopsData = response;
+      } else if (response?.data && Array.isArray(response.data)) {
+        shopsData = response.data;
+      } else if (response?.shops && Array.isArray(response.shops)) {
+        shopsData = response.shops;
+      } else {
+        shopsData = [];
+      }
+      
+      console.log('Extracted shops data:', shopsData.length, 'shops');
+      
+      // Apply location filter if needed
+      if (locationFilter) {
+        shopsData = shopsData.filter(shop => {
+          const shopLocation = (shop.city || '').toLowerCase() || 
+                              (shop.state || '').toLowerCase() ||
+                              (shop.address || '').toLowerCase();
+          return shopLocation.includes(locationFilter.toLowerCase());
+        });
+      }
+      
+      // Apply brand filter if needed
+      if (brandFilter) {
+        shopsData = shopsData.filter(shop => {
+          const shopBrand = (shop.brand || shop.shopName || '').toLowerCase();
+          return shopBrand.includes(brandFilter.toLowerCase());
+        });
+      }
+
+      // Filter verified shops if needed
+      let filteredShops = shopsData;
+      if (shopFilter === 'verified') {
+        filteredShops = shopsData.filter(shop => shop.isVerified || shop.verified);
+      }
+
+      // Map API response to ShopCard props
+      const mappedShops = filteredShops.map((shop) => {
+        // Get owner name
+        let ownerName = 'Owner';
+        if (shop.owner) {
+          if (typeof shop.owner === 'object') {
+            ownerName = shop.owner.firstName && shop.owner.lastName
+              ? `${shop.owner.firstName} ${shop.owner.lastName}`
+              : shop.owner.name || shop.owner.firstName || 'Owner';
+          } else {
+            ownerName = shop.owner;
+          }
+        }
+
+        // Get shop image
+        let shopImage = null;
+        if (shop.image) {
+          shopImage = shop.image.startsWith('http') 
+            ? shop.image 
+            : `${BASEIMGURL}${shop.image}`;
+        } else if (shop.owner?.image) {
+          shopImage = shop.owner.image.startsWith('http')
+            ? shop.owner.image
+            : `${BASEIMGURL}${shop.owner.image}`;
+        } else if (shop.shopImage) {
+          shopImage = shop.shopImage.startsWith('http')
+            ? shop.shopImage
+            : `${BASEIMGURL}${shop.shopImage}`;
+        }
+
+        // Get address
+        const address = shop.address || 
+          (shop.city && shop.state ? `${shop.city}, ${shop.state}` : '') ||
+          shop.location ||
+          'Address not available';
+
+        // Get hours
+        const hours = shop.hours || 
+          shop.timing || 
+          shop.openingHours ||
+          (shop.openTime && shop.closeTime ? `${shop.openTime} - ${shop.closeTime}` : 'Hours not available');
+
+        // Get rating and reviews
+        const rating = shop.rating || shop.averageRating || 0;
+        const reviewCount = shop.reviewCount || shop.reviewsCount || shop.totalReviews || 0;
+
+        return {
+          id: shop._id || shop.id,
+          image: shopImage,
+          name: shop.shopName || shop.name || 'Shop',
+          owner: ownerName,
+          rating: typeof rating === 'number' ? rating : parseFloat(rating) || 0,
+          reviewCount: typeof reviewCount === 'number' ? reviewCount : parseInt(reviewCount) || 0,
+          address: address,
+          hours: hours,
+          isVerified: shop.isVerified || shop.verified || false,
+        };
+      });
+
+      console.log('Mapped shops:', mappedShops.length, 'shops');
+      setShops(mappedShops);
+    } catch (err) {
+      console.error('Error fetching shops:', err);
+      console.error('Error details:', err.response?.data || err.message);
+      setError('Failed to load shops. Please try again.');
+      setShops([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [locationFilter, brandFilter, shopFilter]);
+
+  // Fetch shops on mount and when filters change
+  useEffect(() => {
+    fetchShops();
+  }, [fetchShops]);
+
+  // Filter options - can be populated from API if needed
   const locationOptions = [
+    { label: 'All Locations', value: null },
     { label: 'Hyderabad', value: 'hyderabad' },
     { label: 'Mumbai', value: 'mumbai' },
     { label: 'Delhi', value: 'delhi' },
+    { label: 'Bangalore', value: 'bangalore' },
   ];
 
   const brandOptions = [
+    { label: 'All Brands', value: null },
     { label: 'Tanishq', value: 'tanishq' },
     { label: 'Kalyan', value: 'kalyan' },
   ];
@@ -87,6 +184,11 @@ const ShopsScreen = () => {
     { label: 'All Shops', value: 'all' },
     { label: 'Verified Only', value: 'verified' },
   ];
+
+  // Handle filter button press
+  const handleFilterPress = () => {
+    fetchShops();
+  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -100,29 +202,20 @@ const ShopsScreen = () => {
       case 'profile':
         navigation.navigate('ProfileScreen');
         break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
+        break;
       default:
         break;
     }
   };
 
-  const renderShop = ({ item }) => (
-    <ShopCard
-      id={item.id}
-      image={item.image}
-      name={item.name}
-      owner={item.owner}
-      rating={item.rating}
-      reviewCount={item.reviewCount}
-      address={item.address}
-      hours={item.hours}
-      isVerified={item.isVerified}
-      onPress={() => navigation.navigate('ShopDetailScreen', { shopId: item.id })}
-    />
-  );
-
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Shops" showNotification showShare />
+      <HeaderBar showBack title="Shops" onBackPress={handleBackPress} />
 
       {/* Filter Bar */}
       <View style={styles.filterWrapper}>
@@ -149,7 +242,10 @@ const ShopsScreen = () => {
             selectedValue={shopFilter}
             onSelect={setShopFilter}
           />
-          <TouchableOpacity style={styles.filterButton}>
+          <TouchableOpacity 
+            style={styles.filterButton}
+            onPress={handleFilterPress}
+          >
             <Text style={styles.filterButtonText}>Filter</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -161,7 +257,30 @@ const ShopsScreen = () => {
         contentContainerStyle={styles.shopsContainer}
         showsVerticalScrollIndicator={false}
       >
-        {shops.map((shop) => (
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={jewelleryColors.primary} />
+            <Text style={styles.loadingText}>Loading shops...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Icon name="error-outline" size={48} color={jewelleryColors.textSecondary} />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton}
+              onPress={fetchShops}
+            >
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        ) : shops.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Icon name="store" size={48} color={jewelleryColors.textSecondary} />
+            <Text style={styles.emptyText}>No shops found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
+          </View>
+        ) : (
+          shops.map((shop) => (
           <ShopCard
             key={shop.id}
             id={shop.id}
@@ -175,7 +294,8 @@ const ShopsScreen = () => {
             isVerified={shop.isVerified}
             onPress={() => navigation.navigate('ShopDetailScreen', { shopId: shop.id })}
           />
-        ))}
+          ))
+        )}
       </ScrollView>
 
       {/* View More Button */}
@@ -257,6 +377,62 @@ const styles = StyleSheet.create({
     ...typography.bodySmall,
     color: jewelleryColors.textSecondary,
     textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+    minHeight: 200,
+  },
+  loadingText: {
+    ...typography.body,
+    color: jewelleryColors.textSecondary,
+    marginTop: spacing.md,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+    minHeight: 200,
+  },
+  errorText: {
+    ...typography.body,
+    color: jewelleryColors.textSecondary,
+    marginTop: spacing.md,
+    textAlign: 'center',
+    marginHorizontal: spacing.lg,
+  },
+  retryButton: {
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: jewelleryColors.primary,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    ...typography.body,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+    minHeight: 200,
+  },
+  emptyText: {
+    ...typography.body,
+    color: jewelleryColors.text,
+    marginTop: spacing.md,
+    fontWeight: '600',
+  },
+  emptySubtext: {
+    ...typography.bodySmall,
+    color: jewelleryColors.textSecondary,
+    marginTop: spacing.xs,
   },
 });
 

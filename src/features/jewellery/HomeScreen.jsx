@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import CarouselBanner from '../../components/Jewellery/CarouselBanner';
 import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -19,6 +19,13 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
 const HomeScreen = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('home');
+
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveTab('home');
+    }, [])
+  );
   const [spotRates, setSpotRates] = useState(null);
   const [loadingRates, setLoadingRates] = useState(true);
 
@@ -120,13 +127,20 @@ const HomeScreen = () => {
     setActiveTab(tab);
     switch (tab) {
       case 'home':
-        // Already on home
+        // Navigate to main Dashboard from jewelry module home page
+        navigation.navigate('Dashboard');
         break;
       case 'search':
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
         navigation.navigate('ProfileScreen');
+        break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
         break;
       default:
         break;
@@ -137,8 +151,8 @@ const HomeScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar 
         showBack 
-        showNotification 
-        showShare 
+        showNotification={false}
+        showShare={false}
         onBackPress={() => navigation.navigate('Dashboard')}
       />
       

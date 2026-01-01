@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ProductCard from '../../components/Jewellery/ProductCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -21,6 +21,17 @@ const BrowseScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('search');
+
+  const handleBackPress = () => {
+    navigation.navigate('HomeScreen');
+  };
+
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveTab('search');
+    }, [])
+  );
   const [wishlistedItems, setWishlistedItems] = useState([]);
 
   const categories = ['All', 'Rings', 'Bracelets', 'Chains', 'Earrings', 'Necklaces'];
@@ -121,6 +132,12 @@ const BrowseScreen = () => {
       case 'profile':
         navigation.navigate('ProfileScreen');
         break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
+        break;
       default:
         break;
     }
@@ -143,7 +160,7 @@ const BrowseScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Browse" showNotification />
+      <HeaderBar showBack title="Browse" onBackPress={handleBackPress} />
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>

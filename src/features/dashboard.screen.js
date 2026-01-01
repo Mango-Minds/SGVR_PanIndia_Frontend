@@ -148,19 +148,11 @@ export default function DashboardScreen({ navigation }) {
   const { token } = useSelector((state) => state.user);
   const { loading, notification, temple } = useSelector((state) => state.user);
   
-  // Safety check for token
+  // CRITICAL FIX: Return null if token is null (user is logged out)
+  // This prevents showing loading spinner after logout, especially from jewelry module
+  // The Navigation component will handle showing PreLoginNavigator
   if (!token) {
-    return (
-      <ActivityIndicator
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-        size={"large"}
-        color={"#b98c13"}
-      />
-    );
+    return null;
   }
   
   const tokenPayload = token.split(".")[1];
@@ -389,10 +381,25 @@ export default function DashboardScreen({ navigation }) {
           });
         }
       } else if (moduleKey === "Jewellery") {
-        // Navigate directly to the new jewelry module HomeScreen (no onboarding check)
-        navigation.navigate("Jewellery", {
-          screen: "HomeScreen"
-        });
+        if (updatedUser?.isJewelryOnboarded) {
+          navigation.navigate("Jewellery", {
+            screen: "HomeScreen"
+          });
+        } else {
+          navigation.navigate("OnboardModuleForm", {
+            userId,
+            redirectTo: moduleKey,
+          });
+        }
+      } else if (moduleKey === "Temple") {
+        if (updatedUser?.isTempleOnboarded) {
+          navigateToScreen(modulePath);
+        } else {
+          navigation.navigate("OnboardModuleForm", {
+            userId,
+            redirectTo: moduleKey,
+          });
+        }
       } else {
         // For other modules, use the existing logic
         const onboardFlags = {

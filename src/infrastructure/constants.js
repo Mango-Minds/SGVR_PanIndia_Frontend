@@ -1,8 +1,8 @@
 // Development URLs (used when __DEV__ is true)
-const DEV_BASEAPIURL = "http://192.168.1.5:5050/api";
-const DEV_BASEIMGURL = "http://192.168.1.5:5050/";
-const DEV_RENDERMEDIAURL = "http://192.168.1.5:5050";
-const DEV_SOCKETURL = "http://192.168.1.5:5050";
+const DEV_BASEAPIURL = "http://192.168.1.6:5050/api";
+const DEV_BASEIMGURL = "http://192.168.1.6:5050/";
+const DEV_RENDERMEDIAURL = "http://192.168.1.6:5050";
+const DEV_SOCKETURL = "http://192.168.1.6:5050";
 
 // Production URLs (used when __DEV__ is false)
 const PROD_BASEAPIURL = "https://api.mimaratha.co.in/api";

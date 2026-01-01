@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import RegisterScreen from "../../features/matrimony/register.screen";
 import Icon from "react-native-vector-icons/SimpleLineIcons";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useSelector } from "react-redux";
 import MatrimonyScreen from "../../features/matrimony/matrimony.screen";
 import MatrimonyMessageScreen from "../../features/matrimony/matrimonyMessage.screen";
 import IconAnt from "react-native-vector-icons/MaterialCommunityIcons";
@@ -27,6 +28,7 @@ import DashboardScreen from "../../features/dashboard.screen";
 import MyMatrimonyProfile from "../../features/matrimonyNew/matrimonyProfile";
 import TempleEditAdminRegisterScreen from "../../features/Temple/EditProfile";
 import MatrimonyProfileEdit from "../../features/matrimonyNew/matrimonyProfileEdit";
+import OnboardModuleForm from "../../features/OnBoardModuleForm";
 
 import MatrimonyShopProfileEdit from "../../features/matrimonyNew/matrimonyShopProfileEdit";
 import MatrimonyProfileWithConnection from "../../features/matrimonyNew/matrimonyShopProfileWithConnection";
@@ -40,8 +42,37 @@ const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
 export const MatrimonyStackNavigator = () => {
+  const user = useSelector((state) => state.user.user);
+  console.log("Matrimony Navigator - logged in user data", user);
+  console.log("Matrimony Navigator - isMatrimonyOnboarded:", user?.isMatrimonyOnboarded);
+  
+  // Determine initial route based on onboarding status
+  let initialRouteName = "OnboardModuleForm";
+  
+  if (user?.isMatrimonyOnboarded === true) {
+    initialRouteName = "Main";
+  }
+
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator 
+      initialRouteName={initialRouteName}
+      screenOptions={{ headerShown: false }}
+    >
+      {/* Onboarding Screen */}
+      <Stack.Screen name="OnboardModuleForm">
+        {(props) => (
+          <OnboardModuleForm 
+            {...props} 
+            route={{
+              params: {
+                userId: user?._id,
+                redirectTo: "Matrimony"
+              }
+            }}
+          />
+        )}
+      </Stack.Screen>
+      
       <Stack.Screen name="Main" component={MatrimonyScreenNew} />
        {/* <Stack.Screen name="Main" component={MatrimonyNavigator} />  */}
       <Stack.Screen name = "MainHome" component={DashboardScreen}/>

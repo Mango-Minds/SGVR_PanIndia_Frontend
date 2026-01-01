@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import PremiumPlanCard from '../../components/Jewellery/PremiumPlanCard';
 import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -19,6 +19,17 @@ const PremiumAccessScreen = () => {
   const navigation = useNavigation();
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [activeBottomTab, setActiveBottomTab] = useState('profile');
+
+  const handleBackPress = () => {
+    navigation.navigate('ShopsScreen');
+  };
+
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveBottomTab('profile');
+    }, [])
+  );
 
   const plans = [
     {
@@ -101,7 +112,13 @@ const PremiumAccessScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        // Already on profile
+        navigation.navigate('ProfileScreen');
+        break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
         break;
       default:
         break;
@@ -110,7 +127,7 @@ const PremiumAccessScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Premium Access" />
+      <HeaderBar showBack title="Premium Access" onBackPress={handleBackPress} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Icon */}

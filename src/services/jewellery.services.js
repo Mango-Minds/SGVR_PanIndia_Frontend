@@ -135,6 +135,28 @@ export const getShopDetails = async (id) => {
   }
 };
 
+export const getShopByOwner = async (ownerId) => {
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=shop`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    // Find shop where owner matches the ownerId
+    const shops = res.data?.data || [];
+    const shop = shops.find(s => 
+      s.owner?._id === ownerId || 
+      s.owner?._id?.toString() === ownerId?.toString() ||
+      s.owner?.toString() === ownerId?.toString()
+    );
+    return shop || null;
+  } catch (error) {
+    console.error('Error fetching shop by owner:', error);
+    throw error;
+  }
+};
+
 export const searchShops = async (params) => {
   const { keyword, location, brand, rating } = params;
   const queryParams = new URLSearchParams({
@@ -192,6 +214,70 @@ export const getProductDetails = async (id) => {
     return res.data;
   } catch (error) {
     console.error('Error fetching product details:', error);
+    throw error;
+  }
+};
+
+// CRUD operations for jewelry products (shop owners)
+export const createJewelryProduct = async (productData) => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/jewelry-products`,
+      productData,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error creating jewelry product:', error);
+    throw error;
+  }
+};
+
+export const updateJewelryProduct = async (id, productData) => {
+  try {
+    const res = await axios.patch(
+      `${BASEAPIURL}/jewelry-products/${id}`,
+      productData,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error updating jewelry product:', error);
+    throw error;
+  }
+};
+
+export const deleteJewelryProduct = async (id) => {
+  try {
+    const res = await axios.delete(`${BASEAPIURL}/jewelry-products/${id}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error deleting jewelry product:', error);
+    throw error;
+  }
+};
+
+export const getShopProducts = async (shopId, params = {}) => {
+  try {
+    const queryParams = new URLSearchParams({
+      shop: shopId,
+      ...params,
+    });
+    const res = await axios.get(
+      `${BASEAPIURL}/jewelry-products?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop products:', error);
     throw error;
   }
 };
@@ -354,6 +440,241 @@ export const getQRCode = async (shopId) => {
     console.error('Error generating QR code:', error);
     // Return a placeholder QR value if endpoint doesn't exist
     return { qrValue: `shop-${shopId}`, qrImage: null };
+  }
+};
+
+// Stock Items - Separate APIs for inventory management
+export const getStockItems = async (params = {}) => {
+  const { page = 1, limit = 20, shop, category, productCategory, search } = params;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(shop && { shop }),
+    ...(category && { category }),
+    ...(productCategory && { productCategory }),
+    ...(search && { search }),
+  });
+  
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/jewelry-stock-items?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching stock items:', error);
+    throw error;
+  }
+};
+
+export const getStockItemDetails = async (id) => {
+  try {
+    const res = await axios.get(`${BASEAPIURL}/jewelry-stock-items/${id}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching stock item details:', error);
+    throw error;
+  }
+};
+
+export const createStockItem = async (stockItemData) => {
+  try {
+    const headers = await authHeader();
+    // Remove Content-Type for FormData - axios will set it automatically with boundary
+    delete headers['Content-Type'];
+    
+    const res = await axios.post(
+      `${BASEAPIURL}/jewelry-stock-items`,
+      stockItemData,
+      {
+        headers: headers,
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error creating stock item:', error);
+    throw error;
+  }
+};
+
+export const updateStockItem = async (id, stockItemData) => {
+  try {
+    const headers = await authHeader();
+    // Remove Content-Type for FormData - axios will set it automatically with boundary
+    delete headers['Content-Type'];
+    
+    const res = await axios.patch(
+      `${BASEAPIURL}/jewelry-stock-items/${id}`,
+      stockItemData,
+      {
+        headers: headers,
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error updating stock item:', error);
+    throw error;
+  }
+};
+
+export const deleteStockItem = async (id) => {
+  try {
+    const res = await axios.delete(`${BASEAPIURL}/jewelry-stock-items/${id}`, {
+      headers: await authHeader(),
+    });
+    return res.data;
+  } catch (error) {
+    console.error('Error deleting stock item:', error);
+    throw error;
+  }
+};
+
+export const getShopStockItems = async (shopId, params = {}) => {
+  try {
+    const queryParams = new URLSearchParams({
+      shop: shopId,
+      ...params,
+    });
+    const res = await axios.get(
+      `${BASEAPIURL}/jewelry-stock-items?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop stock items:', error);
+    throw error;
+  }
+};
+
+// Follow functionality for jewelry module
+export const followUser = async (userId) => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/social/follow/${userId}`,
+      {},
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error following user:', error);
+    throw error;
+  }
+};
+
+export const unfollowUser = async (userId) => {
+  try {
+    const res = await axios.patch(
+      `${BASEAPIURL}/social/unfollow/${userId}`,
+      {},
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error unfollowing user:', error);
+    throw error;
+  }
+};
+
+export const checkFollowStatus = async (userId) => {
+  try {
+    const res = await axios.get(
+      `${BASEAPIURL}/social/check-follow-status/${userId}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error checking follow status:', error);
+    // Return default status if error occurs
+    return { status: 'none', friendStatus: 'none' };
+  }
+};
+
+export const getFollowers = async (userId, params = {}) => {
+  try {
+    const { page = 1, limit = 10 } = params;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const res = await axios.get(
+      `${BASEAPIURL}/social/${userId}/followers?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching followers:', error);
+    throw error;
+  }
+};
+
+export const getFollowing = async (userId, params = {}) => {
+  try {
+    const { page = 1, limit = 10 } = params;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const res = await axios.get(
+      `${BASEAPIURL}/social/${userId}/following?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching following:', error);
+    throw error;
+  }
+};
+
+// Reviews
+export const createShopReview = async (shopId, rating, comment = '') => {
+  try {
+    const res = await axios.post(
+      `${BASEAPIURL}/reviews/shop/${shopId}`,
+      { rating, comment },
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error creating shop review:', error);
+    throw error;
+  }
+};
+
+export const getShopReviews = async (shopId, params = {}) => {
+  try {
+    const { page = 1, limit = 10 } = params;
+    const queryParams = new URLSearchParams({
+      page: page.toString(),
+      limit: limit.toString(),
+    });
+    const res = await axios.get(
+      `${BASEAPIURL}/reviews/shop/${shopId}?${queryParams}`,
+      {
+        headers: await authHeader(),
+      }
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop reviews:', error);
+    throw error;
   }
 };
 

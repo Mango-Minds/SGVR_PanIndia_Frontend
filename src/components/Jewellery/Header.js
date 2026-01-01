@@ -24,19 +24,6 @@ const ProfileHeader = ({ title }) => {
           {title}
         </TopText>
       </View>
-      <View
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <IconButton
-          icon="bell-outline"
-          style={{ marginLeft: "auto" }}
-          onPress={() => navigation.navigate("JewelleryNotifications")}
-        ></IconButton>
-      </View>
     </View>
   );
 };

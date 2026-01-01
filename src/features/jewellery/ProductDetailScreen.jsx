@@ -9,7 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRoute, useNavigation } from '@react-navigation/native';
+import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import RatingDisplay from '../../components/Jewellery/RatingDisplay';
@@ -30,6 +30,13 @@ const ProductDetailScreen = () => {
   const [qrModalVisible, setQrModalVisible] = useState(false);
   const [activeBottomTab, setActiveBottomTab] = useState('home');
   const scrollViewRef = useRef(null);
+
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveBottomTab('home');
+    }, [])
+  );
 
   // Mock product data - replace with actual API call
   const productData = {
@@ -66,6 +73,10 @@ const ProductDetailScreen = () => {
 
   const specCategories = ['Diamond Sets', 'Custom Designs'];
 
+  const handleBackPress = () => {
+    navigation.goBack();
+  };
+
   const handleTabBarChange = (tab) => {
     setActiveBottomTab(tab);
     switch (tab) {
@@ -78,6 +89,12 @@ const ProductDetailScreen = () => {
       case 'profile':
         navigation.navigate('ProfileScreen');
         break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
+        break;
       default:
         break;
     }
@@ -85,7 +102,7 @@ const ProductDetailScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack showNotification />
+      <HeaderBar showBack onBackPress={handleBackPress} />
 
       <ScrollView ref={scrollViewRef} showsVerticalScrollIndicator={false}>
         {/* Product Image Carousel */}

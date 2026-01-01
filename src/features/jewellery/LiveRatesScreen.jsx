@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import LiveRatesCard from '../../components/Jewellery/LiveRatesCard';
@@ -18,6 +18,13 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
 const LiveRatesScreen = () => {
   const navigation = useNavigation();
   const [activeTab, setActiveTab] = useState('home');
+
+  // Update active tab when screen is focused
+  useFocusEffect(
+    React.useCallback(() => {
+      setActiveTab('home');
+    }, [])
+  );
   const [ratesData, setRatesData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -85,6 +92,12 @@ const LiveRatesScreen = () => {
       case 'profile':
         navigation.navigate('ProfileScreen');
         break;
+      case 'message':
+        navigation.navigate('ChatScreen');
+        break;
+      case 'notifications':
+        navigation.navigate('JewelleryNotifications');
+        break;
       default:
         break;
     }
@@ -104,8 +117,6 @@ const LiveRatesScreen = () => {
       <HeaderBar
         showBack
         title="Live Rates"
-        showNotification
-        showShare
         onBackPress={() => navigation.goBack()}
       />
 

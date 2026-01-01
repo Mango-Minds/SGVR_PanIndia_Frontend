@@ -635,19 +635,6 @@ const JewelleryHome = ({ navigation }) => {
                 style={{ width: 35, height: 35, marginRight: 10 }}
               />
             </TouchableOpacity>
-
-            <IconButton
-              icon="bell-outline"
-              style={{ marginLeft: "auto" }}
-              // onPress={() => navigation.navigate("JewelleryNotifications")}
-              onPress={() =>
-                navigation.navigate("JewelleryNotifications", {
-                  // fetchShopToShopRequest,
-                  shops,
-                  shopId,
-                })
-              }
-            ></IconButton>
           </View>
         </RowBetween>
       </View>

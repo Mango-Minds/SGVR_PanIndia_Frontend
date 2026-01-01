@@ -44,12 +44,16 @@ const Stack = createStackNavigator();
 export const TempleStackNavigator = () => {
   const user = useSelector((state) => state.user.user);
   const userType = useSelector((state) => state.user.user?.userType || []);
+  console.log("Temple Navigator - logged in user data", user);
+  console.log("Temple Navigator - isTempleOnboarded:", user?.isTempleOnboarded);
   
   // Determine initial route based on onboarding status
   let initialRouteName = "OnboardModuleForm";
   
-  if (user?.isTempleOnboarded) {
-    if (userType.includes("superadmin")) {
+  if (user?.isTempleOnboarded === true) {
+    if (Array.isArray(userType) && userType.includes("superadmin")) {
+      initialRouteName = "TempleSuperAdminHome";
+    } else if (userType === "superadmin") {
       initialRouteName = "TempleSuperAdminHome";
     } else {
       initialRouteName = "TempleHome";

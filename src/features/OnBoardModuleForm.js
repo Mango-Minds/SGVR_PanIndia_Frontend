@@ -71,6 +71,14 @@ const userTypes = {
     "Caterer",
     "Venue",
   ],
+  Jewellery: [
+    "Vendor",
+    "Shop",
+    "Worker",
+    "Designer",
+    "Gemologist",
+    "Browse Only",
+  ],
 };
 
 
@@ -86,7 +94,13 @@ const userTypeMappings = {
   Planner: "planner",
   Decorator: "decorator",
   Caterer: "caterer",
-  Venue: "venue"
+  Venue: "venue",
+  "Vendor": "vendor",
+  "Shop": "shop",
+  "Worker": "worker",
+  "Designer": "jewelryDesigner",
+  "Gemologist": "gemologist",
+  "Browse Only": "basicUser",
 };
 
 
@@ -152,7 +166,7 @@ console.log("Selected Module:", selectedModule);
       const onboardingFlagMap = {
         Matrimony: "isMatrimonyOnboarded",
         Temple: "isTempleOnboarded",
-       
+        Jewellery: "isJewelryOnboarded",
       };
   
       const updatedDetails = {
@@ -187,6 +201,25 @@ console.log("Selected Module:", selectedModule);
       : [data.user.userType],
   };
   dispatch(updateUser(normalizedUser));
+  
+  // Persist updated user data to AsyncStorage so it's available on next app start
+  await AsyncStorage.setItem("user", JSON.stringify(normalizedUser));
+  console.log("User data persisted to AsyncStorage with onboarding flags:", {
+    isJewelryOnboarded: normalizedUser.isJewelryOnboarded,
+    isMatrimonyOnboarded: normalizedUser.isMatrimonyOnboarded,
+    isTempleOnboarded: normalizedUser.isTempleOnboarded,
+  });
+  
+  // Also update the setInitialUser to ensure Redux state is fully updated
+  const token = await AsyncStorage.getItem("token");
+  const refreshToken = await AsyncStorage.getItem("refresh_token");
+  if (token && refreshToken) {
+    dispatch(setInitialUser({
+      user: normalizedUser,
+      token,
+      refreshToken,
+    }));
+  }
 }
 
 
@@ -203,6 +236,10 @@ console.log("Selected Module:", selectedModule);
         setTimeout(() => {
           navigation.navigate("TempleHome");
         }, 100);
+      } else if (selectedModule === "Jewellery") {
+        navigation.navigate("Jewellery", {
+          screen: "HomeScreen"
+        });
       } else {
         navigation.navigate(selectedModule);
       }

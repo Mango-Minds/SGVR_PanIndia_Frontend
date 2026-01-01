@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { useSelector } from "react-redux";
 import { createStackNavigator } from "@react-navigation/stack";
+import OnboardModuleForm from "../../features/OnBoardModuleForm";
 import JewelleryUserRegisterScreen from "../../features/jewellery/UserRegistration";
 import JewelleryHome from "../../features/jewellery/JewelleryHome";
 import MyProfile from "../../features/jewellery/MyProfile";
@@ -79,31 +80,62 @@ import ShopDetailScreen from "../../features/jewellery/ShopDetailScreen";
 import ProductDetailScreen from "../../features/jewellery/ProductDetailScreen";
 import PremiumAccessScreen from "../../features/jewellery/PremiumAccessScreen";
 import ProfileScreen from "../../features/jewellery/ProfileScreen";
+import FollowersFollowingScreen from "../../features/jewellery/FollowersFollowingScreen";
 import LiveRatesScreen from "../../features/jewellery/LiveRatesScreen";
+import AddProductScreen from "../../features/jewellery/AddProductScreen";
+import EditProductScreen from "../../features/jewellery/EditProductScreen";
+import EditShopScreen from "../../features/jewellery/EditShopScreen";
+import StockDetailsScreen from "../../features/jewellery/StockDetailsScreen";
+import AddStockItemScreen from "../../features/jewellery/AddStockItemScreen";
+import EditStockItemScreen from "../../features/jewellery/EditStockItemScreen";
+import StockItemDetailScreen from "../../features/jewellery/StockItemDetailScreen";
 
 const Stack = createStackNavigator();
 
 export const JewelleryStackNavigator = () => {
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user?.userType || []);
   const user = useSelector((state) => state.user.user);
-  console.log("logged in user data", user);
-  // let initialRouteName = "SuperAdminHome";
-  // Use new HomeScreen as default, fallback to old JewelleryHome
-  let initialRouteName = "HomeScreen";
+  console.log("Jewellery Navigator - logged in user data", user);
+  console.log("Jewellery Navigator - isJewelryOnboarded:", user?.isJewelryOnboarded);
+  
+  // Check onboarding status first
+  let initialRouteName = "OnboardModuleForm";
+  
+  if (user?.isJewelryOnboarded === true) {
+    // Use new HomeScreen as default, fallback to old JewelleryHome
+    initialRouteName = "HomeScreen";
 
-  if (userType === "worker") {
-    initialRouteName = "WorkerHome";
-  } else if (userType === "vendor") {
-    initialRouteName = "VendorHome";
-  } else if (userType === "shop") {
-    initialRouteName = "JewelleryHome";
-  } else if (userType === "superadmin") {
-    initialRouteName = "SuperAdminHome";
-  }else if (userType === "jewelryDesigner") {
-    initialRouteName = "DesignerHome";
-  }
-  else if (userType === "gemologist") {
-    initialRouteName = "GemologistHome";
+    // Set route based on userType if onboarded
+    if (Array.isArray(userType)) {
+      if (userType.includes("worker")) {
+        initialRouteName = "WorkerHome";
+      } else if (userType.includes("vendor")) {
+        initialRouteName = "VendorHome";
+      } else if (userType.includes("shop")) {
+        initialRouteName = "JewelleryHome";
+      } else if (userType.includes("superadmin")) {
+        initialRouteName = "SuperAdminHome";
+      } else if (userType.includes("jewelryDesigner")) {
+        initialRouteName = "DesignerHome";
+      } else if (userType.includes("gemologist")) {
+        initialRouteName = "GemologistHome";
+      }
+    } else {
+      // Handle non-array userType (backward compatibility)
+      if (userType === "worker") {
+        initialRouteName = "WorkerHome";
+      } else if (userType === "vendor") {
+        initialRouteName = "VendorHome";
+      } else if (userType === "shop") {
+        initialRouteName = "JewelleryHome";
+      } else if (userType === "superadmin") {
+        initialRouteName = "SuperAdminHome";
+      } else if (userType === "jewelryDesigner") {
+        initialRouteName = "DesignerHome";
+      } else if (userType === "gemologist") {
+        initialRouteName = "GemologistHome";
+      }
+    }
   }
 
   return (
@@ -233,7 +265,30 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} />
       <Stack.Screen name="PremiumAccessScreen" component={PremiumAccessScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <Stack.Screen name="FollowersFollowingScreen" component={FollowersFollowingScreen} />
       <Stack.Screen name="LiveRatesScreen" component={LiveRatesScreen} />
+      <Stack.Screen name="AddProductScreen" component={AddProductScreen} />
+      <Stack.Screen name="EditProductScreen" component={EditProductScreen} />
+      <Stack.Screen name="EditShopScreen" component={EditShopScreen} />
+      <Stack.Screen name="StockDetailsScreen" component={StockDetailsScreen} />
+      <Stack.Screen name="AddStockItemScreen" component={AddStockItemScreen} />
+      <Stack.Screen name="StockItemDetailScreen" component={StockItemDetailScreen} />
+      <Stack.Screen name="EditStockItemScreen" component={EditStockItemScreen} />
+
+      {/* Onboarding Screen */}
+      <Stack.Screen name="OnboardModuleForm">
+        {(props) => (
+          <OnboardModuleForm 
+            {...props} 
+            route={{
+              params: {
+                userId: user?._id,
+                redirectTo: "Jewellery"
+              }
+            }}
+          />
+        )}
+      </Stack.Screen>
 
       {/* <Stack.Screen name="CommunityProfile" component={CommunityProfileScreen} /> */}
     </Stack.Navigator>

@@ -1,7 +1,7 @@
 
 
-import React, { useEffect, useState } from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import React, { useEffect, useRef } from "react";
+import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
 import { PreLoginNavigator } from "./prelogin.navigator";
 import { DashboardNavigator } from "./dashboard.navigator";
 import Icons from "react-native-vector-icons/MaterialIcons";
@@ -20,7 +20,6 @@ import {
   Text,
   Platform,
   View,
-  useColorScheme,
 } from "react-native";
 import {
   GetNotification,
@@ -52,12 +51,16 @@ export const Navigation = () => {
     dispatch = () => console.warn("Dispatch not available");
   }
 
-  const { token, loading, error, user } = userState;
+  const { token, loading, error } = userState;
 
   const errorsize = Platform.OS === "ios" ? 16 : 14;
   const errorVerticalPadding = Platform.OS === "ios" ? 12 : 8;
   const errorMarginBottom = Platform.OS === "ios" ? 20 : 40;
   const errorPaddingTop = Platform.OS === "ios" ? 8 : 0;
+
+  // CRITICAL FIX: If token is null, loading must be false immediately
+  // This prevents the loading screen from showing after logout, especially from jewelry module
+  const effectiveLoading = !token ? false : loading;
 
  
   const IsLoggedIn = async () => {
@@ -127,22 +130,47 @@ export const Navigation = () => {
   
  
   
+  // Use a ref to track if initialUser has been called to prevent multiple calls
+  const initialUserCalledRef = useRef(false);
+  
   useEffect(() => {
-    dispatch(initialUser());
-  }, []);
-
-  useEffect(() => {
-    try {
-      IsLoggedIn();
-      dispatch(GetSocialData());
-      dispatch(GetNotification());
-    } catch (error) {
-      dispatch(Isloading(false));
-      // return;x/
+    // Only call initialUser once on mount
+    // This prevents re-initialization after logout or when navigating between modules
+    if (!initialUserCalledRef.current) {
+      initialUserCalledRef.current = true;
+      dispatch(initialUser());
     }
   }, []);
 
-  if (loading)
+  useEffect(() => {
+    const checkLoginAndLoadData = async () => {
+      try {
+        const isLoggedIn = await IsLoggedIn();
+        // Only load social data and notifications if user is logged in
+        if (isLoggedIn) {
+          dispatch(GetSocialData());
+          dispatch(GetNotification());
+        }
+      } catch (error) {
+        dispatch(Isloading(false));
+        // return;x/
+      }
+    };
+    checkLoginAndLoadData();
+  }, []);
+
+  // Ensure loading is false when token is null (after logout)
+  // This is critical for fixing the loading screen issue after logout
+  useEffect(() => {
+    if (!token && loading) {
+      console.log("Token is null but loading is true after logout, setting loading to false");
+      dispatch(Isloading(false));
+    }
+  }, [token, loading]);
+
+  // CRITICAL FIX: Don't show loading screen if token is null (user is logged out)
+  // This is especially important when navigating back from jewelry module
+  if (effectiveLoading)
     return (
       <ActivityIndicator
         style={{
@@ -156,14 +184,24 @@ export const Navigation = () => {
         color={Theme.themeColor}
       />
     );
-  else
+  
+  // Navigation ref to reset navigation state when token becomes null
+  const navigationRef = useNavigationContainerRef();
+  
+  // Reset navigation when token becomes null (after logout)
+  useEffect(() => {
+    if (!token && navigationRef.isReady()) {
+      // Navigation will be handled by the conditional render below
+    }
+  }, [token]);
+  
+  // CRITICAL: Separate returns for logged out vs logged in states
+  // This ensures clean unmounting/remounting of navigators
+  if (!token) {
     return (
-      <NavigationContainer>
-        <>
-          {/* <DashboardNavigator /> */}
-          {token ? <DashboardNavigator /> : <PreLoginNavigator />}
-
-          <Snackbar
+      <NavigationContainer ref={navigationRef} key="prelogin-container">
+        <PreLoginNavigator key="prelogin" />
+        <Snackbar
             visible={error.toggle}
             onDismiss={() =>
               dispatch(
@@ -224,7 +262,77 @@ export const Navigation = () => {
               </Text>
             </View>
           </Snackbar>
-        </>
       </NavigationContainer>
     );
+  }
+  
+  // User is logged in - show DashboardNavigator
+  return (
+    <NavigationContainer ref={navigationRef} key="dashboard-container">
+      <>
+        <DashboardNavigator key="dashboard" />
+        <Snackbar
+          visible={error.toggle}
+          onDismiss={() =>
+            dispatch(
+              ErrorToggle({ toggle: false, msg: error.msg, type: error.type })
+            )
+          }
+          action={{
+            label: "✕",
+            labelStyle: { 
+              color: "white", 
+              fontSize: 18, 
+              fontWeight: "bold" 
+            },
+            onPress: () => {
+              dispatch(
+                ErrorToggle({
+                  toggle: false,
+                  msg: error.msg,
+                  type: error.type,
+                })
+              );
+            },
+          }}
+          duration={3000}
+          style={{
+            backgroundColor: error.type === "Success" ? "#4CAF50" : "#364135",
+            marginBottom: errorMarginBottom,
+            borderRadius: 8,
+          }}
+          wrapperStyle={{
+            bottom: errorMarginBottom,
+            left: 16,
+            right: 16,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              paddingVertical: Platform.OS === "ios" ? 4 : 2,
+            }}
+          >
+            <Icons
+              name={error.type === "Success" ? "check-circle" : "info"}
+              size={20}
+              color="white"
+              style={{ marginRight: 8 }}
+            />
+            <Text
+              style={{
+                color: "white",
+                fontSize: errorsize,
+                fontWeight: Platform.OS === "ios" ? "600" : "normal",
+                flex: 1,
+              }}
+            >
+              {error.msg}
+            </Text>
+          </View>
+        </Snackbar>
+      </>
+    </NavigationContainer>
+  );
 };

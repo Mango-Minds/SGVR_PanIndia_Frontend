@@ -8,33 +8,37 @@ const BottomTabBar = ({ activeTab, onTabChange }) => {
   const insets = useSafeAreaInsets();
   const tabs = [
     { key: 'home', icon: 'home' },
-    { key: 'search', icon: 'search' },
-    { key: 'media', icon: 'play-circle-outline' },
     { key: 'profile', icon: 'person-outline' },
-    { key: 'media2', icon: 'play-circle-outline' },
+    { key: 'search', icon: 'search' },
+    { key: 'message', icon: 'message' },
+    { key: 'notifications', icon: 'notifications-none' },
   ];
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
-      {tabs.map((tab, index) => (
-        <TouchableOpacity
-          key={tab.key}
-          style={styles.tab}
-          onPress={() => onTabChange(tab.key)}
-          activeOpacity={0.7}
-        >
-          <View style={[
-            styles.iconContainer,
-            activeTab === tab.key && styles.activeIconContainer
-          ]}>
-            <Icon
-              name={tab.icon}
-              size={24}
-              color={activeTab === tab.key ? jewelleryColors.primary : jewelleryColors.textSecondary}
-            />
-          </View>
-        </TouchableOpacity>
-      ))}
+      {tabs.map((tab, index) => {
+        const isCenter = index === 2; // Search is in the center (index 2)
+        return (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.tab, isCenter && styles.centerTab]}
+            onPress={() => onTabChange(tab.key)}
+            activeOpacity={0.7}
+          >
+            <View style={[
+              styles.iconContainer,
+              activeTab === tab.key && styles.activeIconContainer,
+              isCenter && styles.centerIconContainer
+            ]}>
+              <Icon
+                name={tab.icon}
+                size={isCenter ? 28 : 24}
+                color={activeTab === tab.key ? jewelleryColors.primary : jewelleryColors.textSecondary}
+              />
+            </View>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 };
@@ -64,8 +68,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  centerTab: {
+    flex: 1.2,
+  },
   iconContainer: {
     padding: spacing.xs,
+  },
+  centerIconContainer: {
+    padding: spacing.sm,
   },
   activeIconContainer: {
     backgroundColor: jewelleryColors.primary + '20',

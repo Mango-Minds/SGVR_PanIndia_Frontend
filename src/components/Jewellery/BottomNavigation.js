@@ -8,10 +8,50 @@ export default function BottomNavigation({ navigation }) {
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("Main")} 
+          onPress={() => navigation.navigate("JewelleryHome")} 
         >
-          <Ionicons name="home-outline" size={24} color="#b98c13" />
+          <Ionicons name="home" size={24} color="#b98c13" />
           <Text style={[styles.iconText, { color: "#b98c13" }]}>Home</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("MyProfile")}
+        >
+          <Ionicons name="person-outline" size={24} color="gray" />
+          <Text style={[styles.iconText, { color: "gray" }]}>Profile</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.iconContainer, styles.centerIconContainer]}
+          onPress={() => {
+            // Toggle search visibility or navigate to search screen
+            navigation.navigate("JewelleryHome");
+          }}
+        >
+          <Ionicons name="search" size={28} color="gray" />
+          <Text style={[styles.iconText, { color: "gray" }]}>Search</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() => navigation.navigate("ChatScreen")}
+        >
+          <Ionicons name="chatbubble-outline" size={24} color="gray" />
+          <Text style={[styles.iconText, { color: "gray" }]}>Message</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={styles.iconContainer}
+          onPress={() =>
+            navigation.navigate("JewelleryNotifications", {
+              shops: [],
+              shopId: null,
+            })
+          }
+        >
+          <Ionicons name="notifications-outline" size={24} color="gray" />
+          <Text style={[styles.iconText, { color: "gray" }]}>Notifications</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -138,7 +178,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
   },
-
+  centerIconContainer: {
+    flex: 1.2,
+  },
   iconText: {
     marginTop: 4,
   },
