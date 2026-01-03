@@ -8,25 +8,29 @@ import {
   Image,
   Alert,
   ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  ScrollView,
 } from "react-native";
-import { IconButton } from "react-native-paper";
-import { RowBetween, SearchField } from "../../styles/common.styles";
-import { TopText } from "../../styles/social.styles";
-import Icon from "react-native-vector-icons/Ionicons";
-import { ScrollView } from "react-native-gesture-handler";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
-import BottomNavigation from "../../components/Jewellery/BottomNavigation";
+import HeaderBar from "../../components/Jewellery/HeaderBar";
+import BottomTabBar from "../../components/Jewellery/BottomTabBar";
+import { jewelleryColors, typography, spacing, commonStyles } from "../../styles/jewellery.styles";
+import apiClient from "../../store/apiClient";
+import moment from "moment";
 
 function JewelleryNotifications({ navigation, route }) {
-  const [selectedTab, setSelectedTab] = useState("Requests");
-  const handleTabPress = (tab) => {
-    setSelectedTab(tab);
-  };
+  const insets = useSafeAreaInsets();
+  const [activeBottomTab, setActiveBottomTab] = useState("notifications");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
+  const [stockNotifications, setStockNotifications] = useState([]);
+  const [loadingStockNotifications, setLoadingStockNotifications] = useState(false);
+  const [refreshingStockNotifications, setRefreshingStockNotifications] = useState(false);
 
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -82,7 +86,58 @@ function JewelleryNotifications({ navigation, route }) {
     fetchDesignerVendorRequest();
     fetchGemologistVendorRequest();
     fetchBuyRequest();
+    fetchStockNotifications();
   }, []);
+
+  // Fetch stock item notifications
+  const fetchStockNotifications = async () => {
+    try {
+      setLoadingStockNotifications(true);
+      const response = await apiClient.get("/notifications/");
+      
+      if (response.status === 200) {
+        const allNotifications = response.data.notifications || [];
+        // Filter for stock item notifications
+        const stockItemNotifications = allNotifications.filter(
+          (notif) => notif.type === "stockItemCreated" || notif.type === "stockItemUpdated"
+        );
+        setStockNotifications(stockItemNotifications);
+      }
+    } catch (error) {
+      console.error("Error fetching stock notifications:", error);
+    } finally {
+      setLoadingStockNotifications(false);
+    }
+  };
+
+  const handleRefreshStockNotifications = async () => {
+    setRefreshingStockNotifications(true);
+    await fetchStockNotifications();
+    setRefreshingStockNotifications(false);
+  };
+
+  const handleTabChange = (tab) => {
+    setActiveBottomTab(tab);
+    switch (tab) {
+      case "home":
+        navigation.navigate("HomeScreen");
+        break;
+      case "search":
+        navigation.navigate("BrowseScreen");
+        break;
+      case "profile":
+        navigation.navigate("ProfileScreen");
+        break;
+      case "message":
+        navigation.navigate("ChatScreen");
+        break;
+      case "notifications":
+        // Already on notifications
+        break;
+      default:
+        break;
+    }
+  };
 
   const fetchVendorToVendorRequest = async () => {
     console.log("VToV vendor id: ", vendorId);
@@ -1033,83 +1088,49 @@ Alert.alert("OK", "Chat Room Created", [
 
   {console.log("notification: ", notification)}  
 
+  // Check if there are any notifications to show
+  const hasNotifications = 
+    vendors.length > 0 ||
+    vendorsData.length > 0 ||
+    vendorDesignerData.length > 0 ||
+    vendorGemologistData.length > 0 ||
+    workersData.length > 0 ||
+    designersData.length > 0 ||
+    gemologistList.length > 0 ||
+    vendorslistData.length > 0 ||
+    shopsData.length > 0 ||
+    shops.length > 0 ||
+    vendorData.length > 0 ||
+    stockNotifications.length > 0;
+
   return (
-    <SafeAreaView
-      style={{
-        flex: 1,
-        backgroundColor: "white",
-      }}
-    >
-      <View
-        style={{
-          paddingHorizontal: 10,
-        }}
-      >
-        <RowBetween style={{ paddingTop: 24 }}>
-          <View style={{ alignItems: "center", flexDirection: "row" }}>
-            <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-            <TopText
-              style={{ color: "#D4AF37", fontSize: 20, fontWeight: "bold" }}
-            >
-              Jewellery
-            </TopText>
-          </View>
-        </RowBetween>
-      </View>
+    <SafeAreaView style={commonStyles.container} edges={['top']}>
+      <HeaderBar showBack title="Jewellery" onBackPress={() => navigation.goBack()} />
 
-      <View style={styles.tabsContainer}>
-        {["Requests", "Product Requests"].map((tab) => (
-          <TouchableOpacity
-            key={tab}
-            onPress={() => handleTabPress(tab)}
-            style={[styles.tab, selectedTab === tab ? styles.selectedTab : {}]}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                selectedTab === tab ? styles.selectedTabText : {},
-              ]}
-            >
-              {tab}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      <View>
-        {/* {selectedTab === "Requests" && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginHorizontal: 14,
-              marginTop: 10,
-            }}
-          >
-            <SearchField placeholder="Search" />
-            <View style={{ position: "absolute", right: 20, elevation: 3 }}>
-              <Icon name="search" size={24} />
-            </View>
+      <View style={styles.contentWrapper}>
+        {loadingAnimation || loadingStockNotifications ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={jewelleryColors.primary} />
           </View>
-        )} */}
-      </View>
-
-      {selectedTab === "Requests" && (
-        <>
-          <View
-            style={[
-              styles.shadowProp,
+        ) : !hasNotifications ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No notifications</Text>
+          </View>
+        ) : (
+          <ScrollView
+            style={styles.shadowProp}
+            contentContainerStyle={[
               {
                 backgroundColor: "#e6f9ff",
                 padding: "2%",
                 margin: "4%",
-                display: "flex",
-                flexDirection: "row",
-                flex: 1,
               },
+              { paddingBottom: 80 + insets.bottom } // Account for tab bar height + safe area
             ]}
+            showsVerticalScrollIndicator={false}
           >
-            <ScrollView vertical={true} showsVerticalScrollIndicator={false}>
-              {vendors.map((vendor) => (
+            {/* Render all connection requests */}
+            {vendors.map((vendor) => (
                 <View key={vendor._id} style={{ marginBottom: 10 }}>
                   <TouchableOpacity>
                     <View
@@ -2025,247 +2046,192 @@ Alert.alert("OK", "Chat Room Created", [
                   </TouchableOpacity>
                 </View>
               ))}
-            </ScrollView>
-          </View>
-          <BottomNavigation navigation={navigation} />
-        </>
-      )}
 
-      
-
-      {selectedTab === "Product Requests" && (
-        <>
-          <View style={{ flex: 1 }}>
-            {loadingAnimation === true ? (
-              <ActivityIndicator
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-                size={"large"}
-                color={"#b98c13"}
-              />
-            ) : (
-              <View
-                style={[
-                  styles.shadowProp,
-                  {
-                    backgroundColor: "#fefefe",
-                    padding: "2%",
-                    margin: "4%",
-                    display: "flex",
-                    flexDirection: "row",
-                    flex: 1,
-                  },
-                ]}
-              >
-                {vendorData.length === 0 ? (
+            {/* Render product buy requests */}
+            {vendorData.map((vendor) => (
+              <View key={vendor._id} style={{ marginBottom: 10 }}>
+                <TouchableOpacity>
                   <View
                     style={{
-                      flex: 1,
-                      justifyContent: "center",
+                      flexDirection: "row",
                       alignItems: "center",
+                      margin: 10,
                     }}
                   >
-                    <Text style={{ fontSize: 18, color: "grey" }}>
-                      No data found
+                    <View style={{ marginLeft: 10, flex: 1 }}>
+                      <Text
+                        style={{
+                          opacity: 0.7,
+                          fontSize: 15,
+                        }}
+                      >
+                        {vendor?.fromType === "shop"
+                          ? vendor?.fromId?.shopName
+                          : vendor?.fromId?.username}{" "}
+                        has requested to buy {vendor?.productId?.name}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: "#D4AF37",
+                          paddingVertical: 8,
+                          paddingHorizontal: 12,
+                          borderRadius: 5,
+                          marginRight: 10,
+                        }}
+                        onPress={() => {
+                          const requestId = vendor._id;
+                          console.log("Req id: ", requestId);
+                          setSelectedRequestId(requestId);
+                          handleBuyResponseRequest(
+                            "accept",
+                            requestId,
+                            vendor
+                          );
+                        }}
+                      >
+                        <Text style={{ color: "white" }}>Accept</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={{
+                          backgroundColor: "#CCCCCC",
+                          paddingVertical: 8,
+                          paddingHorizontal: 12,
+                          borderRadius: 5,
+                        }}
+                        onPress={() => {
+                          const requestId = vendor._id;
+                          console.log("Req id: ", requestId);
+                          setSelectedRequestId(requestId);
+                          handleBuyResponseRequest(
+                            "reject",
+                            requestId
+                          );
+                        }}
+                      >
+                        <Text style={{ color: "black" }}>Delete</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Divider line between each request */}
+                <View
+                  style={{
+                    height: 1,
+                    backgroundColor: "#ddd",
+                    marginVertical: 10,
+                  }}
+                />
+              </View>
+            ))}
+
+            {/* Render stock notifications */}
+            {stockNotifications.map((item) => (
+              <TouchableOpacity key={item._id} style={styles.notificationCard}>
+                <View style={styles.notificationContent}>
+                  <View style={styles.notificationIcon}>
+                    <Text style={styles.notificationIconText}>
+                      {item.type === "stockItemCreated" ? "📦" : "✏️"}
                     </Text>
                   </View>
-                ) : (
-                  <ScrollView
-                    vertical={true}
-                    showsVerticalScrollIndicator={false}
-                  >
-                    {vendorData.map((vendor) => {
-                      return (
-                        <View key={vendor._id} style={{ marginBottom: 10 }}>
-                          <TouchableOpacity>
-                            <View
-                              style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                margin: 10,
-                              }}
-                            >
-                              <View style={{ marginLeft: 10, flex: 1 }}>
-                                <Text
-                                  style={{
-                                    opacity: 0.7,
-                                    fontSize: 15,
-                                  }}
-                                >
-                                  {vendor?.fromType === "shop"
-                                    ? vendor?.fromId?.shopName
-                                    : vendor?.fromId?.username}{" "}
-                                  has requested to buy {vendor?.productId?.name}
-                                </Text>
-                              </View>
+                  <View style={styles.notificationTextContainer}>
+                    <Text style={styles.notificationMessage}>{item.message}</Text>
+                    <Text style={styles.notificationTime}>
+                      {moment(item.createdAt).fromNow()}
+                    </Text>
+                  </View>
+                  {!item.read && <View style={styles.unreadDot} />}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        )}
+      </View>
 
-                              <View
-                                style={{
-                                  flexDirection: "row",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <TouchableOpacity
-                                  style={{
-                                    backgroundColor: "#D4AF37",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 12,
-                                    borderRadius: 5,
-                                    marginRight: 10,
-                                  }}
-                                  onPress={() => {
-                                    const requestId = vendor._id;
-                                    console.log("Req id: ", requestId);
-                                    setSelectedRequestId(requestId);
-                                    handleBuyResponseRequest(
-                                      "accept",
-                                      requestId,
-                                      vendor
-                                    );
-                                  }}
-                                >
-                                  <Text style={{ color: "white" }}>Accept</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                  style={{
-                                    backgroundColor: "#CCCCCC",
-                                    paddingVertical: 8,
-                                    paddingHorizontal: 12,
-                                    borderRadius: 5,
-                                  }}
-                                  onPress={() => {
-                                    const requestId = vendor._id;
-                                    console.log("Req id: ", requestId);
-                                    setSelectedRequestId(requestId);
-                                    handleBuyResponseRequest(
-                                      "reject",
-                                      requestId
-                                    );
-                                  }}
-                                >
-                                  <Text style={{ color: "black" }}>Delete</Text>
-                                </TouchableOpacity>
-                              </View>
-                            </View>
-                          </TouchableOpacity>
-
-                          {/* Divider line between each request */}
-                          <View
-                            style={{
-                              height: 1,
-                              backgroundColor: "#ddd", // Light grey color for the divider
-                              marginVertical: 10,
-                            }}
-                          />
-                        </View>
-                      );
-                    })}
-                  </ScrollView>
-                )}
-              </View>
-            )}
-          </View>
-
-          <BottomNavigation navigation={navigation} />
-        </>
-      )}
-
+      <BottomTabBar activeTab={activeBottomTab} onTabChange={handleTabChange} />
 
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  Catagory: {
-    marginHorizontal: 10,
-    marginVertical: 15,
+  contentWrapper: {
+    flex: 1,
   },
-  CatagoryText: {
-    fontSize: 13,
-    fontWeight: "500",
-    marginTop: 10,
-    textAlign: "center",
-    color: "#616161",
+  contentContainer: {
+    flex: 1,
+    backgroundColor: jewelleryColors.bg,
   },
-  StockCard: {
-    flexDirection: "row",
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "flex-start",
-    paddingHorizontal: 10,
-    paddingVertical: 10,
-    marginVertical: 5,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 5,
-      height: 2,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 3.84,
-    elevation: 2,
-    backgroundColor: "#fff",
-    borderRadius: 10,
   },
-  stockImage: {
-    width: 90,
-    height: 90,
-    marginRight: 10,
-  },
-  stockName: {
-    fontSize: 17,
-    fontWeight: "600",
-    color: "#141414",
-    marginBottom: 10,
-  },
-  stockspecs: {
-    flexDirection: "row",
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "space-between",
-    width: "73%",
   },
-  stockdetails: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#616161",
-    opacity: 0.5,
+  emptyText: {
+    ...typography.body,
+    color: jewelleryColors.textSecondary,
   },
-  stocklocation: {
+  notificationsList: {
+    padding: spacing.md,
+  },
+  notificationCard: {
+    backgroundColor: jewelleryColors.bg,
+    borderRadius: 12,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    ...commonStyles.shadow,
+  },
+  notificationContent: {
     flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  notificationIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: jewelleryColors.bgSecondary,
+    justifyContent: "center",
     alignItems: "center",
-    justifyContent: "flex-start",
-    marginTop: 10,
+    marginRight: spacing.md,
   },
-  stockloacaiontext: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#616161",
-    opacity: 0.8,
+  notificationIconText: {
+    fontSize: 24,
   },
-  tabsContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    marginTop: 8,
+  notificationTextContainer: {
+    flex: 1,
   },
-  tab: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 20,
+  notificationMessage: {
+    ...typography.body,
+    color: jewelleryColors.text,
+    marginBottom: spacing.xs,
   },
-  selectedTab: {
-    backgroundColor: "#D4AF37",
+  notificationTime: {
+    ...typography.caption,
+    color: jewelleryColors.textSecondary,
   },
-  tabText: {
-    color: "black",
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: jewelleryColors.primary,
+    marginLeft: spacing.sm,
+    marginTop: spacing.xs,
   },
-  selectedTabText: {
-    color: "white",
-  },
-
   shadowProp: {
-    backgroundColor: "#f2f2f2",
+    backgroundColor: jewelleryColors.bgSecondary,
     borderRadius: 10,
     shadowColor: "#000",
     shadowOffset: {
@@ -2275,89 +2241,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 1.41,
     elevation: 2,
-  },
-
-  bottomBarContainer: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  iconContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  iconText: {
-    marginTop: 4,
-  },
-  icon: {
-    marginRight: 10,
-    marginTop: 3,
-    marginLeft: 20,
-  },
-  circleImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 45,
-    overflow: "hidden",
-    marginBottom: 5,
-    borderWidth: 0.1,
-    borderColor: "gray",
-  },
-  chatIconBackground: {
-    width: 60,
-    height: 30,
-    borderRadius: 22,
-    backgroundColor: "#D4AF37",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalBackground: {
-    flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "flex-end",
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  modalContent: {
-    backgroundColor: "white",
-    padding: 20,
-    borderRadius: 10,
-    elevation: 5,
-  },
-  option: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 15,
-    backgroundColor: "lightgray",
-    borderRadius: 10,
-    width: 250,
-    opacity: 1.5,
-    height: 40,
-    fontWeight: "bold",
-  },
-  optionText: {
-    fontSize: 18,
-  },
-  closeButton: {
-    position: "absolute",
-    top: 1,
-    right: 8,
   },
 });
 

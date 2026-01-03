@@ -11,6 +11,10 @@ const FilterDropdown = ({ label, options = [], selectedValue, onSelect }) => {
     setIsVisible(false);
   };
 
+  // Find the selected option to display its label
+  const selectedOption = options.find(option => option.value === selectedValue);
+  const displayText = selectedOption ? selectedOption.label : label;
+
   return (
     <>
       <TouchableOpacity
@@ -18,7 +22,7 @@ const FilterDropdown = ({ label, options = [], selectedValue, onSelect }) => {
         onPress={() => setIsVisible(true)}
         activeOpacity={0.7}
       >
-        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.label}>{displayText}</Text>
         <Icon name="keyboard-arrow-down" size={18} color={jewelleryColors.text} />
       </TouchableOpacity>
 
@@ -42,7 +46,7 @@ const FilterDropdown = ({ label, options = [], selectedValue, onSelect }) => {
             </View>
             <FlatList
               data={options}
-              keyExtractor={(item) => item.value}
+              keyExtractor={(item, index) => item.value?.toString() || `option-${index}`}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={[

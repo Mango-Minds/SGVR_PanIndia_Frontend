@@ -16,7 +16,7 @@ import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
-import { getShopData } from '../../services/jewellery.services';
+import { getShops } from '../../services/jewellery.services';
 import { BASEIMGURL } from '../../infrastructure/constants';
 
 const ShopsScreen = () => {
@@ -46,8 +46,17 @@ const ShopsScreen = () => {
       setLoading(true);
       setError(null);
       
-      // Use getShopData service function
-      const response = await getShopData();
+      // Build query parameters for API
+      const params = {};
+      if (locationFilter) {
+        params.location = locationFilter;
+      }
+      if (brandFilter) {
+        params.brand = brandFilter;
+      }
+      
+      // Use getShops service function which supports filters
+      const response = await getShops(params);
       
       console.log('Shops API Response:', JSON.stringify(response, null, 2));
       
@@ -65,20 +74,10 @@ const ShopsScreen = () => {
       
       console.log('Extracted shops data:', shopsData.length, 'shops');
       
-      // Apply location filter if needed
-      if (locationFilter) {
+      // Apply brand filter client-side if API doesn't support it
+      if (brandFilter && !params.brand) {
         shopsData = shopsData.filter(shop => {
-          const shopLocation = (shop.city || '').toLowerCase() || 
-                              (shop.state || '').toLowerCase() ||
-                              (shop.address || '').toLowerCase();
-          return shopLocation.includes(locationFilter.toLowerCase());
-        });
-      }
-      
-      // Apply brand filter if needed
-      if (brandFilter) {
-        shopsData = shopsData.filter(shop => {
-          const shopBrand = (shop.brand || shop.shopName || '').toLowerCase();
+          const shopBrand = (shop.brand || shop.shopName || shop.name || '').toLowerCase();
           return shopBrand.includes(brandFilter.toLowerCase());
         });
       }
@@ -166,12 +165,16 @@ const ShopsScreen = () => {
   }, [fetchShops]);
 
   // Filter options - can be populated from API if needed
+  // Note: Backend uses regex matching, so these values will match variations
+  // e.g., 'mumbai' matches "Mumbai", "Greater Mumbai", "Navi Mumbai"
+  // e.g., 'delhi' matches "Delhi", "New Delhi"
+  // e.g., 'bengaluru' matches "Bengaluru" (not "Bangalore" - use 'bengaluru' for consistency)
   const locationOptions = [
     { label: 'All Locations', value: null },
     { label: 'Hyderabad', value: 'hyderabad' },
-    { label: 'Mumbai', value: 'mumbai' },
-    { label: 'Delhi', value: 'delhi' },
-    { label: 'Bangalore', value: 'bangalore' },
+    { label: 'Greater Mumbai', value: 'mumbai' }, // Matches "Mumbai", "Greater Mumbai", "Navi Mumbai"
+    { label: 'Delhi', value: 'delhi' }, // Matches "Delhi", "New Delhi"
+    { label: 'Bengaluru', value: 'bengaluru' }, // Matches "Bengaluru" (standard spelling)
   ];
 
   const brandOptions = [

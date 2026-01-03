@@ -1,58 +1,41 @@
-import axios from "axios";
+import apiClient from "../store/apiClient";
 import { BASEAPIURL } from "../infrastructure/constants";
-import authHeader from "./auth.header";
 
 export const getShopData = async () => {
-  const res = await axios.get(
-    `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=shop`,
-    {
-      headers: await authHeader(),
-    }
+  const res = await apiClient.get(
+    `/vendor/vendor-for-user?module=store&role=shop`
   );
   return res.data;
 };
 
 export const getEachShopData = async (id) => {
-  const res = await axios.get(`${BASEAPIURL}/vendor/vendor-for-user?id=${id}`, {
-    headers: await authHeader(),
-  });
+  const res = await apiClient.get(`/vendor/vendor-for-user?id=${id}`);
   return res.data;
 };
 
 export const getRetailersData = async () => {
-  const res = await axios.get(
-    `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=vendor`,
-    {
-      headers: await authHeader(),
-    }
+  const res = await apiClient.get(
+    `/vendor/vendor-for-user?module=store&role=vendor`
   );
   return res.data;
 };
 
 export const getWorkersData = async () => {
-  const res = await axios.get(`${BASEAPIURL}/worker/worker`, {
-    headers: await authHeader(),
-  });
+  const res = await apiClient.get(`/worker/worker`);
   return res.data;
 };
 
 export const getWorkersSearchData = async (keyword) => {
-  const res = await axios.get(
-    `${BASEAPIURL}/worker/worker?keyword=${keyword}`,
-    {
-      headers: await authHeader(),
-    }
+  const res = await apiClient.get(
+    `/worker/worker?keyword=${keyword}`
   );
   return res.data;
 };
 
 export const getShopRetailerSearchData = async (props) => {
   const role = props.index === 1 ? "vendor" : "shop";
-  const res = await axios.get(
-    `${BASEAPIURL}/vendor/vendor?keyword=${props.search}&role=${role}`,
-    {
-      headers: await authHeader(),
-    }
+  const res = await apiClient.get(
+    `/vendor/vendor?keyword=${props.search}&role=${role}`
   );
   return res.data;
 };
@@ -90,9 +73,7 @@ width: 480,
  };
  
 export const editJewelleryData = async (id, formData) => {
-  const res = await axios.patch(`${BASEAPIURL}/jewellery/${id}`, formData, {
-     headers: await authHeader(),
-  });
+  const res = await apiClient.patch(`/jewellery/${id}`, formData);
   return res.data;
  };
 
@@ -110,11 +91,8 @@ export const getShops = async (params = {}) => {
   });
   
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=shop&${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/vendor/vendor-for-user?module=store&role=shop&${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -125,9 +103,7 @@ export const getShops = async (params = {}) => {
 
 export const getShopDetails = async (id) => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/vendor/vendor-for-user?id=${id}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/vendor/vendor-for-user?id=${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching shop details:', error);
@@ -137,11 +113,8 @@ export const getShopDetails = async (id) => {
 
 export const getShopByOwner = async (ownerId) => {
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/vendor/vendor-for-user?module=store&role=shop`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/vendor/vendor-for-user?module=store&role=shop`
     );
     // Find shop where owner matches the ownerId
     const shops = res.data?.data || [];
@@ -167,11 +140,8 @@ export const searchShops = async (params) => {
   });
   
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/vendor/vendor?role=shop&${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/vendor/vendor?role=shop&${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -192,11 +162,8 @@ export const getProducts = async (params = {}) => {
   
   try {
     // Using jewellery-products endpoint if available, otherwise fallback
-    const res = await axios.get(
-      `${BASEAPIURL}/jewelry-products?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/jewelry-products?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -208,9 +175,7 @@ export const getProducts = async (params = {}) => {
 
 export const getProductDetails = async (id) => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/jewelry-products/${id}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/jewelry-products/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching product details:', error);
@@ -221,12 +186,9 @@ export const getProductDetails = async (id) => {
 // CRUD operations for jewelry products (shop owners)
 export const createJewelryProduct = async (productData) => {
   try {
-    const res = await axios.post(
-      `${BASEAPIURL}/jewelry-products`,
-      productData,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.post(
+      `/jewelry-products`,
+      productData
     );
     return res.data;
   } catch (error) {
@@ -237,12 +199,9 @@ export const createJewelryProduct = async (productData) => {
 
 export const updateJewelryProduct = async (id, productData) => {
   try {
-    const res = await axios.patch(
-      `${BASEAPIURL}/jewelry-products/${id}`,
-      productData,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.patch(
+      `/jewelry-products/${id}`,
+      productData
     );
     return res.data;
   } catch (error) {
@@ -253,9 +212,7 @@ export const updateJewelryProduct = async (id, productData) => {
 
 export const deleteJewelryProduct = async (id) => {
   try {
-    const res = await axios.delete(`${BASEAPIURL}/jewelry-products/${id}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.delete(`/jewelry-products/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error deleting jewelry product:', error);
@@ -269,11 +226,8 @@ export const getShopProducts = async (shopId, params = {}) => {
       shop: shopId,
       ...params,
     });
-    const res = await axios.get(
-      `${BASEAPIURL}/jewelry-products?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/jewelry-products?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -290,11 +244,8 @@ export const searchProducts = async (params) => {
   });
   
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/jewelry-products?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/jewelry-products?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -306,9 +257,7 @@ export const searchProducts = async (params) => {
 // Wishlist
 export const getWishlist = async () => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/wishlists`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/wishlists`);
     return res.data;
   } catch (error) {
     console.error('Error fetching wishlist:', error);
@@ -318,12 +267,9 @@ export const getWishlist = async () => {
 
 export const addToWishlist = async (productId) => {
   try {
-    const res = await axios.post(
-      `${BASEAPIURL}/wishlists/${productId}`,
-      {},
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.post(
+      `/wishlists/${productId}`,
+      {}
     );
     return res.data;
   } catch (error) {
@@ -334,9 +280,7 @@ export const addToWishlist = async (productId) => {
 
 export const removeFromWishlist = async (productId) => {
   try {
-    const res = await axios.delete(`${BASEAPIURL}/wishlists/${productId}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.delete(`/wishlists/${productId}`);
     return res.data;
   } catch (error) {
     console.error('Error removing from wishlist:', error);
@@ -347,9 +291,7 @@ export const removeFromWishlist = async (productId) => {
 // Subscriptions
 export const getSubscriptionPlans = async () => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/subscriptions/plans`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/subscriptions/plans`);
     return res.data;
   } catch (error) {
     console.error('Error fetching subscription plans:', error);
@@ -403,12 +345,9 @@ export const getSubscriptionPlans = async () => {
 
 export const subscribeToPlan = async (planType) => {
   try {
-    const res = await axios.post(
-      `${BASEAPIURL}/subscriptions/subscribe`,
-      { planType },
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.post(
+      `/subscriptions/subscribe`,
+      { planType }
     );
     return res.data;
   } catch (error) {
@@ -419,9 +358,7 @@ export const subscribeToPlan = async (planType) => {
 
 export const getCurrentSubscription = async () => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/subscriptions/current`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/subscriptions/current`);
     return res.data;
   } catch (error) {
     console.error('Error fetching current subscription:', error);
@@ -432,9 +369,7 @@ export const getCurrentSubscription = async () => {
 // QR Code
 export const getQRCode = async (shopId) => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/shops/${shopId}/qr-code`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/shops/${shopId}/qr-code`);
     return res.data;
   } catch (error) {
     console.error('Error generating QR code:', error);
@@ -456,11 +391,8 @@ export const getStockItems = async (params = {}) => {
   });
   
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/jewelry-stock-items?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/jewelry-stock-items?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -471,9 +403,7 @@ export const getStockItems = async (params = {}) => {
 
 export const getStockItemDetails = async (id) => {
   try {
-    const res = await axios.get(`${BASEAPIURL}/jewelry-stock-items/${id}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.get(`/jewelry-stock-items/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching stock item details:', error);
@@ -483,16 +413,10 @@ export const getStockItemDetails = async (id) => {
 
 export const createStockItem = async (stockItemData) => {
   try {
-    const headers = await authHeader();
-    // Remove Content-Type for FormData - axios will set it automatically with boundary
-    delete headers['Content-Type'];
-    
-    const res = await axios.post(
-      `${BASEAPIURL}/jewelry-stock-items`,
-      stockItemData,
-      {
-        headers: headers,
-      }
+    // apiClient will handle headers automatically, including FormData
+    const res = await apiClient.post(
+      `/jewelry-stock-items`,
+      stockItemData
     );
     return res.data;
   } catch (error) {
@@ -503,16 +427,10 @@ export const createStockItem = async (stockItemData) => {
 
 export const updateStockItem = async (id, stockItemData) => {
   try {
-    const headers = await authHeader();
-    // Remove Content-Type for FormData - axios will set it automatically with boundary
-    delete headers['Content-Type'];
-    
-    const res = await axios.patch(
-      `${BASEAPIURL}/jewelry-stock-items/${id}`,
-      stockItemData,
-      {
-        headers: headers,
-      }
+    // apiClient will handle headers automatically, including FormData
+    const res = await apiClient.patch(
+      `/jewelry-stock-items/${id}`,
+      stockItemData
     );
     return res.data;
   } catch (error) {
@@ -523,9 +441,7 @@ export const updateStockItem = async (id, stockItemData) => {
 
 export const deleteStockItem = async (id) => {
   try {
-    const res = await axios.delete(`${BASEAPIURL}/jewelry-stock-items/${id}`, {
-      headers: await authHeader(),
-    });
+    const res = await apiClient.delete(`/jewelry-stock-items/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error deleting stock item:', error);
@@ -539,11 +455,8 @@ export const getShopStockItems = async (shopId, params = {}) => {
       shop: shopId,
       ...params,
     });
-    const res = await axios.get(
-      `${BASEAPIURL}/jewelry-stock-items?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/jewelry-stock-items?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -555,12 +468,9 @@ export const getShopStockItems = async (shopId, params = {}) => {
 // Follow functionality for jewelry module
 export const followUser = async (userId) => {
   try {
-    const res = await axios.post(
-      `${BASEAPIURL}/social/follow/${userId}`,
-      {},
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.post(
+      `/social/follow/${userId}`,
+      {}
     );
     return res.data;
   } catch (error) {
@@ -571,12 +481,9 @@ export const followUser = async (userId) => {
 
 export const unfollowUser = async (userId) => {
   try {
-    const res = await axios.patch(
-      `${BASEAPIURL}/social/unfollow/${userId}`,
-      {},
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.patch(
+      `/social/unfollow/${userId}`,
+      {}
     );
     return res.data;
   } catch (error) {
@@ -587,11 +494,8 @@ export const unfollowUser = async (userId) => {
 
 export const checkFollowStatus = async (userId) => {
   try {
-    const res = await axios.get(
-      `${BASEAPIURL}/social/check-follow-status/${userId}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/social/check-follow-status/${userId}`
     );
     return res.data;
   } catch (error) {
@@ -608,11 +512,8 @@ export const getFollowers = async (userId, params = {}) => {
       page: page.toString(),
       limit: limit.toString(),
     });
-    const res = await axios.get(
-      `${BASEAPIURL}/social/${userId}/followers?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/social/${userId}/followers?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -628,11 +529,8 @@ export const getFollowing = async (userId, params = {}) => {
       page: page.toString(),
       limit: limit.toString(),
     });
-    const res = await axios.get(
-      `${BASEAPIURL}/social/${userId}/following?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/social/${userId}/following?${queryParams}`
     );
     return res.data;
   } catch (error) {
@@ -644,12 +542,9 @@ export const getFollowing = async (userId, params = {}) => {
 // Reviews
 export const createShopReview = async (shopId, rating, comment = '') => {
   try {
-    const res = await axios.post(
-      `${BASEAPIURL}/reviews/shop/${shopId}`,
-      { rating, comment },
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.post(
+      `/reviews/shop/${shopId}`,
+      { rating, comment }
     );
     return res.data;
   } catch (error) {
@@ -665,11 +560,8 @@ export const getShopReviews = async (shopId, params = {}) => {
       page: page.toString(),
       limit: limit.toString(),
     });
-    const res = await axios.get(
-      `${BASEAPIURL}/reviews/shop/${shopId}?${queryParams}`,
-      {
-        headers: await authHeader(),
-      }
+    const res = await apiClient.get(
+      `/reviews/shop/${shopId}?${queryParams}`
     );
     return res.data;
   } catch (error) {

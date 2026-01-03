@@ -78,10 +78,15 @@ export const UserSignup = async ({
 
 export const getUpdatedTokens = async (refreshToken) => {
   try {
+    // Refresh endpoint doesn't require authentication headers
     const res = await axios.post(
       `${BASEAPIURL}/user/refresh`,
       { refreshToken },
-      { headers: await authHeader() }
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
     );
 
     if (res && res.data && res.data.status === 0) {

@@ -3,7 +3,6 @@ import { useSelector } from "react-redux";
 import { createStackNavigator } from "@react-navigation/stack";
 import OnboardModuleForm from "../../features/OnBoardModuleForm";
 import JewelleryUserRegisterScreen from "../../features/jewellery/UserRegistration";
-import JewelleryHome from "../../features/jewellery/JewelleryHome";
 import MyProfile from "../../features/jewellery/MyProfile";
 import Store from "../../features/jewellery/Store";
 import Retailer from "../../features/jewellery/Retailer";
@@ -102,7 +101,7 @@ export const JewelleryStackNavigator = () => {
   let initialRouteName = "OnboardModuleForm";
   
   if (user?.isJewelryOnboarded === true) {
-    // Use new HomeScreen as default, fallback to old JewelleryHome
+    // Use new HomeScreen as default
     initialRouteName = "HomeScreen";
 
     // Set route based on userType if onboarded
@@ -112,7 +111,7 @@ export const JewelleryStackNavigator = () => {
       } else if (userType.includes("vendor")) {
         initialRouteName = "VendorHome";
       } else if (userType.includes("shop")) {
-        initialRouteName = "JewelleryHome";
+        initialRouteName = "HomeScreen"; // Changed from JewelleryHome to HomeScreen
       } else if (userType.includes("superadmin")) {
         initialRouteName = "SuperAdminHome";
       } else if (userType.includes("jewelryDesigner")) {
@@ -127,7 +126,7 @@ export const JewelleryStackNavigator = () => {
       } else if (userType === "vendor") {
         initialRouteName = "VendorHome";
       } else if (userType === "shop") {
-        initialRouteName = "JewelleryHome";
+        initialRouteName = "HomeScreen"; // Changed from JewelleryHome to HomeScreen
       } else if (userType === "superadmin") {
         initialRouteName = "SuperAdminHome";
       } else if (userType === "jewelryDesigner") {
@@ -159,7 +158,6 @@ export const JewelleryStackNavigator = () => {
         component={JewelleryEditRoleRegisterScreen}
       />
       <Stack.Screen name="MyJewelleryProfile" component={MyJewelleryProfile} />
-      <Stack.Screen name="JewelleryHome" component={JewelleryHome} />
       <Stack.Screen name="FilterMenu" component={FilterMenu} />
       <Stack.Screen name="Bottomnavigation" component={BottomNavigation} />
       <Stack.Screen name="ChatScreen" component={JewelleryChatScreen} />

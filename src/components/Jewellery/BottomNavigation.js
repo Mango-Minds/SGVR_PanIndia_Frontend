@@ -8,7 +8,7 @@ export default function BottomNavigation({ navigation }) {
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("JewelleryHome")} 
+          onPress={() => navigation.navigate("HomeScreen")} 
         >
           <Ionicons name="home" size={24} color="#b98c13" />
           <Text style={[styles.iconText, { color: "#b98c13" }]}>Home</Text>
@@ -25,8 +25,8 @@ export default function BottomNavigation({ navigation }) {
         <TouchableOpacity
           style={[styles.iconContainer, styles.centerIconContainer]}
           onPress={() => {
-            // Toggle search visibility or navigate to search screen
-            navigation.navigate("JewelleryHome");
+            // Navigate to browse/search screen
+            navigation.navigate("BrowseScreen");
           }}
         >
           <Ionicons name="search" size={28} color="gray" />

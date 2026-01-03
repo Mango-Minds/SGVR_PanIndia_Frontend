@@ -15,7 +15,7 @@ const BottomTabBar = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.xs) }]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
       {tabs.map((tab, index) => {
         const isCenter = index === 2; // Search is in the center (index 2)
         return (
