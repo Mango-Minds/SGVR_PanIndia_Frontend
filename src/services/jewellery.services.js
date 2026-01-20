@@ -570,3 +570,70 @@ export const getShopReviews = async (shopId, params = {}) => {
   }
 };
 
+// Shop Events
+export const createShopEvent = async (eventData) => {
+  try {
+    const res = await apiClient.post('/shopEvents', eventData);
+    return res.data;
+  } catch (error) {
+    console.error('Error creating shop event:', error);
+    throw error;
+  }
+};
+
+export const getShopEvents = async (shopId, eventDate = null) => {
+  try {
+    let url = `/shopEvents/shop/${shopId}`;
+    if (eventDate) {
+      url += `?eventDate=${eventDate}`;
+    }
+    const res = await apiClient.get(url);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop events:', error);
+    throw error;
+  }
+};
+
+export const getShopEventDatesByMonth = async (shopId, month, year) => {
+  try {
+    const res = await apiClient.get(
+      `/shopEvents/eventsByMonth?shopId=${shopId}&month=${month}&year=${year}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop event dates:', error);
+    throw error;
+  }
+};
+
+export const getShopEvent = async (eventId) => {
+  try {
+    const res = await apiClient.get(`/shopEvents/${eventId}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching shop event:', error);
+    throw error;
+  }
+};
+
+export const updateShopEvent = async (eventId, eventData) => {
+  try {
+    const res = await apiClient.put(`/shopEvents/${eventId}`, eventData);
+    return res.data;
+  } catch (error) {
+    console.error('Error updating shop event:', error);
+    throw error;
+  }
+};
+
+export const deleteShopEvent = async (eventId) => {
+  try {
+    const res = await apiClient.delete(`/shopEvents/${eventId}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error deleting shop event:', error);
+    throw error;
+  }
+};
+

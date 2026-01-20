@@ -88,6 +88,8 @@ import StockDetailsScreen from "../../features/jewellery/StockDetailsScreen";
 import AddStockItemScreen from "../../features/jewellery/AddStockItemScreen";
 import EditStockItemScreen from "../../features/jewellery/EditStockItemScreen";
 import StockItemDetailScreen from "../../features/jewellery/StockItemDetailScreen";
+import ShopEventCreate from "../../features/jewellery/ShopEventCreate";
+import ShopEvents from "../../features/jewellery/ShopEvents";
 
 const Stack = createStackNavigator();
 
@@ -272,6 +274,8 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="AddStockItemScreen" component={AddStockItemScreen} />
       <Stack.Screen name="StockItemDetailScreen" component={StockItemDetailScreen} />
       <Stack.Screen name="EditStockItemScreen" component={EditStockItemScreen} />
+      <Stack.Screen name="ShopEventCreate" component={ShopEventCreate} />
+      <Stack.Screen name="ShopEvents" component={ShopEvents} />
 
       {/* Onboarding Screen */}
       <Stack.Screen name="OnboardModuleForm">

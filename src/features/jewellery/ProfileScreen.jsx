@@ -18,7 +18,7 @@ import FollowButton from '../../components/Jewellery/FollowButton';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import axios from 'axios';
 import { BASEIMGURL, BASEAPIURL } from '../../infrastructure/constants';
-import { checkFollowStatus, followUser, unfollowUser, getFollowers, getFollowing } from '../../services/jewellery.services';
+import { checkFollowStatus, followUser, unfollowUser, getFollowers, getFollowing, getShopByOwner } from '../../services/jewellery.services';
 import authHeader from '../../services/auth.header';
 
 const ProfileScreen = () => {
@@ -33,6 +33,8 @@ const ProfileScreen = () => {
   const [followersCount, setFollowersCount] = useState(0);
   const [followingCount, setFollowingCount] = useState(0);
   const [isLoadingCounts, setIsLoadingCounts] = useState(false);
+  const [shopData, setShopData] = useState(null);
+  const [isLoadingShop, setIsLoadingShop] = useState(false);
   
   // Check if viewing another user's profile
   const viewingUserId = route.params?.userId;
@@ -64,6 +66,26 @@ const ProfileScreen = () => {
   }, []);
 
 
+  // Fetch shop data for shop owners
+  const fetchShopData = useCallback(async (userId) => {
+    if (!userId) return;
+    
+    setIsLoadingShop(true);
+    try {
+      const shop = await getShopByOwner(userId);
+      if (shop) {
+        setShopData(shop);
+      } else {
+        setShopData(null);
+      }
+    } catch (error) {
+      console.error('Error fetching shop data:', error);
+      setShopData(null);
+    } finally {
+      setIsLoadingShop(false);
+    }
+  }, []);
+
   // Fetch other user's profile if viewing another user
   const fetchUserProfile = useCallback(async () => {
     if (!viewingUserId || !isViewingOtherProfile) {
@@ -80,7 +102,20 @@ const ProfileScreen = () => {
       
       if (response.data) {
         const data = response.data;
-        setProfileUser(data.user || data);
+        const fetchedUser = data.user || data;
+        setProfileUser(fetchedUser);
+        
+        // Fetch shop data if user is a shop owner
+        const userIsShopOwner = fetchedUser?.userType && (
+          Array.isArray(fetchedUser.userType) 
+            ? fetchedUser.userType.includes('shop') || fetchedUser.userType.includes('Shop')
+            : fetchedUser.userType === 'shop' || fetchedUser.userType === 'Shop'
+        );
+        if (userIsShopOwner) {
+          fetchShopData(viewingUserId);
+        } else {
+          setShopData(null);
+        }
         
         // Fetch follow status
         try {
@@ -97,7 +132,7 @@ const ProfileScreen = () => {
     } finally {
       setIsLoadingProfile(false);
     }
-  }, [viewingUserId, isViewingOtherProfile]);
+  }, [viewingUserId, isViewingOtherProfile, fetchShopData]);
 
   // Handle follow/unfollow actions
   const handleFollowAction = async () => {
@@ -131,13 +166,81 @@ const ProfileScreen = () => {
       setActiveTab('profile');
       if (isViewingOtherProfile) {
         fetchUserProfile();
+      } else {
+        // For own profile, fetch shop data if user is a shop owner
+        if (currentUser?._id) {
+          const userIsShopOwner = currentUser?.userType && (
+            Array.isArray(currentUser.userType) 
+              ? currentUser.userType.includes('shop') || currentUser.userType.includes('Shop')
+              : currentUser.userType === 'shop' || currentUser.userType === 'Shop'
+          );
+          if (userIsShopOwner) {
+            fetchShopData(currentUser._id);
+          } else {
+            setShopData(null);
+          }
+        }
       }
       // Fetch follow counts for the displayed user
       if (displayUserId) {
         fetchFollowCounts(displayUserId);
       }
-    }, [isViewingOtherProfile, fetchUserProfile, displayUserId, fetchFollowCounts])
+    }, [isViewingOtherProfile, fetchUserProfile, displayUserId, fetchFollowCounts, fetchShopData, currentUser])
   );
+
+  // Check if user is a shop owner
+  const isShopOwner = user?.userType && (
+    Array.isArray(user.userType) 
+      ? user.userType.includes('shop') || user.userType.includes('Shop')
+      : user.userType === 'shop' || user.userType === 'Shop'
+  );
+
+  // Check if user can manage stock (shop owners and vendors)
+  const canManageStock = user?.userType && (
+    Array.isArray(user.userType) 
+      ? user.userType.includes('shop') || user.userType.includes('Shop') || user.userType.includes('vendor') || user.userType.includes('Vendor')
+      : user.userType === 'shop' || user.userType === 'Shop' || user.userType === 'vendor' || user.userType === 'Vendor'
+  );
+
+  // Handle Events menu item press
+  const handleEventsPress = async () => {
+    if (!isShopOwner || !user?._id) {
+      Alert.alert('Error', 'Unable to find shop information');
+      return;
+    }
+
+    try {
+      const shop = await getShopByOwner(user._id);
+      if (shop && shop._id) {
+        navigation.navigate('ShopEvents', { shopId: shop._id });
+      } else {
+        Alert.alert('Error', 'No shop found for your account');
+      }
+    } catch (error) {
+      console.error('Error fetching shop:', error);
+      Alert.alert('Error', 'Failed to load shop information');
+    }
+  };
+
+  // Handle Stock for Sale menu item press
+  const handleStockForSalePress = async () => {
+    if (!canManageStock || !user?._id) {
+      Alert.alert('Error', 'Unable to find shop information');
+      return;
+    }
+
+    try {
+      const shop = await getShopByOwner(user._id);
+      if (shop && shop._id) {
+        navigation.navigate('StockDetailsScreen', { shopId: shop._id });
+      } else {
+        Alert.alert('Error', 'No shop found for your account');
+      }
+    } catch (error) {
+      console.error('Error fetching shop:', error);
+      Alert.alert('Error', 'Failed to load shop information');
+    }
+  };
 
   const menuItems = [
     {
@@ -152,35 +255,23 @@ const ProfileScreen = () => {
       icon: 'card-membership',
       onPress: () => navigation.navigate('PremiumAccessScreen'),
     },
+    ...(isShopOwner ? [{
+      key: 'events',
+      label: 'Events',
+      icon: 'event',
+      onPress: handleEventsPress,
+    }] : []),
+    ...(canManageStock ? [{
+      key: 'stock-for-sale',
+      label: 'Stock for Sale',
+      icon: 'inventory',
+      onPress: handleStockForSalePress,
+    }] : []),
     {
       key: 'settings',
       label: 'Settings',
       icon: 'settings',
       onPress: () => navigation.navigate('SettingsScreen'),
-    },
-    {
-      key: 'vendor',
-      label: 'Vendor Profile',
-      icon: 'store',
-      onPress: () => navigation.navigate('VendorProfile'),
-    },
-    {
-      key: 'worker',
-      label: 'Worker Profile',
-      icon: 'work',
-      onPress: () => navigation.navigate('WorkerProfile'),
-    },
-    {
-      key: 'designer',
-      label: 'Designer Profile',
-      icon: 'star',
-      onPress: () => navigation.navigate('DesignerProfile'),
-    },
-    {
-      key: 'gemologist',
-      label: 'Gemologist Profile',
-      icon: 'diamond',
-      onPress: () => navigation.navigate('GemologistProfile'),
     },
   ];
 
@@ -210,7 +301,17 @@ const ProfileScreen = () => {
   const userName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
     : user?.email || 'User';
-  const userAvatar = user?.avatar_url || `${BASEIMGURL}${user?.avatar}` || null;
+  
+  // Get avatar - prioritize shop image for shop owners, then user avatar
+  let userAvatar = null;
+  const shopImage = shopData?.image || shopData?.profileImage;
+  if (shopImage && shopImage.trim() !== '') {
+    userAvatar = shopImage.startsWith('http') ? shopImage : `${BASEIMGURL}${shopImage}`;
+  } else if (user?.avatar_url && user.avatar_url.trim() !== '') {
+    userAvatar = user.avatar_url;
+  } else if (user?.avatar && user.avatar.trim() !== '') {
+    userAvatar = `${BASEIMGURL}${user.avatar}`;
+  }
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>

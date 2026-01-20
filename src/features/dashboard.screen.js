@@ -93,17 +93,17 @@ const exploreData = [
     color: "#6B7280",
   },
   {
-    title: "Matrimony",
-    path: "Matrimony",
-    status: false,
-    icon: "heart",
-    color: "#6B7280",
-  },
-  {
     title: "Jewellery",
     path: "Jewellery",
     status: true,
     icon: "diamond",
+    color: "#6B7280",
+  },
+  {
+    title: "Matrimony",
+    path: "Matrimony",
+    status: false,
+    icon: "heart",
     color: "#6B7280",
   },
   {
@@ -489,11 +489,11 @@ export default function DashboardScreen({ navigation }) {
   ];
 
   const menuItems = [
-    { label: "B2C", icon: "storefront", path: "B2C" },
-    { label: "Matrimony", icon: "heart", path: "Matrimony" },
-    { label: "Temple", icon: "home", path: "Temple" },
     { label: "Social", icon: "people", path: "SocialMedia" },
     { label: "Jewellery", icon: "diamond", path: "Jewellery" },
+    { label: "Matrimony", icon: "heart", path: "Matrimony" },
+    { label: "Temple", icon: "home", path: "Temple" },
+    { label: "B2C", icon: "storefront", path: "B2C" },
   ];
 
   const featuredTemples = [

@@ -531,6 +531,16 @@ const ShopDetailScreen = () => {
           </View>
         </View>
 
+        {/* Owner Actions - CRUD buttons for shop owners */}
+        {shopData.isOwner && (
+          <View style={styles.ownerActionsContainer}>
+            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct}>
+              <Icon name="add" size={20} color="#FFFFFF" />
+              <Text style={styles.addProductButtonText}>Add Product to Album</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Description */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Description</Text>
@@ -832,63 +842,15 @@ const ShopDetailScreen = () => {
           </View>
         </View>
 
-        {/* Owner Actions - CRUD buttons for shop owners */}
-        {shopData.isOwner && (
-          <View style={styles.ownerActionsContainer}>
-            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct}>
-              <Icon name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addProductButtonText}>Add Product</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
-        {/* Products List for Shop Owners */}
-        {shopData.isOwner && shopData.products && shopData.products.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>My Products</Text>
-            {shopData.products.map((product) => (
-              <View key={product._id} style={styles.productItem}>
-                {product.images?.[0] ? (
-                  <Image 
-                    source={{ uri: product.images[0] }} 
-                    style={styles.productThumbnail}
-                  />
-                ) : (
-                  <View style={styles.productThumbnail}>
-                    <Icon name="image" size={24} color={jewelleryColors.textSecondary} />
-                  </View>
-                )}
-                <View style={styles.productInfo}>
-                  <Text style={styles.productName}>{product.name}</Text>
-                  <Text style={styles.productPrice}>₹{product.price}</Text>
-                </View>
-                <View style={styles.productActions}>
-                  <TouchableOpacity 
-                    style={styles.productActionButton}
-                    onPress={() => handleEditProduct(product._id)}
-                  >
-                    <Icon name="edit" size={18} color={jewelleryColors.primary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={styles.productActionButton}
-                    onPress={() => handleDeleteProduct(product._id)}
-                  >
-                    <Icon name="delete" size={18} color="#FF3B30" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* View Stock Details Button - Restricted to vendors, shops, manufacturers, and wholesalers */}
+        {/* Stock for Sale Button - Restricted to vendors, shops, manufacturers, and wholesalers */}
         {canViewStockDetails() && (
           <TouchableOpacity 
             style={styles.stockButton}
             onPress={handleViewStockDetails}
           >
             <Icon name="visibility" size={20} color="#FFFFFF" />
-            <Text style={styles.stockButtonText}>View Stock Details</Text>
+            <Text style={styles.stockButtonText}>Stock for Sale</Text>
           </TouchableOpacity>
         )}
 

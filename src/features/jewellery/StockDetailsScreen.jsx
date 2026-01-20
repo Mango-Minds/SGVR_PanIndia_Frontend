@@ -1,9 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
   TextInput,
   FlatList,
   TouchableOpacity,
@@ -20,7 +19,6 @@ import { decode } from 'base-64';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
-import { BASEAPIURL, BASEIMGURL } from '../../infrastructure/constants';
 import { getShopStockItems, deleteStockItem, getShopDetails } from '../../services/jewellery.services';
 
 const StockDetailsScreen = () => {
@@ -33,11 +31,8 @@ const StockDetailsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeCategory, setActiveCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('home');
   const [isOwnShop, setIsOwnShop] = useState(false);
-
-  const categories = ['All', 'Rings', 'Bracelets', 'Chains', 'Earrings', 'Necklaces'];
 
   // Check if current user owns the shop
   const checkShopOwnership = useCallback(async () => {
@@ -76,26 +71,6 @@ const StockDetailsScreen = () => {
     }
   }, [shopId, token]);
 
-  // Normalize category from frontend format (plural) to backend format (singular)
-  const normalizeCategory = (category) => {
-    if (!category || category === 'All') return null;
-    
-    const categoryLower = category.toLowerCase().trim();
-    const categoryMap = {
-      'rings': 'ring',
-      'bracelets': 'bracelet',
-      'chains': 'chain',
-      'earrings': 'earrings', // Already correct
-      'necklaces': 'necklace',
-      'ring': 'ring',
-      'bracelet': 'bracelet',
-      'chain': 'chain',
-      'necklace': 'necklace',
-    };
-    
-    return categoryMap[categoryLower] || categoryLower;
-  };
-
   const handleBackPress = () => {
     if (shopId) {
       navigation.navigate('ShopDetailScreen', { shopId });
@@ -110,10 +85,8 @@ const StockDetailsScreen = () => {
 
     try {
       setLoading(true);
-      const normalizedCategory = normalizeCategory(activeCategory);
       const params = {
         shop: shopId,
-        ...(normalizedCategory && { productCategory: normalizedCategory }),
         ...(searchQuery && { search: searchQuery }),
       };
 
@@ -138,7 +111,7 @@ const StockDetailsScreen = () => {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [shopId, activeCategory, searchQuery]);
+  }, [shopId, searchQuery]);
 
   useFocusEffect(
     useCallback(() => {
@@ -278,14 +251,6 @@ const StockDetailsScreen = () => {
   // Note: This is a fallback filter. The main filtering should happen via API.
   // This ensures consistency if API filtering doesn't work perfectly.
   const filteredStockItems = Array.isArray(stockItems) ? stockItems.filter((item) => {
-    if (activeCategory !== 'All') {
-      const normalizedCategory = normalizeCategory(activeCategory);
-      // Check both productCategory (correct field) and category (fallback)
-      const categoryMatch = 
-        item.productCategory?.toLowerCase() === normalizedCategory?.toLowerCase() ||
-        item.category?.toLowerCase() === normalizedCategory?.toLowerCase();
-      if (!categoryMatch) return false;
-    }
     if (searchQuery) {
       const searchLower = searchQuery.toLowerCase();
       return (
@@ -330,36 +295,6 @@ const StockDetailsScreen = () => {
         )}
       </View>
 
-      {/* Category Filters */}
-      <View style={styles.categoryFiltersWrapper}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoriesContainer}
-        >
-          {categories.map((category) => (
-            <TouchableOpacity
-              key={category}
-              style={[
-                styles.categoryButton,
-                activeCategory === category && styles.activeCategoryButton,
-              ]}
-              onPress={() => setActiveCategory(category)}
-            >
-              <Text
-                style={[
-                  styles.categoryText,
-                  activeCategory === category && styles.activeCategoryText,
-                ]}
-                allowFontScaling={false}
-              >
-                {category}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      </View>
-
       {/* Stock Items Grid */}
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -371,11 +306,11 @@ const StockDetailsScreen = () => {
           <Icon name="inventory-2" size={64} color={jewelleryColors.textSecondary} />
           <Text style={styles.emptyText}>No stock items found</Text>
           <Text style={styles.emptySubtext}>
-            {searchQuery || activeCategory !== 'All'
-              ? 'Try adjusting your filters'
+            {searchQuery
+              ? 'Try adjusting your search'
               : 'Add your first stock item to get started'}
           </Text>
-          {!searchQuery && activeCategory === 'All' && isOwnShop && (
+          {!searchQuery && isOwnShop && (
             <TouchableOpacity
               style={styles.emptyAddButton}
               onPress={() => navigation.navigate('AddStockItemScreen', { shopId })}
@@ -438,43 +373,6 @@ const styles = StyleSheet.create({
     flex: 1,
     ...typography.body,
     paddingVertical: spacing.sm,
-  },
-  categoryFiltersWrapper: {
-    backgroundColor: jewelleryColors.bg,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: jewelleryColors.border,
-  },
-  categoriesContainer: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingBottom: spacing.sm,
-    gap: spacing.sm,
-  },
-  categoryButton: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: 20,
-    backgroundColor: jewelleryColors.bgSecondary,
-    marginRight: spacing.sm,
-    minHeight: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  activeCategoryButton: {
-    backgroundColor: jewelleryColors.primary,
-  },
-  categoryText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#000000',
-    lineHeight: 18,
-    textAlign: 'center',
-  },
-  activeCategoryText: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 14,
   },
   stockItemsContainer: {
     padding: spacing.sm,
