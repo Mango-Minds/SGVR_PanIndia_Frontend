@@ -1,20 +1,20 @@
 {
   "expo": {
-    "name": "Pan India",
+    "name": "In Bharat",
     "slug": "mimaratha",
-    "version": "1.3.8",
+    "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.jpg",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
-      "image": "./assets/icon.jpg",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.mimaratha.app",
-      "buildNumber": "11",
+      "bundleIdentifier": "com.inbharat.app",
+      "buildNumber": "1",
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
       },
@@ -24,11 +24,11 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icon.jpg",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.mimaratha.app",
-      "versionCode": 36,
+      "package": "com.inbharat.app",
+      "versionCode": 1,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"

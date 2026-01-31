@@ -761,7 +761,7 @@ const TempleDetails = ({ route, navigation }) => {
                 { key: "today", color: Theme.themeColor },
                 { key: "event", color: Theme.themeColor }
               ]
-            : [{ key: "today", color: '#FF6B35' }],
+            : [{ key: "today", color: '#D4AF37' }],
         };
 
         // Mark event dates with enhanced visual indicators
@@ -789,7 +789,7 @@ const TempleDetails = ({ route, navigation }) => {
           [today]: {
             marked: true,
             dotColor: Theme.themeColor,
-            dots: [{ key: "today", color: '#FF6B35' }],
+            dots: [{ key: "today", color: '#D4AF37' }],
           }
         });
       } finally {
@@ -811,8 +811,8 @@ const TempleDetails = ({ route, navigation }) => {
       setMarkedDates({
         [today]: {
           marked: true,
-          dotColor: '#FF6B35',
-          dots: [{ key: "today", color: '#FF6B35' }],
+          dotColor: '#D4AF37',
+          dots: [{ key: "today", color: '#D4AF37' }],
         }
       });
 
@@ -1695,7 +1695,7 @@ const TempleDetails = ({ route, navigation }) => {
                   ? Theme.themeColor
                   : (userType.includes("templeShopOwner") ? isShopAlreadyConnected : isPanditAlreadyConnected)
                     ? "#4CAF50"  // Green for connected
-                    : "#FFA726", // Orange for pending
+                    : "#D4AF37", // Yellow-gold for pending
               borderRadius: 8,
               paddingHorizontal: 4,
               justifyContent: "center",

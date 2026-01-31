@@ -795,7 +795,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   fillingFast: {
-    color: "orange",
+    color: "#D4AF37",
     fontWeight: "bold",
   },
   bookNowButton: {

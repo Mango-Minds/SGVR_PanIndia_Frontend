@@ -1386,7 +1386,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginBottom: 12,
     borderLeftWidth: 4,
-    borderLeftColor: "#ff6b35",
+    borderLeftColor: "#D4AF37",
   },
   jobCompany: {
     fontSize: 16,

@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import {
-  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -32,6 +31,15 @@ const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
     marginTop: "10%",
+  },
+  logoText: {
+    alignSelf: "center",
+    marginTop: "10%",
+    fontSize: 36,
+    fontWeight: "bold",
+    color: Theme.themeColor,
+    letterSpacing: 1,
+    textAlign: "center",
   },
 });
 
@@ -139,10 +147,7 @@ export default function LoginScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flex: 1, justifyContent: "center" }}>
-        <Image
-          style={styles.logo}
-          source={require("../assets/images/pre-login/miLogo-small.png")}
-        />
+        <Text style={styles.logoText}>In Bharat</Text>
 
         <FormSection>
           <FormSectionTitle>Login</FormSectionTitle>

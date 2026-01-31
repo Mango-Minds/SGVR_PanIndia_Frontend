@@ -99,7 +99,7 @@ const SuperAdminHome = ({ navigation }) => {
   const statusOptions = [
     { title: "Accepted", icon: "checkmark-circle", color: "#7AB163" }, // Green color
     { title: "Rejected", icon: "close-circle", color: "#ff0000" }, // Red color
-    { title: "Pending", icon: "time-outline", color: "#ffa500" }, // Orange color
+    { title: "Pending", icon: "time-outline", color: "#D4AF37" }, // Yellow-gold color
   ];
 
   const [activeFilter, setActiveFilter] = useState("Category");
@@ -608,7 +608,7 @@ const SuperAdminHome = ({ navigation }) => {
                             }
                             size={16}
                             color={
-                              selectedItem ? selectedItem.color : "#ffa500"
+                              selectedItem ? selectedItem.color : "#D4AF37"
                             }
                             style={{ marginRight: 5 }}
                           />
@@ -853,7 +853,7 @@ const SuperAdminHome = ({ navigation }) => {
                             }
                             size={16}
                             color={
-                              selectedItem ? selectedItem.color : "#ffa500"
+                              selectedItem ? selectedItem.color : "#D4AF37"
                             }
                             style={{ marginRight: 5 }}
                           />
@@ -1066,7 +1066,7 @@ const SuperAdminHome = ({ navigation }) => {
                             }
                             size={16}
                             color={
-                              selectedItem ? selectedItem.color : "#ffa500"
+                              selectedItem ? selectedItem.color : "#D4AF37"
                             }
                             style={{ marginRight: 5 }}
                           />

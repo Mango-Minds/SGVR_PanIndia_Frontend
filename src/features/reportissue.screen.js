@@ -67,7 +67,7 @@ const Reportscreen = ({ navigation }) => {
               padding: 10,
             }}
           >
-            <Image source={Logo} alt="Pan India" />
+            <Image source={Logo} alt="In Bharat" />
           </View>
 
           <View

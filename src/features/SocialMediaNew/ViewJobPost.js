@@ -368,7 +368,7 @@ const ViewJobPost = ({ route }) => {
             {/* Profile Completion Warning */}
             {!isProfileComplete && !applicationStatus && (
               <View style={styles.profileWarningContainer}>
-                <Ionicons name="warning" size={16} color="#ff6b35" style={{ marginRight: 8 }} />
+                <Ionicons name="warning" size={16} color="#D4AF37" style={{ marginRight: 8 }} />
                 <Text style={styles.profileWarningText}>{profileWarning}</Text>
                 <TouchableOpacity
                   style={styles.completeProfileButton}
@@ -665,7 +665,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   completeProfileButton: {
-    backgroundColor: "#ff6b35",
+    backgroundColor: "#D4AF37",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 6,

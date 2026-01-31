@@ -370,7 +370,7 @@ const { t } = useTranslation();
           </View>
           {/* Centered text logo */}
           <View style={styles.centerTitleContainer}>
-            <Text style={styles.centerTitle}>Pan India</Text>
+            <Text style={styles.centerTitle}>In Bharat</Text>
           </View>
           <View style={{ flex: 1 }} />
           <TouchableOpacity 
@@ -391,9 +391,9 @@ const { t } = useTranslation();
           {/* Composer directly under top bar */}
           <LinearGradient
             colors={[
-              'rgba(255,153,51,0.40)',   // deep orange
-              'rgba(255,183,102,0.30)',  // mid peach
-              'rgba(255,210,153,0.20)'   // light peach
+              'rgba(212,175,55,0.40)',   // deep yellow-gold
+              'rgba(212,175,55,0.30)',   // mid yellow-gold
+              'rgba(212,175,55,0.20)'    // light yellow-gold
             ]}
             locations={[0, 0.55, 1]}
             start={{ x: 0, y: 0 }}
@@ -764,7 +764,7 @@ const styles = StyleSheet.create({
     height: 60,
     borderRadius: 12, // square with subtle rounding
     borderWidth: 4,
-    borderColor: 'rgba(255,153,51,0.6)',
+    borderColor: 'rgba(212,175,55,0.6)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
@@ -788,7 +788,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
     position: 'relative',
     borderWidth: 4,
-    borderColor: 'rgba(255,153,51,0.6)',
+    borderColor: 'rgba(212,175,55,0.6)',
     shadowColor: Theme.themeColor,
     shadowOpacity: 0.25,
     shadowRadius: 4,

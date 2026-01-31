@@ -725,7 +725,7 @@ export default function DashboardScreen({ navigation }) {
                       <Icon
                         name="chatbubble-ellipses"
                         size={20}
-                        color="#FF6B00" // Orange
+                        color="#D4AF37" // Yellow-gold
                       />
                       <Text style={styles.quickActionText}>
                         Ask astrologers anything

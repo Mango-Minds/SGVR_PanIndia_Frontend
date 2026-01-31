@@ -240,7 +240,7 @@ const TemplePanditDetails = ({ route, navigation }) => {
                 { key: "today", color: Theme.themeColor },
                 { key: "event", color: Theme.themeColor }
               ]
-            : [{ key: "today", color: '#FF6B35' }],
+            : [{ key: "today", color: '#D4AF37' }],
         };
 
         // Mark event dates with enhanced visual indicators

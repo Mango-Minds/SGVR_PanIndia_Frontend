@@ -41,8 +41,8 @@ const statusOptions = [
     title: "Pending",
     value: "pending",
     icon: "time-outline",
-    color: "#ffa500",
-  }, // Orange color
+    color: "#D4AF37",
+  }, // Yellow-gold color
 ];
 
 export default function TempleShops({ templeinfo }) {
@@ -409,7 +409,7 @@ export default function TempleShops({ templeinfo }) {
                               }
                               size={16}
                               color={
-                                selectedItem ? selectedItem.color : "#ffa500"
+                                selectedItem ? selectedItem.color : "#D4AF37"
                               }
                               style={{ marginRight: 5 }}
                             />

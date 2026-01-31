@@ -25,7 +25,7 @@ const VendorCompactCard = ({
 
   const getConnectionStatusColor = () => {
     switch (connectionStatus) {
-      case 'pending': return '#FFA500';
+      case 'pending': return '#D4AF37';
       case 'accepted': return '#4CAF50';
       case 'rejected': return '#F44336';
       default: return Theme.themeColor;

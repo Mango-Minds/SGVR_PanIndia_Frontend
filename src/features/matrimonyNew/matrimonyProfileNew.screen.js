@@ -1032,7 +1032,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   fillingFast: {
-    color: "orange",
+    color: "#D4AF37",
     fontWeight: "bold",
   },
   bookNowButton: {
@@ -1047,7 +1047,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   pendingButton: {
-    backgroundColor: "#FFA500", // Orange for pending
+    backgroundColor: "#D4AF37", // Yellow-gold for pending
   },
   acceptedButton: {
     backgroundColor: "#28A745", // Green for accepted

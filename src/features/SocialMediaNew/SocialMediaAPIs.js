@@ -78,9 +78,10 @@ export const submitNewPost = async (description, list, hashtags = []) => {
     }
 
     console.log("FormData prepared, making API call...");
+    // Note: Don't set Content-Type header - axios interceptor will set it automatically with boundary
+    // Authorization is already handled by the interceptor, but including it here for clarity
     const response = await apiClient.post("/social/post/create", formData, {
       headers: {
-        "Content-Type": "multipart/form-data",
         Authorization: `Bearer ${token}`,
       },
     });

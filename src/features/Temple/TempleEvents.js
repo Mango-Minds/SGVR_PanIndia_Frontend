@@ -40,8 +40,8 @@ const statusOptions = [
     title: "Pending",
     value: "pending",
     icon: "time-outline",
-    color: "#ffa500",
-  }, // Orange color
+    color: "#D4AF37",
+  }, // Yellow-gold color
 ];
 const TempleEvents = ({ navigation }) => {
   const { user } = useSelector((state) => state.user);
@@ -1115,7 +1115,7 @@ const TempleEvents = ({ navigation }) => {
                             selectedItem ? selectedItem.icon : "time-outline"
                           }
                           size={16}
-                          color={selectedItem ? selectedItem.color : "#ffa500"}
+                          color={selectedItem ? selectedItem.color : "#D4AF37"}
                           style={{ marginRight: 5 }}
                         />
                         <Text>
@@ -1275,7 +1275,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   editLayout: {
-    backgroundColor: "orange",
+    backgroundColor: "#D4AF37",
     padding: 8,
     borderRadius: 5,
     margin: 5,
