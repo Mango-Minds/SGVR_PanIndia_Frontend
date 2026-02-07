@@ -121,6 +121,14 @@ const TermsAndConditions = ({ navigation }) => {
             </Text>
 
             <Text style={styles.privacytextsubheading}>
+              Strictly Prohibited - Child Safety Violations:
+            </Text>
+
+            <Text style={styles.privacytext}>
+              In Bharat maintains a strict zero-tolerance policy regarding child sexual abuse material (CSAM), content that sexualizes minors, grooming or predatory behavior targeting minors, or any form of child exploitation. Any content or behavior involving child sexual abuse or exploitation is strictly prohibited and will result in immediate account termination and reporting to law enforcement authorities. Users found violating these policies will be permanently banned, and all relevant information will be shared with appropriate law enforcement agencies as required by law.
+            </Text>
+
+            <Text style={styles.privacytextsubheading}>
               Right to remove content posted or Uploaded:
             </Text>
 
@@ -280,6 +288,14 @@ const TermsAndConditions = ({ navigation }) => {
               this Website, for no reason or any reason whatsoever, including
               improper use of this Website or failure to comply with these Terms
               of Use.
+            </Text>
+
+            <Text style={styles.privacytextheading}>
+              Child Safety Compliance
+            </Text>
+
+            <Text style={styles.privacytext}>
+              In Bharat complies with all relevant child safety laws and regulations, including the Protection of Children from Sexual Offences (POCSO) Act, 2012, and the Information Technology Act, 2000. We report all instances of child sexual abuse material to appropriate law enforcement authorities and cooperate fully with their investigations. Users can report child safety concerns through the in-app reporting system or by contacting sgvrtech1@gmail.com. For detailed information about our child safety policies, please refer to our Child Safety Standards document accessible through the app settings.
             </Text>
 
             <Text style={styles.privacytextheading}>

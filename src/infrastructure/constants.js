@@ -25,3 +25,9 @@ export const BASEIMGURL = isProduction ? PROD_BASEIMGURL : DEV_BASEIMGURL;
 export const RENDERMEDIAURL = isProduction ? PROD_RENDERMEDIAURL : DEV_RENDERMEDIAURL;
 export const SOCKETURL = isProduction ? PROD_SOCKETURL : DEV_SOCKETURL;
 
+// Child Safety Standards Configuration
+// Update the GitHub Pages URL with your actual repository details
+// Format: https://[username].github.io/[repository-name]/child-safety-standards.html
+export const CHILD_SAFETY_STANDARDS_URL = "https://girishsai22.github.io/SGVR_PanIndia_Frontend/child-safety-standards.html";
+export const CHILD_SAFETY_EMAIL = "sgvrtech1@gmail.com";
+

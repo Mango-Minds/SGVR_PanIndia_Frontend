@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, Text, TouchableOpacity } from "react-native";
+import { ScrollView, Text, TouchableOpacity, Linking, Alert } from "react-native";
 // import { useSelector } from "react-redux";
 import { Divider, IconButton } from "react-native-paper";
 import { Container, RowBetween, View } from "../styles/common.styles";
@@ -7,11 +7,18 @@ import SettingCard from "../components/social/SettingCard";
 import { logout } from "../store/user";
 import { useDispatch } from "react-redux";
 import Theme from "../styles/theme";
-import { useTranslation } from "react-i18next"; 
+import { useTranslation } from "react-i18next";
+import { CHILD_SAFETY_STANDARDS_URL } from "../infrastructure/constants"; 
 
 export default function DashboardSettingsScreen({ navigation }) {
   const dispatch = useDispatch();
   const { t } = useTranslation();
+
+  const openChildSafetyStandards = () => {
+    Linking.openURL(CHILD_SAFETY_STANDARDS_URL).catch((err) => {
+      Alert.alert("Error", "Unable to open safety standards page. Please check your internet connection.");
+    });
+  };
   // const userType = useSelector((state) => state.user.user.userType[0]);
   // console.log("usertype in dasboard");
   
@@ -90,6 +97,10 @@ export default function DashboardSettingsScreen({ navigation }) {
       callback: () => {
         navigation.navigate("PrivacyPolicy");
       },
+    },
+    {
+      name: t("child_safety_standards") || "Child Safety Standards",
+      callback: openChildSafetyStandards,
     },
     {
       name: t("contact_us"),

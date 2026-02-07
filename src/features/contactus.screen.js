@@ -16,6 +16,7 @@ import { TopText } from "../styles/social.styles";
 import { useSelector } from "react-redux";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import Theme from "../styles/theme";
+import { CHILD_SAFETY_EMAIL } from "../infrastructure/constants";
 export default function Contactus({ navigation }) {
   const { width } = Dimensions.get("window");
 
@@ -65,6 +66,73 @@ export default function Contactus({ navigation }) {
             marginBottom: 20,
           }}
         ></View>
+        
+        {/* Child Safety Contact Section */}
+        <View
+          style={{
+            backgroundColor: "#FFF3CD",
+            borderLeftWidth: 4,
+            borderLeftColor: "#FFC107",
+            padding: 16,
+            marginHorizontal: 16,
+            marginBottom: 20,
+            borderRadius: 4,
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", marginBottom: 8 }}>
+            <MaterialIcon name="security" size={20} color="#856404" />
+            <Text
+              style={{
+                fontSize: 16,
+                fontWeight: "bold",
+                color: "#856404",
+                marginLeft: 8,
+              }}
+            >
+              Child Safety Concerns
+            </Text>
+          </View>
+          <Text
+            style={{
+              fontSize: 14,
+              color: "#856404",
+              marginBottom: 12,
+              lineHeight: 20,
+            }}
+          >
+            For reporting child safety concerns, child sexual abuse material (CSAM), or exploitation:
+          </Text>
+          <View
+            style={{
+              alignItems: "center",
+              paddingHorizontal: 16,
+              paddingVertical: 8,
+            }}
+          >
+            <MaterialIcon name="email" size={18} color={Theme.themeColor} />
+            <View
+              style={{ backgroundColor: "white", padding: "1%", borderRadius: 4 }}
+            >
+              <TouchableOpacity
+                onPress={() => Linking.openURL(`mailto:${CHILD_SAFETY_EMAIL}`)}
+              >
+                <Text
+                  style={{
+                    paddingHorizontal: 8,
+                    fontSize: 16,
+                    color: "#856404",
+                    textTransform: "lowercase",
+                    fontWeight: "600",
+                  }}
+                >
+                  {CHILD_SAFETY_EMAIL}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+
+        {/* General Support Contact */}
         <View
           style={{
             alignItems: "center",

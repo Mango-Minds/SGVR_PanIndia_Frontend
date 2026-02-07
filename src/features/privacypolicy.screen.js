@@ -243,6 +243,38 @@ const PrivacyPolicyScreen = ({ navigation }) => {
             </Text>
 
             <Text style={styles.privacytextheading}>
+              Child Safety and Protection
+            </Text>
+
+            <Text style={styles.privacytext}>
+              In Bharat is committed to protecting children and preventing child sexual abuse and exploitation (CSAE) on our platform. We maintain a zero-tolerance policy for any content, behavior, or activity that harms children or exploits minors.
+            </Text>
+
+            <Text style={styles.privacytextsubheading}>
+              Reporting Child Safety Concerns:
+            </Text>
+
+            <Text style={styles.privacytext}>
+              Users can report child safety concerns directly within the app through Settings → Report → Report Child Safety Concern, or by contacting us at sgvrtech1@gmail.com. All reports are reviewed immediately, and confirmed child sexual abuse material (CSAM) is removed immediately and reported to relevant law enforcement authorities.
+            </Text>
+
+            <Text style={styles.privacytextsubheading}>
+              Compliance with Laws:
+            </Text>
+
+            <Text style={styles.privacytext}>
+              In Bharat complies with all relevant child safety laws and regulations, including the Protection of Children from Sexual Offences (POCSO) Act, 2012, and the Information Technology Act, 2000. We report all instances of child sexual abuse material to appropriate law enforcement authorities and cooperate fully with their investigations.
+            </Text>
+
+            <Text style={styles.privacytextsubheading}>
+              Safety Standards:
+            </Text>
+
+            <Text style={styles.privacytext}>
+              For detailed information about our child safety policies, content moderation practices, and reporting mechanisms, please refer to our Child Safety Standards document, which is accessible through the app settings or via our published safety standards page.
+            </Text>
+
+            <Text style={styles.privacytextheading}>
               Updates to this policy
             </Text>
 

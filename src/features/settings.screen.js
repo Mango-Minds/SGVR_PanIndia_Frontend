@@ -1,5 +1,5 @@
 import React from "react";
-import { ScrollView, TouchableOpacity } from "react-native";
+import { ScrollView, TouchableOpacity, Linking, Alert } from "react-native";
 import { Divider, IconButton } from "react-native-paper";
 import {
   Container,
@@ -9,8 +9,15 @@ import {
 } from "../styles/common.styles";
 import { TopText } from "../styles/social.styles";
 import SettingCard from "../components/social/SettingCard";
+import { CHILD_SAFETY_STANDARDS_URL } from "../infrastructure/constants";
 
 export default function SettingScreen({ navigation }) {
+  const openChildSafetyStandards = () => {
+    Linking.openURL(CHILD_SAFETY_STANDARDS_URL).catch((err) => {
+      Alert.alert("Error", "Unable to open safety standards page. Please check your internet connection.");
+    });
+  };
+
   const searchData = [
     {
       name: "Terms & Conditions",
@@ -23,6 +30,10 @@ export default function SettingScreen({ navigation }) {
       callback: () => {
         navigation.navigate("PrivacyPolicy");
       },
+    },
+    {
+      name: "Child Safety Standards",
+      callback: openChildSafetyStandards,
     },
     {
       name: "Contact Us",
