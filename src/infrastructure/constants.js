@@ -26,8 +26,8 @@ export const RENDERMEDIAURL = isProduction ? PROD_RENDERMEDIAURL : DEV_RENDERMED
 export const SOCKETURL = isProduction ? PROD_SOCKETURL : DEV_SOCKETURL;
 
 // Child Safety Standards Configuration
-// Update the GitHub Pages URL with your actual repository details
+// GitHub Pages URL - when serving from /docs folder, files are served from repository root
 // Format: https://[username].github.io/[repository-name]/child-safety-standards.html
-export const CHILD_SAFETY_STANDARDS_URL = "https://girishsai22.github.io/SGVR_PanIndia_Frontend/child-safety-standards.html";
+export const CHILD_SAFETY_STANDARDS_URL = "https://mango-minds.github.io/SGVR_PanIndia_Frontend/child-safety-standards.html";
 export const CHILD_SAFETY_EMAIL = "sgvrtech1@gmail.com";
 
