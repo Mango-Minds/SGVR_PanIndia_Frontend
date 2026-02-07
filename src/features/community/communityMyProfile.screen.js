@@ -16,33 +16,31 @@ export default function CommunityMyProfileScreen({ navigation }) {
   const dispatch = useDispatch();
   // get width
   const { width } = Dimensions.get("window");
-  const { data, isError, error, isLoading } = useQuery(
-    "community-user-profile",
-    getMyCommunities,
-    {
-      onSuccess: (data) => {
-        if (data.status === 1) {
-          navigation.goBack();
-          return dispatch(
-            ErrorToggle({
-              msg: "You are not a member of any community",
-              type: "error",
-              toggle: true,
-            })
-          );
-        }
-      },
-      onError: (err) => {
-        dispatch(
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["community-user-profile"],
+    queryFn: getMyCommunities,
+    onSuccess: (data) => {
+      if (data.status === 1) {
+        navigation.goBack();
+        return dispatch(
           ErrorToggle({
+            msg: "You are not a member of any community",
             type: "error",
-            msg: err.response.data.error,
             toggle: true,
           })
         );
-      },
-    }
-  );
+      }
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          type: "error",
+          msg: err.response.data.error,
+          toggle: true,
+        })
+      );
+    },
+  });
 
   if (isLoading) {
     return (

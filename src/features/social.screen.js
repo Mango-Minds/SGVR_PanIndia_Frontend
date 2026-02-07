@@ -51,26 +51,26 @@ export default function SocialScreen({ navigation }) {
   const [modalData, setModalData] = React.useState({});
   const [selectedId, setSelectedId] = React.useState(null);
 
-  const { data, isError, error, isLoading } = useQuery(
-    "social-timeline",
-    getSocialMediaTimeline,
-    {
-      onSuccess: (data) => {
-        socpropost.current = true;
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            msg: err.response.data.message,
-            type: "error",
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["social-timeline"],
+    queryFn: getSocialMediaTimeline,
+    onSuccess: (data) => {
+      socpropost.current = true;
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          msg: err.response.data.message,
+          type: "error",
+          toggle: true,
+        })
+      );
+    },
+  });
 
-  useQuery(["social-profile-posts"], () => getSocialMediaProfile(user._id), {
+  useQuery({
+    queryKey: ["social-profile-posts"],
+    queryFn: () => getSocialMediaProfile(user._id),
     onSuccess: async (data) => {
       for await (let item of data.result.posts) {
         let posturl = [];
@@ -99,7 +99,9 @@ export default function SocialScreen({ navigation }) {
     enabled: socpropost.current,
   });
 
-  useQuery(["get-friend-list"], getSearchUsers, {
+  useQuery({
+    queryKey: ["get-friend-list"],
+    queryFn: getSearchUsers,
     onSuccess: async (data) => {
       if (data.profiles.length > 0) {
         for await (const item of data.profiles) {

@@ -17,6 +17,7 @@ import {
   FlatList,
   TextInput,
   Modal,
+  Alert,
 } from "react-native";
 import { Badge, IconButton, Surface } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
@@ -82,6 +83,8 @@ import { CommonActions } from "@react-navigation/native";
 import styled from "styled-components/native";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
+import apiClient from "../store/apiClient";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 const YELLOW_COLOR = "#D4AF37";
 
 const exploreData = [
@@ -277,6 +280,13 @@ export default function DashboardScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [belliconbadge, setBelliconbadge] = useState(1);
   const [index, setIndex] = useState(0);
+
+  // State for featured content from API
+  const [featuredTemples, setFeaturedTemples] = useState([]);
+  const [latestJewellery, setLatestJewellery] = useState([]);
+  const [matrimonyProfiles, setMatrimonyProfiles] = useState([]);
+  const [b2cProducts, setB2cProducts] = useState([]);
+  const [loadingFeatured, setLoadingFeatured] = useState(true);
 
   const socket = useMemo(() => {
     const socketConnection = io(SOCKETURL, {
@@ -488,58 +498,135 @@ export default function DashboardScreen({ navigation }) {
     },
   ];
 
+  // API fetch functions
+  const fetchFeaturedTemples = async () => {
+    try {
+      const response = await apiClient.get("/temple?limit=4");
+      if (response.data && Array.isArray(response.data)) {
+        // Take first 4 temples
+        const temples = response.data.slice(0, 4).map((temple) => ({
+          ...temple,
+          title: temple.templeName || temple.name || "Temple",
+          image: temple.images && temple.images.length > 0 
+            ? (temple.images[0].startsWith('http') ? temple.images[0] : `${BASEIMGURL}${temple.images[0]}`)
+            : null,
+        }));
+        setFeaturedTemples(temples);
+      }
+    } catch (error) {
+      console.error("Error fetching featured temples:", error);
+      setFeaturedTemples([]);
+    }
+  };
+
+  const fetchLatestJewellery = async () => {
+    try {
+      const response = await apiClient.get("/jewelry-products?limit=4");
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        const jewellery = response.data.data.map((item) => ({
+          ...item,
+          title: item.name || "Jewellery",
+          image: item.images && item.images.length > 0
+            ? (item.images[0].startsWith('http') ? item.images[0] : `${BASEIMGURL}${item.images[0]}`)
+            : null,
+        }));
+        setLatestJewellery(jewellery);
+      }
+    } catch (error) {
+      console.error("Error fetching latest jewellery:", error);
+      setLatestJewellery([]);
+    }
+  };
+
+  const fetchMatrimonyProfiles = async () => {
+    try {
+      const response = await apiClient.get("/matrimony/matrimonyUsers?limit=5");
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        const profiles = response.data.data.slice(0, 5).map((profile) => {
+          const owner = profile.owner || {};
+          const name = profile.name || `${owner.firstName || ""} ${owner.lastName || ""}`.trim() || "User";
+          const age = profile.age ? `, ${profile.age}` : "";
+          const workLocation = profile.workLocation || profile.homeTown || "";
+          const profession = profile.profession || owner.profession || "";
+          const details = profession && workLocation 
+            ? `${profession}, ${workLocation}`
+            : workLocation || profession || "Profile";
+          
+          return {
+            ...profile,
+            name: `${name}${age}`,
+            details: details,
+            image: profile.image || owner.image 
+              ? (profile.image || owner.image).startsWith('http') 
+                ? (profile.image || owner.image)
+                : `${BASEIMGURL}${profile.image || owner.image}`
+              : null,
+            userId: owner._id || profile._id,
+          };
+        });
+        setMatrimonyProfiles(profiles);
+      }
+    } catch (error) {
+      console.error("Error fetching matrimony profiles:", error);
+      setMatrimonyProfiles([]);
+    }
+  };
+
+  const fetchB2cProducts = async () => {
+    try {
+      const response = await apiClient.get("/listings?limit=3");
+      if (response.data && response.data.listings && Array.isArray(response.data.listings)) {
+        const products = response.data.listings.slice(0, 3).map((item) => {
+          const image = item.pictures && item.pictures.length > 0
+            ? (item.pictures[0].startsWith('http') ? item.pictures[0] : `${BASEIMGURL}${item.pictures[0]}`)
+            : item.images && item.images.length > 0
+            ? (item.images[0].startsWith('http') ? item.images[0] : `${BASEIMGURL}${item.images[0]}`)
+            : null;
+          
+          return {
+            ...item,
+            title: item.title || item.name || "Product",
+            subtitle: item.price ? `₹${item.price}` : item.subtitle || "",
+            image: image,
+          };
+        });
+        setB2cProducts(products);
+      }
+    } catch (error) {
+      console.error("Error fetching B2C products:", error);
+      setB2cProducts([]);
+    }
+  };
+
+  // Fetch all featured content on mount
+  useEffect(() => {
+    const fetchAllFeaturedContent = async () => {
+      setLoadingFeatured(true);
+      try {
+        await Promise.all([
+          fetchFeaturedTemples(),
+          fetchLatestJewellery(),
+          fetchMatrimonyProfiles(),
+          fetchB2cProducts(),
+        ]);
+      } catch (error) {
+        console.error("Error fetching featured content:", error);
+      } finally {
+        setLoadingFeatured(false);
+      }
+    };
+
+    if (token) {
+      fetchAllFeaturedContent();
+    }
+  }, [token]);
+
   const menuItems = [
     { label: "Social", icon: "people", path: "SocialMedia" },
     { label: "Jewellery", icon: "diamond", path: "Jewellery" },
     { label: "Matrimony", icon: "heart", path: "Matrimony" },
     { label: "Temple", icon: "home", path: "Temple" },
     { label: "B2C", icon: "storefront", path: "B2C" },
-  ];
-
-  const featuredTemples = [
-    {
-      title: "Ram Temple",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSuKSBjjoCcb-oZka78TFtqF81woAFMyrOHyfcWc0dXIgBt5_3JNpg0dB_Z1KHWQdphCHc&usqp=CAU",
-    },
-    {
-      title: "Meena Temple",
-      image:
-        "https://static.toiimg.com/thumb/99336488/Temples-in-Bhubaneswar.jpg?width=1200&height=900",
-    },
-    {
-      title: "Shiva temple",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTHNGeJyic3985opFDHlPfPewygj5-MUvzEJFPJ30XJuIOOT0kKtYh9AjqAo747pXbMoFU&usqp=CAU",
-    },
-    {
-      title: "Hanuman Temple",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSNkcztfm8Wl33GIkcfd287pUJFeTk0IvemoBj7XRM5t0EAxYU7-r4PE6i6ihelw5BKdP4&usqp=CAU",
-    },
-  ];
-
-  const latestJewellery = [
-    {
-      title: "Gold Neclace",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGAlYz-kv2d288DhTpJZ5hsIBKhsixKM-hOA&s",
-    },
-    {
-      title: "Earrings",
-      image:
-        "https://media.gettyimages.com/id/1157433618/video/dolly-right-camera-of-ancient-golden-jewelry-and-accessories-with-gemstones-of-traditional.jpg?s=640x640&k=20&c=ntQVCtXuIOOcRkC5rRncBk-_e2GCBSfY7nYuJ153OXg=",
-    },
-    {
-      title: "Gold Bangles",
-      image:
-        "https://static.toiimg.com/thumb/msid-106209377,width-1070,height-580,imgsize-1187465,resizemode-75,overlay-toi_sw,pt-32,y_pad-40/photo.jpg",
-    },
-    {
-      title: "Gold Earrings",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_ry2EtGBvbKs_WNCF21_sAV5YsrkUT9dBcX2WMpS2Kix17X-zLn89w2NFPGEHUMIuj9U&usqp=CAU",
-    },
   ];
 
   const banners = [
@@ -554,38 +641,6 @@ export default function DashboardScreen({ navigation }) {
     {
       id: 3,
       uri: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQG9_99OyhFhdcBADNx_JmPVW1wRbyNjpg3LdPhZ8kcPoYygQWfoX1lzq-7RPWNoktWRQ&usqp=CAU",
-    },
-  ];
-  const matrimonyProfiles = [
-    {
-      name: "Anjali, 29",
-      details: "Doctor, Delhi",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQTq5d1KlFgqDB4M7nNkPMTEE1jHd1CXxHVPqlN3Ot_zFHx9fY2kxN5AVkWIjGDdQe5FpI&usqp=CAU",
-    },
-    {
-      name: "Sneha, 27",
-      details: "Architect, Chennai",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTWW1zJPvLQMhRlVOKOnf52RnaHh-eZGUR8HdycNsNcbTqM-cLoEJBGJjFj7Wc1hEAFjug&usqp=CAU",
-    },
-    {
-      name: "Jyoti, 25",
-      details: "Engineer, Jind",
-      image:
-        "https://media.istockphoto.com/id/1457293775/photo/portrait-of-cheerful-young-university-student.jpg?s=612x612&w=0&k=20&c=TW0wcrCBtwflvWd7dRt1eGQsg6wP4-rD5D0saU3eB3I=",
-    },
-    {
-      name: "Neha, 23",
-      details: "Analyst, Hisar",
-      image:
-        "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTqreMciVWo5iBvv77t3E15AfCWfUmrx6p_b3cIi6C9XNdahDe4Gf2VD_u2mJQLpz5Xki4&usqp=CAU",
-    },
-    {
-      name: "Amrita, 29",
-      details: "Lawyer, Rohtak",
-      image:
-        "https://images.pexels.com/photos/733872/pexels-photo-733872.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
     },
   ];
 
@@ -720,7 +775,10 @@ export default function DashboardScreen({ navigation }) {
               <View style={styles.quickActionsWrapper}>
                 {/* Row 1 */}
                 <View style={styles.quickActionRow}>
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon
                         name="chatbubble-ellipses"
@@ -733,7 +791,10 @@ export default function DashboardScreen({ navigation }) {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon
                         name="leaf"
@@ -748,31 +809,63 @@ export default function DashboardScreen({ navigation }) {
                 </View>
 
                 {/* Featured Temples */}
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Featured Temples</Text>
-                    <Text style={styles.seeAll}>see all &gt;</Text>
-                  </View>
-                  <FlatList
-                    horizontal
-                    data={featuredTemples}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-                      <View style={styles.card}>
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.cardImage}
-                        />
-                        <Text style={styles.cardTitle}>{item.title}</Text>
-                      </View>
+                {featuredTemples.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>Featured Temples</Text>
+                      <TouchableOpacity onPress={() => navigation.navigate("Temple")}>
+                        <Text style={styles.seeAll}>see all &gt;</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {loadingFeatured ? (
+                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
+                    ) : (
+                      <FlatList
+                        horizontal
+                        nestedScrollEnabled={true}
+                        data={featuredTemples}
+                        keyExtractor={(item, index) => item._id || index.toString()}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            onPress={() => {
+                              navigation.navigate("Temple", {
+                                screen: "TempleDetails",
+                                params: {
+                                  templeinfo: item,
+                                },
+                              });
+                            }}
+                            style={{ marginRight: 10 }}
+                          >
+                            <View style={styles.card} pointerEvents="box-none">
+                              {item.image ? (
+                                <Image
+                                  source={{ uri: item.image }}
+                                  style={styles.cardImage}
+                                />
+                              ) : (
+                                <View style={[styles.cardImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
+                                  <Icon name="image-outline" size={30} color="#999" />
+                                </View>
+                              )}
+                              <Text style={styles.cardTitle}>{item.title}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                      />
                     )}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
+                  </View>
+                )}
 
                 {/* Row 2 */}
                 <View style={styles.quickActionRow}>
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon
                         name="card-outline"
@@ -785,7 +878,10 @@ export default function DashboardScreen({ navigation }) {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon
                         name="pricetag-outline"
@@ -799,40 +895,76 @@ export default function DashboardScreen({ navigation }) {
                   </TouchableOpacity>
                 </View>
                 {/* Latest Jewellery */}
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>
-                      Latest Jewellery Designs
-                    </Text>
-                    <Text style={styles.seeAll}>see all &gt;</Text>
-                  </View>
-                  <FlatList
-                    horizontal
-                    data={latestJewellery}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-                      <View style={styles.card}>
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.cardImage}
-                        />
-                        <Text style={styles.cardTitle}>{item.title}</Text>
-                      </View>
+                {latestJewellery.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>
+                        Latest Jewellery Designs
+                      </Text>
+                      <TouchableOpacity onPress={() => navigation.navigate("Jewellery")}>
+                        <Text style={styles.seeAll}>see all &gt;</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {loadingFeatured ? (
+                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
+                    ) : (
+                      <FlatList
+                        horizontal
+                        nestedScrollEnabled={true}
+                        data={latestJewellery}
+                        keyExtractor={(item, index) => item._id || index.toString()}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            onPress={() => {
+                              navigation.navigate("Jewellery", {
+                                screen: "EachProduct",
+                                params: {
+                                  productId: item._id,
+                                  product: item,
+                                },
+                              });
+                            }}
+                            style={{ marginRight: 10 }}
+                          >
+                            <View style={styles.card} pointerEvents="box-none">
+                              {item.image ? (
+                                <Image
+                                  source={{ uri: item.image }}
+                                  style={styles.cardImage}
+                                />
+                              ) : (
+                                <View style={[styles.cardImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
+                                  <Icon name="image-outline" size={30} color="#999" />
+                                </View>
+                              )}
+                              <Text style={styles.cardTitle}>{item.title}</Text>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                      />
                     )}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
+                  </View>
+                )}
 
                 {/* ❤️ Matrimony Capsules */}
                 <View style={styles.quickActionRow}>
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon name="heart" size={20} color="#dc3545" />
                       <Text style={styles.quickActionText}>Find Matches</Text>
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon name="person-add" size={18} color="#17a2b8" />
                       <Text style={styles.quickActionText}>
@@ -843,36 +975,68 @@ export default function DashboardScreen({ navigation }) {
                 </View>
 
                 {/* 💌 Slider: Featured Profiles */}
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>
-                      Featured Matrimony Profiles
-                    </Text>
-                    <Text style={styles.seeAll}>Explore &gt;</Text>
-                  </View>
-                  <FlatList
-                    horizontal
-                    data={matrimonyProfiles}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-                      <View style={styles.profileCard}>
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.profileImage}
-                        />
-                        <Text style={styles.profileName}>{item.name}</Text>
-                        <Text style={styles.profileDetails}>
-                          {item.details}
-                        </Text>
-                      </View>
+                {matrimonyProfiles.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>
+                        Featured Matrimony Profiles
+                      </Text>
+                      <TouchableOpacity onPress={() => navigation.navigate("Matrimony")}>
+                        <Text style={styles.seeAll}>Explore &gt;</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {loadingFeatured ? (
+                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
+                    ) : (
+                      <FlatList
+                        horizontal
+                        nestedScrollEnabled={true}
+                        data={matrimonyProfiles}
+                        keyExtractor={(item, index) => item._id || index.toString()}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            onPress={() => {
+                              navigation.navigate("Matrimony", {
+                                screen: "MatrimonyViewUser",
+                                params: {
+                                  userId: item.userId || item._id,
+                                },
+                              });
+                            }}
+                            style={{ marginHorizontal: 6 }}
+                          >
+                            <View style={styles.profileCard} pointerEvents="box-none">
+                              {item.image ? (
+                                <Image
+                                  source={{ uri: item.image }}
+                                  style={styles.profileImage}
+                                />
+                              ) : (
+                                <View style={[styles.profileImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
+                                  <Icon name="person-outline" size={40} color="#999" />
+                                </View>
+                              )}
+                              <Text style={styles.profileName}>{item.name}</Text>
+                              <Text style={styles.profileDetails}>
+                                {item.details}
+                              </Text>
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                      />
                     )}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
+                  </View>
+                )}
 
                 {/* --- B2C Quick Actions --- */}
                 <View style={styles.quickActionRow}>
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon name="bag-check" size={20} color="#0D6EFD" />
                       <Text style={styles.quickActionText}>
@@ -881,7 +1045,10 @@ export default function DashboardScreen({ navigation }) {
                     </View>
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.quickAction}>
+                  <TouchableOpacity 
+                    style={styles.quickAction}
+                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
+                  >
                     <View style={styles.quickActionContent}>
                       <Icon name="flash-outline" size={20} color="#DC3545" />
                       <Text style={styles.quickActionText}>Today's Offers</Text>
@@ -890,44 +1057,60 @@ export default function DashboardScreen({ navigation }) {
                 </View>
 
                 {/* --- Featured B2C Products Slider --- */}
-                <View style={styles.section}>
-                  <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Top B2C Picks</Text>
-                    <Text style={styles.seeAll}>see all &gt;</Text>
-                  </View>
-                  <FlatList
-                    horizontal
-                    data={[
-                      {
-                        image: "https://i.imgur.com/UYiroysl.jpg",
-                        title: "Handcrafted Lamp",
-                        subtitle: "₹799 | Handmade",
-                      },
-                      {
-                        image: "https://i.imgur.com/UPrs1EWl.jpg",
-                        title: "Eco Diya Set",
-                        subtitle: "₹299 | Bestseller",
-                      },
-                      {
-                        image: "https://i.imgur.com/MABUbpDl.jpg",
-                        title: "Home Decor Pack",
-                        subtitle: "₹999 | Combo",
-                      },
-                    ]}
-                    keyExtractor={(item, index) => index.toString()}
-                    renderItem={({ item }) => (
-                      <View style={styles.card}>
-                        <Image
-                          source={{ uri: item.image }}
-                          style={styles.cardImage}
-                        />
-                        <Text style={styles.cardTitle}>{item.title}</Text>
-                        <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-                      </View>
+                {b2cProducts.length > 0 && (
+                  <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                      <Text style={styles.sectionTitle}>Top B2C Picks</Text>
+                      <TouchableOpacity onPress={() => navigation.navigate("B2C")}>
+                        <Text style={styles.seeAll}>see all &gt;</Text>
+                      </TouchableOpacity>
+                    </View>
+                    {loadingFeatured ? (
+                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
+                    ) : (
+                      <FlatList
+                        horizontal
+                        nestedScrollEnabled={true}
+                        data={b2cProducts}
+                        keyExtractor={(item, index) => item._id || index.toString()}
+                        renderItem={({ item }) => (
+                          <TouchableOpacity
+                            activeOpacity={0.7}
+                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                            onPress={() => {
+                              navigation.navigate("B2C", {
+                                screen: "EachListing",
+                                params: {
+                                  itemId: item._id,
+                                  item: item,
+                                },
+                              });
+                            }}
+                            style={{ marginRight: 10 }}
+                          >
+                            <View style={styles.card} pointerEvents="box-none">
+                              {item.image ? (
+                                <Image
+                                  source={{ uri: item.image }}
+                                  style={styles.cardImage}
+                                />
+                              ) : (
+                                <View style={[styles.cardImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
+                                  <Icon name="image-outline" size={30} color="#999" />
+                                </View>
+                              )}
+                              <Text style={styles.cardTitle}>{item.title}</Text>
+                              {item.subtitle && (
+                                <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
+                              )}
+                            </View>
+                          </TouchableOpacity>
+                        )}
+                        showsHorizontalScrollIndicator={false}
+                      />
                     )}
-                    showsHorizontalScrollIndicator={false}
-                  />
-                </View>
+                  </View>
+                )}
               </View>
             </View>
 

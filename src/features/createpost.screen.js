@@ -42,22 +42,20 @@ const CreatePostScreen = ({ navigation }) => {
   const [selectedLocation, setSelectedLocation] = useState("");
   const [taggedPeople, setTaggedPeople] = useState([]);
   const [taggedPeopleNames, setTaggedPeopleNames] = useState([]);
-  const { data, isError, error, isLoading } = useQuery(
-    ["all-friends", user.username],
-    () => GetAllFriends({ userid: user._id }),
-    {
-      onSuccess: (data) => {},
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            msg: err.response.data.message,
-            type: "error",
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["all-friends", user.username],
+    queryFn: () => GetAllFriends({ userid: user._id }),
+    onSuccess: (data) => {},
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          msg: err.response.data.message,
+          type: "error",
+          toggle: true,
+        })
+      );
+    },
+  });
   const pickVideo = async () => {
     // const options = {
     //   mediaType:"video"

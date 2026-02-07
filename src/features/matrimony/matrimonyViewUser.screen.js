@@ -53,35 +53,35 @@ export default function MatrimonyViewUser({ navigation, route }) {
     extrapolate: "clamp",
   });
 
-  const { data, isError, error, isLoading } = useQuery(
-    ["matrimony-one-user", userId],
-    () => getMatrimonyOneUser(userId),
-    {
-      onSuccess: async (data) => {
-        // console.log(data , "user profile");
-        let images = [];
-        for await (let item of data.photos) {
-          const res = await getImageUrl(item);
-          images.push(res);
-        }
-        setImages(images);
-        if (data.phone !== undefined) {
-          setIsMatch(true);
-        }
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            type: "error",
-            msg: err.response.data.error,
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["matrimony-one-user", userId],
+    queryFn: () => getMatrimonyOneUser(userId),
+    onSuccess: async (data) => {
+      // console.log(data , "user profile");
+      let images = [];
+      for await (let item of data.photos) {
+        const res = await getImageUrl(item);
+        images.push(res);
+      }
+      setImages(images);
+      if (data.phone !== undefined) {
+        setIsMatch(true);
+      }
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          type: "error",
+          msg: err.response.data.error,
+          toggle: true,
+        })
+      );
+    },
+  });
 
-  const { temp } = useQuery(["me-user"], getMyProfile, {
+  const { temp } = useQuery({
+    queryKey: ["me-user"],
+    queryFn: getMyProfile,
     onSuccess: async (data) => {
       setRequestAccepted(data.request_accepted);
       let temp = [];
@@ -642,7 +642,7 @@ export default function MatrimonyViewUser({ navigation, route }) {
             </View>
           </View>
         )}
-        {isMatch === false && reqData !== {} && (
+        {isMatch === false && reqData.item !== 1 && (
           <View>
             {reqData.status === "pending" && (
               <TouchableOpacity

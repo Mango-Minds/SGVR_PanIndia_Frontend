@@ -102,52 +102,50 @@ const MatrimonyEachVendor = ({ route }) => {
     return res;
   };
 
-  const { Data_dates } = useQuery(
-    ["vendor-one-user"],
-    () => getShceduledDates(_id, month, year),
-    {
-      onSuccess: (data) => {
-        let bufferArray = {};
-        data.data.map((item) => {
-          if (item.todate === undefined) {
-            bufferArray[item.fromdate.slice(0, 10)] = {
+  const { Data_dates } = useQuery({
+    queryKey: ["vendor-one-user"],
+    queryFn: () => getShceduledDates(_id, month, year),
+    onSuccess: (data) => {
+      let bufferArray = {};
+      data.data.map((item) => {
+        if (item.todate === undefined) {
+          bufferArray[item.fromdate.slice(0, 10)] = {
+            marked: true,
+            dotColor: "#D8AE25",
+            textColor: "#D8AE25",
+          };
+        } else {
+          bufferArray[item.fromdate.slice(0, 10)] = {
+            marked: true,
+            dotColor: "#D8AE25",
+            textColor: "#D8AE25",
+          };
+          bufferArray[item.todate.slice(0, 10)] = {
+            marked: true,
+            dotColor: "#D8AE25",
+            textColor: "#D8AE25",
+          };
+          var temp = new Date(item.fromdate);
+          temp.setDate(temp.getDate() + 1);
+          var daysOfYear = [];
+          for (
+            var d = temp;
+            d < new Date(item.todate);
+            d.setDate(d.getDate() + 1)
+          ) {
+            let ss = new Date(d).toISOString().slice(0, 10);
+            bufferArray[ss] = {
               marked: true,
               dotColor: "#D8AE25",
               textColor: "#D8AE25",
             };
-          } else {
-            bufferArray[item.fromdate.slice(0, 10)] = {
-              marked: true,
-              dotColor: "#D8AE25",
-              textColor: "#D8AE25",
-            };
-            bufferArray[item.todate.slice(0, 10)] = {
-              marked: true,
-              dotColor: "#D8AE25",
-              textColor: "#D8AE25",
-            };
-            var temp = new Date(item.fromdate);
-            temp.setDate(temp.getDate() + 1);
-            var daysOfYear = [];
-            for (
-              var d = temp;
-              d < new Date(item.todate);
-              d.setDate(d.getDate() + 1)
-            ) {
-              let ss = new Date(d).toISOString().slice(0, 10);
-              bufferArray[ss] = {
-                marked: true,
-                dotColor: "#D8AE25",
-                textColor: "#D8AE25",
-              };
-            }
           }
-        });
-        setMarkedDates(bufferArray);
-        setLoadingDates(false);
-      },
-    }
-  );
+        }
+      });
+      setMarkedDates(bufferArray);
+      setLoadingDates(false);
+    },
+  });
 
   const renderBackground = () => {
     return (

@@ -2,7 +2,7 @@
   "expo": {
     "name": "In Bharat",
     "slug": "mimaratha",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,12 +14,13 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inbharat.app",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
       },
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "In Bharat needs access to your photo library to upload and share photos and videos within the app. Specifically, we use your photos to: (1) Create social media posts - select photos from your gallery to share with the community, (2) Set profile pictures - choose an image to display as your profile photo, (3) Add product listings - upload product photos when selling items in B2C marketplace, jewellery, or real estate sections, (4) Create moments/stories - select photos or videos to share temporary stories visible to your connections, (5) Add matrimony profile photos - upload images for your matrimony profile, and (6) Share temple event photos - upload images when creating or sharing temple events. For example, when you tap 'Create Post' or 'Add Product', you can browse and select images from your photo library to upload and share."
       }
     },
     "android": {
@@ -28,7 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.inbharat.app",
-      "versionCode": 1,
+      "versionCode": 2,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"

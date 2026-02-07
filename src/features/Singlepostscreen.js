@@ -49,23 +49,21 @@ export default function SinglePostScreen({ navigation, route }) {
   // const [selectedId, setSelectedId] = React.useState(null);
   const [commentText, setCommentText] = React.useState("");
 
-  const { data, isError, error, isLoading } = useQuery(
-    "getSinglePost",
-    () => getSinglePost(route.params.meetupPost._id),
-    {
-      onSuccess: (data) => {},
-      onError: (err) => {
-        // console.log(err);
-        dispatch(
-          ErrorToggle({
-            msg: err.response.data.message,
-            type: "error",
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["getSinglePost"],
+    queryFn: () => getSinglePost(route.params.meetupPost._id),
+    onSuccess: (data) => {},
+    onError: (err) => {
+      // console.log(err);
+      dispatch(
+        ErrorToggle({
+          msg: err.response.data.message,
+          type: "error",
+          toggle: true,
+        })
+      );
+    },
+  });
 
   const options = [
     {

@@ -61,28 +61,28 @@ export default function CommunityProfileScreen({ route, navigation }) {
 
   const { communityId } = route.params;
   const id = communityId;
-  const { data, isError, error, isLoading } = useQuery(
-    ["community-profile"],
-    () => viewCommunityById(id),
-    {
-      onSuccess: (data) => {
-        setImages(data.imageUrl);
-        setModalImagesFunc(data.imageUrl);
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            msg: err.response.data.message,
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["community-profile"],
+    queryFn: () => viewCommunityById(id),
+    onSuccess: (data) => {
+      setImages(data.imageUrl);
+      setModalImagesFunc(data.imageUrl);
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          msg: err.response.data.message,
 
-            type: "error",
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+          type: "error",
+          toggle: true,
+        })
+      );
+    },
+  });
 
-  const members = useQuery(["community-members"], () => viewMembers(id), {
+  const members = useQuery({
+    queryKey: ["community-members"],
+    queryFn: () => viewMembers(id),
     onSuccess: (data) => {
       console.log(data);
       if (data.data && data.data.length > 0)

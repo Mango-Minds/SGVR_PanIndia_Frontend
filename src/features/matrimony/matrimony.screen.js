@@ -66,65 +66,61 @@ const MatrimonyScreen = ({ navigation }) => {
   const likedBy = useSelector((state) => state.user.likedBy);
   // const [likedBy,setLikedBy] = useState()
 
-  const { dataBuffer } = useQuery(
-    ["matrimony-one-user"],
-    () => getCurrentUserMatrimonyprofile(),
-    {
-      onSuccess: async (data) => {
-        dispatch(setLikedBy(data.data.likes));
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            type: "error",
-            msg: err.response.data.error,
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+  const { dataBuffer } = useQuery({
+    queryKey: ["matrimony-one-user"],
+    queryFn: () => getCurrentUserMatrimonyprofile(),
+    onSuccess: async (data) => {
+      dispatch(setLikedBy(data.data.likes));
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          type: "error",
+          msg: err.response.data.error,
+          toggle: true,
+        })
+      );
+    },
+  });
 
-  const { data, isError, error, isLoading } = useQuery(
-    ["matrimony-all-profiles", matrimonySection],
-    () => getAllMatrimonyProfiles(matrimonySection),
-    {
-      onSuccess: async (data) => {
-        if (matrimonySection === "female") {
-          if (imagesFemale.length === 0) {
-            let matrimonyImage = [];
-            for await (let item of data.data) {
-              const res = await getImageUrl(item.photos[0]);
-              matrimonyImage.push(res);
-            }
-            dispatch(
-              loadmatrimonyprofileImages([matrimonyImage, matrimonySection])
-            );
+  const { data, isError, error, isLoading } = useQuery({
+    queryKey: ["matrimony-all-profiles", matrimonySection],
+    queryFn: () => getAllMatrimonyProfiles(matrimonySection),
+    onSuccess: async (data) => {
+      if (matrimonySection === "female") {
+        if (imagesFemale.length === 0) {
+          let matrimonyImage = [];
+          for await (let item of data.data) {
+            const res = await getImageUrl(item.photos[0]);
+            matrimonyImage.push(res);
           }
-        } else {
-          if (images.length === 0) {
-            let matrimonyImage = [];
-            for await (let item of data.data) {
-              const res = await getImageUrl(item.photos[0]);
-              matrimonyImage.push(res);
-            }
-            dispatch(
-              loadmatrimonyprofileImages([matrimonyImage, matrimonySection])
-            );
-          }
+          dispatch(
+            loadmatrimonyprofileImages([matrimonyImage, matrimonySection])
+          );
         }
-      },
-      onError: (err) => {
-        dispatch(
-          ErrorToggle({
-            type: "error",
-            msg: err.response.data.error,
-            toggle: true,
-          })
-        );
-      },
-    }
-  );
+      } else {
+        if (images.length === 0) {
+          let matrimonyImage = [];
+          for await (let item of data.data) {
+            const res = await getImageUrl(item.photos[0]);
+            matrimonyImage.push(res);
+          }
+          dispatch(
+            loadmatrimonyprofileImages([matrimonyImage, matrimonySection])
+          );
+        }
+      }
+    },
+    onError: (err) => {
+      dispatch(
+        ErrorToggle({
+          type: "error",
+          msg: err.response.data.error,
+          toggle: true,
+        })
+      );
+    },
+  });
   const likeHandlerHelper = async (_id) => {
     // navigation.navigate('Home',{navigation})
     setLikedBy([...likedBy, _id]);

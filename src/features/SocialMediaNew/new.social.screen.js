@@ -331,12 +331,48 @@ const { t } = useTranslation();
         try {
           await uploadMoment('', media);
           await loadMyMoments();
+        } catch (uploadErr) {
+          console.error('pickMomentMedia error', uploadErr);
+          // Handle different error types
+          let errorMessage = 'Failed to upload moment. Please try again.';
+          
+          if (uploadErr.response) {
+            // Server responded with error status
+            const status = uploadErr.response.status;
+            const serverMessage = uploadErr.response?.data?.message;
+            
+            if (status === 500) {
+              errorMessage = serverMessage || 'Server error occurred. Please try again later.';
+            } else if (status === 413) {
+              errorMessage = 'File is too large. Please choose a smaller file.';
+            } else if (status === 400) {
+              errorMessage = serverMessage || 'Invalid file format. Please choose an image or video.';
+            } else if (status === 401) {
+              errorMessage = 'Session expired. Please log in again.';
+            } else {
+              errorMessage = serverMessage || `Upload failed (${status}). Please try again.`;
+            }
+          } else if (uploadErr.request) {
+            // Request was made but no response received
+            errorMessage = 'Network error. Please check your internet connection.';
+          } else {
+            // Something else happened
+            errorMessage = uploadErr.message || 'An unexpected error occurred.';
+          }
+          
+          Alert.alert('Upload Failed', errorMessage);
         } finally {
           setIsUploadingMoment(false);
         }
       }
     } catch (err) {
       console.error('pickMomentMedia error', err);
+      // Handle permission or image picker errors
+      if (err.code === 'E_PERMISSION_DENIED') {
+        Alert.alert('Permission Denied', 'We need access to your gallery to upload moments.');
+      } else {
+        Alert.alert('Error', 'Failed to pick media. Please try again.');
+      }
     }
   };
 
