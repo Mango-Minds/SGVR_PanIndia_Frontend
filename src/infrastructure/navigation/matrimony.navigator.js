@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import RegisterScreen from "../../features/matrimony/register.screen";
 import Icon from "react-native-vector-icons/SimpleLineIcons";
 import { createStackNavigator } from "@react-navigation/stack";
+import { useNavigation } from "@react-navigation/native";
 import { useSelector } from "react-redux";
 import MatrimonyScreen from "../../features/matrimony/matrimony.screen";
 import MatrimonyMessageScreen from "../../features/matrimony/matrimonyMessage.screen";
@@ -43,8 +44,23 @@ const Stack = createStackNavigator();
 
 export const MatrimonyStackNavigator = () => {
   const user = useSelector((state) => state.user.user);
+  const token = useSelector((state) => state.user.token);
+  const navigation = useNavigation();
   console.log("Matrimony Navigator - logged in user data", user);
   console.log("Matrimony Navigator - isMatrimonyOnboarded:", user?.isMatrimonyOnboarded);
+
+  useEffect(() => {
+    if (!token) {
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("Main");
+      }
+    }
+  }, [token, navigation]);
+
+  if (!token) {
+    return null;
+  }
   
   // Determine initial route based on onboarding status
   let initialRouteName = "OnboardModuleForm";

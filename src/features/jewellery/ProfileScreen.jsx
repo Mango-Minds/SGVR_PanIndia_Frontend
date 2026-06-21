@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import FollowButton from '../../components/Jewellery/FollowButton';
+import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import axios from 'axios';
 import { BASEIMGURL, BASEAPIURL } from '../../infrastructure/constants';
@@ -24,7 +25,8 @@ import authHeader from '../../services/auth.header';
 const ProfileScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const currentUser = useSelector((state) => state.user.user);
+  const dispatch = useDispatch();
+  const { token, isGuest, user: currentUser } = useSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState('profile');
   const [profileUser, setProfileUser] = useState(null);
   const [followStatus, setFollowStatus] = useState('none');
@@ -288,10 +290,8 @@ const ProfileScreen = () => {
         // Already on profile
         break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;

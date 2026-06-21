@@ -17,7 +17,6 @@ import MyAllLookingfor from "../../components/B2b/MyAllLookingfor";
 import MylookingforDetails from "../../features/B2b/Mylookingfor";
 import PropertyLookingfor from "../../features/B2b/LookingforHome.screen";
 import lookingforDetails from "../../features/B2b/Lookingfor.screen";
-import PageComingSoon from "../../features/B2b/B2b.PageComingSoon";
 
 const Stack = createStackNavigator();
 
@@ -28,9 +27,6 @@ export const B2BStackNavigator = () => (
     <Stack.Screen name="CatagoryInner" component={CatagoryInner} />
     <Stack.Screen name="ProductDetails" component={ProductDetails} />
     <Stack.Screen name="PropertyDetails" component={PropertyDetails} />
-    <Stack.Screen name="Electronics" component={PageComingSoon}/>
-    <Stack.Screen name="Fashion" component={PageComingSoon}/>
-    <Stack.Screen name="HomeDecor" component={PageComingSoon}/>
     <Stack.Screen name="MyAllProduct" component={MyAllProduct} />
     <Stack.Screen name="AddProduct" component={AddProduct} />
     <Stack.Screen name="EditProduct" component={EditProduct} />

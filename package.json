@@ -75,6 +75,7 @@
     "react-native-paper-dates": "^0.22.3",
     "react-native-parallax-scroll-view": "^0.21.3",
     "react-native-phone-number-input": "^2.1.0",
+    "react-native-qrcode-svg": "^6.3.21",
     "react-native-raw-bottom-sheet": "^2.2.1",
     "react-native-reanimated": "~4.1.1",
     "react-native-root-siblings": "^5.0.1",
@@ -82,6 +83,7 @@
     "react-native-screens": "~4.16.0",
     "react-native-select-dropdown": "^3.4.0",
     "react-native-snap-carousel": "^3.9.1",
+    "react-native-svg": "15.12.1",
     "react-native-tab-view": "^3.5.2",
     "react-native-vector-icons": "^10.0.3",
     "react-native-video": "^6.4.5",
@@ -95,7 +97,8 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@react-native-community/cli": "latest"
+    "@react-native-community/cli": "latest",
+    "eas-cli": "^18.5.0"
   },
   "private": true
 }

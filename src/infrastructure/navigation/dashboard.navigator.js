@@ -8,8 +8,6 @@ import { B2BStackNavigator } from "./B2B.navigator";
 import { MatrimonyStackNavigator } from "./matrimony.navigator";
 import DashboardSettingsScreen from "../../features/dashboardSettings.screen";
 import { CommunityStackNavigator } from "./community.navigator";
-import { B2bStackNavigator } from "./B2B.navigator";
-import { CareerStackNavigator } from "./Career.navigator";
 import ViewProfileScreen from "../../features/viewProfile.screen";
 import DashboardNotificationScreen from "../../features/dashboardNotifications.screen";
 import CommunityProfileScreen from "../../features/community/communityProfile.screen";

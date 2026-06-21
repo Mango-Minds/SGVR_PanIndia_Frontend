@@ -42,16 +42,18 @@ import { Linking } from "react-native";
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
+const EMPTY_USER_TYPES = [];
+
 const TempleDetails = ({ route, navigation }) => {
   const Navigation = useNavigation();
-  const { user } = useSelector((state) => state.user);
+  const { user, token, isGuest, loading } = useSelector((state) => state.user);
   const { t } = useTranslation();
   console.log("User in temple details: ", user);
   const outeruser = useSelector((state) => state.user);
   const isFocused = useIsFocused();
 
-  // Early return if user is not loaded yet
-  if (!user) {
+  // Wait only while restoring an authenticated session — guests have no user object
+  if (!user && !isGuest && loading) {
     return (
       <SafeArea>
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -62,9 +64,9 @@ const TempleDetails = ({ route, navigation }) => {
     );
   }
 
-  const token = useSelector((state) => state.user.token);
   console.log("temple details page usertoken: ", token);
-  const userType = useSelector((state) => state.user.user?.userType);
+  const rawUserType = user?.userType ?? EMPTY_USER_TYPES;
+  const userType = Array.isArray(rawUserType) ? rawUserType : [rawUserType].filter(Boolean);
   const { templeinfo, fromPandits } = route.params;
   const ShopId = user?.roleData?._id;
   console.log("Shopid: ", ShopId);
@@ -119,11 +121,10 @@ const TempleDetails = ({ route, navigation }) => {
     checkConnectionStatus();
   }, [user, templeinfo._id]);
   console.log("templeDetails in details page: ", templeDetails);
-  const tokenPayload = token?.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : null;
   console.log(decodedPayload);
-  const userId = decodedPayload.id;
+  const userId = decodedPayload?.id ?? null;
   console.log("outeruser", outeruser);
 
   console.log("templeinfo in details: ", templeinfo);
@@ -359,10 +360,10 @@ const TempleDetails = ({ route, navigation }) => {
   };
 
   useEffect(() => {
-    if (isFocused) {
+    if (isFocused && token && userType.includes("templeShopOwner")) {
       fetchShops();
     }
-  }, [isFocused]);
+  }, [isFocused, token, userType]);
 
   console.log("ShopData in details: ", shopData);
   const loggedInShop = shopData.find(

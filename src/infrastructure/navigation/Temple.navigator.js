@@ -41,16 +41,20 @@ import PanditNotifications from "../../features/Temple/PanditNotifications";
 import ShopNotifications from "../../features/Temple/ShopNotifications";
 const Stack = createStackNavigator();
 
+const EMPTY_USER_TYPES = [];
+
 export const TempleStackNavigator = () => {
   const user = useSelector((state) => state.user.user);
-  const userType = useSelector((state) => state.user.user?.userType || []);
+  const userType = useSelector((state) => state.user.user?.userType ?? EMPTY_USER_TYPES);
+  const isGuest = useSelector((state) => state.user.isGuest);
   console.log("Temple Navigator - logged in user data", user);
   console.log("Temple Navigator - isTempleOnboarded:", user?.isTempleOnboarded);
   
-  // Determine initial route based on onboarding status
   let initialRouteName = "OnboardModuleForm";
-  
-  if (user?.isTempleOnboarded === true) {
+
+  if (isGuest) {
+    initialRouteName = "TempleHome";
+  } else if (user?.isTempleOnboarded === true) {
     if (Array.isArray(userType) && userType.includes("superadmin")) {
       initialRouteName = "TempleSuperAdminHome";
     } else if (userType === "superadmin") {

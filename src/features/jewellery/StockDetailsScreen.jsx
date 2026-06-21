@@ -13,20 +13,21 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { decode } from 'base-64';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
+import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { getShopStockItems, deleteStockItem, getShopDetails } from '../../services/jewellery.services';
 
 const StockDetailsScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
   const { shopId } = route.params || {};
-  const token = useSelector((state) => state.user.token);
-  const user = useSelector((state) => state.user.user);
+  const { token, isGuest, user } = useSelector((state) => state.user);
   const [stockItems, setStockItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -161,13 +162,9 @@ const StockDetailsScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;

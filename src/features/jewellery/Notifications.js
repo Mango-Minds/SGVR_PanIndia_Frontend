@@ -16,26 +16,27 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import HeaderBar from "../../components/Jewellery/HeaderBar";
 import BottomTabBar from "../../components/Jewellery/BottomTabBar";
+import { navigateJewelleryAuthTab } from "../../utils/requireAuth";
 import { jewelleryColors, typography, spacing, commonStyles } from "../../styles/jewellery.styles";
 import apiClient from "../../store/apiClient";
 import moment from "moment";
 
 function JewelleryNotifications({ navigation, route }) {
   const insets = useSafeAreaInsets();
+  const dispatch = useDispatch();
+  const { token, isGuest, user } = useSelector((state) => state.user);
   const [activeBottomTab, setActiveBottomTab] = useState("notifications");
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [stockNotifications, setStockNotifications] = useState([]);
   const [loadingStockNotifications, setLoadingStockNotifications] = useState(false);
   const [refreshingStockNotifications, setRefreshingStockNotifications] = useState(false);
 
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const user = useSelector((state) => state.user.user);
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : null;
   console.log("user: ", user);
   const userId = user?.roleData?._id;
   const vendorId = user?.roleData?._id;
@@ -126,10 +127,8 @@ function JewelleryNotifications({ navigation, route }) {
         navigation.navigate("BrowseScreen");
         break;
       case "profile":
-        navigation.navigate("ProfileScreen");
-        break;
       case "message":
-        navigation.navigate("ChatScreen");
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       case "notifications":
         // Already on notifications

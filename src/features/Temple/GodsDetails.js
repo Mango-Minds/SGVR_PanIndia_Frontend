@@ -14,23 +14,25 @@ import { RowBetween, SearchField } from "../../styles/common.styles";
 import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native-gesture-handler";
-import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import UserImg from "../../assets/images/general/user.png";
 import { useIsFocused } from "@react-navigation/native";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 const DetailsScreen = ({ route, navigation }) => {
-  const { god, userType, templeinfo, godId, setGods } = route.params;
+  const { god, userType: routeUserType, templeinfo, godId, setGods } = route.params;
   const { t } = useTranslation();
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
+  const { token, isGuest } = useSelector((state) => state.user);
+  const userType = Array.isArray(routeUserType)
+    ? routeUserType
+    : routeUserType
+      ? [routeUserType]
+      : [];
   const isFocused = useIsFocused();
-  const [godDetails, setGodDetails] = useState(
-    templeinfo ? templeinfo.gods : []
-  );
+  const [godDetails, setGodDetails] = useState(god || {});
 
   // const fetchTempleGods = async () => {
   //   console.log("Temple id: ", templeinfo._id);
@@ -61,7 +63,8 @@ const DetailsScreen = ({ route, navigation }) => {
     console.log("God id in details: ", godId);
 
     try {
-      const response = await apiClient.get(
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const response = await client.get(
         `/temple/${templeinfo._id}/gods/${godId}`
       );
 

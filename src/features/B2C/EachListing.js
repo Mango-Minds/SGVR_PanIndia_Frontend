@@ -16,7 +16,8 @@ import {
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { requireAuth } from "../../utils/requireAuth";
 import { Row } from "../../styles/dashboard.styles";
 import Theme from "../../styles/theme";
 import { IconButton } from "react-native-paper";
@@ -52,16 +53,14 @@ const EachListing = ({ route }) => {
   const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const { itemId, fetchProducts } = route.params;
-  const { user } = useSelector((state) => state.user);
+  const { user, token, isGuest } = useSelector((state) => state.user);
+  const dispatch = useDispatch();
   const userId = user?._id;
   console.log("User id: ", userId);
 
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  console.log("itemId: ", itemId);
-
-  const loggedInUserId = decodedPayload.id;
+  const loggedInUserId = token
+    ? JSON.parse(decode(token.split(".")[1])).id
+    : null;
   const [currentIndex, setCurrentIndex] = useState(0);
   // Location modal functionality removed
 
@@ -598,20 +597,25 @@ const EachListing = ({ route }) => {
           <View style={styles.bottomBarContainer}>
             <View style={styles.bottomBar}>
               <View style={styles.ticketInfoContainer}>
-                {productData?.createdBy !== user._id ? (
+                {productData?.createdBy !== user?._id ? (
                   <>
                     <Text style={styles.priceText}>{t("interested")}</Text>
                     <TouchableOpacity
                       style={styles.bookNowButton}
-                      // onPress={() => {
-                      //   connectToChat(loggedInUserId, businessId, productData);
-                      // }}
                       onPress={() => {
-                        connectToChat({
-                          owner_id: loggedInUserId,
-                          business_id: businessId,
-                          productData,
+                        requireAuth({
+                          token,
+                          isGuest,
+                          dispatch,
                           navigation,
+                          message: "Sign in to message the listing owner.",
+                          onAuthed: () =>
+                            connectToChat({
+                              owner_id: loggedInUserId,
+                              business_id: businessId,
+                              productData,
+                              navigation,
+                            }),
                         });
                       }}
                     >
@@ -620,7 +624,7 @@ const EachListing = ({ route }) => {
                       </Text>
                     </TouchableOpacity>
                   </>
-                ) : (
+                ) : token ? (
                   <>
                     <Text style={styles.priceText}>{t("delete_product")}</Text>
                     <TouchableOpacity
@@ -632,7 +636,7 @@ const EachListing = ({ route }) => {
                       </Text>
                     </TouchableOpacity>
                   </>
-                )}
+                ) : null}
               </View>
             </View>
           </View>

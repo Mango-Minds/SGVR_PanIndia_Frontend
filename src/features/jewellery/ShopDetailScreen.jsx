@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import RatingDisplay from '../../components/Jewellery/RatingDisplay';
@@ -38,8 +39,8 @@ const ShopDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { shopId } = route.params || {};
-  const token = useSelector((state) => state.user.token);
-  const user = useSelector((state) => state.user.user);
+  const dispatch = useDispatch();
+  const { token, user, isGuest } = useSelector((state) => state.user);
   const [shopData, setShopData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('All');
@@ -443,6 +444,17 @@ const ShopDetailScreen = () => {
 
   // Handle follow/unfollow actions
   const handleFollowAction = async () => {
+    if (!token) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: 'Sign in to follow shops.',
+      });
+      return;
+    }
+
     if (!shopData?.ownerId || !user) return;
     
     // Don't allow following yourself
@@ -553,10 +565,19 @@ const ShopDetailScreen = () => {
         <View style={styles.section}>
           <View style={styles.reviewsHeader}>
             <Text style={styles.sectionTitle}>Reviews</Text>
-            {user && user._id && shopData.ownerId && shopData.ownerId !== user._id && !userHasReviewed && (
+            {shopData.ownerId && (!user || shopData.ownerId !== user._id) && !userHasReviewed && (
               <TouchableOpacity
                 style={styles.writeReviewButton}
-                onPress={() => setReviewFormVisible(true)}
+                onPress={() =>
+                  requireAuth({
+                    token,
+                    isGuest,
+                    dispatch,
+                    navigation,
+                    message: 'Sign in to submit a review.',
+                    onAuthed: () => setReviewFormVisible(true),
+                  })
+                }
               >
                 <Icon name="edit" size={16} color={jewelleryColors.primary} />
                 <Text style={styles.writeReviewButtonText}>Write Review</Text>
@@ -680,8 +701,14 @@ const ShopDetailScreen = () => {
 
   // Handle review submission
   const handleSubmitReview = async (rating, comment) => {
-    if (!shopId || !user) {
-      Alert.alert('Error', 'Please login to submit a review');
+    if (!shopId || !user || !token) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: 'Sign in to submit a review.',
+      });
       return;
     }
 
@@ -738,13 +765,9 @@ const ShopDetailScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;
@@ -879,8 +902,6 @@ const ShopDetailScreen = () => {
         onClose={() => setQrModalVisible(false)}
         qrValue={`shop-${shopData.id}`}
         shopName={shopData.name}
-        onDownload={() => console.log('Download QR')}
-        onShare={() => console.log('Share QR')}
       />
 
       <ReviewForm

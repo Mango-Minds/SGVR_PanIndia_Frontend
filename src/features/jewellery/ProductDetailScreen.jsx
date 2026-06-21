@@ -7,9 +7,12 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  Linking,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import RatingDisplay from '../../components/Jewellery/RatingDisplay';
@@ -18,6 +21,7 @@ import TrustBadge from '../../components/Jewellery/TrustBadge';
 import QRModal from '../../components/Jewellery/QRModal';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
+import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -25,6 +29,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const ProductDetailScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { token, isGuest } = useSelector((state) => state.user);
   const { productId } = route.params || {};
   const [activeSpecCategory, setActiveSpecCategory] = useState('Diamond Sets');
   const [qrModalVisible, setQrModalVisible] = useState(false);
@@ -87,13 +93,9 @@ const ProductDetailScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;
@@ -269,8 +271,13 @@ const ProductDetailScreen = () => {
           <TouchableOpacity 
             style={styles.callButton}
             onPress={() => {
-              // Handle call action
-              console.log('Call:', productData.contact.phone);
+              const raw = productData?.contact?.phone;
+              const digits = raw != null ? String(raw).replace(/\D/g, '') : '';
+              if (digits.length >= 10) {
+                Linking.openURL(`tel:${digits}`);
+              } else {
+                Alert.alert('Call', 'Phone number is not available.');
+              }
             }}
           >
             <Icon name="phone" size={20} color="#FFFFFF" />
@@ -291,8 +298,6 @@ const ProductDetailScreen = () => {
         onClose={() => setQrModalVisible(false)}
         qrValue={`product-${productData.id}`}
         shopName={productData.shop}
-        onDownload={() => console.log('Download QR')}
-        onShare={() => console.log('Share QR')}
       />
 
       <BottomTabBar activeTab={activeBottomTab} onTabChange={handleTabBarChange} />

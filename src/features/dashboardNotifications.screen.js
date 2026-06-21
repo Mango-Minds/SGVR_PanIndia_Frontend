@@ -25,10 +25,13 @@ export default function DashboardNotificationScreen({ navigation, route }) {
   // const queryclient = useQueryClient();
   // const dispatch = useDispatch();
 
-  // console.log(notification.homescreen);
-
-  const { notifications } = route.params;
-  const { token } = useSelector((state) => state.user);
+  const { token, notification } = useSelector((state) => state.user);
+  const paramNotifications = route.params?.notifications;
+  const notifications = Array.isArray(paramNotifications)
+    ? paramNotifications
+    : Array.isArray(notification?.homescreen)
+      ? notification.homescreen
+      : [];
 
   const [refreshing, setRefreshing] = React.useState(false);
 

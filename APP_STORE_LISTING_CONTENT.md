@@ -294,6 +294,28 @@ Thank you for choosing In Bharat!
 
 ---
 
+## 9. App Store Connect — Notes for Review (Guideline 5.1.1v)
+
+Paste into **App Review Information → Notes** when resubmitting:
+
+```
+Guest browsing (no account required):
+1. On the login screen, tap "Continue without account".
+2. Browse products via Dashboard → Jewellery (shops, products, live rates) or Temple (temples, shops, products).
+3. B2C marketplace listings are also browsable without signing in.
+
+Login is only required for account-based features:
+- Social feed and Matrimony profiles
+- Chat / message listing owner
+- Posting or editing listings, submitting shop reviews
+- Profile, settings, and notifications
+
+Demo accounts (optional, for testing logged-in features):
+- appreview.primary@mangominds.test / password
+```
+
+---
+
 ## Quick Reference Checklist
 
 Before submitting to App Store Connect, ensure you have:

@@ -21,6 +21,7 @@ import { TouchableOpacity } from "react-native-gesture-handler";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 //   import AssignForm from "./AssignForm";
@@ -35,7 +36,15 @@ const EachProduct = ({ route }) => {
   const { t } = useTranslation();
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const { productId, product } = route.params;
-  const [loadingAnimation, setLoadingAnimation] = useState(true);
+  const { user, token, isGuest } = useSelector((state) => state.user);
+  const rawUserType = user?.userType;
+  const userType = Array.isArray(rawUserType)
+    ? rawUserType
+    : rawUserType
+      ? [rawUserType]
+      : [];
+  const [loadingAnimation, setLoadingAnimation] = useState(!product);
+  const [productData, setProductData] = useState(product || {});
 
   const images = [
     "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQq1IkSrb16qU9WEDTasSrvxivdkmKo14IkhPdddU4ngzkvdZOJ3fsZ3apV5cGoy8hkbyQ&usqp=CAU",
@@ -46,50 +55,11 @@ const EachProduct = ({ route }) => {
     setSelectedImageIndex(index);
   };
 
-  const [productData, setProductData] = useState([]);
-
-  // const fetchProduct = async () => {
-  //   try {
-  //     setLoadingAnimation(true);
-  //     const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
-  //       method: "GET",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //     setLoadingAnimation(false);
-
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       console.log(" Product Data: ", data);
-
-  //       setProductData(data);
-  //     } else {
-  //       throw new Error("Failed to fetch temple product");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error fetching product:", error);
-  //   }
-  // };
-  // const fetchProduct = async () => {
-  //   try {
-  //     setLoadingAnimation(true);
-  //     const { data } = await apiClient.get(`/products/${productId}`);
-  //      const selectedLanguage =
-  //       (await AsyncStorage.getItem("user-language")) || "en";
-  //     console.log("Product Data: ", data);
-  //     setProductData(data);
-  //   } catch (error) {
-  //     console.error("Error fetching product:", error);
-  //   } finally {
-  //     setLoadingAnimation(false);
-  //   }
-  // };
   const fetchProduct = async () => {
     try {
       setLoadingAnimation(true);
-      const response = await apiClient.get(`/products/${productId}`);
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const response = await client.get(`/products/${productId}`);
       const selectedLanguage =
         (await AsyncStorage.getItem("user-language")) || "en";
       if (response.status === 200) {
@@ -128,39 +98,6 @@ const EachProduct = ({ route }) => {
     }
   }, [isFocused]);
 
-  const token = useSelector((state) => state.user.token);
-
-  // const deleteProduct = async () => {
-  //   try {
-  //     const response = await fetch(`${BASEAPIURL}/products/${productId}`, {
-  //       method: "DELETE",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //         Authorization: `Bearer ${token}`,
-  //       },
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error("Failed to delete product");
-  //     }
-
-  //     Alert.alert(
-  //       "Success",
-  //       "Product deleted successfully",
-  //       [
-  //         {
-  //           text: "OK",
-  //           onPress: () => {
-  //             // fetchProducts();
-  //             navigation.goBack();
-  //           },
-  //         },
-  //       ],
-  //       { cancelable: false }
-  //     );
-  //   } catch (error) {
-  //     console.error("Error deleting product:", error);
-  //   }
-  // };
   const deleteProduct = async () => {
     try {
       await apiClient.delete(`/products/${productId}`);
@@ -180,12 +117,6 @@ const EachProduct = ({ route }) => {
       console.error("Error deleting product:", error);
     }
   };
-  const tokenPayload = token.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const fromVendorId = decodedPayload.id;
-
-  const userType = useSelector((state) => state.user.user.userType);
 
   return (
     <Container

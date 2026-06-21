@@ -1,11 +1,58 @@
-import React from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  StyleSheet,
+  Share,
+  Alert,
+  Platform,
+} from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
+import * as Clipboard from 'expo-clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
-// Note: You'll need to install react-native-qrcode-svg or similar for QR code generation
-// For now, using a placeholder
+import { RENDERMEDIAURL } from '../../infrastructure/constants';
 
-const QRModal = ({ visible, onClose, qrValue, shopName, onDownload, onShare }) => {
+function buildQrPayload(qrValue) {
+  const v = (qrValue || '').trim();
+  if (!v) {
+    const base = RENDERMEDIAURL.replace(/\/$/, '');
+    return `${base}/jewellery`;
+  }
+  if (/^https?:\/\//i.test(v)) return v;
+  const base = RENDERMEDIAURL.replace(/\/$/, '');
+  return `${base}/jewellery?ref=${encodeURIComponent(v)}`;
+}
+
+const QRModal = ({ visible, onClose, qrValue, shopName }) => {
+  const payload = useMemo(() => buildQrPayload(qrValue), [qrValue]);
+
+  const handleCopyLink = async () => {
+    try {
+      await Clipboard.setStringAsync(payload);
+      Alert.alert('Copied', 'Link copied to clipboard.');
+    } catch {
+      Alert.alert('Error', 'Could not copy link.');
+    }
+  };
+
+  const handleShare = async () => {
+    const message = shopName
+      ? `${shopName}\n${payload}`
+      : payload;
+    try {
+      await Share.share(
+        Platform.OS === 'ios'
+          ? { message, url: payload }
+          : { message }
+      );
+    } catch {
+      Alert.alert('Share', 'Unable to open share sheet.');
+    }
+  };
+
   return (
     <Modal
       visible={visible}
@@ -23,21 +70,27 @@ const QRModal = ({ visible, onClose, qrValue, shopName, onDownload, onShare }) =
           </View>
 
           <View style={styles.qrContainer}>
-            {/* Placeholder for QR Code - Replace with actual QR code component */}
-            <View style={styles.qrPlaceholder}>
-              <Icon name="qr-code-2" size={120} color={jewelleryColors.text} />
+            <View style={styles.qrFrame}>
+              <QRCode
+                value={payload}
+                size={200}
+                backgroundColor={jewelleryColors.bgSecondary}
+                color={jewelleryColors.text}
+              />
             </View>
-            <Text style={styles.shopName}>{shopName}</Text>
-            <Text style={styles.subtitle}>Share this QR Code to View Shop Details</Text>
+            {shopName ? <Text style={styles.shopName}>{shopName}</Text> : null}
+            <Text style={styles.subtitle}>
+              Scan this code or share the link to open this page in the app or on the web.
+            </Text>
           </View>
 
           <View style={styles.actions}>
-            <TouchableOpacity style={styles.downloadButton} onPress={onDownload}>
-              <Text style={styles.downloadButtonText}>Download QR</Text>
+            <TouchableOpacity style={styles.downloadButton} onPress={handleCopyLink}>
+              <Text style={styles.downloadButtonText}>Copy link</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.shareButton} onPress={onShare}>
+            <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
               <Icon name="share" size={20} color="#FFFFFF" />
-              <Text style={styles.shareButtonText}>Share QR</Text>
+              <Text style={styles.shareButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -72,7 +125,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
   },
-  qrPlaceholder: {
+  qrFrame: {
     width: 200,
     height: 200,
     backgroundColor: jewelleryColors.bgSecondary,
@@ -80,6 +133,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: spacing.lg,
+    overflow: 'hidden',
   },
   shopName: {
     ...typography.heading2,
@@ -125,5 +179,3 @@ const styles = StyleSheet.create({
 });
 
 export default QRModal;
-
-

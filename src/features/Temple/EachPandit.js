@@ -9,9 +9,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from "react-native";
-import { useSelector } from "react-redux";
 import { Row } from "../../styles/dashboard.styles";
-import { decode } from "base-64";
 import { Divider, IconButton } from "react-native-paper";
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
@@ -29,10 +27,6 @@ const EachPandit = ({ route }) => {
   const navigation = useNavigation();
   const { pandit, userType, templeinfo } = route.params;
   console.log("pandit Detail: ", pandit);
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [userData, setUserData] = useState({});
 

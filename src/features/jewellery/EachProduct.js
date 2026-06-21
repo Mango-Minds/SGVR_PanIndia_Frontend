@@ -57,7 +57,7 @@ const EachProduct = ({ route }) => {
   const [products, setProducts] = useState([]);
   const { user } = useSelector((state) => state.user);
   console.log("User: ", user);
-  const fromShopId = useSelector((state) => state.user.user.roleData._id);
+  const fromShopId = useSelector((state) => state.user.user?.roleData?._id);
   console.log("Fom shop Id: ", fromShopId);
   const token = useSelector((state) => state.user.token);
 
@@ -197,13 +197,12 @@ const EachProduct = ({ route }) => {
 
   console.log("User data id using userData: ", userData?.roleData?._id);
  
-  const tokenPayload = token.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : {};
   const userType = decodedPayload.userType;
   const fromVendorId = decodedPayload.id;
   console.log("from vendor id", fromVendorId);
-  const userId = user?.roleData._id;
+  const userId = user?.roleData?._id;
   console.log("User id: ", userId);
   
 

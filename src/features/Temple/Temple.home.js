@@ -21,6 +21,7 @@ import Profile from "../../assets/images/B2b/profile.png";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useIsFocused } from "@react-navigation/native";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import {
   TempleHomeCard,
   MatrimonyHomeCardSubTitle,
@@ -30,15 +31,19 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useDispatch, useSelector } from "react-redux";
 import { useQueryClient } from "@tanstack/react-query";
 import { UpdateTemple } from "../../store/Handlers/Reducer.Handler";
+import { requireAuth } from "../../utils/requireAuth";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 // import FilterMenu from "./FilterMenu"; // Commented out as filter component is disabled
 import UserImg from "../../assets/images/general/user.png";
 import { useTranslation } from "react-i18next";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const EMPTY_USER_TYPES = [];
+
 const TempleHome = ({ navigation }) => {
   const { t } = useTranslation();
-  const { user } = useSelector((state) => state.user);
+  const { user, isGuest } = useSelector((state) => state.user);
   console.log("user in temple: ", user);
   const token = useSelector((state) => state.user.token);
   const [loadingAnimation, setLoadingAnimation] = useState(true);
@@ -46,12 +51,22 @@ const TempleHome = ({ navigation }) => {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const isFocused = useIsFocused();
-  const userType = useSelector((state) => state.user.user.userType);
+  const userType = useSelector((state) => state.user.user?.userType ?? EMPTY_USER_TYPES);
 
   console.log("Usertype in temple: ", userType);
   const [selectedTab, setSelectedTab] = useState("Temples");
 
   const handleTabPress = (tab) => {
+    if (tab === "Pandits" && !token) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: "Sign in to view pandits.",
+      });
+      return;
+    }
     setSelectedTab(tab);
   };
   const [refreshing, setRefreshing] = useState(false);
@@ -193,7 +208,7 @@ const TempleHome = ({ navigation }) => {
       const selectedLanguage =
         (await AsyncStorage.getItem("user-language")) || "en";
 
-      const response = await apiClient.get(`/temple?${queryString}`);
+      const response = await publicApiClient.get(`/temple?${queryString}`);
       console.log("Temples data:", response.data);
       if (response.status === 200) {
         const templesData = response.data;
@@ -286,8 +301,12 @@ const TempleHome = ({ navigation }) => {
   
   
   useEffect(() => {
-    fetchPandits();
-  }, []);
+    if (!isGuest && token) {
+      fetchPandits();
+    } else {
+      setLoadingAnimation(false);
+    }
+  }, [isGuest, token]);
 
   console.log("Pandits: ", pandits);
 
@@ -335,7 +354,7 @@ const TempleHome = ({ navigation }) => {
           >
             {selectedTab === "Temples" && (
               <>
-                {user.userType.includes("templeAdmin") && (
+                {user?.userType?.includes("templeAdmin") && (
                   <IconButton
                     icon="plus"
                     style={{ marginRight: 10 }}
@@ -352,7 +371,7 @@ const TempleHome = ({ navigation }) => {
             )}
 
             {/* Notification bell for pandits */}
-            {user.userType.includes("pandit") && (
+            {user?.userType?.includes("pandit") && (
               <IconButton
                 icon="bell-outline"
                 style={{ marginRight: 10 }}
@@ -361,7 +380,7 @@ const TempleHome = ({ navigation }) => {
             )}
 
             {/* Notification bell for shop owners */}
-            {user.userType.includes("templeShopOwner") && (
+            {user?.userType?.includes("templeShopOwner") && (
               <IconButton
                 icon="bell-outline"
                 style={{ marginRight: 10 }}
@@ -371,9 +390,17 @@ const TempleHome = ({ navigation }) => {
 
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("MyProfile", {
-                  pandits: pandits,
-                  fetchPandits: fetchPandits,
+                requireAuth({
+                  token,
+                  isGuest,
+                  dispatch,
+                  navigation,
+                  message: "Sign in to view your profile.",
+                  onAuthed: () =>
+                    navigation.navigate("MyProfile", {
+                      pandits: pandits,
+                      fetchPandits: fetchPandits,
+                    }),
                 });
               }}
             >
@@ -657,8 +684,16 @@ const TempleHome = ({ navigation }) => {
                     <TouchableOpacity
                       key={index}
                       onPress={() =>
-                        navigation.navigate("TemplePanditDetails", {
-                          panditinfo: pandit,
+                        requireAuth({
+                          token,
+                          isGuest,
+                          dispatch,
+                          navigation,
+                          message: "Sign in to view pandit details.",
+                          onAuthed: () =>
+                            navigation.navigate("TemplePanditDetails", {
+                              panditinfo: pandit,
+                            }),
                         })
                       }
                     >

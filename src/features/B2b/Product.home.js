@@ -9,40 +9,21 @@ import {
   Pressable,
 } from "react-native";
 import Furiniture from "../../assets/images/B2b/furniture.png";
-import Electronics from "../../assets/images/B2b/Electronics.png";
-import f1 from "../../assets/images/B2b/f1.png";
-import HomeDecor from "../../assets/images/B2b/homedecor.png";
 import { ScrollView } from "react-native-gesture-handler";
 import MaterialIcon from "react-native-vector-icons/MaterialIcons";
 import WestsideImage from "../../assets/images/B2b/westside.png";
 import LifestyleImage from "../../assets/images/B2b/lifestyle.png";
 import { Divider } from "react-native-paper";
 import { useNavigation } from "@react-navigation/native";
-import { useQuery } from "@tanstack/react-query";
-import { getProductCategories } from "../../services/B2B.services";
 
 const ProductHome = () => {
   const navigation = useNavigation();
+  // Only list categories that have a full implementation (App Store guideline 2.2).
   const ProductCatagory = [
     {
       name: "Furniture",
       image: Furiniture,
       route: "CatagoryInner",
-    },
-    {
-      name: "Electronics",
-      image: Electronics,
-      route: "Electronics",
-    },
-    {
-      name: "Fashion",
-      image: f1,
-      route: "Fashion",
-    },
-    {
-      name: "Home Decor",
-      image: HomeDecor,
-      route: "HomeDecor",
     },
   ];
 

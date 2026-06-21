@@ -1,7 +1,5 @@
 import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
-import B2CHome from "../../features/B2C/B2C.Home";
-import PageComingSoon from "../../features/B2C/B2c.PageComingSoon";
 import BuySellScreen from "../../features/B2C/B2C.homeScreen";
 import FurnitureScreen from "../../features/B2C/FurniturePage";
 import FoodProductsScreen from "../../features/B2C/FoodProductsPage";

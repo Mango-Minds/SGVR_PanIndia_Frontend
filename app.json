@@ -2,7 +2,7 @@
   "expo": {
     "name": "In Bharat",
     "slug": "mimaratha",
-    "version": "1.0.1",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inbharat.app",
-      "buildNumber": "2",
+      "buildNumber": "6",
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
       },
@@ -29,7 +29,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.inbharat.app",
-      "versionCode": 2,
+      "versionCode": 6,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"

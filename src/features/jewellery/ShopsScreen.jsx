@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import ShopCard from '../../components/Jewellery/ShopCard';
 import FilterDropdown from '../../components/Jewellery/FilterDropdown';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -18,9 +19,12 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { getShops } from '../../services/jewellery.services';
 import { BASEIMGURL } from '../../infrastructure/constants';
+import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 
 const ShopsScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { token, isGuest } = useSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState('home');
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -203,13 +207,9 @@ const ShopsScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;
@@ -304,7 +304,16 @@ const ShopsScreen = () => {
       {/* View More Button */}
       <TouchableOpacity 
         style={styles.viewMoreButton}
-        onPress={() => navigation.navigate('PremiumAccessScreen')}
+        onPress={() =>
+          requireAuth({
+            token,
+            isGuest,
+            dispatch,
+            navigation,
+            onAuthed: () => navigation.navigate('PremiumAccessScreen'),
+            message: 'Sign in to access premium shop features.',
+          })
+        }
       >
         <Icon name="visibility" size={20} color="#FFFFFF" />
         <Text style={styles.viewMoreText}>View More Shops</Text>

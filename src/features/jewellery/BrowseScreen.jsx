@@ -10,7 +10,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import ProductCard from '../../components/Jewellery/ProductCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -18,6 +20,8 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
 
 const BrowseScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { token, isGuest } = useSelector((state) => state.user);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('search');
@@ -113,11 +117,20 @@ const BrowseScreen = () => {
   ];
 
   const handleWishlist = (productId) => {
-    setWishlistedItems((prev) =>
-      prev.includes(productId)
-        ? prev.filter((id) => id !== productId)
-        : [...prev, productId]
-    );
+    requireAuth({
+      token,
+      isGuest,
+      dispatch,
+      navigation,
+      message: 'Sign in to save items to your wishlist.',
+      onAuthed: () => {
+        setWishlistedItems((prev) =>
+          prev.includes(productId)
+            ? prev.filter((id) => id !== productId)
+            : [...prev, productId]
+        );
+      },
+    });
   };
 
   const handleTabChange = (tab) => {
@@ -130,13 +143,9 @@ const BrowseScreen = () => {
         // Already on search
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;

@@ -22,9 +22,10 @@ import { useIsFocused } from "@react-navigation/native";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { useSelector } from "react-redux";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import { useTranslation } from "react-i18next";
 const EachShopProfile = ({ route }) => {
-  const token = useSelector((state) => state.user.token);
+  const { token, isGuest } = useSelector((state) => state.user);
  
  const { t } = useTranslation();
   const navigation = useNavigation();
@@ -70,7 +71,13 @@ const EachShopProfile = ({ route }) => {
     console.error("Error parsing token:", error);
   }
 
- const userType = useSelector((state) => state.user.user.userType);
+  const user = useSelector((state) => state.user.user);
+  const rawUserType = user?.userType;
+  const userType = Array.isArray(rawUserType)
+    ? rawUserType
+    : rawUserType
+      ? [rawUserType]
+      : [];
  
  // Check if current user is the shop owner with better error handling
   const isShopOwner = fromVendorId && displayShop?.owner && (
@@ -140,7 +147,8 @@ const EachShopProfile = ({ route }) => {
 
   const fetchShop = async () => {
     try {
-      const response = await apiClient.get(`/templeShops/${shopId}`);
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const response = await client.get(`/templeShops/${shopId}`);
       
       if (response.data) {
         // Update the shop state with fresh data from backend
@@ -152,14 +160,17 @@ const EachShopProfile = ({ route }) => {
       console.log("Fetched shop:", response.data);
     } catch (error) {
       console.error("Error fetching shop:", error);
-      Alert.alert("Error", "Failed to refresh shop data. Please try again.");
+      if (!isGuest) {
+        Alert.alert("Error", "Failed to refresh shop data. Please try again.");
+      }
     }
   };
   
   const fetchShopProducts = async () => {
     try {
       setIsLoading(true);
-      const response = await apiClient.get("/products");
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const response = await client.get("/products");
   
       if (response.data && Array.isArray(response.data)) {
         const filteredProducts = response.data.filter(

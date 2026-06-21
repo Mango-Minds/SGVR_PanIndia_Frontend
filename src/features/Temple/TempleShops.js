@@ -22,6 +22,7 @@ import { useIsFocused } from "@react-navigation/native";
 import UserImg from "../../assets/images/general/user.png";
 import Theme from "../../styles/theme";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 const statusOptions = [
@@ -55,12 +56,16 @@ export default function TempleShops({ templeinfo }) {
   console.log("Temple id in shops: ", templeinfo._id);
   const templeId = templeinfo._id;
 
-  const userType = useSelector((state) => state.user.user.userType);
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const userId = decodedPayload.id;
+  const { user, token, isGuest } = useSelector((state) => state.user);
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : null;
+  const userId = decodedPayload?.id;
+  const rawUserType = user?.userType;
+  const userType = Array.isArray(rawUserType)
+    ? rawUserType
+    : rawUserType
+      ? [rawUserType]
+      : [];
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [shops, setShops] = useState([]);
   const [templeDetails, setTempleDetails] = useState(templeinfo);
@@ -115,7 +120,8 @@ export default function TempleShops({ templeinfo }) {
 
   const fetchShops = async () => {
     try {
-      const response = await apiClient.get("/templeShops");
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const response = await client.get("/templeShops");
       console.log("Shop Data: ", response.data);
 
       const selectedLanguage =

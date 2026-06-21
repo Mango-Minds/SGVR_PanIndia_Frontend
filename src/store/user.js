@@ -13,6 +13,7 @@ const slice = createSlice({
     user: null,
     token: null,
     refresh_token: null,
+    isGuest: false,
     loading: true,
     loadingInBtn: false,
     likedBy: [],
@@ -66,10 +67,21 @@ const slice = createSlice({
     loginSuccess: (state, action) => {
       state.token = action.payload.token;
     },
+    enterGuestModeSuccess: (state) => {
+      state.isGuest = true;
+      state.loading = false;
+      state.token = null;
+      state.refresh_token = null;
+      state.user = null;
+    },
+    exitGuestModeSuccess: (state) => {
+      state.isGuest = false;
+    },
     logoutSuccess: (state, action) => {
       state.user = null;
       state.token = null;
       state.refresh_token = null;
+      state.isGuest = false;
       state.likedBy = [];
       state.localChats = [];
       state.conversations = [];
@@ -104,6 +116,7 @@ const slice = createSlice({
       state.user = action.payload.user;
       state.token = action.payload.token;
       state.refresh_token = action.payload.refreshToken;
+      state.isGuest = false;
       state.loading = false; // Ensure loading is set to false after restoring user
     },
     updateTokens: (state, action) => {
@@ -182,6 +195,8 @@ export const {
   setLikedBy,
   loadmatrimonyprofileImages,
   loginSuccess,
+  enterGuestModeSuccess,
+  exitGuestModeSuccess,
   logoutSuccess,
   setInitialUser,
   updateTokens,
@@ -340,6 +355,7 @@ export const login =
         await AsyncStorage.setItem("refresh_token", refreshToken);
         await AsyncStorage.setItem("user", JSON.stringify(user));
         await AsyncStorage.setItem("loggedIn", "true");
+        await AsyncStorage.removeItem("guestMode");
 
         await dispatch(
           setInitialUser({
@@ -349,6 +365,7 @@ export const login =
             refreshToken,
           })
         );
+        dispatch(exitGuestModeSuccess());
 
         return true; // Indicate successful login
       } else {
@@ -621,12 +638,16 @@ export const initialUser = () => async (dispatch) => {
     console.log("userData: ", userData);
     console.log("loggedIn: ", loggedIn);
 
-    // If no loggedIn flag or it's false, clear everything and logout
-    // Don't set loading to true if we're already logged out
+    // If no loggedIn flag, check for guest mode before clearing
     if (loggedIn !== "true") {
+      const guestMode = await AsyncStorage.getItem("guestMode");
+      if (guestMode === "true") {
+        dispatch(enterGuestModeSuccess());
+        return;
+      }
       console.log("User not logged in, clearing data");
-      await AsyncStorage.clear();
       dispatch(logoutSuccess());
+      dispatch(Isloading(false));
       return;
     }
 
@@ -834,6 +855,20 @@ export const deleteAccountHandler = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");
   await AsyncStorage.removeItem("refresh_token");
   dispatch(logoutSuccess());
+};
+
+export const enterGuestMode = () => async (dispatch) => {
+  await AsyncStorage.setItem("guestMode", "true");
+  await AsyncStorage.removeItem("loggedIn");
+  await AsyncStorage.removeItem("token");
+  await AsyncStorage.removeItem("refresh_token");
+  await AsyncStorage.removeItem("user");
+  dispatch(enterGuestModeSuccess());
+};
+
+export const exitGuestMode = () => async (dispatch) => {
+  await AsyncStorage.removeItem("guestMode");
+  dispatch(exitGuestModeSuccess());
 };
 
 // Notification Handling

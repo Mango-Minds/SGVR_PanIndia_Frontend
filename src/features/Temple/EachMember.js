@@ -32,9 +32,9 @@ const EachMember = ({ route }) => {
   const { member, userType, templeinfo } = route.params;
    const { t } = useTranslation();
   console.log("Member Detail: ", member);
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-  const decodedPayload = JSON.parse(decode(tokenPayload));
+  const { token } = useSelector((state) => state.user);
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : {};
   console.log("temple info:", templeinfo);
   console.log("decodedpayload:", decodedPayload);
 
@@ -121,7 +121,8 @@ const EachMember = ({ route }) => {
             {t("memberDetails")}
           </TopText>
         </View>
-        {userType.includes("templeAdmin") &&
+        {userType?.includes("templeAdmin") &&
+          token &&
           templeinfo.createdBy === decodedPayload.id && (
             <>
               <IconButton

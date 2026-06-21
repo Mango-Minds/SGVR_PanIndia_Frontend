@@ -18,11 +18,12 @@ import { RowBetween, SearchField } from "../../styles/common.styles";
 import { useRoute } from "@react-navigation/native";
 import moment from "moment";
 import { useIsFocused } from "@react-navigation/native";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import SelectDropdown from "react-native-select-dropdown";
 import apiClient from "../../store/apiClient";
+import { requireAuth } from "../../utils/requireAuth";
 const statusOptions = [
   {
     title: "Accepted",
@@ -44,11 +45,18 @@ const statusOptions = [
   }, // Yellow-gold color
 ];
 const TempleEvents = ({ navigation }) => {
-  const { user } = useSelector((state) => state.user);
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const userId = decodedPayload.id;
+  const dispatch = useDispatch();
+  const { user, token, isGuest } = useSelector((state) => state.user);
+  const tokenPayload = token?.split(".")?.[1];
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : null;
+  const userId = decodedPayload?.id;
+  const decodedUserRoles = Array.isArray(decodedPayload?.userType)
+    ? decodedPayload.userType
+    : decodedPayload?.userType
+      ? [decodedPayload.userType]
+      : [];
+  const isSuperAdmin =
+    decodedUserRoles.includes("SA") || decodedUserRoles.includes("superadmin");
   const isFocused = useIsFocused();
   const route = useRoute();
   const { date, onMarkedDatesUpdate } = route.params;
@@ -64,6 +72,16 @@ const TempleEvents = ({ navigation }) => {
   const [selectedTab, setSelectedTab] = useState("All Events");
 
   const handleTabPress = (tab) => {
+    if (tab === "My Bookings" && !token) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: "Sign in to view your bookings.",
+      });
+      return;
+    }
     setSelectedTab(tab);
   };
 
@@ -351,6 +369,17 @@ const TempleEvents = ({ navigation }) => {
   };
   
   const sendRequest = async (eventId) => {
+    if (!token) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: "Sign in to book event slots.",
+      });
+      return;
+    }
+
     if (!selectedSlot) {
       Alert.alert("Error", "Please select a slot before sending a request.");
       return;
@@ -505,9 +534,9 @@ const TempleEvents = ({ navigation }) => {
   // };
 
   const isVisible = 
-  decodedPayload.userType === 'SA' || 
+  isSuperAdmin || 
   userId === templeAdmin || 
-  templePandits.some(pandit => pandit.owner === userId);
+  (templePandits ?? []).some(pandit => pandit.owner === userId);
 
   // const createChatRoom = async (userId) => {
   //   console.log("userId: ", userId);
@@ -711,7 +740,7 @@ const TempleEvents = ({ navigation }) => {
                       <View style={styles.iconAndDurationContainer}>
                         {(item.createdBy == userId ||
                           userId == templeAdmin ||
-                          decodedPayload.userType.includes("SA")) && (
+                          isSuperAdmin) && (
                           <>
                             <TouchableOpacity
                               onPress={() =>
@@ -865,12 +894,21 @@ const TempleEvents = ({ navigation }) => {
                     )}
 
                     {item.eventType === "puja" 
-                       && user.userType.includes("basicUser") &&
+                       && (!user || user?.userType?.includes("basicUser")) &&
                      ( <View>
                         <TouchableOpacity
                           onPress={() => {
-                            setCurrentEvent(item);
-                            setModalVisible(true);
+                            requireAuth({
+                              token,
+                              isGuest,
+                              dispatch,
+                              navigation,
+                              message: "Sign in to book event slots.",
+                              onAuthed: () => {
+                                setCurrentEvent(item);
+                                setModalVisible(true);
+                              },
+                            });
                           }}
                           style={styles.bookButton}
                         >
@@ -878,8 +916,17 @@ const TempleEvents = ({ navigation }) => {
                         </TouchableOpacity>
                         <TouchableOpacity
                           onPress={() => {
-                            setChatPanditId(item.pandits.owner);
-                            setRequestModalVisible(true);
+                            requireAuth({
+                              token,
+                              isGuest,
+                              dispatch,
+                              navigation,
+                              message: "Sign in to chat with a pandit.",
+                              onAuthed: () => {
+                                setChatPanditId(item.pandits.owner);
+                                setRequestModalVisible(true);
+                              },
+                            });
                           }}
                           style={styles.bookButton}
                         >

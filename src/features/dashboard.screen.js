@@ -17,7 +17,6 @@ import {
   FlatList,
   TextInput,
   Modal,
-  Alert,
 } from "react-native";
 import { Badge, IconButton, Surface } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
@@ -25,7 +24,6 @@ import HallCard from "../components/dashboard/HallCard";
 import matrimonyImg from "../assets/images/homepage/matrimony.png";
 import samajImg from "../assets/images/homepage/samaj.png";
 import socialImg from "../assets/images/homepage/social.png";
-import storeImg from "../assets/images/homepage/store.png";
 import b2bImg from "../assets/images/homepage/b2b.png";
 import jobImg from "../assets/images/homepage/job.png";
 import Temple from "../assets/images/homepage/temple.png";
@@ -84,7 +82,9 @@ import styled from "styled-components/native";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
 import apiClient from "../store/apiClient";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import publicApiClient from "../store/publicApiClient";
+import { requireAuth, isAccountModule, signInFromGuest } from "../utils/requireAuth";
+
 const YELLOW_COLOR = "#D4AF37";
 
 const exploreData = [
@@ -114,13 +114,6 @@ const exploreData = [
     path: "Temple",
     status: true,
     icon: "temple-hindu",
-    color: "#6B7280",
-  },
-  {
-    title: "B2C",
-    path: "B2C",
-    status: true,
-    icon: "business",
     color: "#6B7280",
   },
 ];
@@ -263,19 +256,14 @@ const offers = [
 ];
 
 export default function DashboardScreen({ navigation }) {
-  const { user, token } = useSelector((state) => state.user);
-  const { loading, notification, temple } = useSelector((state) => state.user);
-  
-  // CRITICAL FIX: Return null if token is null (user is logged out)
-  // This prevents showing loading spinner after logout, especially from jewelry module
-  // The Navigation component will handle showing PreLoginNavigator
-  if (!token) {
-    return null;
-  }
-  
-  const tokenPayload = token.split(".")[1];
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  const userId = decodedPayload.id;
+  const { user, token, isGuest, loading, notification, temple } = useSelector(
+    (state) => state.user
+  );
+  const dispatch = useDispatch();
+
+  const userId = token
+    ? JSON.parse(decode(token.split(".")[1])).id
+    : null;
 
   const [notifications, setNotifications] = useState([]);
   const [belliconbadge, setBelliconbadge] = useState(1);
@@ -285,10 +273,10 @@ export default function DashboardScreen({ navigation }) {
   const [featuredTemples, setFeaturedTemples] = useState([]);
   const [latestJewellery, setLatestJewellery] = useState([]);
   const [matrimonyProfiles, setMatrimonyProfiles] = useState([]);
-  const [b2cProducts, setB2cProducts] = useState([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
 
   const socket = useMemo(() => {
+    if (!token) return null;
     const socketConnection = io(SOCKETURL, {
       query: { token },
       transports: ["websocket"],
@@ -306,8 +294,7 @@ export default function DashboardScreen({ navigation }) {
   }, [SOCKETURL, token]);
 
   useEffect(() => {
-    if (!socket) {
-      console.log("Socket not available.");
+    if (!socket || !userId) {
       return;
     }
 
@@ -402,10 +389,32 @@ export default function DashboardScreen({ navigation }) {
   };
 
   React.useEffect(() => {
-    LastNotification();
-  }, [lastNotificationResponse]);
+    if (token) {
+      LastNotification();
+    }
+  }, [lastNotificationResponse, token]);
 
-  const dispatch = useDispatch();
+  const handleModuleNavigation = (path, params) => {
+    if (!token && isAccountModule(path)) {
+      requireAuth({
+        token,
+        isGuest,
+        dispatch,
+        navigation,
+        message: "Sign in to access this section.",
+      });
+      return;
+    }
+    if (params) {
+      navigation.navigate(path, params);
+    } else {
+      navigation.navigate(path);
+    }
+  };
+
+  const handleAccountAction = (onAuthed, message) => {
+    requireAuth({ token, isGuest, dispatch, navigation, onAuthed, message });
+  };
 
   // Update the sample data for carousels
   const sampleImagesData = [
@@ -501,7 +510,7 @@ export default function DashboardScreen({ navigation }) {
   // API fetch functions
   const fetchFeaturedTemples = async () => {
     try {
-      const response = await apiClient.get("/temple?limit=4");
+      const response = await publicApiClient.get("/temple?limit=4");
       if (response.data && Array.isArray(response.data)) {
         // Take first 4 temples
         const temples = response.data.slice(0, 4).map((temple) => ({
@@ -521,7 +530,7 @@ export default function DashboardScreen({ navigation }) {
 
   const fetchLatestJewellery = async () => {
     try {
-      const response = await apiClient.get("/jewelry-products?limit=4");
+      const response = await publicApiClient.get("/jewelry-products?limit=4");
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         const jewellery = response.data.data.map((item) => ({
           ...item,
@@ -572,43 +581,16 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  const fetchB2cProducts = async () => {
-    try {
-      const response = await apiClient.get("/listings?limit=3");
-      if (response.data && response.data.listings && Array.isArray(response.data.listings)) {
-        const products = response.data.listings.slice(0, 3).map((item) => {
-          const image = item.pictures && item.pictures.length > 0
-            ? (item.pictures[0].startsWith('http') ? item.pictures[0] : `${BASEIMGURL}${item.pictures[0]}`)
-            : item.images && item.images.length > 0
-            ? (item.images[0].startsWith('http') ? item.images[0] : `${BASEIMGURL}${item.images[0]}`)
-            : null;
-          
-          return {
-            ...item,
-            title: item.title || item.name || "Product",
-            subtitle: item.price ? `₹${item.price}` : item.subtitle || "",
-            image: image,
-          };
-        });
-        setB2cProducts(products);
-      }
-    } catch (error) {
-      console.error("Error fetching B2C products:", error);
-      setB2cProducts([]);
-    }
-  };
-
   // Fetch all featured content on mount
   useEffect(() => {
     const fetchAllFeaturedContent = async () => {
       setLoadingFeatured(true);
       try {
-        await Promise.all([
-          fetchFeaturedTemples(),
-          fetchLatestJewellery(),
-          fetchMatrimonyProfiles(),
-          fetchB2cProducts(),
-        ]);
+        const tasks = [fetchFeaturedTemples(), fetchLatestJewellery()];
+        if (token) {
+          tasks.push(fetchMatrimonyProfiles());
+        }
+        await Promise.all(tasks);
       } catch (error) {
         console.error("Error fetching featured content:", error);
       } finally {
@@ -616,17 +598,16 @@ export default function DashboardScreen({ navigation }) {
       }
     };
 
-    if (token) {
+    if (token || isGuest) {
       fetchAllFeaturedContent();
     }
-  }, [token]);
+  }, [token, isGuest]);
 
   const menuItems = [
     { label: "Social", icon: "people", path: "SocialMedia" },
     { label: "Jewellery", icon: "diamond", path: "Jewellery" },
     { label: "Matrimony", icon: "heart", path: "Matrimony" },
     { label: "Temple", icon: "home", path: "Temple" },
-    { label: "B2C", icon: "storefront", path: "B2C" },
   ];
 
   const banners = [
@@ -663,7 +644,11 @@ export default function DashboardScreen({ navigation }) {
     setCurrentIndex(slide);
   };
 
-  if (loading) {
+  if (!token && !isGuest) {
+    return null;
+  }
+
+  if (loading && token) {
     return (
       <ActivityIndicator
         style={{
@@ -684,7 +669,12 @@ export default function DashboardScreen({ navigation }) {
           {/* Top Row: Avatar, Name, Icons */}
           <View style={styles.headerTopRow}>
             <TouchableOpacity
-              onPress={() => navigation.navigate("SettingsScreen")}
+              onPress={() =>
+                handleAccountAction(
+                  () => navigation.navigate("SettingsScreen"),
+                  "Sign in to view your profile and settings."
+                )
+              }
             >
               <Image
                 source={
@@ -696,24 +686,70 @@ export default function DashboardScreen({ navigation }) {
               />
             </TouchableOpacity>
             <Text style={styles.username}>
-              {user && user.firstName &&
-                user.firstName.charAt(0).toUpperCase() +
-                  user.firstName.slice(1).toLowerCase()}
+              {isGuest
+                ? "Guest"
+                : user && user.firstName &&
+                  user.firstName.charAt(0).toUpperCase() +
+                    user.firstName.slice(1).toLowerCase()}
             </Text>
             <View style={styles.headerIcons}>
-              <Icon name="search" size={24} color="#fff" style={styles.icon} />
-              <Icon
-                name="chatbubble-ellipses"
-                size={24}
-                color="#fff"
-                style={styles.icon}
-              />
-              <Icon
-                name="notifications"
-                size={24}
-                color="#fff"
-                style={styles.icon}
-              />
+              {isGuest ? (
+                <TouchableOpacity
+                  onPress={() => signInFromGuest(dispatch)}
+                  style={styles.loginButton}
+                >
+                  <Text style={styles.loginButtonText}>Sign in</Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate("Jewellery", { screen: "BrowseScreen" })
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Search jewellery"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.headerIconHit}
+              >
+                <Icon name="search" size={24} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  handleAccountAction(
+                    () => navigation.navigate("ChatHome"),
+                    "Sign in to view your messages."
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Messages"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.headerIconHit}
+              >
+                <Icon
+                  name="chatbubble-ellipses"
+                  size={24}
+                  color="#fff"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  handleAccountAction(
+                    () =>
+                      navigation.navigate("DashboardNotification", {
+                        notifications: [
+                          ...(notification?.homescreen ?? []),
+                          ...notifications,
+                        ],
+                      }),
+                    "Sign in to view notifications."
+                  )
+                }
+                accessibilityRole="button"
+                accessibilityLabel="Notifications"
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                style={styles.headerIconHit}
+              >
+                <Icon name="notifications" size={24} color="#fff" />
+              </TouchableOpacity>
             </View>
           </View>
         </View>
@@ -764,7 +800,7 @@ export default function DashboardScreen({ navigation }) {
                   <TouchableOpacity
                     key={index}
                     style={styles.menuItem}
-                    onPress={() => navigation.navigate(item.path)}
+                    onPress={() => handleModuleNavigation(item.path)}
                   >
                     <Icon name={item.icon} size={24} color="#000" />
                     <Text style={styles.menuText}>{item.label}</Text>
@@ -773,41 +809,6 @@ export default function DashboardScreen({ navigation }) {
               </View>
 
               <View style={styles.quickActionsWrapper}>
-                {/* Row 1 */}
-                <View style={styles.quickActionRow}>
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon
-                        name="chatbubble-ellipses"
-                        size={20}
-                        color="#D4AF37" // Yellow-gold
-                      />
-                      <Text style={styles.quickActionText}>
-                        Ask astrologers anything
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon
-                        name="leaf"
-                        size={20}
-                        color="#28A745" // Green
-                      />
-                      <Text style={styles.quickActionText}>
-                        Spiritual services, sorted
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
                 {/* Featured Temples */}
                 {featuredTemples.length > 0 && (
                   <View style={styles.section}>
@@ -860,40 +861,6 @@ export default function DashboardScreen({ navigation }) {
                   </View>
                 )}
 
-                {/* Row 2 */}
-                <View style={styles.quickActionRow}>
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon
-                        name="card-outline"
-                        size={20}
-                        color="#007AFF" // Blue
-                      />
-                      <Text style={styles.quickActionText}>
-                        Explore EMI options
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon
-                        name="pricetag-outline"
-                        size={20}
-                        color="#D63384" // Pink/Purple
-                      />
-                      <Text style={styles.quickActionText}>
-                        List and sell fast
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
                 {/* Latest Jewellery */}
                 {latestJewellery.length > 0 && (
                   <View style={styles.section}>
@@ -949,31 +916,6 @@ export default function DashboardScreen({ navigation }) {
                   </View>
                 )}
 
-                {/* ❤️ Matrimony Capsules */}
-                <View style={styles.quickActionRow}>
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon name="heart" size={20} color="#dc3545" />
-                      <Text style={styles.quickActionText}>Find Matches</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon name="person-add" size={18} color="#17a2b8" />
-                      <Text style={styles.quickActionText}>
-                        Create Matrimony Profile
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
                 {/* 💌 Slider: Featured Profiles */}
                 {matrimonyProfiles.length > 0 && (
                   <View style={styles.section}>
@@ -981,7 +923,7 @@ export default function DashboardScreen({ navigation }) {
                       <Text style={styles.sectionTitle}>
                         Featured Matrimony Profiles
                       </Text>
-                      <TouchableOpacity onPress={() => navigation.navigate("Matrimony")}>
+                      <TouchableOpacity onPress={() => handleModuleNavigation("Matrimony")}>
                         <Text style={styles.seeAll}>Explore &gt;</Text>
                       </TouchableOpacity>
                     </View>
@@ -998,12 +940,16 @@ export default function DashboardScreen({ navigation }) {
                             activeOpacity={0.7}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             onPress={() => {
-                              navigation.navigate("Matrimony", {
-                                screen: "MatrimonyViewUser",
-                                params: {
-                                  userId: item.userId || item._id,
-                                },
-                              });
+                              handleAccountAction(
+                                () =>
+                                  navigation.navigate("Matrimony", {
+                                    screen: "MatrimonyViewUser",
+                                    params: {
+                                      userId: item.userId || item._id,
+                                    },
+                                  }),
+                                "Sign in to view matrimony profiles."
+                              );
                             }}
                             style={{ marginHorizontal: 6 }}
                           >
@@ -1022,87 +968,6 @@ export default function DashboardScreen({ navigation }) {
                               <Text style={styles.profileDetails}>
                                 {item.details}
                               </Text>
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                        showsHorizontalScrollIndicator={false}
-                      />
-                    )}
-                  </View>
-                )}
-
-                {/* --- B2C Quick Actions --- */}
-                <View style={styles.quickActionRow}>
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon name="bag-check" size={20} color="#0D6EFD" />
-                      <Text style={styles.quickActionText}>
-                        Verified Sellers
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity 
-                    style={styles.quickAction}
-                    onPress={() => Alert.alert("Coming Soon", "This feature will be available soon!")}
-                  >
-                    <View style={styles.quickActionContent}>
-                      <Icon name="flash-outline" size={20} color="#DC3545" />
-                      <Text style={styles.quickActionText}>Today's Offers</Text>
-                    </View>
-                  </TouchableOpacity>
-                </View>
-
-                {/* --- Featured B2C Products Slider --- */}
-                {b2cProducts.length > 0 && (
-                  <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>Top B2C Picks</Text>
-                      <TouchableOpacity onPress={() => navigation.navigate("B2C")}>
-                        <Text style={styles.seeAll}>see all &gt;</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {loadingFeatured ? (
-                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
-                    ) : (
-                      <FlatList
-                        horizontal
-                        nestedScrollEnabled={true}
-                        data={b2cProducts}
-                        keyExtractor={(item, index) => item._id || index.toString()}
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            onPress={() => {
-                              navigation.navigate("B2C", {
-                                screen: "EachListing",
-                                params: {
-                                  itemId: item._id,
-                                  item: item,
-                                },
-                              });
-                            }}
-                            style={{ marginRight: 10 }}
-                          >
-                            <View style={styles.card} pointerEvents="box-none">
-                              {item.image ? (
-                                <Image
-                                  source={{ uri: item.image }}
-                                  style={styles.cardImage}
-                                />
-                              ) : (
-                                <View style={[styles.cardImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
-                                  <Icon name="image-outline" size={30} color="#999" />
-                                </View>
-                              )}
-                              <Text style={styles.cardTitle}>{item.title}</Text>
-                              {item.subtitle && (
-                                <Text style={styles.cardSubtitle}>{item.subtitle}</Text>
-                              )}
                             </View>
                           </TouchableOpacity>
                         )}
@@ -1133,8 +998,8 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     right: 0,
-    zIndex: 0,
-    elevation: 4,
+    zIndex: 10,
+    elevation: 8,
     paddingBottom: 18,
     // marginBottom: 20,
   },
@@ -1156,14 +1021,35 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontWeight: "bold",
     marginLeft: 12,
-    fontSize: 20,
+    flex: 1,
+  },
+  loginButton: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    marginRight: 8,
+    justifyContent: "center",
+    alignItems: "center",
+    minHeight: 32,
+  },
+  loginButtonText: {
+    color: YELLOW_COLOR,
+    fontWeight: "600",
+    fontSize: 14,
+    lineHeight: 18,
   },
   headerIcons: {
     flexDirection: "row",
+    alignItems: "center",
     marginLeft: "auto",
   },
-  icon: {
-    marginHorizontal: 10,
+  headerIconHit: {
+    minWidth: 44,
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    marginHorizontal: 4,
   },
   scrollWrapper: {
     flex: 1,
@@ -1236,38 +1122,6 @@ const styles = StyleSheet.create({
   quickActionsWrapper: {
     paddingHorizontal: 12,
     marginTop: 5,
-  },
-
-  quickActionRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-    marginTop: 10,
-  },
-
-  quickAction: {
-    backgroundColor: "white",
-    paddingVertical: 10,
-    paddingHorizontal: 4,
-    borderRadius: 30,
-    width: "49%",
-  },
-
-  quickActionContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-evenly",
-    flexWrap: "nowrap",
-  },
-
-  quickActionText: {
-    fontSize: 14,
-    marginLeft: 2,
-    color: "#000",
-    flexShrink: 1,
-    textAlign: "center",
-    lineHeight: 20,
-    fontWeight: "500",
   },
 
   section: {

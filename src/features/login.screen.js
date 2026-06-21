@@ -22,10 +22,9 @@ import {
   LoginInputField,
 } from "../styles/prelogin.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { ErrorToggle, IsBttnloading, login } from "../store/user";
+import { ErrorToggle, IsBttnloading, login, enterGuestMode } from "../store/user";
 import { useDispatch, useSelector } from "react-redux";
 import Theme from "../styles/theme";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASEAPIURL } from "../infrastructure/constants";
 const styles = StyleSheet.create({
   logo: {
@@ -114,25 +113,6 @@ export default function LoginScreen({ navigation }) {
  
  
 
-
-   const logAsyncStorageData = async () => {
-    try {
-     
-
-      const allKeys = await AsyncStorage.getAllKeys();
-      console.log("All Keys in AsyncStorage: ", allKeys);
-      for (const key of allKeys) {
-        const value = await AsyncStorage.getItem(key);
-        console.log(`Key: ${key}, Value: ${value}`);
-      }
-    } catch (error) {
-      console.error("Error reading AsyncStorage: ", error);
-    }
-  };
-  logAsyncStorageData();
-
-  console.log("BASEAPIURL: ", BASEAPIURL);
-  
 
   return (
     <SafeArea>
@@ -243,6 +223,14 @@ export default function LoginScreen({ navigation }) {
               )}
             </Text>
           </FormButton>
+          <TouchableOpacity
+            onPress={() => dispatch(enterGuestMode())}
+            style={{ marginTop: 16, alignItems: "center" }}
+          >
+            <Text style={{ color: Theme.themeColor, fontSize: 16, fontWeight: "600" }}>
+              Continue without account
+            </Text>
+          </TouchableOpacity>
         </FormSection>
 
         <BottomText style={{ marginTop: 30, marginBottom: 20 }}>

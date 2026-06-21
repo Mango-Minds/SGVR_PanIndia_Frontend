@@ -11,11 +11,13 @@ import {
   TextInput,
   ActivityIndicator,
   StyleSheet,
+  Pressable,
+  Platform,
 } from "react-native";
 import { decode } from "base-64";
 import { TopText } from "../../styles/social.styles";
 import Theme from "../../styles/theme";
-import { Card, IconButton } from "react-native-paper";
+import { Card } from "react-native-paper";
 import { TouchableOpacity, ScrollView } from "react-native";
 // import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
@@ -31,6 +33,14 @@ import { BASEAPIURL, BASEIMGURL } from "../../infrastructure/constants";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 const ChatHome = ({ navigation }) => {
+  const goBack = () => {
+    if (navigation.canGoBack?.()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate("Main");
+    }
+  };
+
   // get userdata for apis
   const token = useSelector((state) => state.user.token);
   const tokenPayload = token.split(".")[1];
@@ -152,11 +162,27 @@ const ChatHome = ({ navigation }) => {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
+    <SafeAreaView
+      style={{ flex: 1, backgroundColor: "#fff" }}
+      edges={["top", "left", "right"]}
+    >
       <View style={styles.headerContainer}>
         <View style={styles.headerLeft}>
-          <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
-          <Text style={styles.headerTitle}>Chats</Text>
+          <Text style={styles.headerTitle} pointerEvents="none">
+            Chats
+          </Text>
+          <Pressable
+            onPress={goBack}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+            style={({ pressed }) => [
+              styles.backButton,
+              pressed && Platform.OS === "ios" && { opacity: 0.6 },
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+          >
+            <Ionicons name="arrow-back" size={24} color="#111" />
+          </Pressable>
         </View>
 
         <View style={styles.headerRight}>
@@ -221,7 +247,7 @@ const ChatHome = ({ navigation }) => {
           ))}
         </View>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -232,21 +258,37 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: 16,
+    paddingTop: 12,
+    paddingHorizontal: 16,
+    paddingBottom: 10,
     backgroundColor: "#f8f8f8",
     borderBottomWidth: 1,
     borderBottomColor: "#e0e0e0",
-    paddingBottom:10,
   },
   headerLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flex: 1,
+    marginRight: 8,
+    minHeight: 44,
+    justifyContent: "center",
+    position: "relative",
+  },
+  backButton: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    minWidth: 44,
+    justifyContent: "center",
+    alignItems: "flex-start",
+    paddingRight: 8,
+    zIndex: 10,
   },
   headerTitle: {
     color: Theme.themeColor,
     fontSize: 20,
     fontWeight: "bold",
-    marginLeft: 8,
+    marginLeft: 40,
+    flexShrink: 1,
   },
   headerRight: {
     flexDirection: "row",

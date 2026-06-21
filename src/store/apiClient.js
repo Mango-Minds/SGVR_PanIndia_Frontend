@@ -73,11 +73,13 @@ apiClient.interceptors.response.use(
       const refreshToken = await AsyncStorage.getItem("refresh_token");
       
       if (!refreshToken) {
-        console.error("No refresh token found, logging out...");
+        const storedToken = await AsyncStorage.getItem("token");
         isRefreshing = false;
         processQueue(error, null);
-        // Dispatch logout action to clear Redux state and navigate to login screen
-        store.dispatch(logout());
+        // Guests browsing without a session should not be logged out on 401
+        if (storedToken) {
+          store.dispatch(logout());
+        }
         return Promise.reject(error);
       }
       

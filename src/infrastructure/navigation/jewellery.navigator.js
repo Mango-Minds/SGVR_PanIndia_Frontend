@@ -90,19 +90,24 @@ import EditStockItemScreen from "../../features/jewellery/EditStockItemScreen";
 import StockItemDetailScreen from "../../features/jewellery/StockItemDetailScreen";
 import ShopEventCreate from "../../features/jewellery/ShopEventCreate";
 import ShopEvents from "../../features/jewellery/ShopEvents";
+import DirectoryScreen from "../../features/jewellery/DirectoryScreen";
 
 const Stack = createStackNavigator();
 
+const EMPTY_USER_TYPES = [];
+
 export const JewelleryStackNavigator = () => {
-  const userType = useSelector((state) => state.user.user?.userType || []);
+  const userType = useSelector((state) => state.user.user?.userType ?? EMPTY_USER_TYPES);
   const user = useSelector((state) => state.user.user);
+  const isGuest = useSelector((state) => state.user.isGuest);
   console.log("Jewellery Navigator - logged in user data", user);
   console.log("Jewellery Navigator - isJewelryOnboarded:", user?.isJewelryOnboarded);
   
-  // Check onboarding status first
   let initialRouteName = "OnboardModuleForm";
-  
-  if (user?.isJewelryOnboarded === true) {
+
+  if (isGuest) {
+    initialRouteName = "HomeScreen";
+  } else if (user?.isJewelryOnboarded === true) {
     // Use new HomeScreen as default
     initialRouteName = "HomeScreen";
 
@@ -276,6 +281,10 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="EditStockItemScreen" component={EditStockItemScreen} />
       <Stack.Screen name="ShopEventCreate" component={ShopEventCreate} />
       <Stack.Screen name="ShopEvents" component={ShopEvents} />
+      <Stack.Screen name="VendorsScreen" component={DirectoryScreen} />
+      <Stack.Screen name="WorkersScreen" component={DirectoryScreen} />
+      <Stack.Screen name="DesignersScreen" component={DirectoryScreen} />
+      <Stack.Screen name="GemologistScreen" component={DirectoryScreen} />
 
       {/* Onboarding Screen */}
       <Stack.Screen name="OnboardModuleForm">

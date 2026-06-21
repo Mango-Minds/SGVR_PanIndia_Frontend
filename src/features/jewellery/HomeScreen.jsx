@@ -14,10 +14,14 @@ import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import goldSilverRatesService from '../../services/goldSilverRates.service';
+import { useSelector, useDispatch } from 'react-redux';
+import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { token, isGuest } = useSelector((state) => state.user);
   const [activeTab, setActiveTab] = useState('home');
 
   // Update active tab when screen is focused
@@ -57,6 +61,17 @@ const HomeScreen = () => {
     },
   ];
 
+  const handleCategoryPress = (screen, message) => {
+    requireAuth({
+      token,
+      isGuest,
+      dispatch,
+      navigation,
+      onAuthed: () => navigation.navigate(screen),
+      message,
+    });
+  };
+
   // Category icons configuration
   const categories = [
     {
@@ -71,28 +86,28 @@ const HomeScreen = () => {
       name: 'Vendors',
       icon: 'person',
       color: jewelleryColors.categoryBlue,
-      onPress: () => navigation.navigate('VendorsScreen'),
+      onPress: () => handleCategoryPress('VendorsScreen', 'Sign in to view vendors.'),
     },
     {
       key: 'workers',
       name: 'Workers',
       icon: 'people',
       color: jewelleryColors.categoryOrange,
-      onPress: () => navigation.navigate('WorkersScreen'),
+      onPress: () => handleCategoryPress('WorkersScreen', 'Sign in to view workers.'),
     },
     {
       key: 'designers',
       name: 'Designers',
       icon: 'star',
       color: jewelleryColors.categoryPurple,
-      onPress: () => navigation.navigate('DesignersScreen'),
+      onPress: () => handleCategoryPress('DesignersScreen', 'Sign in to view designers.'),
     },
     {
       key: 'gemologist',
       name: 'Gemologist',
       icon: 'diamond',
       color: jewelleryColors.categoryTeal,
-      onPress: () => navigation.navigate('GemologistScreen'),
+      onPress: () => handleCategoryPress('GemologistScreen', 'Sign in to view gemologists.'),
     },
   ];
 
@@ -127,20 +142,15 @@ const HomeScreen = () => {
     setActiveTab(tab);
     switch (tab) {
       case 'home':
-        // Navigate to main Dashboard from jewelry module home page
         navigation.navigate('Dashboard');
         break;
       case 'search':
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;

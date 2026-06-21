@@ -47,19 +47,19 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTranslation } from "react-i18next";
 const TemplePanditDetails = ({ route, navigation }) => {
   const Navigation = useNavigation();
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
+  const { user, token } = useSelector((state) => state.user);
+  const tokenPayload = token?.split(".")?.[1];
   const { t } = useTranslation();
-  const decodedPayload = JSON.parse(decode(tokenPayload));
-  console.log(decodedPayload);
-  const userId = decodedPayload.id;
-  console.log("outeruser", outeruser);
-  const { user } = useSelector((state) => state.user);
+  const decodedPayload = tokenPayload ? JSON.parse(decode(tokenPayload)) : null;
+  const userId = decodedPayload?.id;
   const outeruser = useSelector((state) => state.user);
   const isFocused = useIsFocused();
-
-
-  const userType = useSelector((state) => state.user.user.userType);
+  const rawUserType = user?.userType;
+  const userType = Array.isArray(rawUserType)
+    ? rawUserType
+    : rawUserType
+      ? [rawUserType]
+      : [];
   const { panditinfo } = route.params;
   console.log("Pandit info: ", panditinfo);
   const [loadingDates, setLoadingDates] = useState(true);

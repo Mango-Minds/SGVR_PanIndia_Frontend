@@ -315,14 +315,6 @@ export const fetchProducts = async (
     const token = await AsyncStorage.getItem("token");
     const userLanguage = (await AsyncStorage.getItem("user-language")) || "en";
 
-    if (!token) {
-      console.error("❌ Bearer token not found");
-      Alert.alert("Error", "Authentication token missing.");
-      return;
-    }
-
-    console.log("✅ Token and userLanguage fetched:", { token, userLanguage });
-
     const queryParams = new URLSearchParams();
 
     selectedFiltersArray.forEach((filter) => {
@@ -378,11 +370,7 @@ export const fetchProducts = async (
 
     setLoadingAnimation(true);
 
-    const response = await apiClient.get(url, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(url);
 
     console.log("✅ API response received:", response?.data);
 
@@ -487,15 +475,8 @@ export const fetchAllProducts = async (
   selectedFiltersArray = []
 ) => {
   try {
-    const token = await AsyncStorage.getItem("token");
     const selectedLanguage =
       (await AsyncStorage.getItem("user-language")) || "en";
-
-    if (!token) {
-      console.error("Bearer token not found");
-      Alert.alert("Error", "Authentication token missing.");
-      return [];
-    }
 
     const queryParams = new URLSearchParams();
 
@@ -522,11 +503,7 @@ export const fetchAllProducts = async (
     const queryString = queryParams.toString();
     console.log("Fetching products with query:", queryString);
 
-    const response = await apiClient.get(`/listings?${queryString}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(`/listings?${queryString}`);
 
     let listings = response.data?.listings || [];
 
@@ -576,22 +553,10 @@ export const fetchAllProducts = async (
 // };
 export const fetchSingleProduct = async (itemId) => {
   try {
-    const token = await AsyncStorage.getItem("token");
     const selectedLanguage =
       (await AsyncStorage.getItem("user-language")) || "en";
 
-    if (!token) {
-      console.error("Bearer token not found");
-      Alert.alert("Error", "Authentication token is missing.");
-      return null;
-    }
-
-    // Fetch product by ID
-    const response = await apiClient.get(`/listings/${itemId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(`/listings/${itemId}`);
 
     let product = response.data?.listing;
 

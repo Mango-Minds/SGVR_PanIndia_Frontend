@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import SocialScreen from "../../features/social.screen";
 import NotificationScreen from "../../components/notification/NotificationScreen";
@@ -25,6 +25,7 @@ import PostCreated from "../../features/SocialMedia/PostCreated.screen";
 import MessageScreenNew from "../../features/SocialMediaNew/MessageScreenNew.jsx";
 
 import BottomNavigation from "../../features/SocialMediaNew/new.social.screen.js";
+import { useNavigation } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Badge } from "react-native-paper";
@@ -60,7 +61,24 @@ const Tab = createBottomTabNavigator();
 
 const Stack = createStackNavigator();
 
-export const SocialMediaStackNavigator = () => (
+export const SocialMediaStackNavigator = () => {
+  const token = useSelector((state) => state.user.token);
+  const navigation = useNavigation();
+
+  useEffect(() => {
+    if (!token) {
+      const parent = navigation.getParent();
+      if (parent) {
+        parent.navigate("Main");
+      }
+    }
+  }, [token, navigation]);
+
+  if (!token) {
+    return null;
+  }
+
+  return (
   <Stack.Navigator   screenOptions={{ headerShown: false, gestureEnabled: true }} >
     {/* <Stack.Screen name="MainNew" component={BottomNavigation} /> */}
          <Stack.Screen name="SocialHomeScreen" component={SocialHomeScreen} options={{gestureEnabled: true}} />
@@ -114,7 +132,8 @@ export const SocialMediaStackNavigator = () => (
     <Stack.Screen name="FollowersFollowing" component={FollowersFollowing} />
     <Stack.Screen name="MomentViewer" component={MomentViewer} options={{ headerShown: false }} />
   </Stack.Navigator>
-);
+  );
+};
 
 export const SocialMediaNavigator = () => {
   const { notification } = useSelector((state) => state.user);

@@ -1,5 +1,12 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../store/apiClient";
+import publicApiClient from "../store/publicApiClient";
 import { BASEAPIURL } from "../infrastructure/constants";
+
+async function getBrowseClient() {
+  const token = await AsyncStorage.getItem("token");
+  return token ? apiClient : publicApiClient;
+}
 
 export const getShopData = async () => {
   const res = await apiClient.get(
@@ -91,7 +98,8 @@ export const getShops = async (params = {}) => {
   });
   
   try {
-    const res = await apiClient.get(
+    const client = await getBrowseClient();
+    const res = await client.get(
       `/vendor/vendor-for-user?module=store&role=shop&${queryParams}`
     );
     return res.data;
@@ -103,7 +111,8 @@ export const getShops = async (params = {}) => {
 
 export const getShopDetails = async (id) => {
   try {
-    const res = await apiClient.get(`/vendor/vendor-for-user?id=${id}`);
+    const client = await getBrowseClient();
+    const res = await client.get(`/vendor/vendor-for-user?id=${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching shop details:', error);
@@ -636,4 +645,31 @@ export const deleteShopEvent = async (eventId) => {
     throw error;
   }
 };
+
+const fetchJewelryDirectory = async (role, params = {}) => {
+  const { page = 1, limit = 100, location } = params;
+  const queryParams = new URLSearchParams({
+    module: 'store',
+    role,
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(location && { location }),
+  });
+
+  const client = await getBrowseClient();
+  const res = await client.get(`/vendor/vendor-for-user?${queryParams}`);
+  return res.data;
+};
+
+export const getVendorsList = async (params) =>
+  fetchJewelryDirectory('vendor', params);
+
+export const getWorkersList = async (params) =>
+  fetchJewelryDirectory('worker', params);
+
+export const getDesignersList = async (params) =>
+  fetchJewelryDirectory('jewelryDesigner', params);
+
+export const getGemologistsList = async (params) =>
+  fetchJewelryDirectory('gemologist', params);
 

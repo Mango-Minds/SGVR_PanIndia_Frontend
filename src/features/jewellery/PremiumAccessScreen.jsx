@@ -8,15 +8,19 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useDispatch, useSelector } from 'react-redux';
 import PremiumPlanCard from '../../components/Jewellery/PremiumPlanCard';
 import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const PremiumAccessScreen = () => {
   const navigation = useNavigation();
+  const dispatch = useDispatch();
+  const { token, isGuest } = useSelector((state) => state.user);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [activeBottomTab, setActiveBottomTab] = useState('profile');
 
@@ -97,9 +101,16 @@ const PremiumAccessScreen = () => {
   };
 
   const handleSubscribe = () => {
-    // Navigate to payment/subscription flow
-    console.log('Subscribe to', selectedPlan, 'plan');
-    // navigation.navigate('PaymentScreen', { plan: selectedPlan });
+    requireAuth({
+      token,
+      isGuest,
+      dispatch,
+      navigation,
+      message: 'Sign in to subscribe to premium access.',
+      onAuthed: () => {
+        console.log('Subscribe to', selectedPlan, 'plan');
+      },
+    });
   };
 
   const handleTabBarChange = (tab) => {
@@ -112,13 +123,9 @@ const PremiumAccessScreen = () => {
         navigation.navigate('BrowseScreen');
         break;
       case 'profile':
-        navigation.navigate('ProfileScreen');
-        break;
       case 'message':
-        navigation.navigate('ChatScreen');
-        break;
       case 'notifications':
-        navigation.navigate('JewelleryNotifications');
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
         break;
       default:
         break;

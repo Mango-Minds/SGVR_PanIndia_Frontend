@@ -24,26 +24,27 @@ import { useIsFocused } from "@react-navigation/native";
 // import FilterMenu from "./FilterMenu"; // Commented out as filter component is disabled
 import Theme from "../../styles/theme";
 import apiClient from "../../store/apiClient";
+import publicApiClient from "../../store/publicApiClient";
 import { debounce } from "lodash";
   import { useTranslation } from "react-i18next";
 
 const AllProductsScreen = ({ route }) => {
   const { userType, ownerId, userId, shopId, loggedInShop } = route.params;
+  const { user, token, isGuest } = useSelector((state) => state.user);
+  const rawUserType = user?.userType;
+  const currentUserType = Array.isArray(rawUserType)
+    ? rawUserType
+    : rawUserType
+      ? [rawUserType]
+      : [];
  const { t } = useTranslation();
   const isFocused = useIsFocused();
-
-  const user = useSelector((state) => state.user.user);
 
   const navigation = useNavigation();
   const [isloading, setIsloading] = useState(true);
 
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
-
-  const token = useSelector((state) => state.user.token);
-  const tokenPayload = token.split(".")[1];
-
-  const decodedPayload = JSON.parse(decode(tokenPayload));
 
   const [selectedFiltersArray, setSelectedFiltersArray] = useState([]);
 
@@ -156,7 +157,8 @@ const AllProductsScreen = ({ route }) => {
     try {
       setIsloading(true); // Ensure loading starts
   
-      const { data } = await apiClient.get("/products");
+      const client = isGuest || !token ? publicApiClient : apiClient;
+      const { data } = await client.get("/products");
   
       const filteredProducts = data.filter(
         (product) => product.shop._id === shopId
@@ -193,7 +195,7 @@ const AllProductsScreen = ({ route }) => {
             {t("AllProducts")}
           </TopText>
         </View>
-        {user.userType.includes("templeShopOwner") && (
+        {currentUserType.includes("templeShopOwner") && (
           <IconButton
             icon="plus"
             style={{ marginLeft: "auto", marginRight: "auto" }}
@@ -235,6 +237,7 @@ const AllProductsScreen = ({ route }) => {
                     onPress={() => {
                       navigation.navigate("EachProduct", {
                         productId: product._id,
+                        product: product,
                       });
                     }}
                   >

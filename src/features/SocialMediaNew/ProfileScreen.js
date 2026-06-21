@@ -638,13 +638,6 @@ export default function ProfileNewScreen() {
           </View>
         );
 
-      case "photos":
-        return (
-          <View style={styles.photosTabContent}>
-            <Text style={styles.comingSoonText}>{t("comingSoon")}</Text>
-          </View>
-        );
-
       default:
         return null;
     }
@@ -1037,7 +1030,7 @@ export default function ProfileNewScreen() {
               )}
             </View>
             <View style={styles.tabContainer}>
-              {["posts", "about", "photos"].map((tab) => (
+              {["posts", "about"].map((tab) => (
                 <TouchableOpacity
                   key={tab}
                   style={[
@@ -1431,17 +1424,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "600",
-  },
-  photosTabContent: {
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 200,
-  },
-  comingSoonText: {
-    fontSize: 18,
-    color: "#6c757d",
-    textAlign: "center",
   },
   resumeItem: {
     flexDirection: "row",
