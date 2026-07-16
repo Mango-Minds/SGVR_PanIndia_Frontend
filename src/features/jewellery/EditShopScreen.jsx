@@ -20,11 +20,37 @@ import { Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { setLoadingInBtn } from '../../store/user';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
-import { BASEAPIURL, BASEIMGURL } from '../../infrastructure/constants';
+import { BASEAPIURL } from '../../infrastructure/constants';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { getShopDetails } from '../../services/jewellery.services';
+import { resolveImageUrl } from '../../utils/mapJewelryProduct';
 import { statesData } from '../../assets/data/statesAndCities';
 import SelectDropdown from 'react-native-select-dropdown';
+
+const buildImageFormPart = (asset, fallbackName = 'image.jpg') => {
+  const uri = asset?.uri;
+  if (!uri) return null;
+
+  const rawName =
+    asset.fileName ||
+    asset.name ||
+    uri.split('/').pop() ||
+    fallbackName;
+  const safeName = rawName.includes('.') ? rawName : fallbackName;
+  const extMatch = /\.(\w+)$/.exec(safeName);
+  const ext = (extMatch ? extMatch[1] : 'jpg').toLowerCase();
+  const normalizedExt = ext === 'jpg' ? 'jpeg' : ext;
+  const type =
+    asset.mimeType ||
+    asset.type ||
+    (normalizedExt ? `image/${normalizedExt}` : 'image/jpeg');
+
+  return {
+    uri,
+    name: safeName.replace(/\s+/g, '_'),
+    type: type === 'image/jpg' ? 'image/jpeg' : type,
+  };
+};
 
 const EditShopScreen = () => {
   const route = useRoute();
@@ -52,10 +78,8 @@ const EditShopScreen = () => {
   const [profileImage, setProfileImage] = useState(null);
   const [existingProfileImage, setExistingProfileImage] = useState(null);
 
-  // Get states list for dropdown
   const statesList = Object.keys(statesData || {});
-  
-  // Get cities for selected state
+
   const getCitiesForState = () => {
     if (!shopDetails.state || !statesData) return [];
     return statesData[shopDetails.state] || [];
@@ -71,7 +95,7 @@ const EditShopScreen = () => {
     try {
       setLoading(true);
       const shop = await getShopDetails(shopId);
-      
+
       setShopDetails({
         name: shop.name || shop.shopName || '',
         description: shop.description || '',
@@ -81,21 +105,29 @@ const EditShopScreen = () => {
         pincode: shop.pincode || '',
       });
 
-      // Set existing profile image
-      if (shop.image || shop.profileImage) {
-        const imgUrl = shop.image || shop.profileImage;
-        setExistingProfileImage(
-          imgUrl.startsWith('http') ? imgUrl : `${BASEIMGURL}${imgUrl}`
-        );
-      }
+      const profileCandidate =
+        shop.image ||
+        shop.profileImage ||
+        shop.owner?.image ||
+        (Array.isArray(shop.images) && shop.images.length > 0 ? shop.images[0] : null);
 
-      // Set existing gallery images
-      if (shop.images && shop.images.length > 0) {
-        const images = shop.images.map((img) => ({
-          uri: img.startsWith('http') ? img : `${BASEIMGURL}${img}`,
-          isExisting: true,
-        }));
-        setExistingImages(images);
+      const profileUri = resolveImageUrl(profileCandidate);
+      setExistingProfileImage(profileUri);
+
+      if (Array.isArray(shop.images) && shop.images.length > 0) {
+        setExistingImages(
+          shop.images
+            .filter(Boolean)
+            .map((img) => ({
+              // Keep original path/URL for saving back to API
+              originalUri: img,
+              uri: resolveImageUrl(img),
+              isExisting: true,
+            }))
+            .filter((img) => img.uri)
+        );
+      } else {
+        setExistingImages([]);
       }
     } catch (error) {
       console.error('Error fetching shop:', error);
@@ -105,42 +137,54 @@ const EditShopScreen = () => {
     }
   };
 
+  const ensureMediaPermission = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Please allow photo library access to update images.');
+      return false;
+    }
+    return true;
+  };
+
   const pickProfileImage = async () => {
+    if (!(await ensureMediaPermission())) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 1,
+      quality: 0.85,
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]) {
       setProfileImage(result.assets[0]);
     }
   };
 
   const pickGalleryImage = async () => {
+    if (!(await ensureMediaPermission())) return;
+
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
-      quality: 1,
+      quality: 0.85,
     });
 
-    if (!result.canceled && result.assets[0]) {
+    if (!result.canceled && result.assets?.[0]) {
       setSelectedImages((prev) => [...prev, result.assets[0]]);
     }
   };
 
-  const removeGalleryImage = (index, isExisting) => {
-    if (isExisting) {
-      setExistingImages((prev) => prev.filter((_, i) => i !== index));
+  const removeGalleryImage = (image) => {
+    if (image.isExisting) {
+      setExistingImages((prev) => prev.filter((img) => img.originalUri !== image.originalUri));
     } else {
-      setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+      setSelectedImages((prev) => prev.filter((img) => img.uri !== image.uri));
     }
   };
 
   const handleUpdateShop = async () => {
-    // Validation
     if (!shopDetails.name || !shopDetails.address || !shopDetails.city || !shopDetails.state) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -157,37 +201,38 @@ const EditShopScreen = () => {
       formData.append('state', shopDetails.state);
       formData.append('pincode', shopDetails.pincode || '');
 
-      // Add profile image if new one is selected
-      if (profileImage) {
-        formData.append('image', {
-          uri: profileImage.uri,
-          name: 'profile.jpg',
-          type: 'image/jpeg',
-        });
+      // New shop profile image (shop.image)
+      if (profileImage?.uri) {
+        const imagePart = buildImageFormPart(profileImage, 'profile.jpg');
+        if (imagePart) {
+          formData.append('image', imagePart);
+        }
       }
 
-      // Add existing gallery images (send full URL as stored in database)
+      // Keep remaining existing gallery images using original stored URLs/paths
       existingImages.forEach((image) => {
-        // Send the image URL as-is (could be S3 URL or relative path)
-        // Backend will handle both cases
-        formData.append('images', image.uri);
+        if (image.originalUri) {
+          formData.append('images', image.originalUri);
+        }
       });
 
-      // Add new gallery images
+      // New gallery uploads
       selectedImages.forEach((image, index) => {
-        formData.append('images', {
-          uri: image.uri,
-          name: `gallery_${index}.jpg`,
-          type: 'image/jpeg',
-        });
+        const imagePart = buildImageFormPart(image, `gallery_${index}.jpg`);
+        if (imagePart) {
+          formData.append('images', imagePart);
+        }
       });
 
-      // Update shop using vendor endpoint
+      // Explicitly clear gallery when user removed all and added none
+      if (existingImages.length === 0 && selectedImages.length === 0) {
+        formData.append('images', '');
+      }
+
       const response = await fetch(`${BASEAPIURL}/vendor/vendor-for-user?id=${shopId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
-          // Don't set Content-Type - let fetch set it automatically with boundary
         },
         body: formData,
       });
@@ -197,8 +242,9 @@ const EditShopScreen = () => {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
-          errorData.message || 
-          'Failed to update shop. Please ensure the shop update endpoint is available in the backend.'
+          errorData.message ||
+            errorData.msg ||
+            'Failed to update shop. Please try again.'
         );
       }
 
@@ -209,7 +255,7 @@ const EditShopScreen = () => {
           {
             text: 'OK',
             onPress: () => {
-              navigation.goBack();
+              navigation.navigate('ShopDetailScreen', { shopId });
             },
           },
         ],
@@ -252,7 +298,6 @@ const EditShopScreen = () => {
             keyboardShouldPersistTaps="handled"
           >
             <View style={styles.container}>
-              {/* Profile Image */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Shop Profile Image</Text>
                 <TouchableOpacity
@@ -264,7 +309,9 @@ const EditShopScreen = () => {
                   ) : (
                     <View style={styles.profileImagePlaceholder}>
                       <Icon name="store" size={40} color={jewelleryColors.textSecondary} />
-                      <Text style={styles.profileImageText} numberOfLines={2}>Add Profile Image</Text>
+                      <Text style={styles.profileImageText} numberOfLines={2}>
+                        Add Profile Image
+                      </Text>
                     </View>
                   )}
                   <View style={styles.editProfileBadge}>
@@ -273,7 +320,6 @@ const EditShopScreen = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Shop Details Form */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Shop Information</Text>
 
@@ -347,16 +393,15 @@ const EditShopScreen = () => {
                 />
               </View>
 
-              {/* Gallery Images */}
               <View style={styles.section}>
                 <Text style={styles.sectionTitle}>Gallery Images</Text>
                 <View style={styles.imageContainer}>
                   {allGalleryImages.map((image, index) => (
-                    <View key={index} style={styles.imageWrapper}>
+                    <View key={`${image.uri}-${index}`} style={styles.imageWrapper}>
                       <Image source={{ uri: image.uri }} style={styles.image} />
                       <TouchableOpacity
                         style={styles.removeButton}
-                        onPress={() => removeGalleryImage(index, image.isExisting)}
+                        onPress={() => removeGalleryImage(image)}
                       >
                         <Icon name="close" size={20} color="#FFFFFF" />
                       </TouchableOpacity>
@@ -374,7 +419,6 @@ const EditShopScreen = () => {
                 </View>
               </View>
 
-              {/* Submit Button */}
               <TouchableOpacity
                 style={styles.submitButton}
                 onPress={handleUpdateShop}
@@ -553,4 +597,3 @@ const styles = StyleSheet.create({
 });
 
 export default EditShopScreen;
-

@@ -12,6 +12,7 @@ const HeaderBar = ({
   onNotificationPress,
   onSharePress,
   onBackPress,
+  rightActions = null,
 }) => {
   const navigation = useNavigation();
 
@@ -32,12 +33,18 @@ const HeaderBar = ({
             <Icon name="arrow-back" size={24} color={jewelleryColors.text} />
           </TouchableOpacity>
         )}
-        {title && (
-          <Text style={styles.title}>{title}</Text>
-        )}
       </View>
 
+      {title ? (
+        <View style={styles.titleContainer} pointerEvents="none">
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={styles.rightSection}>
+        {rightActions}
         {showNotification && (
           <TouchableOpacity 
             onPress={onNotificationPress || (() => navigation.navigate('JewelleryNotifications'))}
@@ -59,29 +66,39 @@ const HeaderBar = ({
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     backgroundColor: jewelleryColors.bg,
+    position: 'relative',
   },
   leftSection: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    zIndex: 1,
   },
   rightSection: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-end',
     gap: spacing.sm,
+    zIndex: 1,
+  },
+  titleContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 72,
   },
   iconButton: {
     padding: spacing.xs,
   },
   title: {
     ...typography.heading3,
-    marginLeft: spacing.sm,
+    textAlign: 'center',
   },
 });
 

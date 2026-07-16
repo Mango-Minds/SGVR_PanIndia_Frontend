@@ -32,7 +32,7 @@ const PremiumPlanCard = ({
         <View style={styles.titleContainer}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.price}>
-            ${price} <Text style={styles.period}>/{period}</Text>
+            ₹{price} <Text style={styles.period}>/{period}</Text>
           </Text>
         </View>
         <TouchableOpacity onPress={handleToggle}>

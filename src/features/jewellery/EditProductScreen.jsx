@@ -28,12 +28,14 @@ const EditProductScreen = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
-  const { productId, shopId } = route.params || {};
+  const { productId, shopId, type } = route.params || {};
+  const isRequirement = type === 'requirement';
   const token = useSelector((state) => state.user.token);
   const { loadingInBtn } = useSelector((state) => state.user);
+  const apiBase = isRequirement ? 'product-requirements' : 'jewelry-products';
 
   const handleBackPress = () => {
-    if (shopId) {
+    if (shopId && !isRequirement) {
       navigation.navigate('ShopDetailScreen', { shopId });
     } else {
       navigation.goBack();
@@ -52,6 +54,8 @@ const EditProductScreen = () => {
     quality: '',
     weightPerProduct: '',
     goldAvailable: '',
+    phone: '',
+    hours: '',
   });
   const [loading, setLoading] = useState(true);
 
@@ -63,12 +67,12 @@ const EditProductScreen = () => {
     if (productId) {
       fetchProductDetails();
     }
-  }, [productId]);
+  }, [productId, isRequirement]);
 
   const fetchProductDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${BASEAPIURL}/jewelry-products/${productId}`, {
+      const response = await fetch(`${BASEAPIURL}/${apiBase}/${productId}`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -77,11 +81,16 @@ const EditProductScreen = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch product details');
+        throw new Error(
+          isRequirement
+            ? 'Failed to fetch requirement details'
+            : 'Failed to fetch product details'
+        );
       }
 
       const data = await response.json();
-      const product = data.jewelryProduct || data.data || data;
+      const product =
+        data.productRequirement || data.jewelryProduct || data.data || data;
 
       setProductDetails({
         name: product.name || '',
@@ -93,6 +102,8 @@ const EditProductScreen = () => {
         quality: product.quality || '',
         weightPerProduct: product.weightPerProduct?.toString() || '',
         goldAvailable: product.goldAvailable || '',
+        phone: product.phone || '',
+        hours: product.hours || '',
       });
 
       // Set existing images
@@ -105,7 +116,12 @@ const EditProductScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching product:', error);
-      Alert.alert('Error', 'Failed to load product details');
+      Alert.alert(
+        'Error',
+        isRequirement
+          ? 'Failed to load requirement details'
+          : 'Failed to load product details'
+      );
     } finally {
       setLoading(false);
     }
@@ -170,6 +186,12 @@ const EditProductScreen = () => {
       if (productDetails.goldAvailable) {
         formData.append('goldAvailable', productDetails.goldAvailable);
       }
+      if (productDetails.phone) {
+        formData.append('phone', productDetails.phone.trim());
+      }
+      if (productDetails.hours) {
+        formData.append('hours', productDetails.hours.trim());
+      }
 
       // Add new images
       selectedImages.forEach((image, index) => {
@@ -180,7 +202,7 @@ const EditProductScreen = () => {
         });
       });
 
-      const response = await fetch(`${BASEAPIURL}/jewelry-products/${productId}`, {
+      const response = await fetch(`${BASEAPIURL}/${apiBase}/${productId}`, {
         method: 'PATCH',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -193,15 +215,21 @@ const EditProductScreen = () => {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to update product');
+        throw new Error(
+          errorData.msg ||
+            errorData.message ||
+            (isRequirement ? 'Failed to update requirement' : 'Failed to update product')
+        );
       }
 
       const data = await response.json();
-      console.log('Product updated successfully:', data);
+      console.log('Updated successfully:', data);
 
       Alert.alert(
         'Success',
-        'Product updated successfully',
+        isRequirement
+          ? 'Product requirement updated successfully'
+          : 'Product updated successfully',
         [
           {
             text: 'OK',
@@ -215,17 +243,27 @@ const EditProductScreen = () => {
     } catch (error) {
       console.error('Error updating product:', error);
       dispatch(setLoadingInBtn(false));
-      Alert.alert('Error', error.message || 'Failed to update product');
+      Alert.alert(
+        'Error',
+        error.message ||
+          (isRequirement ? 'Failed to update requirement' : 'Failed to update product')
+      );
     }
   };
 
   if (loading) {
     return (
       <SafeAreaView style={commonStyles.container} edges={['top']}>
-        <HeaderBar showBack onBackPress={handleBackPress} />
+        <HeaderBar
+          showBack
+          title={isRequirement ? 'Edit Requirement' : 'Edit Product'}
+          onBackPress={handleBackPress}
+        />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.loadingText}>Loading product details...</Text>
+          <Text style={styles.loadingText}>
+            {isRequirement ? 'Loading requirement...' : 'Loading product details...'}
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -235,7 +273,11 @@ const EditProductScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack onBackPress={handleBackPress} />
+      <HeaderBar
+        showBack
+        title={isRequirement ? 'Edit Requirement' : 'Edit Product'}
+        onBackPress={handleBackPress}
+      />
       <Provider>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -379,6 +421,30 @@ const EditProductScreen = () => {
                   }
                 />
 
+                {isRequirement && (
+                  <>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Phone Number"
+                      placeholderTextColor={jewelleryColors.textSecondary}
+                      keyboardType="phone-pad"
+                      value={productDetails.phone}
+                      onChangeText={(text) =>
+                        setProductDetails({ ...productDetails, phone: text })
+                      }
+                    />
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Open Hours (e.g., 10:00 AM - 8:00 PM)"
+                      placeholderTextColor={jewelleryColors.textSecondary}
+                      value={productDetails.hours}
+                      onChangeText={(text) =>
+                        setProductDetails({ ...productDetails, hours: text })
+                      }
+                    />
+                  </>
+                )}
+
                 <TouchableOpacity
                   style={styles.submitButton}
                   onPress={handleUpdateProduct}
@@ -387,7 +453,9 @@ const EditProductScreen = () => {
                   {loadingInBtn ? (
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
-                    <Text style={styles.submitButtonText}>Update Product</Text>
+                    <Text style={styles.submitButtonText}>
+                      {isRequirement ? 'Update Requirement' : 'Update Product'}
+                    </Text>
                   )}
                 </TouchableOpacity>
               </View>

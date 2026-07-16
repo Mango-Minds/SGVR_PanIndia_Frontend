@@ -166,7 +166,13 @@ const DirectoryScreen = () => {
       <HeaderBar
         showBack
         title={config.title}
-        onBackPress={() => navigation.navigate('HomeScreen')}
+        onBackPress={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+            return;
+          }
+          navigation.navigate('HomeScreen');
+        }}
       />
 
       <ScrollView

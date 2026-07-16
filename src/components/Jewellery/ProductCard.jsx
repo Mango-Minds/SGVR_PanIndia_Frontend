@@ -15,11 +15,12 @@ const ProductCard = ({
   isWishlisted = false,
   onPress,
   onWishlist,
+  style,
 }) => {
   const [imageError, setImageError] = useState(false);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={[styles.card, style]} onPress={onPress} activeOpacity={0.8}>
       <View style={styles.imageContainer}>
         {!imageError && image ? (
           <Image 
@@ -35,18 +36,21 @@ const ProductCard = ({
         )}
         <TouchableOpacity
           style={styles.wishlistBtn}
-          onPress={onWishlist}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          onPress={(e) => {
+            e?.stopPropagation?.();
+            onWishlist?.(e);
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <Icon
             name={isWishlisted ? 'favorite' : 'favorite-border'}
-            size={20}
+            size={16}
             color={isWishlisted ? jewelleryColors.primary : '#999'}
           />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.content}>
+      {/* <View style={styles.content}>
         <Text style={styles.title} numberOfLines={2}>
           {title}
         </Text>
@@ -61,17 +65,16 @@ const ProductCard = ({
             <Text style={styles.rating}>{rating.toFixed(1)}</Text>
           </View>
         </View>
-      </View>
+      </View> */}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
-    margin: spacing.sm,
+    width: '100%',
     backgroundColor: jewelleryColors.bg,
-    borderRadius: 12,
+    borderRadius: 10,
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: {
@@ -85,7 +88,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     width: '100%',
-    height: 180,
+    aspectRatio: 1,
     backgroundColor: jewelleryColors.bgSecondary,
   },
   image: {
@@ -102,11 +105,11 @@ const styles = StyleSheet.create({
   },
   wishlistBtn: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    padding: spacing.xs,
+    top: spacing.xs,
+    right: spacing.xs,
+    padding: 4,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderRadius: 20,
+    borderRadius: 16,
   },
   content: {
     padding: spacing.md,

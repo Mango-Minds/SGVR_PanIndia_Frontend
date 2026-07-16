@@ -5,16 +5,18 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import PremiumPlanCard from '../../components/Jewellery/PremiumPlanCard';
-import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
+import { subscribeToPlan } from '../../services/jewellery.services';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const PremiumAccessScreen = () => {
@@ -23,9 +25,14 @@ const PremiumAccessScreen = () => {
   const { token, isGuest } = useSelector((state) => state.user);
   const [selectedPlan, setSelectedPlan] = useState('monthly');
   const [activeBottomTab, setActiveBottomTab] = useState('profile');
+  const [subscribing, setSubscribing] = useState(false);
 
   const handleBackPress = () => {
-    navigation.navigate('ShopsScreen');
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('HomeScreen');
   };
 
   // Update active tab when screen is focused
@@ -39,7 +46,7 @@ const PremiumAccessScreen = () => {
     {
       key: 'monthly',
       title: 'Monthly',
-      price: '99',
+      price: '400',
       period: 'month',
       features: [
         'Access to 100+ Verified Shops',
@@ -52,7 +59,7 @@ const PremiumAccessScreen = () => {
     {
       key: 'quarterly',
       title: 'Quarterly',
-      price: '299',
+      price: '1200',
       period: 'quarter',
       features: [
         'Access to 100+ Verified Shops',
@@ -66,7 +73,7 @@ const PremiumAccessScreen = () => {
     {
       key: 'yearly',
       title: 'Yearly',
-      price: '1999',
+      price: '2400',
       period: 'year',
       features: [
         'Access to 100+ Verified Shops',
@@ -100,7 +107,27 @@ const PremiumAccessScreen = () => {
     setSelectedPlan(planKey);
   };
 
+  const confirmAndSubscribe = async () => {
+    try {
+      setSubscribing(true);
+      await subscribeToPlan(selectedPlan);
+      Alert.alert(
+        'Subscribed',
+        'Premium access activated. You can now view shop contact details.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    } catch (err) {
+      Alert.alert(
+        'Subscription failed',
+        err?.response?.data?.msg || err?.message || 'Unable to subscribe right now.'
+      );
+    } finally {
+      setSubscribing(false);
+    }
+  };
+
   const handleSubscribe = () => {
+    const plan = plans.find((p) => p.key === selectedPlan);
     requireAuth({
       token,
       isGuest,
@@ -108,7 +135,14 @@ const PremiumAccessScreen = () => {
       navigation,
       message: 'Sign in to subscribe to premium access.',
       onAuthed: () => {
-        console.log('Subscribe to', selectedPlan, 'plan');
+        Alert.alert(
+          'Confirm Subscription',
+          `Do you want to subscribe to the ${plan?.title || selectedPlan} plan for ₹${plan?.price || ''}?`,
+          [
+            { text: 'No', style: 'cancel' },
+            { text: 'Yes', onPress: confirmAndSubscribe },
+          ]
+        );
       },
     });
   };
@@ -139,13 +173,9 @@ const PremiumAccessScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Icon */}
         <View style={styles.headerIconContainer}>
-          <CategoryIcon
-            name="Shops"
-            icon="attach-money"
-            color={jewelleryColors.primary}
-            size={80}
-            onPress={() => {}}
-          />
+          <View style={styles.rupeeIconBox}>
+            <Text style={styles.rupeeIconText}>₹</Text>
+          </View>
         </View>
 
         {/* Title and Subtitle */}
@@ -173,10 +203,18 @@ const PremiumAccessScreen = () => {
         </View>
 
         {/* Subscribe Button */}
-        <TouchableOpacity style={styles.subscribeButton} onPress={handleSubscribe}>
-          <Text style={styles.subscribeButtonText}>
-            Subscribe to {plans.find((p) => p.key === selectedPlan)?.title} Plan
-          </Text>
+        <TouchableOpacity
+          style={[styles.subscribeButton, subscribing && { opacity: 0.7 }]}
+          onPress={handleSubscribe}
+          disabled={subscribing}
+        >
+          {subscribing ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.subscribeButtonText}>
+              Subscribe to {plans.find((p) => p.key === selectedPlan)?.title} Plan
+            </Text>
+          )}
         </TouchableOpacity>
 
         {/* Trust Text */}
@@ -207,6 +245,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xl,
     marginBottom: spacing.md,
+  },
+  rupeeIconBox: {
+    width: 80,
+    height: 80,
+    borderRadius: 12,
+    backgroundColor: jewelleryColors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  rupeeIconText: {
+    color: '#FFFFFF',
+    fontSize: 36,
+    fontWeight: '700',
+    lineHeight: 42,
   },
   headerTextContainer: {
     paddingHorizontal: spacing.lg,

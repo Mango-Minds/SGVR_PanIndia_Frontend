@@ -31,7 +31,8 @@ import ReviewForm from '../../components/Jewellery/ReviewForm';
 import ReviewList from '../../components/Jewellery/ReviewList';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { getShopDetails, followUser, unfollowUser, checkFollowStatus, createShopReview, getShopReviews } from '../../services/jewellery.services';
-import { BASEAPIURL, BASEIMGURL } from '../../infrastructure/constants';
+import { BASEAPIURL } from '../../infrastructure/constants';
+import { resolveImageUrl } from '../../utils/mapJewelryProduct';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -94,22 +95,38 @@ const ShopDetailScreen = () => {
       const response = await getShopDetails(shopId);
       
       if (response) {
+        const ownerId = response.owner?._id || response.owner?.id || null;
+        const currentUserId = user?._id || user?.id;
+        const isOwner =
+          response.isOwner === true ||
+          (!!ownerId &&
+            !!currentUserId &&
+            ownerId.toString() === currentUserId.toString());
+
         // Format the response data
         const formattedData = {
           ...response,
           id: response._id || shopId,
           name: response.name || response.shopName || '',
           owner: response.owner?.name || `${response.owner?.firstName || ''} ${response.owner?.lastName || ''}`.trim() || 'Owner',
-          ownerId: response.owner?._id || response.owner?.id || null,
+          ownerId,
           rating: response.rating || 0,
           reviewCount: response.reviewCount || 0,
           description: response.description || '',
-          profileImage: response.image || response.profileImage || (response.owner?.image ? `${BASEIMGURL}${response.owner.image}` : ''),
+          profileImage:
+            resolveImageUrl(response.image) ||
+            resolveImageUrl(response.profileImage) ||
+            resolveImageUrl(response.owner?.image) ||
+            (Array.isArray(response.images) && response.images.length > 0
+              ? resolveImageUrl(response.images[0])
+              : '') ||
+            '',
           address: response.address || '',
           location: response.city || response.location || '',
           hours: response.hours || '',
+          phone: response.phone || response.owner?.phone || '',
           isVerified: response.isVerified || response.verified || false,
-          isOwner: response.isOwner || false,
+          isOwner,
           products: response.products || [],
           galleryItems: response.galleryItems || [],
         };
@@ -515,7 +532,7 @@ const ShopDetailScreen = () => {
             )}
             {shopData.isVerified && (
               <View style={styles.portfolioBadgeContainer}>
-                <VerifiedBadge />
+                <VerifiedBadge size="small" />
               </View>
             )}
           </View>
@@ -525,33 +542,31 @@ const ShopDetailScreen = () => {
         <View style={styles.portfolioInfoContainer}>
           <View style={styles.portfolioHeaderRow}>
             <View style={styles.portfolioHeaderLeft}>
-              <Text style={styles.portfolioShopName}>{shopData.name}</Text>
+              <View style={styles.shopNameRow}>
+                <Text style={styles.portfolioShopName} numberOfLines={2}>
+                  {shopData.name}
+                </Text>
+                {shopData.isVerified && <VerifiedBadge size="small" />}
+              </View>
               {shopData.owner && (
                 <Text style={styles.portfolioOwner}>Owned by {shopData.owner}</Text>
               )}
             </View>
-            {shopData.ownerId && user && shopData.ownerId !== user._id && (
-              <FollowButton
-                followStatus={followStatus}
-                onPress={handleFollowAction}
-                isLoading={isLoadingFollow}
-              />
-            )}
+            {!shopData.isOwner &&
+              shopData.ownerId &&
+              user &&
+              shopData.ownerId.toString() !== (user._id || user.id)?.toString() && (
+                <FollowButton
+                  followStatus={followStatus}
+                  onPress={handleFollowAction}
+                  isLoading={isLoadingFollow}
+                />
+              )}
           </View>
           <View style={styles.portfolioRatingWrapper}>
             <RatingDisplay rating={shopData.rating} reviewCount={shopData.reviewCount} />
           </View>
         </View>
-
-        {/* Owner Actions - CRUD buttons for shop owners */}
-        {shopData.isOwner && (
-          <View style={styles.ownerActionsContainer}>
-            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct}>
-              <Icon name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addProductButtonText}>Add Product to Album</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         {/* Description */}
         <View style={styles.section}>
@@ -696,7 +711,11 @@ const ShopDetailScreen = () => {
   };
 
   const handleBackPress = () => {
-    navigation.navigate('ShopsScreen');
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('HomeScreen');
   };
 
   // Handle review submission
@@ -811,19 +830,6 @@ const ShopDetailScreen = () => {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Shop Info Section */}
         <View style={styles.infoContainer}>
-          {shopData.isVerified && (
-            <View style={styles.verifiedBadgeTopRight}>
-              <VerifiedBadge />
-            </View>
-          )}
-          {shopData.isOwner && (
-            <TouchableOpacity 
-              style={styles.editButton}
-              onPress={() => navigation.navigate('EditShopScreen', { shopId })}
-            >
-              <Icon name="edit" size={20} color={jewelleryColors.primary} />
-            </TouchableOpacity>
-          )}
           <View style={styles.profileSection}>
             {/* Profile Image */}
             <View style={styles.profileImageContainer}>
@@ -844,14 +850,32 @@ const ShopDetailScreen = () => {
             <View style={styles.shopDetailsContainer}>
               <View style={styles.shopHeaderRow}>
                 <View style={styles.shopHeaderLeft}>
-                  <Text style={styles.shopName}>{shopData.name}</Text>
+                  <View style={styles.shopNameRow}>
+                    <Text style={styles.shopName} numberOfLines={2}>
+                      {shopData.name}
+                    </Text>
+                    {shopData.isVerified && (
+                      <VerifiedBadge size="small" />
+                    )}
+                  </View>
                 </View>
-                {shopData.ownerId && user && shopData.ownerId !== user._id && (
-                  <FollowButton
-                    followStatus={followStatus}
-                    onPress={handleFollowAction}
-                    isLoading={isLoadingFollow}
-                  />
+                {shopData.isOwner ? (
+                  <TouchableOpacity
+                    style={styles.editButton}
+                    onPress={() => navigation.navigate('EditShopScreen', { shopId })}
+                  >
+                    <Icon name="edit" size={20} color={jewelleryColors.primary} />
+                  </TouchableOpacity>
+                ) : (
+                  shopData.ownerId &&
+                  user &&
+                  shopData.ownerId.toString() !== (user._id || user.id)?.toString() && (
+                    <FollowButton
+                      followStatus={followStatus}
+                      onPress={handleFollowAction}
+                      isLoading={isLoadingFollow}
+                    />
+                  )
                 )}
               </View>
               <View style={styles.locationContainer}>
@@ -865,6 +889,15 @@ const ShopDetailScreen = () => {
           </View>
         </View>
 
+        {/* Owner Add Product - always visible for shop owners */}
+        {shopData.isOwner && (
+          <View style={styles.ownerActionsContainer}>
+            <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct}>
+              <Icon name="add" size={20} color="#FFFFFF" />
+              <Text style={styles.addProductButtonText}>Add Product to Album</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Stock for Sale Button - Restricted to vendors, shops, manufacturers, and wholesalers */}
         {canViewStockDetails() && (
@@ -982,13 +1015,6 @@ const styles = StyleSheet.create({
   infoContainer: {
     padding: spacing.lg,
     paddingTop: spacing.xl,
-    position: 'relative',
-  },
-  verifiedBadgeTopRight: {
-    position: 'absolute',
-    top: spacing.xl,
-    right: spacing.lg,
-    zIndex: 10,
   },
   profileSection: {
     flexDirection: 'row',
@@ -1020,23 +1046,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-start',
     paddingTop: spacing.xs,
+    minWidth: 0,
   },
   shopHeaderRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.xs,
+    gap: spacing.sm,
   },
   shopHeaderLeft: {
     flex: 1,
-    marginRight: spacing.md,
+    minWidth: 0,
+  },
+  shopNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
   },
   shopName: {
     ...typography.heading1,
     fontSize: 24,
     fontWeight: '700',
     color: jewelleryColors.text,
-    marginBottom: spacing.xs,
+    flexShrink: 1,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -1051,6 +1085,28 @@ const styles = StyleSheet.create({
   },
   ratingContainer: {
     marginTop: spacing.xs,
+  },
+  editButton: {
+    padding: spacing.xs,
+    marginTop: 2,
+  },
+  ownerActionsContainer: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  addProductButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: jewelleryColors.primary,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    gap: spacing.sm,
+  },
+  addProductButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   section: {
     paddingHorizontal: spacing.lg,
@@ -1242,32 +1298,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
   },
-  editButton: {
-    position: 'absolute',
-    top: spacing.xl,
-    right: spacing.lg + 40,
-    zIndex: 10,
-    padding: spacing.xs,
-  },
-  ownerActionsContainer: {
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
-    marginBottom: spacing.md,
-  },
-  addProductButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: jewelleryColors.primary,
-    paddingVertical: spacing.md,
-    borderRadius: 12,
-    gap: spacing.sm,
-  },
-  addProductButtonText: {
-    ...typography.body,
-    fontWeight: '600',
-    color: '#FFFFFF',
-  },
   productItem: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1340,22 +1370,24 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     marginBottom: spacing.xs,
+    gap: spacing.sm,
   },
   portfolioHeaderLeft: {
     flex: 1,
-    marginRight: spacing.md,
+    minWidth: 0,
   },
   portfolioShopName: {
     ...typography.heading2,
     fontWeight: '700',
     fontSize: 24,
-    marginBottom: spacing.xs,
     color: jewelleryColors.text,
+    flexShrink: 1,
   },
   portfolioOwner: {
     ...typography.body,
     color: jewelleryColors.textSecondary,
     fontSize: 14,
+    marginTop: spacing.xs,
     marginBottom: spacing.sm,
   },
   portfolioRatingWrapper: {

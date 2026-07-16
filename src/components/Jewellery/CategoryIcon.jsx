@@ -19,7 +19,7 @@ const CategoryIcon = ({
       <View style={[styles.iconContainer, { backgroundColor: color }]}>
         <Icon name={icon} size={size * 0.4} color="#FFFFFF" />
       </View>
-      <Text style={styles.label} numberOfLines={1} adjustsFontSizeToFit>{name}</Text>
+      <Text style={styles.label} numberOfLines={1}>{name}</Text>
     </TouchableOpacity>
   );
 };
@@ -43,6 +43,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
     textAlign: 'center',
     width: '100%',
+    minHeight: 42,
   },
 });
 

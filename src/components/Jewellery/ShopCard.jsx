@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
@@ -17,6 +17,10 @@ const ShopCard = ({
   onPress,
 }) => {
   const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [image]);
   
   const cardStyle = [
     styles.card,

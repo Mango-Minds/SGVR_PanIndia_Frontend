@@ -15,11 +15,11 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import FollowButton from '../../components/Jewellery/FollowButton';
-import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
+import { navigateJewelleryAuthTab, requireAuth } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import axios from 'axios';
 import { BASEIMGURL, BASEAPIURL } from '../../infrastructure/constants';
-import { checkFollowStatus, followUser, unfollowUser, getFollowers, getFollowing, getShopByOwner } from '../../services/jewellery.services';
+import { checkFollowStatus, followUser, unfollowUser, getFollowers, getFollowing, getShopByOwner, getCurrentSubscription } from '../../services/jewellery.services';
 import authHeader from '../../services/auth.header';
 
 const ProfileScreen = () => {
@@ -37,6 +37,7 @@ const ProfileScreen = () => {
   const [isLoadingCounts, setIsLoadingCounts] = useState(false);
   const [shopData, setShopData] = useState(null);
   const [isLoadingShop, setIsLoadingShop] = useState(false);
+  const [subscriptionLabel, setSubscriptionLabel] = useState(null);
   
   // Check if viewing another user's profile
   const viewingUserId = route.params?.userId;
@@ -87,6 +88,42 @@ const ProfileScreen = () => {
       setIsLoadingShop(false);
     }
   }, []);
+
+  const formatPlanName = (planName) => {
+    if (!planName) return 'Premium';
+    return String(planName)
+      .replace(/^Jewellery\s+/i, '')
+      .trim();
+  };
+
+  const fetchSubscriptionStatus = useCallback(async () => {
+    if (!token || isGuest || isViewingOtherProfile) {
+      setSubscriptionLabel(null);
+      return;
+    }
+    try {
+      const sub = await getCurrentSubscription();
+      const active = Boolean(
+        sub?.isActive ||
+          sub?.isPremium ||
+          sub?.data?.isActive ||
+          sub?.data?.isPremium
+      );
+      if (!active) {
+        setSubscriptionLabel(null);
+        return;
+      }
+      const planName =
+        sub?.subscription?.planName ||
+        sub?.data?.subscription?.planName ||
+        sub?.planName ||
+        'Premium';
+      setSubscriptionLabel(formatPlanName(planName));
+    } catch (error) {
+      console.error('Error fetching subscription status:', error);
+      setSubscriptionLabel(null);
+    }
+  }, [token, isGuest, isViewingOtherProfile]);
 
   // Fetch other user's profile if viewing another user
   const fetchUserProfile = useCallback(async () => {
@@ -182,12 +219,13 @@ const ProfileScreen = () => {
             setShopData(null);
           }
         }
+        fetchSubscriptionStatus();
       }
       // Fetch follow counts for the displayed user
       if (displayUserId) {
         fetchFollowCounts(displayUserId);
       }
-    }, [isViewingOtherProfile, fetchUserProfile, displayUserId, fetchFollowCounts, fetchShopData, currentUser])
+    }, [isViewingOtherProfile, fetchUserProfile, displayUserId, fetchFollowCounts, fetchShopData, fetchSubscriptionStatus, currentUser])
   );
 
   // Check if user is a shop owner
@@ -197,6 +235,9 @@ const ProfileScreen = () => {
       : user.userType === 'shop' || user.userType === 'Shop'
   );
 
+  // My Page is only for shop owners
+  const canSeeMyPage = !isViewingOtherProfile && isShopOwner;
+
   // Check if user can manage stock (shop owners and vendors)
   const canManageStock = user?.userType && (
     Array.isArray(user.userType) 
@@ -204,23 +245,19 @@ const ProfileScreen = () => {
       : user.userType === 'shop' || user.userType === 'Shop' || user.userType === 'vendor' || user.userType === 'Vendor'
   );
 
-  // Handle Events menu item press
-  const handleEventsPress = async () => {
-    if (!isShopOwner || !user?._id) {
-      Alert.alert('Error', 'Unable to find shop information');
-      return;
-    }
+  const handleMyPagePress = async () => {
+    if (!user?._id) return;
 
     try {
-      const shop = await getShopByOwner(user._id);
-      if (shop && shop._id) {
-        navigation.navigate('ShopEvents', { shopId: shop._id });
-      } else {
-        Alert.alert('Error', 'No shop found for your account');
+      const shop = shopData || (await getShopByOwner(user._id));
+      if (shop?._id) {
+        navigation.navigate('ShopDetailScreen', { shopId: shop._id });
+        return;
       }
+      Alert.alert('My Page', 'No shop page found for your account.');
     } catch (error) {
-      console.error('Error fetching shop:', error);
-      Alert.alert('Error', 'Failed to load shop information');
+      console.error('Error opening my page:', error);
+      Alert.alert('Error', 'Failed to open your page.');
     }
   };
 
@@ -244,25 +281,108 @@ const ProfileScreen = () => {
     }
   };
 
+  const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate('HomeScreen');
+  };
+
   const menuItems = [
-    {
-      key: 'wishlist',
-      label: 'Saved Items',
-      icon: 'favorite-border',
-      onPress: () => navigation.navigate('WishlistScreen'),
-    },
-    {
-      key: 'subscription',
-      label: 'Subscription Status',
-      icon: 'card-membership',
-      onPress: () => navigation.navigate('PremiumAccessScreen'),
-    },
-    ...(isShopOwner ? [{
-      key: 'events',
-      label: 'Events',
-      icon: 'event',
-      onPress: handleEventsPress,
+    ...(!isViewingOtherProfile && currentUser && !currentUser.isJewelryOnboarded ? [{
+      key: 'complete-profile',
+      label: 'Complete Jewellery Profile',
+      icon: 'person-add',
+      onPress: () => navigation.navigate('OnboardModuleForm'),
     }] : []),
+    ...(!isViewingOtherProfile ? [
+      {
+        key: 'subscription',
+        label: 'Subscription Status',
+        icon: 'card-membership',
+        onPress: () => navigation.navigate('PremiumAccessScreen'),
+      },
+      {
+        key: 'wishlist',
+        label: 'Saved Items',
+        icon: 'favorite-border',
+        onPress: () => {
+          requireAuth({
+            token,
+            isGuest,
+            dispatch,
+            navigation,
+            message: 'Sign in to view your saved items.',
+            onAuthed: () => navigation.navigate('WishlistScreen'),
+          });
+        },
+      },
+      {
+        key: 'my-events',
+        label: 'My Events',
+        icon: 'event',
+        onPress: () => {
+          requireAuth({
+            token,
+            isGuest,
+            dispatch,
+            navigation,
+            message: 'Sign in to view your events.',
+            onAuthed: () =>
+              navigation.navigate('EventsHomeScreen', { mineOnly: true }),
+          });
+        },
+      },
+      {
+        key: 'customers',
+        label: 'My Customers',
+        icon: 'people',
+        onPress: () => navigation.navigate('MyCustomersScreen'),
+      },
+      {
+        key: 'karegars',
+        label: 'My Karegars',
+        icon: 'handyman',
+        onPress: () => navigation.navigate('WorkersScreen'),
+      },
+      {
+        key: 'vendors',
+        label: 'My Vendors',
+        icon: 'store',
+        onPress: () => navigation.navigate('VendorsScreen'),
+      },
+      {
+        key: 'manufacturers',
+        label: 'My Manufacturers',
+        icon: 'precision-manufacturing',
+        onPress: () => navigation.navigate('DesignersScreen'),
+      },
+      {
+        key: 'orders',
+        label: 'My Orders',
+        icon: 'receipt-long',
+        onPress: () => navigation.navigate('MyOrdersScreen'),
+      },
+      {
+        key: 'payments',
+        label: 'My Payments from Customers',
+        icon: 'payments',
+        onPress: () => navigation.navigate('MyPaymentsScreen'),
+      },
+      {
+        key: 'staff',
+        label: 'My Staff',
+        icon: 'badge',
+        onPress: () => navigation.navigate('MyStaffScreen'),
+      },
+      {
+        key: 'gold-price',
+        label: 'My Gold Price',
+        icon: 'trending-up',
+        onPress: () => navigation.navigate('LiveRatesScreen'),
+      },
+    ] : []),
     ...(canManageStock ? [{
       key: 'stock-for-sale',
       label: 'Stock for Sale',
@@ -315,11 +435,25 @@ const ProfileScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar />
+      <HeaderBar
+        showBack
+        title={isViewingOtherProfile ? 'Profile' : 'My Profile'}
+        onBackPress={handleBackPress}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
         <View style={styles.profileHeader}>
+          {canSeeMyPage && (
+            <TouchableOpacity
+              style={styles.myPageButton}
+              onPress={handleMyPagePress}
+              activeOpacity={0.8}
+            >
+              <Icon name="storefront" size={16} color="#FFFFFF" />
+              <Text style={styles.myPageButtonText}>My Page</Text>
+            </TouchableOpacity>
+          )}
           <View style={styles.avatarContainer}>
             {userAvatar ? (
               <Image source={{ uri: userAvatar }} style={styles.avatar} />
@@ -329,6 +463,28 @@ const ProfileScreen = () => {
               </View>
             )}
           </View>
+          {!isViewingOtherProfile && (
+            <View style={styles.subscriptionStatusRow}>
+              {subscriptionLabel ? (
+                <View style={styles.subscriptionBadge}>
+                  <Icon name="workspace-premium" size={16} color={jewelleryColors.primary} />
+                  <Text style={styles.subscriptionStatusText}>
+                    Subscribed · {subscriptionLabel}
+                  </Text>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  style={styles.subscriptionBadgeMuted}
+                  activeOpacity={0.8}
+                  onPress={() => navigation.navigate('PremiumAccessScreen')}
+                >
+                  <Icon name="lock" size={14} color={jewelleryColors.textSecondary} />
+                  <Text style={styles.subscriptionStatusMuted}>Not Subscribed</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+        
           <View style={styles.profileHeaderRow}>
             <View style={styles.profileHeaderLeft}>
               <Text style={styles.userName}>{userName}</Text>
@@ -432,6 +588,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
+    position: 'relative',
+  },
+  myPageButton: {
+    position: 'absolute',
+    top: spacing.md,
+    right: spacing.lg,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: jewelleryColors.primary,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: 20,
+  },
+  myPageButtonText: {
+    ...typography.bodySmall,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  subscriptionStatusRow: {
+    marginBottom: spacing.md,
+    alignItems: 'center',
+  },
+  subscriptionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: jewelleryColors.bgSecondary,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: jewelleryColors.primary,
+  },
+  subscriptionStatusText: {
+    ...typography.bodySmall,
+    color: jewelleryColors.primary,
+    fontWeight: '600',
+  },
+  subscriptionBadgeMuted: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+  },
+  subscriptionStatusMuted: {
+    ...typography.bodySmall,
+    color: jewelleryColors.textSecondary,
   },
   profileHeaderRow: {
     width: '100%',

@@ -237,8 +237,9 @@ console.log("Selected Module:", selectedModule);
           navigation.navigate("TempleHome");
         }, 100);
       } else if (selectedModule === "Jewellery") {
-        navigation.navigate("Jewellery", {
-          screen: "HomeScreen"
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "HomeScreen" }],
         });
       } else {
         navigation.navigate(selectedModule);

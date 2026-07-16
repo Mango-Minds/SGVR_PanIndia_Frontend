@@ -16,9 +16,9 @@ import HeaderBar from '../../components/Jewellery/HeaderBar';
 import goldSilverRatesService from '../../services/goldSilverRates.service';
 import { useSelector, useDispatch } from 'react-redux';
 import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
-import { jewelleryColors, spacing, commonStyles } from '../../styles/jewellery.styles';
+import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
-const HomeScreen = () => {
+const JewellerysHomeScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -75,76 +75,41 @@ const HomeScreen = () => {
   // Category icons configuration
   const categories = [
     {
-      key: 'jewellery',
-      name: 'Jewellery',
-      icon: 'diamond',
+      key: 'shops',
+      name: 'Shops',
+      icon: 'store',
       color: jewelleryColors.categoryGold,
-      onPress: () => navigation.navigate('JewellerysHomeScreen'),
+      onPress: () => navigation.navigate('JewellerysScreen'),
     },
     {
-      key: 'gems',
-      name: 'Gems',
-      icon: 'diamond',
+      key: 'vendors',
+      name: 'Vendors',
+      icon: 'person',
       color: jewelleryColors.categoryBlue,
-      onPress: () => navigation.navigate('GemsHomeScreen'),
+      onPress: () => handleCategoryPress('VendorsScreen', 'Sign in to view vendors.'),
     },
     {
-      key: 'tools',
-      name: 'Tools',
-      icon: 'build',
-      color: jewelleryColors.categoryOrange,
-      onPress: () => navigation.navigate('ToolsScreen'),
-    },
-    {
-      key: 'events',
-      name: 'Events',
-      icon: 'event',
+      key: 'manufacturers',
+      name: 'Manufacturers',
+      icon: 'star',
       color: jewelleryColors.categoryPurple,
-      onPress: () => navigation.navigate('EventsHomeScreen'),
+      onPress: () => handleCategoryPress('DesignersScreen', 'Sign in to view designers.'),
     },
     {
-      key: 'bullion',
-      name: 'Bullion',
-      icon: 'attach-money',
-      color: jewelleryColors.categoryTeal,
-      onPress: () => navigation.navigate('BullionScreen'),
-    },
-    {
-      key: 'goldTesting',
-      name: 'Gold Testing',
-      icon: 'biotech',
-      color: jewelleryColors.categoryGold,
-      onPress: () => navigation.navigate('GoldTestingCentresScreen'),
-    },
-    {
-      key: 'goldRefinery',
-      name: 'Gold Refinery',
-      icon: 'business',
-      color: jewelleryColors.categoryBlue,
-      onPress: () => navigation.navigate('GoldRefineryScreen'),
-    },
-    {
-      key: 'logistics',
-      name: 'Logistics',
-      icon: 'local-shipping',
+      key: 'karegars',
+      name: 'Karegars',
+      icon: 'people',
       color: jewelleryColors.categoryOrange,
-      onPress: () => navigation.navigate('LogisticsScreen'),
-    },
-    {
-      key: 'jobs',
-      name: 'Jobs',
-      icon: 'work',
-      color: jewelleryColors.categoryPurple,
-      onPress: () => navigation.navigate('JobsScreen'),
-    },
-    {
-      key: 'goldAssociations',
-      name: 'Gold Associations',
-      icon: 'groups',
+      onPress: () => handleCategoryPress('WorkersScreen', 'Sign in to view workers.'),
+    },{
+      key: 'product requirement',
+      name: 'Product requirement',
+      icon: 'store',
       color: jewelleryColors.categoryTeal,
-      onPress: () => navigation.navigate('GoldAssociationsScreen'),
-    },
+      onPress: () => navigation.navigate('ProductRequirementsScreen'),
+    }
   ];
+
   // Fetch spot rates for banners
   useEffect(() => {
     const loadSpotRates = async () => {
@@ -176,7 +141,7 @@ const HomeScreen = () => {
     setActiveTab(tab);
     switch (tab) {
       case 'home':
-        // Already on jewellery home — stay here
+        navigation.navigate('HomeScreen');
         break;
       case 'search':
         navigation.navigate('BrowseScreen');
@@ -197,7 +162,7 @@ const HomeScreen = () => {
         showBack 
         showNotification={false}
         showShare={false}
-        onBackPress={() => navigation.navigate('Dashboard')}
+        onBackPress={() => navigation.navigate('HomeScreen')}
       />
       
       <ScrollView
@@ -208,53 +173,8 @@ const HomeScreen = () => {
         {/* Carousel Banner */}
         <CarouselBanner items={bannerItems} />
 
-        {/* Gold & Silver Spot Price Banners */}
-        <View style={styles.spotBannersContainer}>
-          <TouchableOpacity
-            style={[styles.spotBanner, styles.goldBanner]}
-            onPress={() => navigation.navigate('LiveRatesScreen')}
-            activeOpacity={0.8}
-          >
-            {loadingRates ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <View style={styles.spotBannerMainRow}>
-                  <Text style={styles.spotBannerTitle}>GOLD</Text>
-                  <Text style={styles.spotBannerPrice}>
-                    ₹{spotRates?.gold?.spot?.toLocaleString('en-IN') || '6,500'}
-                    <Text style={styles.spotBannerSubtext}>/g</Text>
-                  </Text>
-                </View>
-                <Text style={styles.spotBannerRangeText} numberOfLines={1} adjustsFontSizeToFit>
-                  L ₹{spotRates?.gold?.low?.toLocaleString('en-IN') || '6,400'} · H ₹{spotRates?.gold?.high?.toLocaleString('en-IN') || '6,600'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.spotBanner, styles.silverBanner]}
-            onPress={() => navigation.navigate('LiveRatesScreen')}
-            activeOpacity={0.8}
-          >
-            {loadingRates ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <View style={styles.spotBannerMainRow}>
-                  <Text style={styles.spotBannerTitle}>SILVER</Text>
-                  <Text style={styles.spotBannerPrice}>
-                    ₹{spotRates?.silver?.spot?.toFixed(2) || '85.00'}
-                    <Text style={styles.spotBannerSubtext}>/g</Text>
-                  </Text>
-                </View>
-                <Text style={styles.spotBannerRangeText} numberOfLines={1} adjustsFontSizeToFit>
-                  L ₹{spotRates?.silver?.low?.toFixed(2) || '84.00'} · H ₹{spotRates?.silver?.high?.toFixed(2) || '86.00'}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+        <View style={styles.screenTitleContainer}>
+          <Text style={styles.screenTitle}>JEWELLERY HOME</Text>
         </View>
 
         {/* Category Grid */}
@@ -287,6 +207,21 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: spacing.xxxl,
+  },
+  screenTitleContainer: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.lg,
+    marginTop: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  screenTitle: {
+    ...typography.heading2,
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    color: jewelleryColors.text,
   },
   spotBannersContainer: {
     flexDirection: 'row',
@@ -327,10 +262,12 @@ const styles = StyleSheet.create({
   },
   spotBannerTitle: {
     fontWeight: '700',
-    color: '#FFFFFF',
+    color: '#8C8C8C',
     letterSpacing: 0.8,
     textTransform: 'uppercase',
     fontSize: 11,
+    justifyContent: 'center',
+    textAlign: 'center',
   },
   spotBannerPrice: {
     fontWeight: '800',
@@ -382,5 +319,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default JewellerysHomeScreen;
 

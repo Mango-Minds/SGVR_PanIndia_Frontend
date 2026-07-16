@@ -36,7 +36,7 @@ const getShopImageUri = (shop) => {
   return null;
 };
 
-const ShopsScreen = () => {
+const JewellerysScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -53,7 +53,7 @@ const ShopsScreen = () => {
       navigation.goBack();
       return;
     }
-    navigation.navigate('HomeScreen');
+    navigation.navigate('JewellerysHomeScreen');
   };
 
   // Update active tab when screen is focused
@@ -224,7 +224,7 @@ const ShopsScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Shops" onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Jewellery Shops" onBackPress={handleBackPress} />
 
       {/* Filter Bar */}
       <View style={styles.filterWrapper}>
@@ -454,5 +454,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ShopsScreen;
+export default JewellerysScreen;
 

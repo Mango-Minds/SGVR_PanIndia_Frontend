@@ -75,10 +75,20 @@ import MyAllToolProduct from "../../features/jewellery/Tools/AllmyTool";
 import HomeScreen from "../../features/jewellery/HomeScreen";
 import BrowseScreen from "../../features/jewellery/BrowseScreen";
 import ShopsScreen from "../../features/jewellery/ShopsScreen";
+import JewellerysScreen from "../../features/jewellery/JewellerysScreen";
+import ProductRequirementsScreen from "../../features/jewellery/ProductRequirementsScreen";
+import GemsScreen from "../../features/jewellery/GemsScreen";
+import JewellerysHomeScreen from "../../features/jewellery/JewellerysHomeScreen";
+import GemsHomeScreen from "../../features/jewellery/GemsHomeScreen";
 import ShopDetailScreen from "../../features/jewellery/ShopDetailScreen";
 import ProductDetailScreen from "../../features/jewellery/ProductDetailScreen";
+import EventDetailScreen from "../../features/jewellery/EventDetailScreen";
+import EventsHomeScreen from "../../features/jewellery/EventsHomeScreen";
+import AddEventScreen from "../../features/jewellery/AddEventScreen";
+import EditEventScreen from "../../features/jewellery/EditEventScreen";
 import PremiumAccessScreen from "../../features/jewellery/PremiumAccessScreen";
 import ProfileScreen from "../../features/jewellery/ProfileScreen";
+import WishlistScreen from "../../features/jewellery/WishlistScreen";
 import FollowersFollowingScreen from "../../features/jewellery/FollowersFollowingScreen";
 import LiveRatesScreen from "../../features/jewellery/LiveRatesScreen";
 import AddProductScreen from "../../features/jewellery/AddProductScreen";
@@ -94,58 +104,23 @@ import DirectoryScreen from "../../features/jewellery/DirectoryScreen";
 
 const Stack = createStackNavigator();
 
-const EMPTY_USER_TYPES = [];
-
 export const JewelleryStackNavigator = () => {
-  const userType = useSelector((state) => state.user.user?.userType ?? EMPTY_USER_TYPES);
   const user = useSelector((state) => state.user.user);
   const isGuest = useSelector((state) => state.user.isGuest);
-  console.log("Jewellery Navigator - logged in user data", user);
-  console.log("Jewellery Navigator - isJewelryOnboarded:", user?.isJewelryOnboarded);
-  
+
+  const navigatorKey = `${user?._id ?? (isGuest ? "guest" : "anon")}-${user?.isJewelryOnboarded ? "1" : "0"}`;
+
   let initialRouteName = "OnboardModuleForm";
 
   if (isGuest) {
     initialRouteName = "HomeScreen";
   } else if (user?.isJewelryOnboarded === true) {
-    // Use new HomeScreen as default
     initialRouteName = "HomeScreen";
-
-    // Set route based on userType if onboarded
-    if (Array.isArray(userType)) {
-      if (userType.includes("worker")) {
-        initialRouteName = "WorkerHome";
-      } else if (userType.includes("vendor")) {
-        initialRouteName = "VendorHome";
-      } else if (userType.includes("shop")) {
-        initialRouteName = "HomeScreen"; // Changed from JewelleryHome to HomeScreen
-      } else if (userType.includes("superadmin")) {
-        initialRouteName = "SuperAdminHome";
-      } else if (userType.includes("jewelryDesigner")) {
-        initialRouteName = "DesignerHome";
-      } else if (userType.includes("gemologist")) {
-        initialRouteName = "GemologistHome";
-      }
-    } else {
-      // Handle non-array userType (backward compatibility)
-      if (userType === "worker") {
-        initialRouteName = "WorkerHome";
-      } else if (userType === "vendor") {
-        initialRouteName = "VendorHome";
-      } else if (userType === "shop") {
-        initialRouteName = "HomeScreen"; // Changed from JewelleryHome to HomeScreen
-      } else if (userType === "superadmin") {
-        initialRouteName = "SuperAdminHome";
-      } else if (userType === "jewelryDesigner") {
-        initialRouteName = "DesignerHome";
-      } else if (userType === "gemologist") {
-        initialRouteName = "GemologistHome";
-      }
-    }
   }
 
   return (
     <Stack.Navigator
+      key={navigatorKey}
       initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false }}
     >
@@ -266,10 +241,20 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="HomeScreen" component={HomeScreen} />
       <Stack.Screen name="BrowseScreen" component={BrowseScreen} />
       <Stack.Screen name="ShopsScreen" component={ShopsScreen} />
+      <Stack.Screen name="JewellerysScreen" component={JewellerysScreen} />
+      <Stack.Screen name="ProductRequirementsScreen" component={ProductRequirementsScreen} />
+      <Stack.Screen name="GemsScreen" component={GemsScreen} />
+      <Stack.Screen name="JewellerysHomeScreen" component={JewellerysHomeScreen} />
+      <Stack.Screen name="GemsHomeScreen" component={GemsHomeScreen} />
       <Stack.Screen name="ShopDetailScreen" component={ShopDetailScreen} />
       <Stack.Screen name="ProductDetailScreen" component={ProductDetailScreen} />
+      <Stack.Screen name="EventsHomeScreen" component={EventsHomeScreen} />
+      <Stack.Screen name="EventDetailScreen" component={EventDetailScreen} />
+      <Stack.Screen name="AddEventScreen" component={AddEventScreen} />
+      <Stack.Screen name="EditEventScreen" component={EditEventScreen} />
       <Stack.Screen name="PremiumAccessScreen" component={PremiumAccessScreen} />
       <Stack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <Stack.Screen name="WishlistScreen" component={WishlistScreen} />
       <Stack.Screen name="FollowersFollowingScreen" component={FollowersFollowingScreen} />
       <Stack.Screen name="LiveRatesScreen" component={LiveRatesScreen} />
       <Stack.Screen name="AddProductScreen" component={AddProductScreen} />

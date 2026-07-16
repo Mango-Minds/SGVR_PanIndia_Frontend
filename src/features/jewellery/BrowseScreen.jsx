@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,10 @@ import {
   TextInput,
   FlatList,
   TouchableOpacity,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -16,119 +20,201 @@ import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import ProductCard from '../../components/Jewellery/ProductCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
+import {
+  getWishlistIds,
+  addWishlistItem,
+  removeWishlistItem,
+} from '../../utils/jewelleryWishlist';
+import { getProducts } from '../../services/jewellery.services';
+import { mapJewelryProduct } from '../../utils/mapJewelryProduct';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
+
+const NUM_COLUMNS = 3;
+const GRID_PADDING = spacing.sm;
+const GRID_GAP = spacing.xs;
+const CARD_WIDTH = Math.floor(
+  (Dimensions.get('window').width - GRID_PADDING * 2 - GRID_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS
+);
+const PAGE_LIMIT = 30;
+
+const CATEGORIES = [
+  { label: 'All', value: null },
+  { label: 'Rings', value: 'ring' },
+  { label: 'Bracelets', value: 'bracelet' },
+  { label: 'Chains', value: 'chain' },
+  { label: 'Earrings', value: 'earrings' },
+  { label: 'Necklaces', value: 'necklace' },
+];
 
 const BrowseScreen = () => {
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('search');
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [wishlistedItems, setWishlistedItems] = useState([]);
+  const requestIdRef = useRef(0);
+
+  const activeProductCategory = useMemo(
+    () => CATEGORIES.find((item) => item.label === activeCategory)?.value || null,
+    [activeCategory]
+  );
 
   const handleBackPress = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+      return;
+    }
     navigation.navigate('HomeScreen');
   };
 
-  // Update active tab when screen is focused
-  useFocusEffect(
-    React.useCallback(() => {
-      setActiveTab('search');
-    }, [])
+  const loadWishlistIds = useCallback(async () => {
+    if (!token) {
+      setWishlistedItems([]);
+      return;
+    }
+    try {
+      const ids = await getWishlistIds();
+      setWishlistedItems(ids);
+    } catch (error) {
+      console.error('Error loading wishlist ids:', error);
+    }
+  }, [token]);
+
+  const fetchProducts = useCallback(
+    async ({ pageNum = 1, isRefresh = false, append = false } = {}) => {
+      const requestId = ++requestIdRef.current;
+
+      if (isRefresh) {
+        setRefreshing(true);
+      } else if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+
+      try {
+        const response = await getProducts({
+          page: pageNum,
+          limit: PAGE_LIMIT,
+          search: debouncedSearch || undefined,
+          productCategory: activeProductCategory || undefined,
+        });
+
+        if (requestId !== requestIdRef.current) return;
+
+        const mapped = (response?.data || [])
+          .map(mapJewelryProduct)
+          .filter(Boolean);
+
+        setProducts((prev) => (append ? [...prev, ...mapped] : mapped));
+        setPage(pageNum);
+
+        const pagination = response?.pagination;
+        if (pagination?.pages != null) {
+          setHasMore(pageNum < pagination.pages);
+        } else {
+          setHasMore(mapped.length >= PAGE_LIMIT);
+        }
+      } catch (error) {
+        if (requestId !== requestIdRef.current) return;
+        console.error('Error fetching products:', error);
+        if (!append) {
+          setProducts([]);
+          setHasMore(false);
+        }
+        Alert.alert('Error', 'Failed to load jewellery products');
+      } finally {
+        if (requestId === requestIdRef.current) {
+          setLoading(false);
+          setRefreshing(false);
+          setLoadingMore(false);
+        }
+      }
+    },
+    [debouncedSearch, activeProductCategory]
   );
-  const [wishlistedItems, setWishlistedItems] = useState([]);
 
-  const categories = ['All', 'Rings', 'Bracelets', 'Chains', 'Earrings', 'Necklaces'];
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  // Mock product data - replace with actual API call
-  const products = [
-    {
-      id: '1',
-      image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=400&h=400&fit=crop',
-      title: 'Diamond Ring',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 125,
-    },
-    {
-      id: '2',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-      title: 'Ear Rings',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 89,
-    },
-    {
-      id: '3',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?w=400&h=400&fit=crop',
-      title: 'Necklace',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 203,
-    },
-    {
-      id: '4',
-      image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=400&h=400&fit=crop',
-      title: 'Gold Bracelet',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 95,
-    },
-    {
-      id: '5',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?w=400&h=400&fit=crop',
-      title: 'Diamond Ring',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 142,
-    },
-    {
-      id: '6',
-      image: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=400&h=400&fit=crop',
-      title: 'Pearl Necklace',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 178,
-    },
-    {
-      id: '7',
-      image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=400&h=400&fit=crop',
-      title: 'Gold Chain',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 156,
-    },
-    {
-      id: '8',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=400&h=400&fit=crop',
-      title: 'Diamond Earrings',
-      shop: 'Golden Jewels',
-      price: '3K',
-      rating: 4.8,
-      reviewCount: 134,
-    },
-  ];
+  useEffect(() => {
+    fetchProducts({ pageNum: 1 });
+  }, [fetchProducts]);
 
-  const handleWishlist = (productId) => {
+  useFocusEffect(
+    useCallback(() => {
+      setActiveTab('search');
+      loadWishlistIds();
+    }, [loadWishlistIds])
+  );
+
+  const gridProducts = useMemo(() => {
+    const padCount = (NUM_COLUMNS - (products.length % NUM_COLUMNS)) % NUM_COLUMNS;
+    if (padCount === 0) return products;
+    return [
+      ...products,
+      ...Array.from({ length: padCount }, (_, i) => ({
+        id: `grid-pad-${i}`,
+        empty: true,
+      })),
+    ];
+  }, [products]);
+
+  const handleWishlist = (product) => {
     requireAuth({
       token,
       isGuest,
       dispatch,
       navigation,
       message: 'Sign in to save items to your wishlist.',
-      onAuthed: () => {
-        setWishlistedItems((prev) =>
-          prev.includes(productId)
-            ? prev.filter((id) => id !== productId)
-            : [...prev, productId]
-        );
+      onAuthed: async () => {
+        const productId = String(product.id);
+        const isWishlisted = wishlistedItems.includes(productId);
+
+        if (isWishlisted) {
+          Alert.alert(
+            'Remove from Wishlist',
+            'Are you sure you want to remove this item from your wishlist?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              {
+                text: 'Remove',
+                style: 'destructive',
+                onPress: async () => {
+                  try {
+                    const nextItems = await removeWishlistItem(productId);
+                    setWishlistedItems(nextItems.map((item) => item.id));
+                  } catch (error) {
+                    console.error('Error removing wishlist item:', error);
+                    Alert.alert('Error', 'Failed to remove item from wishlist');
+                  }
+                },
+              },
+            ]
+          );
+          return;
+        }
+
+        try {
+          const nextItems = await addWishlistItem(product);
+          setWishlistedItems(nextItems.map((item) => item.id));
+        } catch (error) {
+          console.error('Error adding wishlist item:', error);
+          Alert.alert('Error', 'Failed to save item to wishlist');
+        }
       },
     });
   };
@@ -140,7 +226,6 @@ const BrowseScreen = () => {
         navigation.navigate('HomeScreen');
         break;
       case 'search':
-        // Already on search
         break;
       case 'profile':
       case 'message':
@@ -152,26 +237,40 @@ const BrowseScreen = () => {
     }
   };
 
-  const renderProduct = ({ item }) => (
-    <ProductCard
-      id={item.id}
-      image={item.image}
-      title={item.title}
-      shop={item.shop}
-      price={item.price}
-      rating={item.rating}
-      reviewCount={item.reviewCount}
-      isWishlisted={wishlistedItems.includes(item.id)}
-      onPress={() => navigation.navigate('ProductDetailScreen', { productId: item.id })}
-      onWishlist={() => handleWishlist(item.id)}
-    />
-  );
+  const handleLoadMore = () => {
+    if (loading || refreshing || loadingMore || !hasMore || products.length === 0) {
+      return;
+    }
+    fetchProducts({ pageNum: page + 1, append: true });
+  };
+
+  const renderProduct = ({ item }) => {
+    if (item.empty) {
+      return <View style={styles.gridSpacer} />;
+    }
+
+    return (
+      <View style={styles.gridItem}>
+        <ProductCard
+          id={item.id}
+          image={item.image}
+          title={item.title}
+          shop={item.shop}
+          price={item.priceLabel || item.price}
+          rating={item.rating}
+          reviewCount={item.reviewCount}
+          isWishlisted={wishlistedItems.includes(String(item.id))}
+          onPress={() => navigation.navigate('ProductDetailScreen', { productId: item.id })}
+          onWishlist={() => handleWishlist(item)}
+        />
+      </View>
+    );
+  };
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Browse" onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Gallery" onBackPress={handleBackPress} />
 
-      {/* Search Bar */}
       <View style={styles.searchContainer}>
         <Icon name="search" size={24} color={jewelleryColors.textSecondary} style={styles.searchIcon} />
         <TextInput
@@ -183,46 +282,82 @@ const BrowseScreen = () => {
         />
       </View>
 
-      {/* Category Filters */}
       <View style={styles.categoryFiltersWrapper}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
         >
-          {categories.map((category) => (
+          {CATEGORIES.map((category) => (
             <TouchableOpacity
-              key={category}
+              key={category.label}
               style={[
                 styles.categoryButton,
-                activeCategory === category && styles.activeCategoryButton,
+                activeCategory === category.label && styles.activeCategoryButton,
               ]}
-              onPress={() => setActiveCategory(category)}
+              onPress={() => setActiveCategory(category.label)}
             >
               <Text
                 style={[
                   styles.categoryText,
-                  activeCategory === category && styles.activeCategoryText,
+                  activeCategory === category.label && styles.activeCategoryText,
                 ]}
                 allowFontScaling={false}
               >
-                {category}
+                {category.label}
               </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
-      {/* Product Grid */}
-      <FlatList
-        data={products}
-        renderItem={renderProduct}
-        keyExtractor={(item) => item.id}
-        numColumns={2}
-        contentContainerStyle={styles.productsContainer}
-        showsVerticalScrollIndicator={false}
-        style={styles.productsList}
-      />
+      {loading && products.length === 0 ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color={jewelleryColors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={gridProducts}
+          renderItem={renderProduct}
+          keyExtractor={(item) => String(item.id)}
+          key="gallery-grid-3"
+          numColumns={NUM_COLUMNS}
+          columnWrapperStyle={products.length > 0 ? styles.columnWrapper : undefined}
+          contentContainerStyle={[
+            styles.productsContainer,
+            products.length === 0 && styles.emptyProductsContainer,
+          ]}
+          showsVerticalScrollIndicator={false}
+          style={styles.productsList}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => fetchProducts({ pageNum: 1, isRefresh: true })}
+              tintColor={jewelleryColors.primary}
+            />
+          }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color={jewelleryColors.primary} />
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            <View style={styles.emptyState}>
+              <Icon name="search-off" size={48} color={jewelleryColors.textSecondary} />
+              <Text style={styles.emptyStateTitle}>No products found</Text>
+              <Text style={styles.emptyStateText}>
+                {debouncedSearch
+                  ? `No results for "${debouncedSearch}"`
+                  : `No products in ${activeCategory}`}
+              </Text>
+            </View>
+          }
+        />
+      )}
 
       <BottomTabBar activeTab={activeTab} onTabChange={handleTabChange} />
     </SafeAreaView>
@@ -276,7 +411,7 @@ const styles = StyleSheet.create({
   categoryText: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#000000', // Black for maximum visibility
+    color: '#000000',
     lineHeight: 18,
     textAlign: 'center',
   },
@@ -289,10 +424,49 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   productsContainer: {
-    padding: spacing.sm,
+    paddingHorizontal: GRID_PADDING,
     paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  columnWrapper: {
+    gap: GRID_GAP,
+    marginBottom: GRID_GAP,
+  },
+  gridItem: {
+    width: CARD_WIDTH,
+  },
+  gridSpacer: {
+    width: CARD_WIDTH,
+  },
+  emptyProductsContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.xxxl,
+  },
+  emptyStateTitle: {
+    ...typography.heading3,
+    marginTop: spacing.md,
+    textAlign: 'center',
+  },
+  emptyStateText: {
+    ...typography.bodySmall,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerLoader: {
+    paddingVertical: spacing.md,
+    alignItems: 'center',
   },
 });
 
 export default BrowseScreen;
-

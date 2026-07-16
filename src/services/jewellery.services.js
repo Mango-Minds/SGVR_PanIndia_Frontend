@@ -161,33 +161,129 @@ export const searchShops = async (params) => {
 
 // Products
 export const getProducts = async (params = {}) => {
-  const { page = 1, limit = 20, category, search } = params;
+  const {
+    page = 1,
+    limit = 20,
+    category,
+    productCategory,
+    search,
+    shop,
+  } = params;
   const queryParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
-    ...(category && { category }),
-    ...(search && { search }),
   });
-  
+
+  if (category) queryParams.append('category', category);
+  if (productCategory) queryParams.append('productCategory', productCategory);
+  if (search) queryParams.append('search', search);
+  if (shop) queryParams.append('shop', shop);
+
   try {
-    // Using jewellery-products endpoint if available, otherwise fallback
-    const res = await apiClient.get(
-      `/jewelry-products?${queryParams}`
-    );
+    const client = await getBrowseClient();
+    const res = await client.get(`/jewelry-products?${queryParams}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching products:', error);
-    // Return empty array if endpoint doesn't exist yet
-    return { data: [], pagination: { page, limit, total: 0 } };
+    return { data: [], pagination: { page, limit, total: 0, pages: 0 } };
   }
 };
 
 export const getProductDetails = async (id) => {
   try {
-    const res = await apiClient.get(`/jewelry-products/${id}`);
+    const client = await getBrowseClient();
+    const res = await client.get(`/jewelry-products/${id}`);
     return res.data;
   } catch (error) {
     console.error('Error fetching product details:', error);
+    throw error;
+  }
+};
+
+// Product Requirements
+export const getProductRequirements = async (params = {}) => {
+  const {
+    page = 1,
+    limit = 20,
+    category,
+    productCategory,
+    search,
+    createdBy,
+    shop,
+  } = params;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  if (category) queryParams.append('category', category);
+  if (productCategory) queryParams.append('productCategory', productCategory);
+  if (search) queryParams.append('search', search);
+  if (createdBy) queryParams.append('createdBy', createdBy);
+  if (shop) queryParams.append('shop', shop);
+
+  try {
+    const client = await getBrowseClient();
+    const res = await client.get(`/product-requirements?${queryParams}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching product requirements:', error);
+    return { data: [], pagination: { page, limit, total: 0, pages: 0 } };
+  }
+};
+
+export const getMyProductRequirements = async (params = {}) => {
+  const { page = 1, limit = 20 } = params;
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+  try {
+    const res = await apiClient.get(`/product-requirements/mine?${queryParams}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching my product requirements:', error);
+    throw error;
+  }
+};
+
+export const getProductRequirementDetails = async (id) => {
+  try {
+    const client = await getBrowseClient();
+    const res = await client.get(`/product-requirements/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error fetching product requirement details:', error);
+    throw error;
+  }
+};
+
+export const createProductRequirement = async (formData) => {
+  try {
+    const res = await apiClient.post(`/product-requirements`, formData);
+    return res.data;
+  } catch (error) {
+    console.error('Error creating product requirement:', error);
+    throw error;
+  }
+};
+
+export const updateProductRequirement = async (id, formData) => {
+  try {
+    const res = await apiClient.patch(`/product-requirements/${id}`, formData);
+    return res.data;
+  } catch (error) {
+    console.error('Error updating product requirement:', error);
+    throw error;
+  }
+};
+
+export const deleteProductRequirement = async (id) => {
+  try {
+    const res = await apiClient.delete(`/product-requirements/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Error deleting product requirement:', error);
     throw error;
   }
 };
@@ -269,20 +365,22 @@ export const getWishlist = async () => {
     const res = await apiClient.get(`/wishlists`);
     return res.data;
   } catch (error) {
-    console.error('Error fetching wishlist:', error);
+    // Endpoint may be unavailable on older backends — callers fall back to local storage
+    if (error?.response?.status !== 404) {
+      console.warn('Wishlist fetch failed:', error?.response?.status || error.message);
+    }
     return { data: [] };
   }
 };
 
 export const addToWishlist = async (productId) => {
   try {
-    const res = await apiClient.post(
-      `/wishlists/${productId}`,
-      {}
-    );
+    const res = await apiClient.post(`/wishlists/${productId}`, {});
     return res.data;
   } catch (error) {
-    console.error('Error adding to wishlist:', error);
+    if (error?.response?.status !== 404) {
+      console.warn('Wishlist add failed:', error?.response?.status || error.message);
+    }
     throw error;
   }
 };
@@ -292,7 +390,9 @@ export const removeFromWishlist = async (productId) => {
     const res = await apiClient.delete(`/wishlists/${productId}`);
     return res.data;
   } catch (error) {
-    console.error('Error removing from wishlist:', error);
+    if (error?.response?.status !== 404) {
+      console.warn('Wishlist remove failed:', error?.response?.status || error.message);
+    }
     throw error;
   }
 };
@@ -370,6 +470,11 @@ export const getCurrentSubscription = async () => {
     const res = await apiClient.get(`/subscriptions/current`);
     return res.data;
   } catch (error) {
+    const status = error?.response?.status;
+    // Guests / unauthenticated users are not subscribed — avoid noisy logs
+    if (status === 401 || status === 403) {
+      return null;
+    }
     console.error('Error fetching current subscription:', error);
     return null;
   }
@@ -642,6 +747,69 @@ export const deleteShopEvent = async (eventId) => {
     return res.data;
   } catch (error) {
     console.error('Error deleting shop event:', error);
+    throw error;
+  }
+};
+
+// Jewellery Events
+export const getJewelleryEvents = async () => {
+  try {
+    const client = await getBrowseClient();
+    const res = await client.get("/events");
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Error fetching jewellery events:", error);
+    throw error;
+  }
+};
+
+export const getMyJewelleryEvents = async () => {
+  try {
+    const res = await apiClient.get("/events/mine");
+    return res.data?.data || [];
+  } catch (error) {
+    console.error("Error fetching my jewellery events:", error);
+    throw error;
+  }
+};
+
+export const getJewelleryEventById = async (eventId) => {
+  try {
+    const client = await getBrowseClient();
+    const res = await client.get(`/events/${eventId}`);
+    return res.data?.data;
+  } catch (error) {
+    console.error("Error fetching jewellery event:", error);
+    throw error;
+  }
+};
+
+export const createJewelleryEvent = async (formData) => {
+  try {
+    const res = await apiClient.post("/events", formData);
+    return res.data?.data;
+  } catch (error) {
+    console.error("Error creating jewellery event:", error);
+    throw error;
+  }
+};
+
+export const updateJewelleryEvent = async (eventId, formData) => {
+  try {
+    const res = await apiClient.put(`/events/${eventId}`, formData);
+    return res.data?.data;
+  } catch (error) {
+    console.error("Error updating jewellery event:", error);
+    throw error;
+  }
+};
+
+export const deleteJewelleryEvent = async (eventId) => {
+  try {
+    const res = await apiClient.delete(`/events/${eventId}`);
+    return res.data;
+  } catch (error) {
+    console.error("Error deleting jewellery event:", error);
     throw error;
   }
 };

@@ -83,7 +83,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
 import apiClient from "../store/apiClient";
 import publicApiClient from "../store/publicApiClient";
-import { requireAuth, isAccountModule, signInFromGuest } from "../utils/requireAuth";
+import { requireAuth, isAccountModule, signInFromGuest, navigateToJewellery } from "../utils/requireAuth";
 
 const YELLOW_COLOR = "#D4AF37";
 
@@ -403,6 +403,10 @@ export default function DashboardScreen({ navigation }) {
         navigation,
         message: "Sign in to access this section.",
       });
+      return;
+    }
+    if (path === "Jewellery") {
+      navigateToJewellery(navigation);
       return;
     }
     if (params) {
@@ -868,7 +872,7 @@ export default function DashboardScreen({ navigation }) {
                       <Text style={styles.sectionTitle}>
                         Latest Jewellery Designs
                       </Text>
-                      <TouchableOpacity onPress={() => navigation.navigate("Jewellery")}>
+                      <TouchableOpacity onPress={() => navigateToJewellery(navigation)}>
                         <Text style={styles.seeAll}>see all &gt;</Text>
                       </TouchableOpacity>
                     </View>

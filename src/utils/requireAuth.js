@@ -61,6 +61,14 @@ const JEWELLERY_AUTH_TAB_CONFIG = {
   },
 };
 
+/** Default entry screen for the jewellery module (new UI). */
+export const JEWELLERY_HOME_SCREEN = "HomeScreen";
+
+/** Enter jewellery module; stack picks OnboardModuleForm or HomeScreen from onboarding state. */
+export function navigateToJewellery(navigation) {
+  navigation.navigate("Jewellery");
+}
+
 /** Bottom-tab destinations in the jewellery module that require a signed-in user. */
 export function navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation }) {
   const config = JEWELLERY_AUTH_TAB_CONFIG[tab];
