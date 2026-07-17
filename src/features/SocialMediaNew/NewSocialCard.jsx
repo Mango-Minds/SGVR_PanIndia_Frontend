@@ -27,6 +27,7 @@ import { Container, RowBetween, SearchField } from "../../styles/common.styles";
 import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
 import { BASEAPIURL, RENDERMEDIAURL } from "../../infrastructure/constants";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -57,7 +58,120 @@ import * as Clipboard from 'expo-clipboard';
 import { useFollowStatus } from "./FollowStatusContext";
 import moment from "moment";
 
-const windowWidth = Dimensions.get("window").width;
+const { width: windowWidth } = Dimensions.get("window");
+const isCompact = windowWidth < 375;
+const CARD_PAD = isCompact ? 10 : 14;
+const AVATAR_SIZE = isCompact ? 40 : 46;
+const ACTION_ICON = isCompact ? 20 : 22;
+const ACTION_FONT = isCompact ? 11 : 12;
+
+const normalizeVideoUri = (video) => {
+  if (!video) return null;
+  const cleaned = `${String(video).replace(/\\/g, "/")}`;
+  if (/^https?:\/\//i.test(cleaned)) return cleaned;
+  const base = (RENDERMEDIAURL || "").replace(/\/$/, "");
+  return `${base}/${cleaned.replace(/^\//, "")}`;
+};
+
+const androidVideoSurfaceProps =
+  Platform.OS === "android" ? { surfaceType: "textureView" } : {};
+
+/** Feed preview — muted looping playback via expo-video */
+const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = true;
+    p.play();
+  });
+
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [isMuted, player]);
+
+  useEffect(() => {
+    if (paused) {
+      player.pause();
+    } else {
+      player.play();
+    }
+  }, [paused, player]);
+
+  // Android ExoPlayer often needs an explicit play once the source is ready
+  useEventListener(player, "statusChange", ({ status, error }) => {
+    if (status === "readyToPlay" && !paused) {
+      player.play();
+    }
+    if (status === "error") {
+      console.warn("Feed video error:", error);
+    }
+  });
+
+  return (
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
+      <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+        <VideoView
+          player={player}
+          style={styles.squareMedia}
+          contentFit="cover"
+          nativeControls={false}
+          {...androidVideoSurfaceProps}
+        />
+        <TouchableOpacity
+          style={styles.muteButton}
+          onPress={onToggleMute}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          {isMuted ? (
+            <Ionicons name="volume-mute" size={15} color="white" />
+          ) : (
+            <Ionicons name="volume-high" size={15} color="white" />
+          )}
+        </TouchableOpacity>
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+/** Full-screen reel player — only mounted while modal is open */
+const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.muted = isMuted;
+    p.play();
+  });
+
+  useEffect(() => {
+    player.muted = isMuted;
+  }, [isMuted, player]);
+
+  useEffect(() => {
+    if (isPlaying) {
+      player.play();
+    } else {
+      player.pause();
+    }
+  }, [isPlaying, player]);
+
+  useEventListener(player, "statusChange", ({ status, error }) => {
+    if (status === "readyToPlay" && isPlaying) {
+      player.play();
+    }
+    if (status === "error") {
+      console.warn("Reel video error:", error);
+    }
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.reelVideo}
+      contentFit="contain"
+      nativeControls
+      allowsFullscreen
+      {...androidVideoSurfaceProps}
+    />
+  );
+};
 
 const NewSocialCard = ({
   profileImageUri,
@@ -381,22 +495,20 @@ const NewSocialCard = ({
   };
 
   const renderDescription = () => {
-    const descriptionStyle = {
-      color: "black",
-      marginTop: "2%",
-      marginBottom: "2%",
-      maxHeight: showFullDescription ? "none" : 50,
-      overflow: showFullDescription ? "visible" : "hidden",
-    };
+    if (!description) return null;
 
     if (showFullDescription) {
-      return <Text style={descriptionStyle}>{description}</Text>;
-    } else {
-      const truncatedDescription =
-        description.split(" ").slice(0, 20).join(" ") + "...";
-
-      return <Text style={descriptionStyle}>{truncatedDescription}</Text>;
+      return <Text style={styles.descriptionText}>{description}</Text>;
     }
+
+    const wordLimit = isCompact ? 14 : 20;
+    const words = String(description).trim().split(/\s+/);
+    const needsTruncate = words.length > wordLimit;
+    const truncatedDescription = needsTruncate
+      ? words.slice(0, wordLimit).join(" ") + "..."
+      : description;
+
+    return <Text style={styles.descriptionText}>{truncatedDescription}</Text>;
   };
 
   const sampleComments = [
@@ -865,7 +977,11 @@ const NewSocialCard = ({
           </View>
           <View style={styles.commentActions}>
             <TouchableOpacity style={styles.actionButton} onPress={() => toggleLikeComment(item._id)}>
-              <FontAwesome name="thumbs-o-up" size={14} color="#6B7280" />
+              <FontAwesome
+                name={isCommentLikedByMe(item) ? "heart" : "heart-o"}
+                size={14}
+                color={isCommentLikedByMe(item) ? "red" : "#6B7280"}
+              />
               <Text style={styles.actionLabel}>{(item.likesCount || 0)} {tr("likes", "likes")}</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={() => setReplyTarget(item._id)}>
@@ -986,21 +1102,18 @@ const NewSocialCard = ({
   const [isReelPlaying, setIsReelPlaying] = useState(true);
   const [showReelFullDescription, setShowReelFullDescription] = useState(false);
   const [showReelModal, setShowReelModal] = useState(false);
-  const reelRef = useRef(null);
+  const videoUri = normalizeVideoUri(video);
 
   const toggleReelMute = () => setIsReelMuted((prevMuted) => !prevMuted);
 
-  const toggleReelPlayPause = () => {
-    if (isReelPlaying) {
-      reelRef.current.pauseAsync();
-    } else {
-      reelRef.current.playAsync();
-    }
-    setIsReelPlaying((prevState) => !prevState);
+  const openReelModal = () => {
+    setIsReelPlaying(true);
+    setReelModalVisible(true);
   };
-
-  const openReelModal = () => setReelModalVisible(true);
-  const closeReelModal = () => setReelModalVisible(false);
+  const closeReelModal = () => {
+    setIsReelPlaying(false);
+    setReelModalVisible(false);
+  };
 
   const openDescriptionModal = () => setShowReelModal(true);
   const closeDescriptionModal = () => setShowReelModal(false);
@@ -1069,7 +1182,7 @@ const NewSocialCard = ({
                 }
               }}
             >
-              <Text style={styles.name}>
+              <Text style={styles.name} numberOfLines={1}>
                 {firstName} {lastName}
               </Text>
             </TouchableOpacity>
@@ -1182,7 +1295,7 @@ const NewSocialCard = ({
                         ? "add"
                         : "checkmark"
                     }
-                    size={20}
+                    size={isCompact ? 16 : 18}
                     style={
                       effectiveFollowStatus === "none"
                         ? styles.plusIcon
@@ -1190,6 +1303,7 @@ const NewSocialCard = ({
                     }
                   />
                   <Text
+                    numberOfLines={1}
                     style={
                       effectiveFollowStatus === "none"
                         ? styles.followText
@@ -1216,7 +1330,7 @@ const NewSocialCard = ({
               (source !== "SocialHomeScreen" && source !== "EachProfile") ? { marginLeft: "auto" } : {}
             ]}
           >
-            <Icon name="ellipsis-vertical" size={22} color="grey" />
+            <Icon name="ellipsis-vertical" size={isCompact ? 18 : 20} color="#6B7280" />
           </TouchableOpacity>
 
           {/* Report Post Modal */}
@@ -1298,30 +1412,15 @@ const NewSocialCard = ({
         </View>
 
         {/* video + reels */}
-        {video && (
+        {videoUri && (
           <>
-            <TouchableOpacity onPress={openReelModal}>
-              <View style={styles.squareMediaWrapper}>
-                <VideoView
-                  source={{ uri: `${video.replace(/\\/g, "/")}` }}
-                  style={styles.squareMedia}
-                  resizeMode="cover"
-                  shouldPlay={false}
-                  isLooping
-                  isMuted={isMuted}
-                />
-                <TouchableOpacity
-                  style={styles.muteButton}
-                  onPress={toggleMute}
-                >
-                  {isMuted ? (
-                    <Ionicons name="volume-mute" size={15} color="white" />
-                  ) : (
-                    <Ionicons name="volume-high" size={15} color="white" />
-                  )}
-                </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
+            <FeedVideoPreview
+              uri={videoUri}
+              isMuted={isMuted}
+              onToggleMute={toggleMute}
+              onPress={openReelModal}
+              paused={reelModalVisible}
+            />
             <Modal
               animationType="slide"
               transparent={false}
@@ -1338,18 +1437,14 @@ const NewSocialCard = ({
                     <Ionicons name="arrow-back" size={32} color="white" />
                   </TouchableOpacity>
 
-                  {/* Video Player */}
-
-                  <VideoView
-                    ref={reelRef}
-                    source={{ uri: `${video.replace(/\\/g, "/")}` }}
-                    style={styles.reelVideo}
-                    resizeMode="contain"
-                    shouldPlay={isReelPlaying}
-                    isLooping
-                    isMuted={isReelMuted}
-                    useNativeControls
-                  />
+                  {/* Video Player — mount only while modal is open */}
+                  {reelModalVisible && (
+                    <ReelVideoPlayer
+                      uri={videoUri}
+                      isMuted={isReelMuted}
+                      isPlaying={isReelPlaying}
+                    />
+                  )}
 
                   {/* Mute Button */}
                   <TouchableOpacity
@@ -1586,12 +1681,11 @@ const NewSocialCard = ({
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 decelerationRate="fast"
-                style={{ marginLeft: -16, marginRight: -16 }}
+                style={styles.mediaBleed}
                 contentContainerStyle={{ paddingHorizontal: 0 }}
               >
                 {images.map((image, index) => {
                   const imageUri = `${image}`;
-                  console.log("Rendering image:", imageUri);
                   return (
                     <TouchableWithoutFeedback
                       key={index}
@@ -1610,7 +1704,7 @@ const NewSocialCard = ({
               </ScrollView>
             ) : (
               <TouchableWithoutFeedback onPress={handleDoubleTap}>
-                <View style={styles.squareMediaWrapper}>
+                <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
                   <Image
                     style={styles.squareMedia}
                     source={{ uri: `${images[0]}` }}
@@ -1639,69 +1733,67 @@ const NewSocialCard = ({
         )}
 
         {/* Caption below media */}
-        <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
+        <View style={styles.captionSection}>
           {renderDescription()}
-          <TouchableOpacity onPress={toggleDescription}>
-            <Text style={styles.readMore}>
-              {showFullDescription ? tr("readLess", "Read less") : tr("readMore", "Read more")}
-            </Text>
-          </TouchableOpacity>
+          {!!description && (
+            <TouchableOpacity onPress={toggleDescription} hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}>
+              <Text style={styles.readMore}>
+                {showFullDescription ? tr("readLess", "Read less") : tr("readMore", "Read more")}
+              </Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Social Info Section */}
         <View style={styles.socialInfo}>
           <View style={styles.likeSection}>
             <View style={styles.heartIconContainer}>
-              <FontAwesomeIcon name="heart" size={10} color="pink" />
+              <FontAwesomeIcon name="heart" size={9} color="#fff" />
             </View>
-
-            <View style={styles.commentIconContainer}>
-              <FontAwesomeIcon name="thumbs-up" size={10} color="lightblue" />
-            </View>
-            <Text style={styles.socialText}>{likeCount}</Text>
-          </View>
-          <Text style={styles.socialText}>
-              {commentCount} {tr("comments", "comments")} • {reposts} {tr("reposts", "reposts")}
+            <Text style={styles.socialText} numberOfLines={1}>
+              {likeCount}
             </Text>
+          </View>
+          <Text style={[styles.socialText, styles.socialMetaText]} numberOfLines={1}>
+            {commentCount} {isCompact ? tr("comments_short", "comments") : tr("comments", "comments")}
+            {" · "}
+            {reposts} {isCompact ? tr("reposts_short", "reposts") : tr("reposts", "reposts")}
+          </Text>
         </View>
 
         {/* Action Buttons */}
         <View style={styles.actions}>
-          <TouchableOpacity onPress={toggleLike} style={styles.likeButton}>
+          <TouchableOpacity onPress={toggleLike} style={styles.actionItem}>
             <FontAwesomeIcon
               key={isLiked}
               name={isLiked ? "heart" : "heart-o"}
-              size={24}
-              color={isLiked ? "red" : "black"}
-              style={{
-                textShadowColor: "white",
-                textShadowOffset: { width: 1, height: 1 },
-              }}
+              size={ACTION_ICON}
+              color={isLiked ? "#E11D48" : "#374151"}
             />
-            <Text style={styles.actionText}>{tr("like", "Like")}</Text>
+            <Text style={[styles.actionText, isLiked && styles.actionTextActive]} numberOfLines={1}>
+              {tr("like", "Like")}
+            </Text>
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={openCommentsModal}>
-            <FontAwesomeIcon
-              name="comment-o"
-              size={24}
-              marginLeft={10}
-              color="black"
-            />
-            <Text style={styles.actionText}>{tr("comment", "Comment")}</Text>
+          <TouchableOpacity onPress={openCommentsModal} style={styles.actionItem}>
+            <FontAwesomeIcon name="comment-o" size={ACTION_ICON} color="#374151" />
+            <Text style={styles.actionText} numberOfLines={1}>
+              {tr("comment", "Comment")}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={openRepostModal}>
-            <FontAwesomeIcon name="retweet" size={24} marginLeft={10} />
-            <Text style={styles.actionText}>{tr("repost", "Repost")}</Text>
+
+          <TouchableOpacity onPress={openRepostModal} style={styles.actionItem}>
+            <FontAwesomeIcon name="retweet" size={ACTION_ICON} color="#374151" />
+            <Text style={styles.actionText} numberOfLines={1}>
+              {tr("repost", "Repost")}
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={openShareModal}>
-            <FontAwesomeIcon
-              name="paper-plane-o"
-              size={22}
-              marginLeft={10}
-              color="#000"
-            />
-            <Text style={styles.actionText}>{tr("share", "Share")}</Text>
+
+          <TouchableOpacity onPress={openShareModal} style={styles.actionItem}>
+            <FontAwesomeIcon name="paper-plane-o" size={ACTION_ICON - 1} color="#374151" />
+            <Text style={styles.actionText} numberOfLines={1}>
+              {tr("share", "Share")}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -2003,40 +2095,45 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "transparent",
-    paddingVertical: 4,
+    paddingVertical: isCompact ? 2 : 4,
     paddingHorizontal: 0,
     marginHorizontal: 0,
   },
 
   card: {
     backgroundColor: "#fff",
-    paddingLeft: 16,
-    paddingRight: 16,
-    paddingBottom: 12,
-    paddingTop: 4,
-    borderRadius: 14,
+    paddingLeft: CARD_PAD,
+    paddingRight: CARD_PAD,
+    paddingBottom: isCompact ? 8 : 10,
+    paddingTop: isCompact ? 8 : 10,
+    borderRadius: isCompact ? 10 : 14,
     borderWidth: 1,
     borderColor: "#FFE7C2",
-    marginHorizontal: 0,
-    marginBottom: 6,
-    // Orange themed shadow/glow
+    marginHorizontal: isCompact ? 6 : 8,
+    marginBottom: isCompact ? 8 : 10,
+    overflow: "hidden",
     shadowColor: Theme.themeColor,
-    shadowOpacity: 0.18,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 6,
+    shadowOpacity: isCompact ? 0.1 : 0.14,
+    shadowRadius: isCompact ? 6 : 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: isCompact ? 3 : 5,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
+    minHeight: AVATAR_SIZE,
+    marginBottom: 6,
   },
   profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
   },
   headerText: {
-    marginLeft: 10,
+    flex: 1,
+    marginLeft: isCompact ? 8 : 10,
+    marginRight: 6,
+    minWidth: 0,
   },
   commentHeaderContainer: {
     flexDirection: "row",
@@ -2057,63 +2154,59 @@ const styles = StyleSheet.create({
   },
 
   name: {
-    fontSize: 16,
-    fontWeight: "bold",
+    fontSize: isCompact ? 14 : 15,
+    fontWeight: "700",
+    color: "#111827",
   },
   title: {
-    fontSize: 14,
+    fontSize: 13,
     color: "gray",
   },
   time: {
     fontSize: 12,
     color: "gray",
   },
-  followContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: "auto",
-  },
   moreOptions: {
     fontSize: 18,
     color: "#333",
     fontWeight: "bold",
   },
-
   followContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: "auto",
+    flexShrink: 0,
+    maxWidth: isCompact ? 96 : 110,
+    paddingHorizontal: isCompact ? 4 : 6,
   },
   iconContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   plusIcon: {
-    fontSize: 20,
+    fontSize: isCompact ? 16 : 18,
     color: Theme.themeColor,
-    marginRight: 4,
+    marginRight: 2,
     fontWeight: "bold",
   },
   followText: {
     color: Theme.themeColor,
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: isCompact ? 13 : 14,
+    fontWeight: "700",
   },
-
   checkIcon: {
-    fontSize: 20,
+    fontSize: isCompact ? 16 : 18,
     color: "grey",
-    marginRight: 4,
+    marginRight: 2,
     fontWeight: "bold",
   },
   followingText: {
     color: "grey",
-    fontSize: 18,
-    fontWeight: "bold",
+    fontSize: isCompact ? 13 : 14,
+    fontWeight: "700",
   },
   bannerImage: {
-    width: windowWidth,
-    height: windowWidth,
+    width: "100%",
+    aspectRatio: 1,
     padding: 0,
     marginHorizontal: 0,
     marginVertical: 6,
@@ -2123,18 +2216,23 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     marginTop: 2,
-    marginBottom: 4,
+    marginBottom: 2,
+    overflow: "hidden",
+  },
+  mediaBleed: {
+    marginLeft: -CARD_PAD,
+    marginRight: -CARD_PAD,
   },
   bannerSingleImage: {
     width: "100%",
-    height: 400,
+    aspectRatio: 1,
     padding: 0,
     marginHorizontal: 0,
     marginVertical: 6,
   },
   squareMediaWrapper: {
-    width: windowWidth,
-    height: windowWidth, // square edge-to-edge
+    width: windowWidth - (isCompact ? 12 : 16),
+    height: windowWidth - (isCompact ? 12 : 16),
     alignSelf: "center",
     overflow: "hidden",
     borderRadius: 0,
@@ -2144,44 +2242,44 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  captionSection: {
+    paddingTop: isCompact ? 6 : 8,
+    paddingBottom: 2,
+  },
+  descriptionText: {
+    color: "#111827",
+    fontSize: isCompact ? 13 : 14,
+    lineHeight: isCompact ? 18 : 20,
+  },
   readMore: {
-    color: "black",
-    marginBottom: 4,
+    color: "#6B7280",
+    fontSize: isCompact ? 12 : 13,
+    fontWeight: "600",
+    marginTop: 2,
+    marginBottom: 2,
   },
   socialInfo: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f1f1f1",
+    paddingVertical: isCompact ? 6 : 8,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#E5E7EB",
+    gap: 8,
   },
   likeSection: {
     flexDirection: "row",
     alignItems: "center",
+    flexShrink: 0,
+    gap: 5,
   },
   heartIconContainer: {
-    width: 20,
-    height: 20,
-    borderRadius: 15,
-    borderWidth: 1,
-
+    width: 16,
+    height: 16,
+    borderRadius: 8,
     justifyContent: "center",
     alignItems: "center",
-    marginLeft: 10,
-    backgroundColor: "red",
-  },
-  commentIconContainer: {
-    width: 20,
-    height: 20,
-    borderRadius: 15,
-    borderWidth: 1,
-
-    justifyContent: "center",
-    alignItems: "center",
-    marginLeft: 8,
-    backgroundColor: "blue",
-    right: 5,
+    backgroundColor: "#E11D48",
   },
   likeIcon: {
     width: 20,
@@ -2189,23 +2287,39 @@ const styles = StyleSheet.create({
     marginRight: 5,
   },
   socialText: {
-    fontSize: 14,
-    color: "darkgrey",
+    fontSize: isCompact ? 12 : 13,
+    color: "#6B7280",
+  },
+  socialMetaText: {
+    flexShrink: 1,
+    textAlign: "right",
   },
   actions: {
     flexDirection: "row",
+    alignItems: "center",
     justifyContent: "space-between",
-    paddingVertical: 6,
-    marginTop: 4,
-    borderTopWidth: 1,
-    borderTopColor: "#f1f1f1",
+    paddingTop: isCompact ? 6 : 8,
+    paddingBottom: 2,
+    marginTop: 2,
+  },
+  actionItem: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: isCompact ? 4 : 6,
+    minWidth: 0,
   },
   actionText: {
-    fontSize: 14,
-    color: "black",
+    fontSize: ACTION_FONT,
+    color: "#374151",
+    marginTop: 3,
+    fontWeight: "500",
+  },
+  actionTextActive: {
+    color: "#E11D48",
   },
   likeButton: {
-    marginRight: 10,
+    marginRight: 0,
   },
   shareModalOverlay: {
     flex: 1,
@@ -2596,11 +2710,11 @@ const styles = StyleSheet.create({
   },
   muteButton: {
     position: "absolute",
-    bottom: 20,
-    right: 20,
+    bottom: isCompact ? 12 : 16,
+    right: isCompact ? 12 : 16,
     backgroundColor: "rgba(0, 0, 0, 0.5)",
-    borderRadius: 25,
-    padding: 8,
+    borderRadius: 20,
+    padding: isCompact ? 6 : 8,
   },
   reelModalOverlay: {
     flex: 1,
@@ -2779,9 +2893,12 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   moreOptionsButton: {
-    paddingLeft: 4,
+    paddingLeft: 2,
+    paddingVertical: 4,
+    paddingRight: 2,
     justifyContent: "center",
     alignItems: "center",
+    flexShrink: 0,
   },
   likeIconContainer: {
     position: "absolute",

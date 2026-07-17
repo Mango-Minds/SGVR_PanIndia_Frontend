@@ -126,11 +126,25 @@ const CreateNewPost = ({ navigation }) => {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const selectedAsset = result.assets[0];
         
-        // Convert ImagePicker result to match the expected format
+        // Prefer picker-provided mimeType so Android/S3 get a real Content-Type
+        const isVideo = selectedAsset.type === "video";
+        const inferredExt = isVideo
+          ? selectedAsset.uri?.match(/\.(mp4|mov|avi|webm|mkv)(\?|$)/i)?.[1]?.toLowerCase() || "mp4"
+          : selectedAsset.uri?.match(/\.(jpe?g|png|gif|webp)(\?|$)/i)?.[1]?.toLowerCase() || "jpg";
         const selectedMedia = {
           uri: selectedAsset.uri,
-          name: selectedAsset.fileName || `media_${Date.now()}.${selectedAsset.type === 'video' ? 'mp4' : 'jpg'}`,
-          mimeType: selectedAsset.type === 'video' ? 'video/mp4' : 'image/jpeg',
+          name:
+            selectedAsset.fileName ||
+            `media_${Date.now()}.${inferredExt === "jpeg" ? "jpg" : inferredExt}`,
+          mimeType:
+            selectedAsset.mimeType ||
+            (isVideo
+              ? inferredExt === "mov"
+                ? "video/quicktime"
+                : `video/${inferredExt === "mkv" ? "x-matroska" : inferredExt}`
+              : inferredExt === "jpg" || inferredExt === "jpeg"
+                ? "image/jpeg"
+                : `image/${inferredExt}`),
           type: selectedAsset.type,
           size: selectedAsset.fileSize,
         };

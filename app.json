@@ -30,6 +30,7 @@
       },
       "package": "com.inbharat.app",
       "versionCode": 6,
+      "usesCleartextTraffic": true,
       "config": {
         "googleMaps": {
           "apiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
