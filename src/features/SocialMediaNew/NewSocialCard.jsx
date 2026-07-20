@@ -19,6 +19,7 @@ import {
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
+  InteractionManager,
 } from "react-native";
 import Theme from "../../styles/theme";
 import FontAwesomeIcon from "react-native-vector-icons/FontAwesome";
@@ -147,6 +148,8 @@ const SocialVideoPlayer = ({
   contentFit = "cover",
   style,
   showNativeControls = false,
+  /** Android TextureView/SurfaceView steals touches unless none */
+  pointerEvents = "none",
 }) => {
   const mutedRef = useRef(muted);
   const playingRef = useRef(playing);
@@ -220,6 +223,7 @@ const SocialVideoPlayer = ({
       contentFit={contentFit}
       nativeControls={showNativeControls}
       allowsFullscreen={showNativeControls}
+      pointerEvents={pointerEvents}
       {...androidVideoSurfaceProps}
     />
   );
@@ -307,11 +311,7 @@ const FeedVideoPreview = ({
         dimension ? dimensionStyle : styles.mediaBleed,
       ]}
     >
-      <TouchableOpacity
-        onPress={onPress}
-        activeOpacity={0.9}
-        style={styles.squareMedia}
-      >
+      <View style={styles.squareMedia}>
         <FeedVideoPoster uri={uri} />
         {shouldPlay ? (
           <SocialVideoPlayer
@@ -320,6 +320,7 @@ const FeedVideoPreview = ({
             playing
             contentFit="cover"
             style={StyleSheet.absoluteFillObject}
+            pointerEvents="none"
           />
         ) : null}
         {!shouldPlay ? (
@@ -333,7 +334,14 @@ const FeedVideoPreview = ({
             <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.92)" />
           </View>
         ) : null}
-      </TouchableOpacity>
+        {/* Absolute tap layer — Android VideoView otherwise swallows press and reel never opens */}
+        <Pressable
+          onPress={onPress}
+          style={styles.feedVideoTapLayer}
+          accessibilityRole="button"
+          accessibilityLabel="Open video reel"
+        />
+      </View>
       {shouldPlay ? (
         <TouchableOpacity
           style={styles.muteButton}
@@ -358,7 +366,8 @@ const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => (
     playing={isPlaying}
     contentFit="contain"
     style={styles.reelVideo}
-    showNativeControls={Platform.OS === "android"}
+    showNativeControls={false}
+    pointerEvents="none"
   />
 );
 
@@ -1001,6 +1010,8 @@ const NewSocialCard = ({
     console.log("Current modal states - reelModalVisible:", reelModalVisible, "isShareModalVisible:", isShareModalVisible);
     
     // Close any other modals that might interfere
+    setIsReelPlaying(false);
+    setReelPlayerReady(false);
     setReelModalVisible(false);
     setCommentsModalVisible(false);
     setRepostModalVisible(false);
@@ -1295,32 +1306,61 @@ const NewSocialCard = ({
   // Android: always start unmuted (feed + reel)
   const [isMuted, setIsMuted] = useState(false);
   const [reelModalVisible, setReelModalVisible] = useState(false);
+  /** Mount reel player only after feed ExoPlayer has released (Android physical devices) */
+  const [reelPlayerReady, setReelPlayerReady] = useState(false);
   const [isReelMuted, setIsReelMuted] = useState(false);
   const [isReelPlaying, setIsReelPlaying] = useState(true);
   const [showReelFullDescription, setShowReelFullDescription] = useState(false);
   const [showReelModal, setShowReelModal] = useState(false);
+  const reelMountTimerRef = useRef(null);
   const videoUri = normalizeVideoUri(video);
 
   const toggleMute = () => setIsMuted((prev) => !prev);
   const toggleReelMute = () => setIsReelMuted((prev) => !prev);
 
   const openReelModal = async () => {
+    if (!videoUri) return;
     setIsReelMuted(false);
     setIsReelPlaying(true);
     setIsMuted(true);
+    setReelPlayerReady(false);
     if (Platform.OS === "ios") {
       audioReadyPromise = null;
       await prepareAudioSession();
     }
+    // Open modal first so feed preview pauses/unmounts, then attach reel player
     setReelModalVisible(true);
+    if (reelMountTimerRef.current) {
+      clearTimeout(reelMountTimerRef.current);
+      reelMountTimerRef.current = null;
+    }
+    InteractionManager.runAfterInteractions(() => {
+      reelMountTimerRef.current = setTimeout(() => {
+        setReelPlayerReady(true);
+        reelMountTimerRef.current = null;
+      }, Platform.OS === "android" ? 120 : 0);
+    });
   };
   const closeReelModal = () => {
+    if (reelMountTimerRef.current) {
+      clearTimeout(reelMountTimerRef.current);
+      reelMountTimerRef.current = null;
+    }
     setIsReelPlaying(false);
+    setReelPlayerReady(false);
     setReelModalVisible(false);
     if (Platform.OS === "android") {
       setIsMuted(false);
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (reelMountTimerRef.current) {
+        clearTimeout(reelMountTimerRef.current);
+      }
+    };
+  }, []);
 
   const openDescriptionModal = () => setShowReelModal(true);
   const closeDescriptionModal = () => setShowReelModal(false);
@@ -1639,6 +1679,9 @@ const NewSocialCard = ({
               transparent={false}
               visible={reelModalVisible}
               onRequestClose={closeReelModal}
+              statusBarTranslucent={Platform.OS === "android"}
+              hardwareAccelerated={Platform.OS === "android"}
+              presentationStyle="fullScreen"
             >
               <View style={styles.reelModalOverlay}>
                 <View style={styles.reelModalContent}>
@@ -1654,13 +1697,17 @@ const NewSocialCard = ({
                     <Ionicons name="arrow-back" size={24} color="white" />
                   </TouchableOpacity>
 
-                  {/* Video Player — mount only while modal is open */}
-                  {reelModalVisible && (
+                  {/* Wait for feed ExoPlayer release before mounting reel player */}
+                  {reelModalVisible && reelPlayerReady ? (
                     <ReelVideoPlayer
                       uri={videoUri}
                       isMuted={isReelMuted}
                       isPlaying={isReelPlaying}
                     />
+                  ) : (
+                    <View style={[styles.reelVideo, styles.reelLoading]}>
+                      <ActivityIndicator color="#fff" size="large" />
+                    </View>
                   )}
 
                   {/* Mute Button */}
@@ -2977,6 +3024,11 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 20,
     padding: isCompact ? 6 : 8,
+    zIndex: 3,
+    elevation: 4,
+  },
+  feedVideoTapLayer: {
+    ...StyleSheet.absoluteFillObject,
     zIndex: 2,
     elevation: 2,
   },
