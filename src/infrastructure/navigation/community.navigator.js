@@ -12,9 +12,7 @@ import CommunityMemberProfileScreen from "../../features/community/communityMemb
 import EventsStackNavigator from "./events.navigator";
 import CommunityNotifications from "../../features/community/CommunityNotifications";
 import CommunitySearchScreenNew from "../../features/communityNew/communitySearchNew.screen";
-import { TempleStackNavigator } from "./Temple.navigator";
 import CommunityProfileScreenNew from "../../features/communityNew/communityProfileNew.screen";
-import BottomNavigation from "../../components/community/BottomNavigation";
 import DashboardScreen from "../../features/dashboard.screen";
 const Stack = createStackNavigator();
 
@@ -31,7 +29,6 @@ export const CommunityStackNavigator = () => (
       component={CommunityMemberProfileScreen}
     />
     <Stack.Screen name="MainHome" component={DashboardScreen} />
-    <Stack.Screen name="Temple" component={TempleStackNavigator} />
     {/* <Stack.Screen name="Homepage" component={CommunityHomeScreen} /> */}
     <Stack.Screen name="MyProfile" component={CommunityMyProfileScreen} />
     <Stack.Screen name="ReportScreen" component={Reportscreen} />

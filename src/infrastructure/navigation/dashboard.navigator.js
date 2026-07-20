@@ -2,7 +2,6 @@ import React from "react";
 import { createStackNavigator } from "@react-navigation/stack";
 import DashboardScreen from "../../features/dashboard.screen";
 import { JewelleryStackNavigator } from "./jewellery.navigator";
-import { TempleStackNavigator } from "./Temple.navigator";
 import { SocialMediaStackNavigator } from "./socialMedia.navigator";
 import { B2BStackNavigator } from "./B2B.navigator";
 import { MatrimonyStackNavigator } from "./matrimony.navigator";
@@ -67,7 +66,6 @@ export const DashboardNavigator = () => (
     <Stack.Screen name="ReportScreen" component={Reportscreen} />
     <Stack.Screen name="EditProfileDetails" component={EditProfileDetails} />
     <Stack.Screen name="Contactus" component={Contactus} />
-    <Stack.Screen name="Temple" component={TempleStackNavigator} />
     <Stack.Screen name="ChangePassword" component={ChangePassword} />
     <Stack.Screen name="SocialMedia" component={SocialMediaStackNavigator} />
     <Stack.Screen name="Jewellery" component={JewelleryStackNavigator} />

@@ -77,7 +77,17 @@ const androidVideoSurfaceProps =
   Platform.OS === "android" ? { surfaceType: "textureView" } : {};
 
 /** Feed preview — muted looping playback via expo-video */
-const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
+const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused, dimension }) => {
+  const dimensionStyle = dimension
+    ? {
+        width: dimension,
+        height: dimension,
+        alignSelf: "center",
+        overflow: "hidden",
+        borderRadius: 0,
+        backgroundColor: "#000",
+      }
+    : null;
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
     p.muted = true;
@@ -108,7 +118,12 @@ const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+      <View
+        style={[
+          styles.squareMediaWrapper,
+          dimension ? dimensionStyle : styles.mediaBleed,
+        ]}
+      >
         <VideoView
           player={player}
           style={styles.squareMedia}
@@ -196,8 +211,18 @@ const NewSocialCard = ({
   profileImageUrl,
   currentFollowStatus,
   onFollowStatusChange,
+  mediaSize,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const mediaDimension = mediaSize ?? windowWidth;
+  const mediaWrapperOverride = {
+    width: mediaDimension,
+    height: mediaDimension,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderRadius: 0,
+    backgroundColor: '#000',
+  };
   const { t } = useTranslation();
   const tr = (key, fallback) => {
     try {
@@ -228,7 +253,7 @@ const NewSocialCard = ({
   // Handle scrolling to update current index
   const handleScroll = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const slide = Math.floor(contentOffsetX / windowWidth);
+    const slide = Math.floor(contentOffsetX / mediaDimension);
     setCurrentIndex(slide);
   };
 
@@ -1420,6 +1445,7 @@ const NewSocialCard = ({
               onToggleMute={toggleMute}
               onPress={openReelModal}
               paused={reelModalVisible}
+              dimension={mediaSize ? mediaDimension : undefined}
             />
             <Modal
               animationType="slide"
@@ -1681,6 +1707,7 @@ const NewSocialCard = ({
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 decelerationRate="fast"
+                snapToInterval={mediaDimension}
                 style={styles.mediaBleed}
                 contentContainerStyle={{ paddingHorizontal: 0 }}
               >
@@ -1691,7 +1718,7 @@ const NewSocialCard = ({
                       key={index}
                       onPress={handleDoubleTap}
                     >
-                      <View style={styles.squareMediaWrapper}>
+                      <View style={[styles.squareMediaWrapper, mediaWrapperOverride]}>
                         <Image
                           style={styles.squareMedia}
                           source={{ uri: imageUri }}
@@ -1704,7 +1731,12 @@ const NewSocialCard = ({
               </ScrollView>
             ) : (
               <TouchableWithoutFeedback onPress={handleDoubleTap}>
-                <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+                <View
+                  style={[
+                    styles.squareMediaWrapper,
+                    mediaSize ? mediaWrapperOverride : styles.mediaBleed,
+                  ]}
+                >
                   <Image
                     style={styles.squareMedia}
                     source={{ uri: `${images[0]}` }}

@@ -27,7 +27,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { ActivityIndicator } from "react-native";
 import DashboardScreen from "../../features/dashboard.screen";
 import MyMatrimonyProfile from "../../features/matrimonyNew/matrimonyProfile";
-import TempleEditAdminRegisterScreen from "../../features/Temple/EditProfile";
+import EditProfileScreen from "../../features/shared/EditProfile.screen";
 import MatrimonyProfileEdit from "../../features/matrimonyNew/matrimonyProfileEdit";
 import OnboardModuleForm from "../../features/OnBoardModuleForm";
 
@@ -98,7 +98,7 @@ export const MatrimonyStackNavigator = () => {
       <Stack.Screen name="MatrimonyProfileVendorNew" component={MatrimonyProfileVendorNew} />
       <Stack.Screen name="ForVendor" component={ForVendor} />
       <Stack.Screen name="MyMatrimonyProfile" component={MyMatrimonyProfile} />
-      <Stack.Screen name="EditProfile" component={TempleEditAdminRegisterScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyMatrimonyProfileEdit" component={MatrimonyProfileEdit}/>
       <Stack.Screen name="ReportScreen" component={Reportscreen} />
       <Stack.Screen name="MatrimonyViewUser" component={MatrimonyViewUser} />

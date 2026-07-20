@@ -7,6 +7,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { debounce } from "lodash";
 import { useSelector } from 'react-redux';
 import { getSearchUsers } from '../../services/socialMedia.services';
+import BottomNavigation from '../../components/social/BottomNavigation';
 
 const SearchResults = () => {
   const searchInputRef = useRef(null);
@@ -128,39 +129,42 @@ const SearchResults = () => {
         </View>
       </View>
       
-      {loadingAnimation ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-          <Text style={styles.loadingText}>Searching...</Text>
-        </View>
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={users}
-          renderItem={renderUser}
-          keyExtractor={item => item._id}
-          contentContainerStyle={styles.list}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
-            searchTerm.length > 0 ? (
-              <View style={styles.emptyContainer}>
-                <Icon name="search" size={50} color="#ccc" />
-                <Text style={styles.emptyText}>No users found</Text>
-                <Text style={styles.emptySubText}>Try searching with a different term</Text>
-              </View>
-            ) : (
-              <View style={styles.emptyContainer}>
-                <Icon name="people" size={50} color="#ccc" />
-                <Text style={styles.emptyText}>Search for users</Text>
-                <Text style={styles.emptySubText}>Type at least 2 characters to search</Text>
-              </View>
-            )
-          }
-        />
-      )}
+      <View style={styles.contentContainer}>
+        {loadingAnimation ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <Text style={styles.loadingText}>Searching...</Text>
+          </View>
+        ) : error ? (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={users}
+            renderItem={renderUser}
+            keyExtractor={item => item._id}
+            contentContainerStyle={styles.list}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+            ListEmptyComponent={
+              searchTerm.length > 0 ? (
+                <View style={styles.emptyContainer}>
+                  <Icon name="search" size={50} color="#ccc" />
+                  <Text style={styles.emptyText}>No users found</Text>
+                  <Text style={styles.emptySubText}>Try searching with a different term</Text>
+                </View>
+              ) : (
+                <View style={styles.emptyContainer}>
+                  <Icon name="people" size={50} color="#ccc" />
+                  <Text style={styles.emptyText}>Search for users</Text>
+                  <Text style={styles.emptySubText}>Type at least 2 characters to search</Text>
+                </View>
+              )
+            }
+          />
+        )}
+      </View>
+      <BottomNavigation navigation={navigation} currentScreen="search" />
     </View>
   );
 };
@@ -169,6 +173,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f0f0f0",
+  },
+  contentContainer: {
+    flex: 1,
   },
   headerContainer: {
     flexDirection: "row",

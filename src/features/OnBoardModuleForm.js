@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   ActivityIndicator,
   Pressable,
+  Alert,
 } from "react-native";
 import { Divider, Menu, Provider, RadioButton } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
@@ -60,8 +61,6 @@ const styles = StyleSheet.create({
 });
 
 const userTypes = {
- 
-  Temple: ["Temple Admin", "Temple Shop", "Devotees", "Pandit"],
   Matrimony: [
     "Matrimony Man",
     "Matrimony Woman",
@@ -83,11 +82,6 @@ const userTypes = {
 
 
 const userTypeMappings = {
-  
-  "Temple Admin": "templeAdmin",
-  "Temple Shop": "templeShopOwner",
-  Devotees: "basicUser",
-  Pandit: "pandit",
   "Matrimony Man": "matrimonyMan",
   "Matrimony Woman": "matrimonyWoman",
   "Matrimony Vendor": "matrimonyVendor",
@@ -165,7 +159,6 @@ console.log("Selected Module:", selectedModule);
   
       const onboardingFlagMap = {
         Matrimony: "isMatrimonyOnboarded",
-        Temple: "isTempleOnboarded",
         Jewellery: "isJewelryOnboarded",
       };
   
@@ -207,7 +200,6 @@ console.log("Selected Module:", selectedModule);
   console.log("User data persisted to AsyncStorage with onboarding flags:", {
     isJewelryOnboarded: normalizedUser.isJewelryOnboarded,
     isMatrimonyOnboarded: normalizedUser.isMatrimonyOnboarded,
-    isTempleOnboarded: normalizedUser.isTempleOnboarded,
   });
   
   // Also update the setInitialUser to ensure Redux state is fully updated
@@ -229,13 +221,11 @@ console.log("Selected Module:", selectedModule);
       
       // Navigate to the specific module after successful onboarding
       if (selectedModule === "Matrimony") {
-        navigation.navigate("Matrimony");
-      } else if (selectedModule === "Temple") {
-        // Since we're already in the Temple stack, navigate to TempleHome
-        // Use setTimeout to ensure navigation happens after state updates
-        setTimeout(() => {
-          navigation.navigate("TempleHome");
-        }, 100);
+        Alert.alert(
+          "Coming Soon",
+          "Matrimony module is coming soon. Stay tuned!"
+        );
+        navigation.goBack();
       } else if (selectedModule === "Jewellery") {
         navigation.reset({
           index: 0,
