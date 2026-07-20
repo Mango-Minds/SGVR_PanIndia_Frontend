@@ -19,6 +19,8 @@ export const createEventData = (eventId) => ({
   entryFee: "",
   capacity: 0,
   registeredCount: 0,
+  interestedCount: 0,
+  interestedUsers: [],
   isVerified: false,
   isFeatured: false,
   createdBy: "",
@@ -69,6 +71,10 @@ export const normalizeEvent = (event) => {
     entryFee: event.entryFee || "Free",
     capacity: event.capacity || 0,
     registeredCount: event.registeredCount || 0,
+    interestedCount: event.interestedCount || 0,
+    interestedUsers: Array.isArray(event.interestedUsers)
+      ? event.interestedUsers.map((id) => String(id?._id || id))
+      : [],
     isVerified: Boolean(event.isVerified),
     isFeatured: Boolean(event.isFeatured),
     createdBy: String(event.createdBy?._id || event.createdBy || ""),

@@ -12,7 +12,9 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  Platform,
 } from "react-native";
+import { setAudioModeAsync } from "expo-audio";
 import { IconButton } from "react-native-paper";
 import Icon from "react-native-vector-icons/Ionicons";
 import { Container, RowBetween } from "../../styles/common.styles";
@@ -56,10 +58,26 @@ const { t } = useTranslation();
   const [tagQuery, setTagQuery] = useState('');
   const [tagSuggestions, setTagSuggestions] = useState([]);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("trending");
+  /** Only one feed video mounts an ExoPlayer — prevents Android OOM / crash */
+  const [activeVideoPostId, setActiveVideoPostId] = useState(null);
   const flatListRef = useRef(null);
   const { getFollowStatus, updateFollowStatus } = useFollowStatus();
   const insets = useSafeAreaInsets();
   const topBarPaddingTop = Math.max(6, Math.min(22, insets.top * 0.6));
+
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 60,
+    minimumViewTime: 120,
+  }).current;
+
+  const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    const firstVideo = viewableItems.find(
+      (v) => v.isViewable && v.item?.video
+    );
+    const nextId = firstVideo?.item?._id ?? null;
+    setActiveVideoPostId((prev) => (prev === nextId ? prev : nextId));
+  }).current;
 
   // Safe translation helper: uses fallback when key is missing
   const tr = (key, fallback) => {
@@ -213,6 +231,18 @@ const { t } = useTranslation();
     );
   };
 
+  // Prime Android media audio session so social videos can unmute with sound
+  useEffect(() => {
+    if (Platform.OS !== "android") return;
+    setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "doNotMix",
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+      allowsRecording: false,
+    }).catch(() => {});
+  }, []);
+
   // Handle refresh when returning from CreateNewPost
   useEffect(() => {
     if (route.params?.refresh) {
@@ -245,7 +275,43 @@ const { t } = useTranslation();
   // const filteredPosts = posts.filter(
   //   (post) => post.createdBy?._id !== filterUserId
   // );
-  const filteredPosts = posts; // Show all posts for now
+  const feedCategories = [
+    { key: "trending", label: tr("trending", "Trending") },
+    { key: "news", label: tr("news", "News") },
+    { key: "ads", label: tr("ads", "Ads") },
+    { key: "shared_videos", label: tr("shared_videos", "Shared Videos") },
+  ];
+
+  const hasHashtag = (post, tags) => {
+    const postTags = (post?.hashtags || []).map((t) => String(t).toLowerCase());
+    return tags.some((tag) => postTags.includes(tag));
+  };
+
+  const filteredPosts = (() => {
+    switch (selectedCategory) {
+      case "news":
+        return posts.filter((post) => hasHashtag(post, ["news"]));
+      case "ads":
+        return posts.filter((post) => hasHashtag(post, ["ads", "ad", "advertisement"]));
+      case "shared_videos":
+        return posts.filter(
+          (post) => !!post?.video || post?.type === "text+video"
+        );
+      case "trending":
+      default:
+        // Engagement-first ordering for Trending; keep API order as a stable fallback
+        return [...posts].sort(
+          (a, b) => (b?.likesCount || 0) - (a?.likesCount || 0)
+        );
+    }
+  })();
+
+  const handleSelectCategory = (key) => {
+    if (key === selectedCategory) return;
+    setSelectedCategory(key);
+    setActiveVideoPostId(null);
+    flatListRef.current?.scrollToOffset?.({ offset: 0, animated: true });
+  };
 
   const [refreshing, setRefreshing] = useState(false); // State to manage refreshing
 
@@ -531,11 +597,35 @@ const { t } = useTranslation();
                         profileImageUrl={profileImageUrl}
                         currentFollowStatus={item.followStatus || getFollowStatus(createdBy?._id)}
                         onFollowStatusChange={handleFollowStatusChange}
+                        isActiveVideo={!!item.video && item._id === activeVideoPostId}
                       />
                     );
                   }}
                   keyExtractor={(item, index) => `${item?._id || 'post'}_${index}`}
                   contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 0, paddingBottom: 12 }}
+                  onViewableItemsChanged={onViewableItemsChanged}
+                  viewabilityConfig={viewabilityConfig}
+                  windowSize={5}
+                  maxToRenderPerBatch={4}
+                  initialNumToRender={3}
+                  removeClippedSubviews={Platform.OS === "android"}
+                  ListEmptyComponent={() => {
+                    if (searchTerm.trim()) return null;
+                    const emptyCopy = {
+                      news: tr("no_news_posts", "No news posts yet. Tag posts with #news."),
+                      ads: tr("no_ads_posts", "No ad posts yet. Tag posts with #ads."),
+                      shared_videos: tr("no_shared_videos", "No shared videos yet."),
+                      trending: tr("no_posts", "No posts yet."),
+                    };
+                    return (
+                      <View style={styles.noResultsContainer}>
+                        <Icon name="albums-outline" size={56} color="#ccc" />
+                        <Text style={styles.noResultsText}>
+                          {emptyCopy[selectedCategory] || emptyCopy.trending}
+                        </Text>
+                      </View>
+                    );
+                  }}
                   ListHeaderComponent={() => (
                     <>
                       {/* Hashtag search box (now scrollable with feed) */}
@@ -639,19 +729,44 @@ const { t } = useTranslation();
                       </View>
                       {/* Category tabs (Trending/News/Ads/Shared Videos) */}
                       <View style={{ paddingLeft: 0, paddingRight: 0, paddingTop: 12, paddingBottom: 12 }}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12 }}>
-                          {[
-                            tr("trending", "Trending"),
-                            tr("news", "News"),
-                            tr("ads", "Ads"),
-                            tr("shared_videos", "Shared Videos"),
-                          ].map((label, idx) => (
-                            <View key={idx} style={{ marginRight: 12 }}>
-                              <TouchableOpacity style={{ height: 40, paddingHorizontal: 16, borderRadius: 20, backgroundColor: idx === 0 ? Theme.themeBackgroundColor : "#f2f2f2", borderWidth: 1, borderColor: idx === 0 ? Theme.themeColor : "#e6e6e6", alignItems: "center", justifyContent: "center" }}>
-                                <Text style={{ color: idx === 0 ? Theme.themeColor : "#555", fontSize: 14, fontWeight: "600", includeFontPadding: false }}>{label}</Text>
-                              </TouchableOpacity>
-                            </View>
-                          ))}
+                        <ScrollView
+                          horizontal
+                          nestedScrollEnabled
+                          showsHorizontalScrollIndicator={false}
+                          contentContainerStyle={{ paddingHorizontal: 12 }}
+                        >
+                          {feedCategories.map((cat) => {
+                            const isActive = selectedCategory === cat.key;
+                            return (
+                              <View key={cat.key} style={{ marginRight: 12 }}>
+                                <TouchableOpacity
+                                  onPress={() => handleSelectCategory(cat.key)}
+                                  activeOpacity={0.7}
+                                  style={{
+                                    height: 40,
+                                    paddingHorizontal: 16,
+                                    borderRadius: 20,
+                                    backgroundColor: isActive ? Theme.themeBackgroundColor : "#f2f2f2",
+                                    borderWidth: 1,
+                                    borderColor: isActive ? Theme.themeColor : "#e6e6e6",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                  }}
+                                >
+                                  <Text
+                                    style={{
+                                      color: isActive ? Theme.themeColor : "#555",
+                                      fontSize: 14,
+                                      fontWeight: "600",
+                                      includeFontPadding: false,
+                                    }}
+                                  >
+                                    {cat.label}
+                                  </Text>
+                                </TouchableOpacity>
+                              </View>
+                            );
+                          })}
                         </ScrollView>
                       </View>
 

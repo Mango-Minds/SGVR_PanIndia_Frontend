@@ -1,16 +1,99 @@
-import React from "react";
-import { View, Image, StyleSheet, Text, SafeAreaView, TouchableOpacity } from "react-native";
+import React, { useEffect } from "react";
+import {
+  View,
+  Image,
+  StyleSheet,
+  Text,
+  SafeAreaView,
+  TouchableOpacity,
+  Platform,
+} from "react-native";
 import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
+import { setAudioModeAsync } from "expo-audio";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
+const androidVideoSurfaceProps =
+  Platform.OS === "android" ? { surfaceType: "textureView" } : {};
+
+let playbackAudioModePromise = null;
+
+const ensurePlaybackAudioMode = () => {
+  if (!playbackAudioModePromise) {
+    playbackAudioModePromise = setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "doNotMix",
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+      allowsRecording: false,
+    }).catch((e) => {
+      playbackAudioModePromise = null;
+      console.warn("Failed to set playback audio mode:", e);
+    });
+  }
+  return playbackAudioModePromise;
+};
+
+const applyPlayerMuteState = (player, muted) => {
+  try {
+    player.muted = !!muted;
+    player.volume = muted ? 0 : 1;
+    player.audioMixingMode = muted ? "mixWithOthers" : "doNotMix";
+  } catch (e) {
+    console.warn("Failed to apply mute state:", e);
+  }
+};
+
+const selectFirstAudioTrack = (player) => {
+  try {
+    const tracks = player.availableAudioTracks;
+    if (Array.isArray(tracks) && tracks.length > 0) {
+      player.audioTrack = tracks[0];
+    }
+  } catch (_) {}
+};
+
 const MomentVideo = ({ mediaUrl }) => {
-  const player = useVideoPlayer(mediaUrl, { autoPlay: true, isMuted: false, repeat: false });
+  const player = useVideoPlayer(mediaUrl, (p) => {
+    p.loop = false;
+    applyPlayerMuteState(p, false);
+    p.audioMixingMode = "doNotMix";
+    p.play();
+  });
+
+  useEffect(() => {
+    ensurePlaybackAudioMode();
+    applyPlayerMuteState(player, false);
+    player.audioMixingMode = "doNotMix";
+    player.play();
+    return () => {
+      try {
+        player.pause();
+      } catch (_) {}
+    };
+  }, [player]);
+
+  useEventListener(player, "statusChange", ({ status, error }) => {
+    if (status === "readyToPlay") {
+      selectFirstAudioTrack(player);
+      applyPlayerMuteState(player, false);
+      player.audioMixingMode = "doNotMix";
+      player.play();
+    }
+    if (status === "error") {
+      console.warn("Moment video error:", error);
+    }
+  });
+
   return (
     <VideoView
       style={styles.media}
       player={player}
-      allowsFullscreen={true}
-      allowsPictureInPicture={true}
+      contentFit="contain"
+      nativeControls
+      allowsFullscreen
+      allowsPictureInPicture
+      {...androidVideoSurfaceProps}
     />
   );
 };
@@ -59,9 +142,9 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.45)'
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
   media: {
     flex: 1,
@@ -83,5 +166,3 @@ const styles = StyleSheet.create({
 });
 
 export default MomentViewer;
-
-

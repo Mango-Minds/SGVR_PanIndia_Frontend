@@ -28,6 +28,7 @@ import Icon from "react-native-vector-icons/Ionicons";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEventListener } from "expo";
+import { setAudioModeAsync } from "expo-audio";
 import { BASEAPIURL, RENDERMEDIAURL } from "../../infrastructure/constants";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -56,6 +57,7 @@ import {
 import { generateShareUrl, generateShareMessage } from "../../utils/shareUtils";
 import * as Clipboard from 'expo-clipboard';
 import { useFollowStatus } from "./FollowStatusContext";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import moment from "moment";
 
 const { width: windowWidth } = Dimensions.get("window");
@@ -64,6 +66,8 @@ const CARD_PAD = isCompact ? 10 : 14;
 const AVATAR_SIZE = isCompact ? 40 : 46;
 const ACTION_ICON = isCompact ? 20 : 22;
 const ACTION_FONT = isCompact ? 11 : 12;
+const REEL_ACTION_ICON = isCompact ? 26 : 30;
+const REEL_ACTION_RAIL_WIDTH = isCompact ? 56 : 64;
 
 const normalizeVideoUri = (video) => {
   if (!video) return null;
@@ -76,30 +80,83 @@ const normalizeVideoUri = (video) => {
 const androidVideoSurfaceProps =
   Platform.OS === "android" ? { surfaceType: "textureView" } : {};
 
-/** Feed preview — muted looping playback via expo-video */
-const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
+// Cache audio-session setup so unmute doesn't await / jank the UI every time
+let playbackAudioModePromise = null;
+
+/** Android needs an active media audio session or unmuted video stays silent */
+const ensurePlaybackAudioMode = () => {
+  if (!playbackAudioModePromise) {
+    playbackAudioModePromise = setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "doNotMix",
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+      allowsRecording: false,
+    }).catch((e) => {
+      playbackAudioModePromise = null;
+      console.warn("Failed to set playback audio mode:", e);
+    });
+  }
+  return playbackAudioModePromise;
+};
+
+const applyPlayerMuteState = (player, muted) => {
+  try {
+    player.muted = !!muted;
+    // Explicit volume helps Android after mute→unmute transitions
+    player.volume = muted ? 0 : 1;
+    player.audioMixingMode = muted ? "mixWithOthers" : "doNotMix";
+  } catch (e) {
+    console.warn("Failed to apply mute state:", e);
+  }
+};
+
+const selectFirstAudioTrack = (player) => {
+  try {
+    const tracks = player.availableAudioTracks;
+    if (Array.isArray(tracks) && tracks.length > 0) {
+      player.audioTrack = tracks[0];
+    }
+  } catch (_) {}
+};
+
+/** Single feed ExoPlayer — only mounted for the active/visible card */
+const FeedVideoPreviewPlayer = ({ uri, isMuted, paused }) => {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
-    p.muted = true;
-    p.play();
+    applyPlayerMuteState(p, isMuted);
+    if (!paused) {
+      p.play();
+    }
   });
 
   useEffect(() => {
-    player.muted = isMuted;
-  }, [isMuted, player]);
-
-  useEffect(() => {
+    if (!isMuted && !paused) {
+      ensurePlaybackAudioMode();
+    }
+    applyPlayerMuteState(player, paused ? true : isMuted);
     if (paused) {
       player.pause();
     } else {
       player.play();
     }
-  }, [paused, player]);
+  }, [isMuted, paused, player]);
 
-  // Android ExoPlayer often needs an explicit play once the source is ready
+  useEffect(() => {
+    return () => {
+      try {
+        player.pause();
+      } catch (_) {}
+    };
+  }, [player]);
+
   useEventListener(player, "statusChange", ({ status, error }) => {
-    if (status === "readyToPlay" && !paused) {
-      player.play();
+    if (status === "readyToPlay") {
+      selectFirstAudioTrack(player);
+      applyPlayerMuteState(player, paused ? true : isMuted);
+      if (!paused) {
+        player.play();
+      }
     }
     if (status === "error") {
       console.warn("Feed video error:", error);
@@ -107,15 +164,60 @@ const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
   });
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.9}>
-      <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
-        <VideoView
-          player={player}
-          style={styles.squareMedia}
-          contentFit="cover"
-          nativeControls={false}
-          {...androidVideoSurfaceProps}
-        />
+    <VideoView
+      player={player}
+      style={StyleSheet.absoluteFillObject}
+      contentFit="cover"
+      nativeControls={false}
+      {...androidVideoSurfaceProps}
+    />
+  );
+};
+
+/** Inactive posts show a light placeholder — no ExoPlayer (prevents OOM / crash) */
+const FeedVideoPlaceholder = () => (
+  <View
+    style={[
+      StyleSheet.absoluteFillObject,
+      { backgroundColor: "#111", alignItems: "center", justifyContent: "center" },
+    ]}
+  >
+    <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.85)" />
+  </View>
+);
+
+/**
+ * Feed preview: mounts a real player only when `isActive`.
+ * Other video cards stay as placeholders so Android doesn't keep N ExoPlayers alive.
+ */
+const FeedVideoPreview = ({
+  uri,
+  isMuted,
+  onToggleMute,
+  onPress,
+  paused,
+  isActive = false,
+}) => {
+  const shouldPlay = isActive && !paused;
+
+  return (
+    <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+      <TouchableOpacity
+        onPress={onPress}
+        activeOpacity={0.9}
+        style={styles.squareMedia}
+      >
+        {shouldPlay ? (
+          <FeedVideoPreviewPlayer
+            uri={uri}
+            isMuted={isMuted}
+            paused={false}
+          />
+        ) : (
+          <FeedVideoPlaceholder />
+        )}
+      </TouchableOpacity>
+      {shouldPlay ? (
         <TouchableOpacity
           style={styles.muteButton}
           onPress={onToggleMute}
@@ -127,34 +229,49 @@ const FeedVideoPreview = ({ uri, isMuted, onToggleMute, onPress, paused }) => {
             <Ionicons name="volume-high" size={15} color="white" />
           )}
         </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
+      ) : null}
+    </View>
   );
 };
 
-/** Full-screen reel player — only mounted while modal is open */
+/** Reel player — mounted only while the modal is open */
 const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => {
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
-    p.muted = isMuted;
-    p.play();
+    applyPlayerMuteState(p, isMuted);
+    p.audioMixingMode = "doNotMix";
+    if (isPlaying) {
+      p.play();
+    }
   });
 
   useEffect(() => {
-    player.muted = isMuted;
-  }, [isMuted, player]);
-
-  useEffect(() => {
+    ensurePlaybackAudioMode();
+    applyPlayerMuteState(player, isMuted);
+    player.audioMixingMode = "doNotMix";
     if (isPlaying) {
       player.play();
     } else {
       player.pause();
     }
-  }, [isPlaying, player]);
+  }, [isMuted, isPlaying, player]);
+
+  useEffect(() => {
+    return () => {
+      try {
+        player.pause();
+      } catch (_) {}
+    };
+  }, [player]);
 
   useEventListener(player, "statusChange", ({ status, error }) => {
-    if (status === "readyToPlay" && isPlaying) {
-      player.play();
+    if (status === "readyToPlay") {
+      selectFirstAudioTrack(player);
+      applyPlayerMuteState(player, isMuted);
+      player.audioMixingMode = "doNotMix";
+      if (isPlaying) {
+        player.play();
+      }
     }
     if (status === "error") {
       console.warn("Reel video error:", error);
@@ -165,8 +282,8 @@ const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => {
     <VideoView
       player={player}
       style={styles.reelVideo}
-      contentFit="contain"
-      nativeControls
+      contentFit="cover"
+      nativeControls={false}
       allowsFullscreen
       {...androidVideoSurfaceProps}
     />
@@ -196,8 +313,11 @@ const NewSocialCard = ({
   profileImageUrl,
   currentFollowStatus,
   onFollowStatusChange,
+  /** Only the most-visible feed card should be true — avoids N ExoPlayers / OOM */
+  isActiveVideo = false,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const insets = useSafeAreaInsets();
   const { t } = useTranslation();
   const tr = (key, fallback) => {
     try {
@@ -491,7 +611,13 @@ const NewSocialCard = ({
   }
 
   const toggleMute = () => {
-    setIsMuted((prevMuted) => !prevMuted);
+    setIsMuted((prevMuted) => {
+      const nextMuted = !prevMuted;
+      if (!nextMuted) {
+        ensurePlaybackAudioMode();
+      }
+      return nextMuted;
+    });
   };
 
   const renderDescription = () => {
@@ -1104,11 +1230,22 @@ const NewSocialCard = ({
   const [showReelModal, setShowReelModal] = useState(false);
   const videoUri = normalizeVideoUri(video);
 
-  const toggleReelMute = () => setIsReelMuted((prevMuted) => !prevMuted);
+  const toggleReelMute = () =>
+    setIsReelMuted((prevMuted) => {
+      const nextMuted = !prevMuted;
+      if (!nextMuted) {
+        ensurePlaybackAudioMode();
+      }
+      return nextMuted;
+    });
 
   const openReelModal = () => {
+    // Unmount feed preview first (via paused/isActive), then play reel with sound
+    setIsMuted(true);
+    setIsReelMuted(false);
     setIsReelPlaying(true);
     setReelModalVisible(true);
+    ensurePlaybackAudioMode();
   };
   const closeReelModal = () => {
     setIsReelPlaying(false);
@@ -1119,26 +1256,30 @@ const NewSocialCard = ({
   const closeDescriptionModal = () => setShowReelModal(false);
 
   const renderReelDescription = () => {
+    if (!description) return null;
+
     const reelDescriptionStyle = {
-      color: "white",
-      marginTop: "2%",
-      marginBottom: "2%",
-      maxHeight: showReelFullDescription ? "none" : "100%",
-      overflow: showReelFullDescription ? "visible" : "hidden",
-      backgroundColor: showReelFullDescription ? "black" : "transparent",
-      zIndex: showReelFullDescription ? 999 : 0,
+      color: "#fff",
+      fontSize: isCompact ? 13 : 14,
+      lineHeight: isCompact ? 18 : 20,
+      textShadowColor: "rgba(0,0,0,0.55)",
+      textShadowOffset: { width: 0, height: 1 },
+      textShadowRadius: 2,
     };
 
     if (showReelFullDescription) {
       return <Text style={reelDescriptionStyle}>{description}</Text>;
-    } else {
-      const truncatedReelDescription =
-        description.split(" ").slice(0, 10).join(" ") + "...";
-
-      return (
-        <Text style={reelDescriptionStyle}>{truncatedReelDescription}</Text>
-      );
     }
+
+    const words = String(description).trim().split(/\s+/);
+    const truncated =
+      words.length > 12 ? `${words.slice(0, 12).join(" ")}...` : description;
+
+    return (
+      <Text style={reelDescriptionStyle} numberOfLines={3}>
+        {truncated}
+      </Text>
+    );
   };
 
   const toggleReelDescription = () => {
@@ -1420,6 +1561,7 @@ const NewSocialCard = ({
               onToggleMute={toggleMute}
               onPress={openReelModal}
               paused={reelModalVisible}
+              isActive={isActiveVideo}
             />
             <Modal
               animationType="slide"
@@ -1427,14 +1569,18 @@ const NewSocialCard = ({
               visible={reelModalVisible}
               onRequestClose={closeReelModal}
             >
-              <SafeAreaView style={styles.reelModalOverlay}>
+              <View style={styles.reelModalOverlay}>
                 <View style={styles.reelModalContent}>
                   {/* Back Arrow */}
                   <TouchableOpacity
                     onPress={closeReelModal}
-                    style={styles.reelBackButton}
+                    style={[
+                      styles.reelBackButton,
+                      { top: Math.max(insets.top, 10) },
+                    ]}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
-                    <Ionicons name="arrow-back" size={32} color="white" />
+                    <Ionicons name="arrow-back" size={24} color="white" />
                   </TouchableOpacity>
 
                   {/* Video Player — mount only while modal is open */}
@@ -1448,100 +1594,120 @@ const NewSocialCard = ({
 
                   {/* Mute Button */}
                   <TouchableOpacity
-                    style={styles.reelMuteButton}
+                    style={[
+                      styles.reelMuteButton,
+                      { top: Math.max(insets.top, 10) },
+                    ]}
                     onPress={toggleReelMute}
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                   >
                     <Ionicons
                       name={isReelMuted ? "volume-mute" : "volume-high"}
-                      size={28}
+                      size={22}
                       color="white"
                     />
                   </TouchableOpacity>
 
-                  {/* Profile Picture, Username, and Follow Button */}
-                  <View style={styles.reelProfileContainer}>
-                    <TouchableOpacity
-                      onPress={() => {
-                        // Only navigate if user exists and has a valid ID
-                        if (userId) {
-                          navigation.navigate("EachProfile", {
-                            userId: userId,
-                          });
-                        }
-                      }}
-                    >
-                      <Image
-                        style={styles.reelProfilePicture}
-                        source={
-                          profileImageUri && profileImageUri.trim() !== ""
-                            ? { uri: profileImageUri }
-                            : UserImg
-                      }
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.reelUsername}>
-                      {post?.createdBy?.firstName} {post?.createdBy?.lastName}
-                    </Text>
-                    {userId !== fromUserId && (
+                  {/* Bottom-left meta: profile + caption (leaves room for action rail) */}
+                  <View
+                    style={[
+                      styles.reelBottomMeta,
+                      {
+                        paddingBottom: Math.max(insets.bottom, 12) + 8,
+                        paddingRight: REEL_ACTION_RAIL_WIDTH + 16,
+                      },
+                    ]}
+                  >
+                    <View style={styles.reelProfileContainer}>
                       <TouchableOpacity
-                        style={[
-                          styles.reelFollowButton,
-                          effectiveFollowStatus === "approved" && {
-                            backgroundColor: "transparent",
-                          },
-                        ]}
                         onPress={() => {
-                          if (effectiveFollowStatus === "none") {
-                            handleSendFollowRequest(fromUserId, userId);
-                          } else if (effectiveFollowStatus === "approved") {
-                            unFollowUser();
+                          if (userId) {
+                            navigation.navigate("EachProfile", {
+                              userId: userId,
+                            });
                           }
                         }}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                       >
-                        <View style={styles.buttonContent}>
-                          <Icon
-                            name={
-                              effectiveFollowStatus === "none"
-                                ? "add"
-                                : "checkmark"
-                            }
-                            size={18}
-                            color={Theme.themeColor}
-                            style={{ marginRight: 8 }}
-                          />
-                          <Text
-                            style={[
-                              styles.reelFollowButtonText,
-                              effectiveFollowStatus === "approved"
-                                ? { color: Theme.themeColor }
-                                : { color: Theme.themeColor },
-                            ]}
-                          >
-                            {effectiveFollowStatus === "none"
-                              ? "Follow"
-                              : "Following"}
-                          </Text>
-                        </View>
+                        <Image
+                          style={styles.reelProfilePicture}
+                          source={
+                            profileImageUri && profileImageUri.trim() !== ""
+                              ? { uri: profileImageUri }
+                              : UserImg
+                          }
+                        />
                       </TouchableOpacity>
-                    )}
-                  </View>
-
-                  {/* Description in 'reel' */}
-                  <View
-                    style={{
-                      position: "absolute",
-                      bottom: 0,
-                      left: showReelFullDescription ? 0 : 20,
-                    }}
-                  >
-                    {renderReelDescription()}
-                    <TouchableOpacity onPress={openDescriptionModal}>
-                      <Text style={{ color: "white", marginBottom: 8 }}>
-                        {showReelFullDescription
-                          ? t("readLess")
-                          : t("readMore")}
+                      <Text style={styles.reelUsername} numberOfLines={1}>
+                        {post?.createdBy?.firstName} {post?.createdBy?.lastName}
                       </Text>
-                    </TouchableOpacity>
+                      {userId !== fromUserId && (
+                        <TouchableOpacity
+                          style={[
+                            styles.reelFollowButton,
+                            effectiveFollowStatus === "approved" && {
+                              backgroundColor: "transparent",
+                              borderWidth: 1,
+                              borderColor: "rgba(255,255,255,0.85)",
+                            },
+                          ]}
+                          onPress={() => {
+                            if (effectiveFollowStatus === "none") {
+                              handleSendFollowRequest(fromUserId, userId);
+                            } else if (effectiveFollowStatus === "approved") {
+                              unFollowUser();
+                            }
+                          }}
+                        >
+                          <View style={styles.buttonContent}>
+                            <Icon
+                              name={
+                                effectiveFollowStatus === "none"
+                                  ? "add"
+                                  : "checkmark"
+                              }
+                              size={isCompact ? 14 : 16}
+                              color={
+                                effectiveFollowStatus === "approved"
+                                  ? "#fff"
+                                  : Theme.themeColor
+                              }
+                              style={{ marginRight: 4 }}
+                            />
+                            <Text
+                              style={[
+                                styles.reelFollowButtonText,
+                                effectiveFollowStatus === "approved" && {
+                                  color: "#fff",
+                                },
+                              ]}
+                              numberOfLines={1}
+                            >
+                              {effectiveFollowStatus === "none"
+                                ? "Follow"
+                                : "Following"}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
+                    <View style={styles.reelCaptionWrap}>
+                      {renderReelDescription()}
+                      {!!description && (
+                        <TouchableOpacity
+                          onPress={openDescriptionModal}
+                          hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                        >
+                          <Text style={styles.reelReadMore}>
+                            {showReelFullDescription
+                              ? t("readLess")
+                              : t("readMore")}
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+
                     <Modal
                       visible={showReelModal}
                       animationType="slide"
@@ -1550,29 +1716,14 @@ const NewSocialCard = ({
                     >
                       <View style={styles.reelDescriptionModalOverlay}>
                         <View style={styles.reelDescriptionModalContent}>
-                          {/* Full description text */}
                           <Text
                             style={styles.reelDescriptionModalDescriptionText}
                           >
                             {description}
                           </Text>
-                          {/* Read less button */}
                           <TouchableOpacity onPress={closeDescriptionModal}>
-                            <Text
-                              style={{
-                                color: "white",
-                                marginVertical: 10,
-                                fontWeight: "bold",
-                                backgroundColor: "black",
-                                borderRadius: 10,
-                                width: 90,
-                                height: "auto",
-                                textAlign: "center",
-                              }}
-                            >
-                              {showReelFullDescription
-                                ? t("readLess")
-                                : t("readMore")}
+                            <Text style={styles.reelDescriptionCloseText}>
+                              {t("readLess")}
                             </Text>
                           </TouchableOpacity>
                         </View>
@@ -1580,53 +1731,87 @@ const NewSocialCard = ({
                     </Modal>
                   </View>
 
-                  {/* Social Action Buttons */}
-                  <View style={styles.reelActionButtons}>
-                    {/* <TouchableOpacity style={styles.reelIconButton}>
-                      <FontAwesome name="heart" size={28} color="white" />
-                    </TouchableOpacity>
-                    <Text style={{ color: "white" }}>{likeCount}</Text> */}
+                  {/* Right-side social action rail */}
+                  <View
+                    style={[
+                      styles.reelActionButtons,
+                      {
+                        bottom: Math.max(insets.bottom, 12) + (isCompact ? 96 : 120),
+                        right: Math.max(insets.right, isCompact ? 8 : 12),
+                      },
+                    ]}
+                  >
                     <TouchableOpacity
                       onPress={toggleLike}
-                      style={styles.reelIconButton}
+                      style={styles.reelActionItem}
+                      activeOpacity={0.75}
                     >
-                      <FontAwesomeIcon
-                        key={isLiked}
-                        name={isLiked ? "heart" : "heart-o"}
-                        size={28}
-                        color={isLiked ? "red" : "white"}
-                        style={{
-                          textShadowColor: "white",
-                          textShadowOffset: { width: 1, height: 1 },
-                        }}
-                      />
+                      <View style={styles.reelIconHit}>
+                        <FontAwesomeIcon
+                          key={isLiked}
+                          name={isLiked ? "heart" : "heart-o"}
+                          size={REEL_ACTION_ICON}
+                          color={isLiked ? "#FF2D55" : "#fff"}
+                        />
+                      </View>
+                      <Text style={styles.reelActionCount} numberOfLines={1}>
+                        {likeCount}
+                      </Text>
                     </TouchableOpacity>
-                    <Text style={{ color: "white" }}>{likeCount}</Text>
+
                     <TouchableOpacity
-                      style={styles.reelIconButton}
+                      style={styles.reelActionItem}
                       onPress={openCommentsModal}
+                      activeOpacity={0.75}
                     >
-                      <FontAwesome name="comment" size={28} color="white" />
-                    </TouchableOpacity>
-                                          <Text style={{ color: "white" }}>
+                      <View style={styles.reelIconHit}>
+                        <FontAwesome
+                          name="comment"
+                          size={REEL_ACTION_ICON}
+                          color="#fff"
+                        />
+                      </View>
+                      <Text style={styles.reelActionCount} numberOfLines={1}>
                         {commentCount}
                       </Text>
-                    <TouchableOpacity style={styles.reelIconButton}>
-                      <Ionicons name="repeat" size={28} color="white" />
                     </TouchableOpacity>
-                    <Text style={{ color: "white" }}>{reposts}</Text>
-                    <TouchableOpacity 
-                      style={styles.reelIconButton}
-                      onPress={() => {
-                        console.log("Reel share button pressed - calling openShareModal");
-                        openShareModal();
-                      }}
+
+                    <TouchableOpacity
+                      style={styles.reelActionItem}
+                      onPress={openRepostModal}
+                      activeOpacity={0.75}
                     >
-                      <Ionicons name="paper-plane" size={28} color="white" />
+                      <View style={styles.reelIconHit}>
+                        <Ionicons
+                          name="repeat"
+                          size={REEL_ACTION_ICON}
+                          color="#fff"
+                        />
+                      </View>
+                      <Text style={styles.reelActionCount} numberOfLines={1}>
+                        {reposts || 0}
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={styles.reelActionItem}
+                      onPress={openShareModal}
+                      activeOpacity={0.75}
+                    >
+                      <View style={styles.reelIconHit}>
+                        <Ionicons
+                          name="paper-plane"
+                          size={REEL_ACTION_ICON - 2}
+                          color="#fff"
+                        />
+                      </View>
+                      <Text style={styles.reelActionCount} numberOfLines={1}>
+                        {tr("share", "Share")}
+                      </Text>
                     </TouchableOpacity>
                   </View>
                 </View>
-              </SafeAreaView>
+              </View>
             </Modal>
           </>
         )}
@@ -2715,90 +2900,147 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0, 0, 0, 0.5)",
     borderRadius: 20,
     padding: isCompact ? 6 : 8,
+    zIndex: 2,
+    elevation: 2,
   },
   reelModalOverlay: {
     flex: 1,
-    backgroundColor: "black",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#000",
   },
   reelModalContent: {
+    flex: 1,
     width: "100%",
-    height: "100%",
+    backgroundColor: "#000",
     justifyContent: "center",
     alignItems: "center",
   },
   reelBackButton: {
     position: "absolute",
-    top: 10,
-    left: 20,
-    zIndex: 1000,
+    top: isCompact ? 8 : 12,
+    left: isCompact ? 12 : 16,
+    zIndex: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   reelMuteButton: {
     position: "absolute",
-    top: 10,
-    right: 20,
-    borderRadius: 20,
-    padding: 5,
-    zIndex: 1000,
+    top: isCompact ? 8 : 12,
+    right: isCompact ? 12 : 16,
+    zIndex: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(0,0,0,0.35)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  reelBottomMeta: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 15,
+    paddingLeft: isCompact ? 12 : 16,
+  },
+  reelCaptionWrap: {
+    marginTop: 8,
+    maxWidth: "100%",
+  },
+  reelReadMore: {
+    color: "rgba(255,255,255,0.9)",
+    fontSize: isCompact ? 12 : 13,
+    fontWeight: "600",
+    marginTop: 4,
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   reelActionButtons: {
     position: "absolute",
-    bottom: 50,
-    right: 20,
+    zIndex: 20,
+    width: REEL_ACTION_RAIL_WIDTH,
     alignItems: "center",
-    height: "25%",
+    justifyContent: "flex-end",
   },
-  reelIconButton: {
-    marginVertical: 10,
+  reelActionItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: isCompact ? 14 : 18,
+    width: "100%",
+  },
+  reelIconHit: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.22)",
+  },
+  reelActionCount: {
+    color: "#fff",
+    fontSize: isCompact ? 11 : 12,
+    fontWeight: "700",
+    marginTop: 2,
+    textAlign: "center",
+    textShadowColor: "rgba(0,0,0,0.65)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   reelVideo: {
     width: "100%",
-    height: "50%",
+    height: "100%",
   },
   reelProfileContainer: {
-    position: "absolute",
-    bottom: 100,
-    left: 20,
-    flexDirection: "row", // Arrange items in a horizontal line
-    alignItems: "center", // Center items vertically within the row
+    flexDirection: "row",
+    alignItems: "center",
+    maxWidth: "100%",
   },
   reelProfilePicture: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
+    width: isCompact ? 40 : 46,
+    height: isCompact ? 40 : 46,
+    borderRadius: isCompact ? 20 : 23,
     borderWidth: 2,
-    borderColor: "white",
-    marginRight: 10, // Add spacing between profile picture and username
+    borderColor: "#fff",
+    marginRight: 8,
   },
   reelUsername: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "bold",
-    marginRight: 10, // Add spacing between username and follow button
+    color: "#fff",
+    fontSize: isCompact ? 14 : 15,
+    fontWeight: "700",
+    marginRight: 8,
+    flexShrink: 1,
+    maxWidth: windowWidth * 0.38,
+    textShadowColor: "rgba(0,0,0,0.55)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
   reelFollowButton: {
-    backgroundColor: "white",
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingHorizontal: isCompact ? 8 : 10,
+    paddingVertical: isCompact ? 4 : 5,
+    flexShrink: 0,
   },
   reelFollowButtonText: {
-    color: "black",
-    fontSize: 14,
-    fontWeight: "bold",
+    color: Theme.themeColor,
+    fontSize: isCompact ? 12 : 13,
+    fontWeight: "700",
   },
   reelDescriptionModalOverlay: {
     flex: 1,
-    backgroundColor: "white",
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
   },
   reelDescriptionModalContent: {
-    width: "95%",
-    backgroundColor: "white",
-    padding: 10,
-    borderRadius: 8,
+    width: "92%",
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 12,
     alignItems: "center",
   },
   reelDescriptionCloseButton: {
@@ -2807,9 +3049,21 @@ const styles = StyleSheet.create({
     right: 10,
     padding: 5,
   },
+  reelDescriptionCloseText: {
+    color: "#fff",
+    marginVertical: 10,
+    fontWeight: "700",
+    backgroundColor: "#000",
+    borderRadius: 10,
+    overflow: "hidden",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    textAlign: "center",
+  },
   reelDescriptionModalDescriptionText: {
-    color: "black",
+    color: "#111",
     fontSize: 16,
+    lineHeight: 22,
   },
 
   followButton: {

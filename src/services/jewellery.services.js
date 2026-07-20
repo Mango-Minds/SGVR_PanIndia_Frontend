@@ -814,6 +814,16 @@ export const deleteJewelleryEvent = async (eventId) => {
   }
 };
 
+export const expressInterestInJewelleryEvent = async (eventId) => {
+  try {
+    const res = await apiClient.post(`/events/${eventId}/interest`);
+    return res.data?.data;
+  } catch (error) {
+    console.error("Error expressing interest in jewellery event:", error);
+    throw error;
+  }
+};
+
 const fetchJewelryDirectory = async (role, params = {}) => {
   const { page = 1, limit = 100, location } = params;
   const queryParams = new URLSearchParams({

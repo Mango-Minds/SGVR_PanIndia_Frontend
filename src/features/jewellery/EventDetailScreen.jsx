@@ -19,8 +19,12 @@ import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import SpecificationRow from '../../components/Jewellery/SpecificationRow';
 import QRModal from '../../components/Jewellery/QRModal';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
-import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
-import { getJewelleryEventById, deleteJewelleryEvent } from '../../services/jewellery.services';
+import { navigateJewelleryAuthTab, requireAuth } from '../../utils/requireAuth';
+import {
+  getJewelleryEventById,
+  deleteJewelleryEvent,
+  expressInterestInJewelleryEvent,
+} from '../../services/jewellery.services';
 import {
   normalizeEvent,
   createEventData,
@@ -43,12 +47,18 @@ const EventDetailScreen = () => {
   const [eventData, setEventData] = useState(createEventData(eventId));
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [markingInterest, setMarkingInterest] = useState(false);
   const scrollViewRef = useRef(null);
 
   const isEventOwner =
     user?._id &&
     eventData.createdBy &&
     String(user._id) === String(eventData.createdBy);
+
+  const isInterested =
+    Boolean(user?._id) &&
+    Array.isArray(eventData.interestedUsers) &&
+    eventData.interestedUsers.some((id) => String(id) === String(user._id));
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -138,6 +148,34 @@ const EventDetailScreen = () => {
 
   const handleEdit = () => {
     navigation.navigate('EditEventScreen', { eventId: eventData.id });
+  };
+
+  const handleInterest = () => {
+    requireAuth({
+      token,
+      isGuest,
+      dispatch,
+      navigation,
+      message: 'Sign in to mark interest in this event.',
+      onAuthed: async () => {
+        if (isInterested || markingInterest || !eventData.id) return;
+
+        try {
+          setMarkingInterest(true);
+          const data = await expressInterestInJewelleryEvent(eventData.id);
+          setEventData(normalizeEvent(data));
+        } catch (error) {
+          const message =
+            error.response?.data?.msg ||
+            error.response?.data?.message ||
+            error.message ||
+            'Failed to mark interest.';
+          Alert.alert('Error', message);
+        } finally {
+          setMarkingInterest(false);
+        }
+      },
+    });
   };
 
   const handleDelete = () => {
@@ -344,7 +382,40 @@ const EventDetailScreen = () => {
               label="Capacity"
               value={`${eventData.capacity} people`}
             />
+            <SpecificationRow
+              label="Interested"
+              value={`${eventData.interestedCount || 0} people`}
+            />
           </View>
+        </View>
+
+        <View style={styles.interestContainer}>
+          <TouchableOpacity
+            style={[
+              styles.interestButton,
+              isInterested && styles.interestButtonActive,
+            ]}
+            onPress={handleInterest}
+            disabled={isInterested || markingInterest}
+            activeOpacity={0.8}
+          >
+            {markingInterest ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Icon
+                  name={isInterested ? 'favorite' : 'favorite-border'}
+                  size={20}
+                  color="#FFFFFF"
+                />
+                <Text style={styles.interestButtonText}>
+                  {isInterested
+                    ? 'You are interested'
+                    : 'I am interested in this Event'}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.section}>
@@ -631,6 +702,29 @@ const styles = StyleSheet.create({
   },
   specificationsList: {
     gap: spacing.sm,
+  },
+  interestContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.sm,
+  },
+  interestButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: jewelleryColors.primary,
+    paddingVertical: spacing.md,
+    borderRadius: 12,
+    gap: spacing.sm,
+  },
+  interestButtonActive: {
+    backgroundColor: jewelleryColors.primary + 'CC',
+  },
+  interestButtonText: {
+    ...typography.body,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    fontSize: 16,
   },
   contactItem: {
     flexDirection: 'row',
