@@ -51,10 +51,11 @@ const { t } = useTranslation();
   const [loadingAnimation, setLoadingAnimation] = useState(true);
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("trending");
-  /** Only one feed video mounts an ExoPlayer — prevents Android OOM / crash */
-  const [activeVideoPostId, setActiveVideoPostId] = useState(null);
   const [showCategoryTabs, setShowCategoryTabs] = useState(false);
+  /** Only one feed video mounts ExoPlayer — prevents Android OOM */
+  const [activeVideoPostId, setActiveVideoPostId] = useState(null);
   const flatListRef = useRef(null);
+  const selectedCategoryRef = useRef("trending");
   const categoryTabsAnim = useRef(new Animated.Value(0)).current;
   const { getFollowStatus, updateFollowStatus } = useFollowStatus();
   const insets = useSafeAreaInsets();
@@ -62,15 +63,26 @@ const { t } = useTranslation();
   const topBarPaddingTop = Math.max(6, Math.min(22, insets.top * 0.6));
 
   const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-    minimumViewTime: 120,
+    itemVisiblePercentThreshold: 40,
+    minimumViewTime: 80,
   }).current;
 
   const onViewableItemsChanged = useRef(({ viewableItems }) => {
+    const hasVideo = (post) => {
+      if (!post) return false;
+      if (typeof post.video === "string" && post.video.trim().length > 0) {
+        return true;
+      }
+      return post.type === "text+video";
+    };
     const firstVideo = viewableItems.find(
-      (v) => v.isViewable && v.item?.video
+      (v) => v.isViewable && hasVideo(v.item)
     );
-    const nextId = firstVideo?.item?._id ?? null;
+    const nextId =
+      firstVideo?.item?._id != null ? String(firstVideo.item._id) : null;
+    // Don't clear active video when only image posts are on screen —
+    // that was stopping in-feed play on Trending (mixed image+video).
+    if (!nextId) return;
     setActiveVideoPostId((prev) => (prev === nextId ? prev : nextId));
   }).current;
 
@@ -141,8 +153,16 @@ const { t } = useTranslation();
     if (!isRefresh) setLoadingAnimation(true);
 
     const pageToFetch = isRefresh ? 1 : page;
+    const category = selectedCategoryRef.current;
+    const media = category === "shared_videos" ? "video" : "";
+    const hashtagsCsv =
+      category === "news"
+        ? "news"
+        : category === "ads"
+          ? "ads,ad,advertisement"
+          : "";
 
-    const response = await fetchAllPosts(pageToFetch, 10, '', '');
+    const response = await fetchAllPosts(pageToFetch, 10, "", hashtagsCsv, media);
     const data = response.data;
 
     // Get user's selected language (default to 'en')
@@ -165,7 +185,8 @@ const { t } = useTranslation();
       return {
         ...translatedPost,
         images: originalPost?.images || translatedPost?.images || [],
-        video: originalPost?.video || translatedPost?.video || null
+        video: originalPost?.video || translatedPost?.video || null,
+        type: originalPost?.type || translatedPost?.type || null,
       };
     });
 
@@ -182,7 +203,6 @@ const { t } = useTranslation();
     console.error("Fetch posts error:", err);
     console.error("Error response:", err.response?.data);
     console.error("Error status:", err.response?.status);
-    setError(err.message);
   } finally {
     if (!isRefresh) setLoadingAnimation(false);
   }
@@ -216,9 +236,9 @@ const { t } = useTranslation();
     }, [categoryTabsAnim])
   );
 
-  // Prime Android media audio session so social videos can unmute with sound
+  // iOS audio session only — Android expo-audio conflicts with expo-video sound
   useEffect(() => {
-    if (Platform.OS !== "android") return;
+    if (Platform.OS !== "ios") return;
     setAudioModeAsync({
       playsInSilentMode: true,
       interruptionMode: "doNotMix",
@@ -277,6 +297,14 @@ const { t } = useTranslation();
     return tags.some((tag) => postTags.includes(tag));
   };
 
+  const postHasVideo = (post) => {
+    if (!post) return false;
+    if (typeof post.video === "string" && post.video.trim().length > 0) {
+      return true;
+    }
+    return post.type === "text+video";
+  };
+
   const filteredPosts = (() => {
     switch (selectedCategory) {
       case "news":
@@ -284,9 +312,7 @@ const { t } = useTranslation();
       case "ads":
         return posts.filter((post) => hasHashtag(post, ["ads", "ad", "advertisement"]));
       case "shared_videos":
-        return posts.filter(
-          (post) => !!post?.video || post?.type === "text+video"
-        );
+        return posts.filter((post) => postHasVideo(post));
       case "trending":
       default:
         // Engagement-first ordering for Trending; keep API order as a stable fallback
@@ -296,19 +322,35 @@ const { t } = useTranslation();
     }
   })();
 
+  // Ensure the first video starts playing after cold start / refresh
+  useEffect(() => {
+    const firstVideo = filteredPosts.find((p) => postHasVideo(p));
+    const firstVideoId = firstVideo?._id != null ? String(firstVideo._id) : null;
+    setActiveVideoPostId((prev) => {
+      if (
+        prev &&
+        filteredPosts.some(
+          (p) => postHasVideo(p) && String(p._id) === String(prev)
+        )
+      ) {
+        return String(prev);
+      }
+      return firstVideoId;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [posts, selectedCategory]);
+
   const handleSelectCategory = (key) => {
     if (key === selectedCategory) return;
+    selectedCategoryRef.current = key;
     setSelectedCategory(key);
-    setActiveVideoPostId(null);
+    setAllLoaded(false);
+    setPage(1);
+    setPosts([]);
+    setLoadingAnimation(true);
     flatListRef.current?.scrollToOffset?.({ offset: 0, animated: true });
+    fetchPosts(true).finally(() => setLoadingAnimation(false));
   };
-
-  // #region agent log
-  useEffect(() => {
-    const videoPosts = filteredPosts.filter((p) => !!p.video);
-    fetch('http://127.0.0.1:7929/ingest/e8d6d600-8e18-4aff-9023-e6b7ca98ea87',{method:'POST',headers:{'Content-Type':'application/json','X-Debug-Session-Id':'873502'},body:JSON.stringify({sessionId:'873502',location:'new.social.screen.js:postsLoaded',message:'Social feed posts loaded',data:{platform:Platform.OS,totalPosts:filteredPosts.length,videoPostCount:videoPosts.length,videoUrls:videoPosts.map((p)=>p.video?.replace(/\\/g,'/'))},timestamp:Date.now(),hypothesisId:'B,C'})}).catch(()=>{});
-  }, [filteredPosts]);
-  // #endregion
 
   const [refreshing, setRefreshing] = useState(false); // State to manage refreshing
 
@@ -388,13 +430,19 @@ const { t } = useTranslation();
         mediaTypes: ImagePicker.MediaTypeOptions.All,
         allowsEditing: false,
         quality: 0.8,
+        // Force H.264 so iOS-recorded moments play on Android
+        videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
       });
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const a = result.assets[0];
+        const isVideo = a.type === "video";
         const media = {
           uri: a.uri,
-          name: a.fileName || `moment_${Date.now()}.${a.type === 'video' ? 'mp4' : 'jpg'}`,
-          mimeType: a.type === 'video' ? 'video/mp4' : 'image/jpeg',
+          name: isVideo
+            ? `moment_${Date.now()}.mp4`
+            : a.fileName || `moment_${Date.now()}.jpg`,
+          mimeType: isVideo ? "video/mp4" : "image/jpeg",
           type: a.type,
         };
         setIsUploadingMoment(true);
@@ -615,6 +663,8 @@ const { t } = useTranslation();
                 <FlatList
                   ref={flatListRef}
                   data={filteredPosts}
+                  // Must include activeVideoPostId or cells keep stale isActiveVideo=false
+                  extraData={`${selectedCategory}:${activeVideoPostId || ""}`}
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
                   renderItem={({ item, index }) => {
@@ -625,6 +675,7 @@ const { t } = useTranslation();
                       : "";
 
                     const postImages = item.images || [];
+                    const itemHasVideo = postHasVideo(item);
 
                     return (
                       <View style={index === 0 ? styles.firstPostWrapper : undefined}>
@@ -646,7 +697,10 @@ const { t } = useTranslation();
                         profileImageUrl={profileImageUrl}
                         currentFollowStatus={item.followStatus || getFollowStatus(createdBy?._id)}
                         onFollowStatusChange={handleFollowStatusChange}
-                        isActiveVideo={!!item.video && item._id === activeVideoPostId}
+                        isActiveVideo={
+                          itemHasVideo &&
+                          String(item._id) === String(activeVideoPostId)
+                        }
                       />
                       </View>
                     );
@@ -655,10 +709,11 @@ const { t } = useTranslation();
                   contentContainerStyle={{ paddingHorizontal: 0, paddingTop: 0, paddingBottom: 12 }}
                   onViewableItemsChanged={onViewableItemsChanged}
                   viewabilityConfig={viewabilityConfig}
-                  windowSize={5}
-                  maxToRenderPerBatch={4}
-                  initialNumToRender={3}
-                  removeClippedSubviews={Platform.OS === "android"}
+                  windowSize={7}
+                  maxToRenderPerBatch={5}
+                  initialNumToRender={4}
+                  // removeClippedSubviews breaks expo-video on Android after reboot/resume
+                  removeClippedSubviews={false}
                   ListEmptyComponent={() => {
                     const emptyCopy = {
                       news: tr("no_news_posts", "No news posts yet. Tag posts with #news."),

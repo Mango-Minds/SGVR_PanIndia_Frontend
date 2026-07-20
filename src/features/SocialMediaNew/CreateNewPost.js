@@ -112,12 +112,16 @@ const CreateNewPost = ({ navigation }) => {
 
       // Open the ImagePicker to show gallery (supports both images and videos)
       // Users can switch between "Photos" and "Albums" tabs
+      // Never use Passthrough/HighestQuality — iOS HEVC/MOV will not play on Android.
+      // H.264 export + server-side transcode keeps Android ExoPlayer happy.
       let result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: getMediaTypes(),
         allowsEditing: false,
         quality: 0.8,
         allowsMultipleSelection: false,
         presentationStyle: 'pageSheet',
+        videoExportPreset: ImagePicker.VideoExportPreset.H264_1280x720,
+        videoQuality: ImagePicker.UIImagePickerControllerQualityType.Medium,
       });
 
       console.log(result);
@@ -129,20 +133,19 @@ const CreateNewPost = ({ navigation }) => {
         // Prefer picker-provided mimeType so Android/S3 get a real Content-Type
         const isVideo = selectedAsset.type === "video";
         const inferredExt = isVideo
-          ? selectedAsset.uri?.match(/\.(mp4|mov|avi|webm|mkv)(\?|$)/i)?.[1]?.toLowerCase() || "mp4"
+          ? "mp4"
           : selectedAsset.uri?.match(/\.(jpe?g|png|gif|webp)(\?|$)/i)?.[1]?.toLowerCase() || "jpg";
         const selectedMedia = {
           uri: selectedAsset.uri,
-          name:
-            selectedAsset.fileName ||
-            `media_${Date.now()}.${inferredExt === "jpeg" ? "jpg" : inferredExt}`,
-          mimeType:
-            selectedAsset.mimeType ||
-            (isVideo
-              ? inferredExt === "mov"
-                ? "video/quicktime"
-                : `video/${inferredExt === "mkv" ? "x-matroska" : inferredExt}`
-              : inferredExt === "jpg" || inferredExt === "jpeg"
+          // Always label videos as .mp4 / video/mp4 for Android-compatible upload metadata
+          name: isVideo
+            ? `video_${Date.now()}.mp4`
+            : selectedAsset.fileName ||
+              `media_${Date.now()}.${inferredExt === "jpeg" ? "jpg" : inferredExt}`,
+          mimeType: isVideo
+            ? "video/mp4"
+            : selectedAsset.mimeType ||
+              (inferredExt === "jpg" || inferredExt === "jpeg"
                 ? "image/jpeg"
                 : `image/${inferredExt}`),
           type: selectedAsset.type,

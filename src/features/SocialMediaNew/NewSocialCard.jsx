@@ -29,6 +29,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { VideoView, useVideoPlayer } from "expo-video";
 import { useEventListener } from "expo";
 import { setAudioModeAsync } from "expo-audio";
+import * as VideoThumbnails from "expo-video-thumbnails";
 import { BASEAPIURL, RENDERMEDIAURL } from "../../infrastructure/constants";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { FontAwesome } from "@expo/vector-icons";
@@ -80,115 +81,202 @@ const normalizeVideoUri = (video) => {
 const androidVideoSurfaceProps =
   Platform.OS === "android" ? { surfaceType: "textureView" } : {};
 
-// Cache audio-session setup so unmute doesn't await / jank the UI every time
-let playbackAudioModePromise = null;
+const thumbnailCache = new Map();
 
-/** Android needs an active media audio session or unmuted video stays silent */
-const ensurePlaybackAudioMode = () => {
-  if (!playbackAudioModePromise) {
-    playbackAudioModePromise = setAudioModeAsync({
+let audioReadyPromise = null;
+
+/**
+ * iOS: configure silent-switch playback.
+ * Android: do NOT call expo-audio here — it fights expo-video/ExoPlayer and
+ * often leaves video playing with no sound.
+ */
+const prepareAudioSession = () => {
+  if (Platform.OS === "android") {
+    return Promise.resolve();
+  }
+  if (!audioReadyPromise) {
+    audioReadyPromise = setAudioModeAsync({
       playsInSilentMode: true,
-      interruptionMode: "doNotMix",
+      allowsRecording: false,
       shouldPlayInBackground: false,
       shouldRouteThroughEarpiece: false,
-      allowsRecording: false,
+      interruptionMode: "doNotMix",
     }).catch((e) => {
-      playbackAudioModePromise = null;
-      console.warn("Failed to set playback audio mode:", e);
+      audioReadyPromise = null;
+      console.warn("prepareAudioSession failed:", e);
     });
   }
-  return playbackAudioModePromise;
+  return audioReadyPromise;
 };
 
-const applyPlayerMuteState = (player, muted) => {
+const safePlayerCall = (player, fn) => {
   try {
-    player.muted = !!muted;
-    // Explicit volume helps Android after mute→unmute transitions
-    player.volume = muted ? 0 : 1;
-    player.audioMixingMode = muted ? "mixWithOthers" : "doNotMix";
-  } catch (e) {
-    console.warn("Failed to apply mute state:", e);
+    if (!player) return;
+    fn(player);
+  } catch (_) {
+    // Player may already be released after unmount / recycle
   }
 };
 
-const selectFirstAudioTrack = (player) => {
-  try {
-    const tracks = player.availableAudioTracks;
-    if (Array.isArray(tracks) && tracks.length > 0) {
-      player.audioTrack = tracks[0];
+const applySound = (player, muted) => {
+  safePlayerCall(player, (p) => {
+    // Never set volume to 0 on Android (corrupts userVolume)
+    p.muted = !!muted;
+    if (!muted) {
+      // Slightly under 1.0 avoids harsh clipping that can sound like buzz/vibration
+      p.volume = 0.9;
+      // Exclusive media focus (USAGE_MEDIA) — cleaner than mixWithOthers
+      p.audioMixingMode = "doNotMix";
+      try {
+        const tracks = p.availableAudioTracks;
+        if (Array.isArray(tracks) && tracks.length > 0) {
+          p.audioTrack = tracks[0];
+        }
+      } catch (_) {}
+    } else {
+      p.audioMixingMode = "mixWithOthers";
     }
-  } catch (_) {}
+  });
 };
 
-/** Single feed ExoPlayer — only mounted for the active/visible card */
-const FeedVideoPreviewPlayer = ({ uri, isMuted, paused }) => {
+/** Stable player — avoid seeking/play on released instances (Android crash) */
+const SocialVideoPlayer = ({
+  uri,
+  muted = false,
+  playing = true,
+  contentFit = "cover",
+  style,
+  showNativeControls = false,
+}) => {
+  const mutedRef = useRef(muted);
+  const playingRef = useRef(playing);
+  const mountedRef = useRef(true);
+  mutedRef.current = muted;
+  playingRef.current = playing;
+
   const player = useVideoPlayer(uri, (p) => {
     p.loop = true;
-    applyPlayerMuteState(p, isMuted);
-    if (!paused) {
-      p.play();
+    p.muted = false;
+    p.volume = 0.9;
+    p.audioMixingMode = "doNotMix";
+    applySound(p, muted);
+    if (playing) {
+      safePlayerCall(p, (pl) => pl.play());
     }
   });
 
   useEffect(() => {
-    if (!isMuted && !paused) {
-      ensurePlaybackAudioMode();
+    mountedRef.current = true;
+    if (Platform.OS === "ios") {
+      prepareAudioSession();
     }
-    applyPlayerMuteState(player, paused ? true : isMuted);
-    if (paused) {
-      player.pause();
+    applySound(player, muted);
+    if (playing) {
+      safePlayerCall(player, (p) => p.play());
     } else {
-      player.play();
+      safePlayerCall(player, (p) => p.pause());
     }
-  }, [isMuted, paused, player]);
+    return () => {
+      mountedRef.current = false;
+    };
+  }, [muted, playing, player]);
 
   useEffect(() => {
     return () => {
-      try {
-        player.pause();
-      } catch (_) {}
+      mountedRef.current = false;
+      safePlayerCall(player, (p) => p.pause());
     };
   }, [player]);
 
   useEventListener(player, "statusChange", ({ status, error }) => {
+    if (!mountedRef.current) return;
     if (status === "readyToPlay") {
-      selectFirstAudioTrack(player);
-      applyPlayerMuteState(player, paused ? true : isMuted);
-      if (!paused) {
-        player.play();
+      applySound(player, mutedRef.current);
+      if (playingRef.current) {
+        safePlayerCall(player, (p) => p.play());
       }
     }
     if (status === "error") {
-      console.warn("Feed video error:", error);
+      console.warn("Social video error:", uri, error);
     }
+  });
+
+  useEventListener(player, "sourceLoad", () => {
+    if (!mountedRef.current) return;
+    applySound(player, mutedRef.current);
+  });
+
+  // Re-assert audio when a loop cycle ends — do NOT seek/play (native loop handles that;
+  // seeking a releasing player crashes Android with "shared object already released")
+  useEventListener(player, "playToEnd", () => {
+    if (!mountedRef.current || !playingRef.current) return;
+    applySound(player, mutedRef.current);
   });
 
   return (
     <VideoView
       player={player}
-      style={StyleSheet.absoluteFillObject}
-      contentFit="cover"
-      nativeControls={false}
+      style={style || StyleSheet.absoluteFillObject}
+      contentFit={contentFit}
+      nativeControls={showNativeControls}
+      allowsFullscreen={showNativeControls}
       {...androidVideoSurfaceProps}
     />
   );
 };
 
-/** Inactive posts show a light placeholder — no ExoPlayer (prevents OOM / crash) */
-const FeedVideoPlaceholder = () => (
-  <View
-    style={[
-      StyleSheet.absoluteFillObject,
-      { backgroundColor: "#111", alignItems: "center", justifyContent: "center" },
-    ]}
-  >
-    <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.85)" />
-  </View>
-);
+const FeedVideoPoster = ({ uri }) => {
+  const [thumbUri, setThumbUri] = useState(
+    () => (uri && thumbnailCache.get(uri)) || null
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!uri) return undefined;
+    if (thumbnailCache.has(uri)) {
+      setThumbUri(thumbnailCache.get(uri));
+      return undefined;
+    }
+    (async () => {
+      try {
+        const { uri: generated } = await VideoThumbnails.getThumbnailAsync(uri, {
+          time: 800,
+          quality: 0.5,
+        });
+        if (cancelled) return;
+        thumbnailCache.set(uri, generated);
+        setThumbUri(generated);
+      } catch (_) {}
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [uri]);
+
+  if (thumbUri) {
+    return (
+      <Image
+        source={{ uri: thumbUri }}
+        style={StyleSheet.absoluteFillObject}
+        resizeMode="cover"
+      />
+    );
+  }
+  return (
+    <View
+      style={[
+        StyleSheet.absoluteFillObject,
+        { backgroundColor: "#1a1a1a", alignItems: "center", justifyContent: "center" },
+      ]}
+    >
+      <ActivityIndicator color="#fff" />
+    </View>
+  );
+};
 
 /**
- * Feed preview: mounts a real player only when `isActive`.
- * Other video cards stay as placeholders so Android doesn't keep N ExoPlayers alive.
+ * Feed: mount player only when active (one at a time).
+ * Always show poster underneath so the cell never looks blank.
  */
 const FeedVideoPreview = ({
   uri,
@@ -199,7 +287,8 @@ const FeedVideoPreview = ({
   isActive = false,
   dimension,
 }) => {
-  const shouldPlay = isActive && !paused;
+  const shouldPlay = Boolean(isActive && !paused && uri);
+
   const dimensionStyle = dimension
     ? {
         width: dimension,
@@ -207,7 +296,7 @@ const FeedVideoPreview = ({
         alignSelf: "center",
         overflow: "hidden",
         borderRadius: 0,
-        backgroundColor: "#000",
+        backgroundColor: "#1a1a1a",
       }
     : null;
 
@@ -223,15 +312,27 @@ const FeedVideoPreview = ({
         activeOpacity={0.9}
         style={styles.squareMedia}
       >
+        <FeedVideoPoster uri={uri} />
         {shouldPlay ? (
-          <FeedVideoPreviewPlayer
+          <SocialVideoPlayer
             uri={uri}
-            isMuted={isMuted}
-            paused={false}
+            muted={isMuted}
+            playing
+            contentFit="cover"
+            style={StyleSheet.absoluteFillObject}
           />
-        ) : (
-          <FeedVideoPlaceholder />
-        )}
+        ) : null}
+        {!shouldPlay ? (
+          <View
+            style={[
+              StyleSheet.absoluteFillObject,
+              { alignItems: "center", justifyContent: "center" },
+            ]}
+            pointerEvents="none"
+          >
+            <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.92)" />
+          </View>
+        ) : null}
       </TouchableOpacity>
       {shouldPlay ? (
         <TouchableOpacity
@@ -250,61 +351,16 @@ const FeedVideoPreview = ({
   );
 };
 
-/** Reel player — mounted only while the modal is open */
-const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => {
-  const player = useVideoPlayer(uri, (p) => {
-    p.loop = true;
-    applyPlayerMuteState(p, isMuted);
-    p.audioMixingMode = "doNotMix";
-    if (isPlaying) {
-      p.play();
-    }
-  });
-
-  useEffect(() => {
-    ensurePlaybackAudioMode();
-    applyPlayerMuteState(player, isMuted);
-    player.audioMixingMode = "doNotMix";
-    if (isPlaying) {
-      player.play();
-    } else {
-      player.pause();
-    }
-  }, [isMuted, isPlaying, player]);
-
-  useEffect(() => {
-    return () => {
-      try {
-        player.pause();
-      } catch (_) {}
-    };
-  }, [player]);
-
-  useEventListener(player, "statusChange", ({ status, error }) => {
-    if (status === "readyToPlay") {
-      selectFirstAudioTrack(player);
-      applyPlayerMuteState(player, isMuted);
-      player.audioMixingMode = "doNotMix";
-      if (isPlaying) {
-        player.play();
-      }
-    }
-    if (status === "error") {
-      console.warn("Reel video error:", error);
-    }
-  });
-
-  return (
-    <VideoView
-      player={player}
-      style={styles.reelVideo}
-      contentFit="cover"
-      nativeControls={false}
-      allowsFullscreen
-      {...androidVideoSurfaceProps}
-    />
-  );
-};
+const ReelVideoPlayer = ({ uri, isMuted, isPlaying }) => (
+  <SocialVideoPlayer
+    uri={uri}
+    muted={isMuted}
+    playing={isPlaying}
+    contentFit="contain"
+    style={styles.reelVideo}
+    showNativeControls={Platform.OS === "android"}
+  />
+);
 
 const NewSocialCard = ({
   profileImageUri,
@@ -329,9 +385,9 @@ const NewSocialCard = ({
   profileImageUrl,
   currentFollowStatus,
   onFollowStatusChange,
-  /** Only the most-visible feed card should be true — avoids N ExoPlayers / OOM */
-  isActiveVideo = false,
   mediaSize,
+  /** Only the most-visible feed card mounts a player */
+  isActiveVideo = false,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const insets = useSafeAreaInsets();
@@ -635,16 +691,6 @@ const NewSocialCard = ({
   function formatImageUrls(urls, prefix) {
     return urls.map((url) => prefix + url.replace(/\\/g, "/"));
   }
-
-  const toggleMute = () => {
-    setIsMuted((prevMuted) => {
-      const nextMuted = !prevMuted;
-      if (!nextMuted) {
-        ensurePlaybackAudioMode();
-      }
-      return nextMuted;
-    });
-  };
 
   const renderDescription = () => {
     if (!description) return null;
@@ -1246,9 +1292,8 @@ const NewSocialCard = ({
     return urls.map((url) => prefix + url.replace(/\\/g, "/"));
   }
 
-  const [isMuted, setIsMuted] = useState(true);
-
-  // for 'reels'
+  // Android: always start unmuted (feed + reel)
+  const [isMuted, setIsMuted] = useState(false);
   const [reelModalVisible, setReelModalVisible] = useState(false);
   const [isReelMuted, setIsReelMuted] = useState(false);
   const [isReelPlaying, setIsReelPlaying] = useState(true);
@@ -1256,26 +1301,25 @@ const NewSocialCard = ({
   const [showReelModal, setShowReelModal] = useState(false);
   const videoUri = normalizeVideoUri(video);
 
-  const toggleReelMute = () =>
-    setIsReelMuted((prevMuted) => {
-      const nextMuted = !prevMuted;
-      if (!nextMuted) {
-        ensurePlaybackAudioMode();
-      }
-      return nextMuted;
-    });
+  const toggleMute = () => setIsMuted((prev) => !prev);
+  const toggleReelMute = () => setIsReelMuted((prev) => !prev);
 
-  const openReelModal = () => {
-    // Unmount feed preview first (via paused/isActive), then play reel with sound
-    setIsMuted(true);
+  const openReelModal = async () => {
     setIsReelMuted(false);
     setIsReelPlaying(true);
+    setIsMuted(true);
+    if (Platform.OS === "ios") {
+      audioReadyPromise = null;
+      await prepareAudioSession();
+    }
     setReelModalVisible(true);
-    ensurePlaybackAudioMode();
   };
   const closeReelModal = () => {
     setIsReelPlaying(false);
     setReelModalVisible(false);
+    if (Platform.OS === "android") {
+      setIsMuted(false);
+    }
   };
 
   const openDescriptionModal = () => setShowReelModal(true);
@@ -3026,6 +3070,11 @@ const styles = StyleSheet.create({
   reelVideo: {
     width: "100%",
     height: "100%",
+  },
+  reelLoading: {
+    backgroundColor: "#000",
+    alignItems: "center",
+    justifyContent: "center",
   },
   reelProfileContainer: {
     flexDirection: "row",

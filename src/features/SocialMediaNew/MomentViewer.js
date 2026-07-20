@@ -19,6 +19,9 @@ const androidVideoSurfaceProps =
 let playbackAudioModePromise = null;
 
 const ensurePlaybackAudioMode = () => {
+  if (Platform.OS === "android") {
+    return Promise.resolve();
+  }
   if (!playbackAudioModePromise) {
     playbackAudioModePromise = setAudioModeAsync({
       playsInSilentMode: true,
@@ -37,8 +40,12 @@ const ensurePlaybackAudioMode = () => {
 const applyPlayerMuteState = (player, muted) => {
   try {
     player.muted = !!muted;
-    player.volume = muted ? 0 : 1;
-    player.audioMixingMode = muted ? "mixWithOthers" : "doNotMix";
+    if (!muted) {
+      player.volume = 0.9;
+      player.audioMixingMode = "doNotMix";
+    } else {
+      player.audioMixingMode = "mixWithOthers";
+    }
   } catch (e) {
     console.warn("Failed to apply mute state:", e);
   }
@@ -69,6 +76,9 @@ const MomentVideo = ({ mediaUrl }) => {
     return () => {
       try {
         player.pause();
+      } catch (_) {}
+      try {
+        player.replace(null);
       } catch (_) {}
     };
   }, [player]);

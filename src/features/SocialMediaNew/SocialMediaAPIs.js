@@ -425,10 +425,11 @@ export const unfollowUserAPI = async (toUserId) => {
   }
 };
 
-export const fetchAllPosts = (page = 1, limit = 10, search = '', hashtagsCsv = '') => {
+export const fetchAllPosts = (page = 1, limit = 10, search = '', hashtagsCsv = '', media = '') => {
   const searchParam = search && search.trim() ? `&search=${encodeURIComponent(search.trim())}` : '';
   const tagsParam = hashtagsCsv && hashtagsCsv.trim() ? `&hashtags=${encodeURIComponent(hashtagsCsv.trim())}` : '';
-  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}${searchParam}${tagsParam}`);
+  const mediaParam = media && media.trim() ? `&media=${encodeURIComponent(media.trim())}` : '';
+  return apiClient.get(`/social/post/all?page=${page}&limit=${limit}${searchParam}${tagsParam}${mediaParam}`);
 };
 
 export const getPopularHashtags = (limit = 20) => {

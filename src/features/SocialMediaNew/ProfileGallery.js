@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -9,9 +9,12 @@ import {
   FlatList,
   Dimensions,
   SafeAreaView,
+  Platform,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
-import { VideoView } from "expo-video";
+import { VideoView, useVideoPlayer } from "expo-video";
+import { useEventListener } from "expo";
+import { setAudioModeAsync } from "expo-audio";
 import { useTranslation } from "react-i18next";
 import { extractPostMedia } from "./utils/extractPostMedia";
 
@@ -21,6 +24,40 @@ const GRID_PADDING = 10;
 const NUM_COLUMNS = 3;
 const itemSize =
   (screenWidth - GRID_PADDING * 2 - GRID_GAP * (NUM_COLUMNS - 1)) / NUM_COLUMNS;
+
+const androidVideoSurfaceProps =
+  Platform.OS === "android" ? { surfaceType: "textureView" } : {};
+
+let playbackAudioModePromise = null;
+
+const ensurePlaybackAudioMode = () => {
+  // Android: never call setAudioModeAsync here — it forces speakerphone ON
+  // (setSpeakerphoneOn(true)) which causes wind/echo/vibration-like noise over video.
+  if (Platform.OS === "android") {
+    return Promise.resolve();
+  }
+  if (!playbackAudioModePromise) {
+    playbackAudioModePromise = setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "doNotMix",
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+      allowsRecording: false,
+    }).catch(() => {
+      playbackAudioModePromise = null;
+    });
+  }
+  return playbackAudioModePromise;
+};
+
+const releasePlayer = (player) => {
+  try {
+    player.pause();
+  } catch (_) {}
+  try {
+    player.replace(null);
+  } catch (_) {}
+};
 
 const GalleryCell = ({ item, onPress }) => {
   const [imageError, setImageError] = useState(false);
@@ -56,18 +93,52 @@ const GalleryCell = ({ item, onPress }) => {
   );
 };
 
-const ViewerItem = ({ item }) => {
+/** Only the currently visible page mounts a player */
+const GalleryVideoPlayer = ({ uri }) => {
+  const player = useVideoPlayer(uri, (p) => {
+    p.loop = true;
+    p.volume = 0.9;
+    p.muted = false;
+    p.audioMixingMode = "doNotMix";
+    p.play();
+  });
+
+  useEffect(() => {
+    ensurePlaybackAudioMode();
+    return () => releasePlayer(player);
+  }, [player]);
+
+  useEventListener(player, "statusChange", ({ status }) => {
+    if (status === "readyToPlay") {
+      player.muted = false;
+      player.volume = 0.9;
+      player.audioMixingMode = "doNotMix";
+      player.play();
+    }
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={styles.viewerVideo}
+      contentFit="contain"
+      nativeControls
+      {...androidVideoSurfaceProps}
+    />
+  );
+};
+
+const ViewerItem = ({ item, isActive }) => {
   if (item.type === "video") {
     return (
       <View style={styles.viewerPage}>
-        <VideoView
-          source={{ uri: item.uri }}
-          style={styles.viewerVideo}
-          resizeMode="contain"
-          shouldPlay
-          isLooping
-          useNativeControls
-        />
+        {isActive ? (
+          <GalleryVideoPlayer uri={item.uri} />
+        ) : (
+          <View style={[styles.viewerVideo, styles.viewerVideoPlaceholder]}>
+            <Icon name="play-circle" size={56} color="rgba(255,255,255,0.85)" />
+          </View>
+        )}
       </View>
     );
   }
@@ -132,33 +203,39 @@ export default function ProfileGallery({ posts = [] }) {
             <Icon name="close" size={28} color="#FFFFFF" />
           </TouchableOpacity>
 
-          <FlatList
-            ref={viewerListRef}
-            data={items}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            initialScrollIndex={viewerIndex}
-            getItemLayout={(_, index) => ({
-              length: screenWidth,
-              offset: screenWidth * index,
-              index,
-            })}
-            onScrollToIndexFailed={() => {
-              viewerListRef.current?.scrollToOffset({
-                offset: viewerIndex * screenWidth,
-                animated: false,
-              });
-            }}
-            onMomentumScrollEnd={(e) => {
-              const index = Math.round(
-                e.nativeEvent.contentOffset.x / screenWidth
-              );
-              setViewerIndex(index);
-            }}
-            renderItem={({ item }) => <ViewerItem item={item} />}
-          />
+          {viewerVisible ? (
+            <FlatList
+              ref={viewerListRef}
+              data={items}
+              keyExtractor={(item) => item.id}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              initialScrollIndex={viewerIndex}
+              windowSize={3}
+              maxToRenderPerBatch={2}
+              getItemLayout={(_, index) => ({
+                length: screenWidth,
+                offset: screenWidth * index,
+                index,
+              })}
+              onScrollToIndexFailed={() => {
+                viewerListRef.current?.scrollToOffset({
+                  offset: viewerIndex * screenWidth,
+                  animated: false,
+                });
+              }}
+              onMomentumScrollEnd={(e) => {
+                const index = Math.round(
+                  e.nativeEvent.contentOffset.x / screenWidth
+                );
+                setViewerIndex(index);
+              }}
+              renderItem={({ item, index }) => (
+                <ViewerItem item={item} isActive={index === viewerIndex} />
+              )}
+            />
+          ) : null}
 
           <Text style={styles.viewerCounter}>
             {viewerIndex + 1} / {items.length}
@@ -192,26 +269,23 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#ececec",
   },
   videoIndicator: {
     ...StyleSheet.absoluteFillObject,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(0,0,0,0.2)",
+    backgroundColor: "rgba(0,0,0,0.25)",
   },
   emptyContainer: {
+    paddingVertical: 40,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 48,
-    paddingHorizontal: 24,
-    backgroundColor: "#fff",
   },
   emptyText: {
-    marginTop: 12,
-    fontSize: 14,
+    marginTop: 10,
     color: "#9B9B9B",
-    textAlign: "center",
+    fontSize: 14,
   },
   viewerContainer: {
     flex: 1,
@@ -219,10 +293,15 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 50,
+    top: 16,
     right: 16,
-    zIndex: 10,
-    padding: 8,
+    zIndex: 2,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0,0,0,0.45)",
   },
   viewerPage: {
     width: screenWidth,
@@ -238,9 +317,14 @@ const styles = StyleSheet.create({
     width: screenWidth,
     height: screenHeight * 0.8,
   },
+  viewerVideoPlaceholder: {
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#111",
+  },
   viewerCounter: {
     position: "absolute",
-    bottom: 40,
+    bottom: 24,
     alignSelf: "center",
     color: "#fff",
     fontSize: 14,
