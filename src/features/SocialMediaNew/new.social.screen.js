@@ -947,6 +947,19 @@ const styles = StyleSheet.create({
     elevation: 5,
     zIndex: 1000,
   },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+    backgroundColor: "#f0f0f0",
+  },
+  noResultsText: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+    marginTop: 10,
+  },
 });
 
 export default SocialHomeScreen;
