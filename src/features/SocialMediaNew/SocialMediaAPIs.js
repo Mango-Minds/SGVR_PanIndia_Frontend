@@ -177,17 +177,21 @@ export const fetchFollowStatusAPI = async (userId) => {
 //   }
 // };
 
-export const fetchPostsAPI = async (userId, setUserPosts) => {
+export const fetchPostsAPI = async (userId, setUserPosts, options = {}) => {
   try {
     const token = await getToken();
     const selectedLanguage =
       (await AsyncStorage.getItem("user-language")) || "en";
+    const { limit = 10, page = 1 } = options;
 
-    const response = await apiClient.get(`/social/post/user/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const response = await apiClient.get(
+      `/social/post/user/${userId}?limit=${limit}&page=${page}`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
 
     if (response.status === 200) {
       const postsData = response.data;
@@ -770,6 +774,8 @@ export const updateUserAboutEducationDetails = async ({
   about,
   education,
   jobExperience,
+  isOrganization,
+  organizationDetails,
   dispatch,
   setLoadingInBtn,
   fetchUserProfile,
@@ -795,8 +801,15 @@ export const updateUserAboutEducationDetails = async ({
 
     let formData = new FormData();
     formData.append("about", about);
-    formData.append("education", JSON.stringify(education));
-    formData.append("jobExperience", JSON.stringify(jobExperience));
+    formData.append("isOrganization", String(isOrganization));
+    if (isOrganization) {
+      formData.append("organizationDetails", JSON.stringify(organizationDetails));
+      formData.append("education", JSON.stringify([]));
+      formData.append("jobExperience", JSON.stringify([]));
+    } else {
+      formData.append("education", JSON.stringify(education));
+      formData.append("jobExperience", JSON.stringify(jobExperience));
+    }
 
     await dispatch(setLoadingInBtn(true));
 
@@ -831,7 +844,9 @@ export const updateUserAboutEducationDetails = async ({
       Alert.alert(t("success"), t("info_updated_successfully"));
     }
 
-    fetchUserProfile();
+    if (fetchUserProfile) {
+      await fetchUserProfile();
+    }
     navigation.goBack();
   } catch (error) {
     console.error("Error updating user:", error);

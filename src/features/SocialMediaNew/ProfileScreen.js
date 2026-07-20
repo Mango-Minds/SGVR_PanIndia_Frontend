@@ -48,6 +48,7 @@ import { decode } from "base-64";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { fetchPostsAPI, fetchUserProfileAPI } from "./SocialMediaAPIs";
+import ProfileGallery from "./ProfileGallery";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 const Tab = createBottomTabNavigator();
 
@@ -368,7 +369,7 @@ export default function ProfileNewScreen() {
 
   const fetchPosts = async () => {
     if (allLoaded) return;
-    fetchPostsAPI(userId, setUserPosts);
+    fetchPostsAPI(userId, setUserPosts, { limit: 100 });
   };
   console.log("Userposts in my profile: ", userposts);
 
@@ -503,6 +504,99 @@ export default function ProfileNewScreen() {
     }
   };
 
+  const organizationDetails = userProfile?.followData?.organizationDetails;
+  const isOrgProfile = userProfile?.followData?.isOrganization === true;
+  const hasOrgContent =
+    organizationDetails?.companyName ||
+    organizationDetails?.industry ||
+    organizationDetails?.website ||
+    organizationDetails?.companySize ||
+    userProfile?.followData?.about;
+
+  const skeletonPulse = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonPulse, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(skeletonPulse, {
+          toValue: 0.4,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ])
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [skeletonPulse]);
+
+  const renderAboutLoadingPlaceholder = () => (
+    <View style={styles.aboutLoadingContainer}>
+      <ActivityIndicator size="small" color={Theme.themeColor} style={{ marginBottom: 16 }} />
+      <Animated.View
+        style={[
+          styles.aboutSkeletonLine,
+          styles.aboutSkeletonLineShort,
+          { opacity: skeletonPulse },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.aboutSkeletonLine,
+          styles.aboutSkeletonLineLong,
+          { opacity: skeletonPulse },
+        ]}
+      />
+      <Animated.View
+        style={[
+          styles.aboutSkeletonLine,
+          styles.aboutSkeletonLineLong,
+          { opacity: skeletonPulse },
+        ]}
+      />
+    </View>
+  );
+
+  const renderCompanyNameOnly = () => (
+    <View style={styles.jobItem}>
+      {organizationDetails?.companyName ? (
+        <Text style={styles.jobCompany}>{organizationDetails.companyName}</Text>
+      ) : null}
+    </View>
+  );
+
+  const renderCompanyAboutSection = (textStyle = styles.aboutMeText) => (
+    <View style={styles.jobItem}>
+      {organizationDetails?.companyName ? (
+        <Text style={styles.jobCompany}>{organizationDetails.companyName}</Text>
+      ) : null}
+      {organizationDetails?.industry ? (
+        <Text style={styles.jobRole}>
+          {t("industry")}: {organizationDetails.industry}
+        </Text>
+      ) : null}
+      {organizationDetails?.website ? (
+        <Text style={styles.jobDuration}>
+          {t("website")}: {organizationDetails.website}
+        </Text>
+      ) : null}
+      {organizationDetails?.companySize ? (
+        <Text style={styles.jobDescription}>
+          {t("companySize")}: {organizationDetails.companySize}
+        </Text>
+      ) : null}
+      {userProfile?.followData?.about ? (
+        <Text style={[textStyle, { marginTop: 8 }]}>
+          {userProfile.followData.about}
+        </Text>
+      ) : null}
+    </View>
+  );
+
   const renderContent = () => {
     switch (activeTab) {
       case "posts":
@@ -546,9 +640,47 @@ export default function ProfileNewScreen() {
           );
         }
 
+      case "gallery":
+        return (
+          <ProfileGallery posts={userposts?.posts || []} />
+        );
+
       case "about":
         return (
           <View style={styles.aboutTabContent}>
+            {loadingAnimation ? (
+              renderAboutLoadingPlaceholder()
+            ) : isOrgProfile ? (
+              <>
+                {hasOrgContent ? (
+                  <View style={styles.sectionContainer}>
+                    <Text style={styles.sectionTitle}>
+                      <Icon name="business" size={20} color={Theme.themeColor} style={{ marginRight: 8 }} />
+                      {t("organizationDetails")}
+                    </Text>
+                    {renderCompanyAboutSection(styles.educationDescription)}
+                  </View>
+                ) : (
+                  <View style={styles.emptyAboutTabContainer}>
+                    <Icon name="business-outline" size={48} color="#9B9B9B" style={{ marginBottom: 16 }} />
+                    <Text style={styles.emptyAboutTabText}>{t("noAboutMe")}</Text>
+                    <TouchableOpacity
+                      style={styles.addAboutButton}
+                      onPress={() => {
+                        navigation.navigate("EditUserEducationInfo", {
+                          userId: userId,
+                          userProfile: userProfile,
+                          fetchUserProfile: fetchUserProfile,
+                        });
+                      }}
+                    >
+                      <Text style={styles.addAboutButtonText}>+ {t("editUserProfile")}</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </>
+            ) : (
+              <>
             {/* Education Section */}
             {userProfile?.followData?.education?.length > 0 && (
               <View style={styles.sectionContainer}>
@@ -634,6 +766,8 @@ export default function ProfileNewScreen() {
                   <Text style={styles.addAboutButtonText}>+ {t("addEducation")}</Text>
                 </TouchableOpacity>
               </View>
+            )}
+              </>
             )}
           </View>
         );
@@ -854,6 +988,12 @@ export default function ProfileNewScreen() {
 
     if (!uploadedDoc) return;
 
+    if (userProfile?.followData?.isOrganization) {
+      Alert.alert(t("error"), t("resumeNotForOrgProfiles"));
+      setUploadedDoc(null);
+      return;
+    }
+
     try {
       const token = await AsyncStorage.getItem("token");
       if (!token) throw new Error("Unauthorized");
@@ -1003,7 +1143,9 @@ export default function ProfileNewScreen() {
             </View>
             <View style={styles.aboutMeContainer}>
               <View style={styles.aboutMeHeader}>
-                <Text style={styles.aboutMeTitle}>{t("about")}</Text>
+                <Text style={styles.aboutMeTitle}>
+                  {isOrgProfile ? t("company") : t("about")}
+                </Text>
                 <TouchableOpacity
                   style={styles.editPencilIconContainer}
                   onPress={() => {
@@ -1017,8 +1159,19 @@ export default function ProfileNewScreen() {
                   <Icon name="pencil" size={20} color={Theme.themeColor} />
                 </TouchableOpacity>
               </View>
-              
-              {userProfile?.followData?.about ? (
+
+              {loadingAnimation ? (
+                renderAboutLoadingPlaceholder()
+              ) : isOrgProfile ? (
+                organizationDetails?.companyName ? (
+                  renderCompanyNameOnly()
+                ) : (
+                  <View style={styles.emptyAboutContainer}>
+                    <Icon name="business-outline" size={24} color="#9B9B9B" style={{ marginBottom: 8 }} />
+                    <Text style={styles.emptyAboutText}>{t("noAboutMe")}</Text>
+                  </View>
+                )
+              ) : userProfile?.followData?.about ? (
                 <Text style={styles.aboutMeText}>
                   {userProfile?.followData?.about}
                 </Text>
@@ -1030,7 +1183,7 @@ export default function ProfileNewScreen() {
               )}
             </View>
             <View style={styles.tabContainer}>
-              {["posts", "about"].map((tab) => (
+              {["posts", "gallery", "about"].map((tab) => (
                 <TouchableOpacity
                   key={tab}
                   style={[
@@ -1199,6 +1352,26 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 20,
   },
+  aboutLoadingContainer: {
+    paddingVertical: 24,
+    alignItems: "center",
+    width: "100%",
+  },
+  aboutSkeletonLine: {
+    height: 14,
+    backgroundColor: "#e9ecef",
+    borderRadius: 4,
+    marginBottom: 8,
+    alignSelf: "stretch",
+  },
+  aboutSkeletonLineShort: {
+    width: "40%",
+    alignSelf: "flex-start",
+  },
+  aboutSkeletonLineLong: {
+    width: "90%",
+    alignSelf: "flex-start",
+  },
 
   activityContainer: {
     marginTop: 20,
@@ -1218,7 +1391,7 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 16,
+    paddingHorizontal: 8,
     alignItems: "center",
     justifyContent: "center",
     marginHorizontal: 4,
@@ -1229,7 +1402,7 @@ const styles = StyleSheet.create({
     backgroundColor: Theme.themeColor,
   },
   tabButtonText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
     color: "#666",
     textAlign: "center",

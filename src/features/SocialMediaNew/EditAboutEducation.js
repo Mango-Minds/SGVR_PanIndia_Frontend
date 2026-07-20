@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useSelector } from "react-redux";
+import { useFocusEffect } from "@react-navigation/native";
 import {
   Image,
   StyleSheet,
@@ -12,6 +13,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  Switch,
 } from "react-native";
 import Theme from "../../styles/theme";
 import { IconButton, Provider } from "react-native-paper";
@@ -286,31 +288,76 @@ const styles = StyleSheet.create({
   uploadResumeButtonDisabled: {
     opacity: 0.6,
   },
+  refreshOverlay: {
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  organizationSwitchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 16,
+    paddingVertical: 8,
+  },
+  organizationSwitchLabel: {
+    flex: 1,
+    fontSize: 15,
+    color: "#495057",
+    marginRight: 12,
+  },
+  orgFieldLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#495057",
+    marginBottom: 4,
+    marginTop: 8,
+  },
 });
+
+const EMPTY_EDUCATION = [{ degree: "", institution: "", duration: "", description: "" }];
+const EMPTY_JOB_EXPERIENCE = [{ company: "", role: "", duration: "", description: "" }];
+const EMPTY_ORG_DETAILS = {
+  companyName: "",
+  industry: "",
+  website: "",
+  companySize: "",
+};
 
 export default function EditUserEducationInfo({ navigation, route }) {
   registerTranslation("en", en);
   const dispatch = useDispatch();
   const { t } = useTranslation();
   const token = useSelector((state) => state.user.token);
-  const { userProfile, fetchUserProfile } = route.params;
+  const { userId, userProfile, fetchUserProfile } = route.params;
+
+  const isOrgProfile = userProfile?.followData?.isOrganization === true;
 
   const [about, setAbout] = useState(userProfile?.followData?.about || "");
   const [isAboutFocused, setIsAboutFocused] = useState(false);
   const MAX_ABOUT_CHARACTERS = 500;
+  const [isOrganization, setIsOrganization] = useState(isOrgProfile);
+  const [organizationDetails, setOrganizationDetails] = useState(
+    userProfile?.followData?.organizationDetails || { ...EMPTY_ORG_DETAILS }
+  );
   const [resumeFile, setResumeFile] = useState(null);
   const [resumeFileName, setResumeFileName] = useState("");
   const [isUploadingResume, setIsUploadingResume] = useState(false);
+  const [isRefreshingProfile, setIsRefreshingProfile] = useState(false);
 
   const [education, setEducation] = useState(
-    userProfile?.followData?.education?.length > 0
-      ? userProfile.followData.education
-      : [{ degree: "", institution: "", duration: "", description: "" }]
+    isOrgProfile
+      ? EMPTY_EDUCATION
+      : userProfile?.followData?.education?.length > 0
+        ? userProfile.followData.education
+        : EMPTY_EDUCATION
   );
   const [jobExperience, setJobExperience] = useState(
-    userProfile?.followData?.jobExperience?.length > 0
-      ? userProfile.followData.jobExperience
-      : [{ company: "", role: "", duration: "", description: "" }]
+    isOrgProfile
+      ? EMPTY_JOB_EXPERIENCE
+      : userProfile?.followData?.jobExperience?.length > 0
+        ? userProfile.followData.jobExperience
+        : EMPTY_JOB_EXPERIENCE
   );
 
   const addEducationField = () => {
@@ -356,7 +403,115 @@ export default function EditUserEducationInfo({ navigation, route }) {
     );
   };
 
+  const hasIndividualData = () => {
+    const hasEducation = education.some(
+      (edu) => edu.degree || edu.institution || edu.duration || edu.description
+    );
+    const hasJobExperience = jobExperience.some(
+      (job) => job.company || job.role || job.duration || job.description
+    );
+    const hasResume = resumeFile || userProfile?.followData?.resume;
+    return hasEducation || hasJobExperience || hasResume;
+  };
+
+  const hasOrganizationData = () => {
+    const org = organizationDetails;
+    return org.companyName || org.industry || org.website || org.companySize;
+  };
+
+  const updateOrganizationDetail = (field, value) => {
+    setOrganizationDetails((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const clearIndividualFields = () => {
+    setEducation(EMPTY_EDUCATION);
+    setJobExperience(EMPTY_JOB_EXPERIENCE);
+    setResumeFile(null);
+    setResumeFileName("");
+  };
+
+  const clearOrganizationFields = () => {
+    setOrganizationDetails({ ...EMPTY_ORG_DETAILS });
+  };
+
+  const applyOrganizationMode = (value) => {
+    setIsOrganization(value);
+    if (value) {
+      clearIndividualFields();
+    } else {
+      clearOrganizationFields();
+    }
+  };
+
+  const syncFromFollowData = (followData) => {
+    if (!followData) return;
+
+    const orgMode = followData.isOrganization === true;
+    setAbout(followData.about || "");
+    setIsOrganization(orgMode);
+    setOrganizationDetails(followData.organizationDetails || { ...EMPTY_ORG_DETAILS });
+
+    if (orgMode) {
+      clearIndividualFields();
+    } else {
+      setEducation(
+        followData.education?.length > 0 ? followData.education : EMPTY_EDUCATION
+      );
+      setJobExperience(
+        followData.jobExperience?.length > 0
+          ? followData.jobExperience
+          : EMPTY_JOB_EXPERIENCE
+      );
+      setResumeFile(null);
+      setResumeFileName("");
+    }
+  };
+
+  const handleOrganizationToggle = (value) => {
+    if (value && !isOrganization && hasIndividualData()) {
+      Alert.alert(t("confirm"), t("switchToOrganizationWarning"), [
+        { text: t("no"), style: "cancel" },
+        { text: t("yes"), onPress: () => applyOrganizationMode(true) },
+      ]);
+      return;
+    }
+    if (!value && isOrganization && hasOrganizationData()) {
+      Alert.alert(t("confirm"), t("switchToIndividualWarning"), [
+        { text: t("no"), style: "cancel" },
+        { text: t("yes"), onPress: () => applyOrganizationMode(false) },
+      ]);
+      return;
+    }
+    applyOrganizationMode(value);
+  };
+
   const { loadingInBtn } = useSelector((state) => state.user);
+
+  useFocusEffect(
+    useCallback(() => {
+      const refreshProfile = async () => {
+        try {
+          setIsRefreshingProfile(true);
+          const storedToken = await AsyncStorage.getItem("token");
+          if (!storedToken || !userId) return;
+
+          const response = await apiClient.get(`/user/profile/${userId}`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+
+          if (response.data?.followData) {
+            syncFromFollowData(response.data.followData);
+          }
+        } catch (error) {
+          console.error("Error refreshing profile on focus:", error);
+        } finally {
+          setIsRefreshingProfile(false);
+        }
+      };
+
+      refreshProfile();
+    }, [userId])
+  );
 
   // Cleanup loading state when component unmounts
   useEffect(() => {
@@ -402,6 +557,11 @@ export default function EditUserEducationInfo({ navigation, route }) {
   };
 
   const handleSubmit = async () => {
+    if (isOrganization && !organizationDetails.companyName?.trim()) {
+      Alert.alert(t("error"), t("companyNameRequired"));
+      return;
+    }
+
     // Validate about section
     if (about.length > MAX_ABOUT_CHARACTERS) {
       Alert.alert(
@@ -411,8 +571,8 @@ export default function EditUserEducationInfo({ navigation, route }) {
       return;
     }
 
-    // If there's a new resume file, upload it first
-    if (resumeFile) {
+    // If there's a new resume file, upload it first (individual profiles only)
+    if (resumeFile && !isOrganization) {
       setIsUploadingResume(true);
       try {
         const token = await AsyncStorage.getItem("token");
@@ -453,6 +613,8 @@ export default function EditUserEducationInfo({ navigation, route }) {
       about,
       education,
       jobExperience,
+      isOrganization,
+      organizationDetails,
       t,
       dispatch,
       setLoadingInBtn,
@@ -495,12 +657,29 @@ export default function EditUserEducationInfo({ navigation, route }) {
               style={{ paddingBottom: 56 }}
               keyboardDismissMode="on-drag"
             >
+              {isRefreshingProfile && (
+                <View style={styles.refreshOverlay}>
+                  <ActivityIndicator size="small" color={Theme.themeColor} />
+                </View>
+              )}
               <FormSection style={{ paddingTop: 0 }}>
                 {/* Improved About Section */}
                 <View style={styles.aboutSection}>
                   <View style={styles.aboutSectionTitle}>
                     <Icon name="account-edit" size={20} color={Theme.themeColor} style={{ marginRight: 8 }} />
-                    <Text>{t("about")}</Text>
+                    <Text>{isOrganization ? t("companyDescription") : t("about")}</Text>
+                  </View>
+
+                  <View style={styles.organizationSwitchRow}>
+                    <Text style={styles.organizationSwitchLabel}>
+                      {t("isOrganizationLabel")}
+                    </Text>
+                    <Switch
+                      value={isOrganization}
+                      onValueChange={handleOrganizationToggle}
+                      trackColor={{ false: "#dee2e6", true: Theme.themeColor }}
+                      thumbColor="#ffffff"
+                    />
                   </View>
                   
                   <View style={styles.aboutInputContainer}>
@@ -508,7 +687,7 @@ export default function EditUserEducationInfo({ navigation, route }) {
                        multiline={true}
                        numberOfLines={6}
                        selectionColor={Theme.themeColor}
-                       placeholder={t("aboutPlaceholder")}
+                       placeholder={isOrganization ? t("aboutOrgPlaceholder") : t("aboutPlaceholder")}
                        activeUnderlineColor={Theme.themeColor}
                        underlineColor="transparent"
                        placeholderTextColor="#9B9B9B"
@@ -532,14 +711,57 @@ export default function EditUserEducationInfo({ navigation, route }) {
                   {/* About Suggestions */}
                   {about.length < 50 && (
                     <View style={styles.aboutSuggestions}>
-                      <Text style={styles.suggestionsTitle}>💡 Suggestions:</Text>
                       <Text style={styles.suggestionText}>
-                        {t("aboutSuggestions")}
+                        {isOrganization ? t("aboutOrgSuggestions") : t("aboutSuggestions")}
                       </Text>
                     </View>
                   )}
                 </View>
 
+                {isOrganization ? (
+                  <>
+                    <View style={styles.sectionDivider} />
+                    <Text style={styles.sectionTitle}>
+                      <Icon name="office-building" size={20} color={Theme.themeColor} style={{ marginRight: 8 }} />
+                      {t("organizationDetails")}
+                    </Text>
+                    <Text style={styles.orgFieldLabel}>{t("companyName")} *</Text>
+                    <LoginInputField
+                      placeholder={t("companyNamePlaceholder")}
+                      value={organizationDetails.companyName}
+                      onChangeText={(text) => updateOrganizationDetail("companyName", text)}
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                    />
+                    <Text style={styles.orgFieldLabel}>{t("industry")}</Text>
+                    <LoginInputField
+                      placeholder={t("industryPlaceholder")}
+                      value={organizationDetails.industry}
+                      onChangeText={(text) => updateOrganizationDetail("industry", text)}
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                    />
+                    <Text style={styles.orgFieldLabel}>{t("website")}</Text>
+                    <LoginInputField
+                      placeholder={t("websitePlaceholder")}
+                      value={organizationDetails.website}
+                      onChangeText={(text) => updateOrganizationDetail("website", text)}
+                      keyboardType="url"
+                      autoCapitalize="none"
+                      returnKeyType="next"
+                      blurOnSubmit={false}
+                    />
+                    <Text style={styles.orgFieldLabel}>{t("companySize")}</Text>
+                    <LoginInputField
+                      placeholder={t("companySizePlaceholder")}
+                      value={organizationDetails.companySize}
+                      onChangeText={(text) => updateOrganizationDetail("companySize", text)}
+                      returnKeyType="done"
+                      blurOnSubmit={true}
+                    />
+                  </>
+                ) : (
+                  <>
                 <View style={styles.sectionDivider} />
 
                 {/* Education Section */}
@@ -755,6 +977,8 @@ export default function EditUserEducationInfo({ navigation, route }) {
                     </TouchableOpacity>
                   </View>
                 </View>
+                  </>
+                )}
 
                 <FormButton onPress={handleSubmit}>
                   <Text

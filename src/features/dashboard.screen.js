@@ -17,16 +17,18 @@ import {
   FlatList,
   TextInput,
   Modal,
+  Alert,
 } from "react-native";
+
+const HORIZONTAL_PADDING = 16;
+const CARD_GAP = 12;
 import { Badge, IconButton, Surface } from "react-native-paper";
 import { SafeArea } from "../components/utility/safe-area.component";
 import HallCard from "../components/dashboard/HallCard";
-import matrimonyImg from "../assets/images/homepage/matrimony.png";
 import samajImg from "../assets/images/homepage/samaj.png";
 import socialImg from "../assets/images/homepage/social.png";
 import b2bImg from "../assets/images/homepage/b2b.png";
 import jobImg from "../assets/images/homepage/job.png";
-import Temple from "../assets/images/homepage/temple.png";
 import UserImg from "../assets/images/general/user.png";
 
 const { width } = Dimensions.get("window");
@@ -64,10 +66,7 @@ import {
 } from "../services/notification.services";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getImageUrl } from "../services/socialMedia.services";
-import {
-  UpdateNotification,
-  UpdateTemple,
-} from "../store/Handlers/Reducer.Handler";
+import { UpdateNotification } from "../store/Handlers/Reducer.Handler";
 import { registerForPushNotificationsAsync } from "../Utility/PushNotificationNavigation";
 import { BASEIMGURL } from "../infrastructure/constants";
 import { io } from "socket.io-client";
@@ -76,68 +75,25 @@ import MaterialIcons from "react-native-vector-icons/MaterialIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import FontAwesome from "react-native-vector-icons/FontAwesome";
 import { log } from "react-native-reanimated";
-import { getTempleList } from "../services/Temple.Services";
 import { CommonActions } from "@react-navigation/native";
 import styled from "styled-components/native";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
-import apiClient from "../store/apiClient";
 import publicApiClient from "../store/publicApiClient";
 import { requireAuth, isAccountModule, signInFromGuest, navigateToJewellery } from "../utils/requireAuth";
 
 const YELLOW_COLOR = "#D4AF37";
+const FLOATING_BAR_HEIGHT = 72;
+const BANNER_WIDTH = width - HORIZONTAL_PADDING * 2;
+const BANNER_HEIGHT = Math.round(BANNER_WIDTH * 0.62);
+const JEWELLERY_CARD_WIDTH = Math.round((width - HORIZONTAL_PADDING * 2 - CARD_GAP * 2) / 2.6);
 
-const exploreData = [
-  {
-    title: "Social",
-    path: "SocialMedia",
-    status: false,
-    icon: "people",
-    color: "#6B7280",
-  },
-  {
-    title: "Jewellery",
-    path: "Jewellery",
-    status: true,
-    icon: "diamond",
-    color: "#6B7280",
-  },
-  {
-    title: "Matrimony",
-    path: "Matrimony",
-    status: false,
-    icon: "heart",
-    color: "#6B7280",
-  },
-  {
-    title: "Temple",
-    path: "Temple",
-    status: true,
-    icon: "temple-hindu",
-    color: "#6B7280",
-  },
-];
-
-const featuredContent = [
-  {
-    id: 1,
-    title: "Featured Temple",
-    image: "https://source.unsplash.com/random/800x600/?temple",
-    description: "Visit the most sacred temples in India",
-  },
-  {
-    id: 2,
-    title: "Latest Events",
-    image: "https://source.unsplash.com/random/800x600/?festival",
-    description: "Discover upcoming cultural events",
-  },
-  {
-    id: 3,
-    title: "Community Meetups",
-    image: "https://source.unsplash.com/random/800x600/?community",
-    description: "Join local community gatherings",
-  },
-];
+const showMatrimonyComingSoon = () => {
+  Alert.alert(
+    "Coming Soon",
+    "Matrimony module is coming soon. Stay tuned!"
+  );
+};
 
 const renderHallItem = (item, index) => {
   return <HallCard key={index} {...item.item} />;
@@ -256,7 +212,7 @@ const offers = [
 ];
 
 export default function DashboardScreen({ navigation }) {
-  const { user, token, isGuest, loading, notification, temple } = useSelector(
+  const { user, token, isGuest, loading, notification } = useSelector(
     (state) => state.user
   );
   const dispatch = useDispatch();
@@ -269,10 +225,7 @@ export default function DashboardScreen({ navigation }) {
   const [belliconbadge, setBelliconbadge] = useState(1);
   const [index, setIndex] = useState(0);
 
-  // State for featured content from API
-  const [featuredTemples, setFeaturedTemples] = useState([]);
   const [latestJewellery, setLatestJewellery] = useState([]);
-  const [matrimonyProfiles, setMatrimonyProfiles] = useState([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
 
   const socket = useMemo(() => {
@@ -362,10 +315,7 @@ export default function DashboardScreen({ navigation }) {
       } else if (not.statusCode === "NOT003") {
         //chat screen navigation
       } else if (not.statusCode === "NOT004") {
-        //matrimony navigation
-        navigation.navigate("MatrimonyViewUser", {
-          userId: not.userid,
-        });
+        showMatrimonyComingSoon();
       } else if (not.statusCode === "NOT007") {
         navigation.navigate("CommunityProfile", {
           communityId: not.community._id,
@@ -395,6 +345,10 @@ export default function DashboardScreen({ navigation }) {
   }, [lastNotificationResponse, token]);
 
   const handleModuleNavigation = (path, params) => {
+    if (path === "Matrimony") {
+      showMatrimonyComingSoon();
+      return;
+    }
     if (!token && isAccountModule(path)) {
       requireAuth({
         token,
@@ -460,77 +414,6 @@ export default function DashboardScreen({ navigation }) {
   ];
 
   const [isSearchVisible, setIsSearchVisible] = useState(false);
-  const [isModuleMenuVisible, setIsModuleMenuVisible] = useState(false);
-
-  // Add temple listings data
-  const templeListings = [
-    {
-      id: 1,
-      title: "Tirupati Temple",
-      location: "Andhra Pradesh",
-      image:
-        "https://images.unsplash.com/photo-1580128660010-f7ae1b1853f1?w=500&h=300&fit=crop",
-      rating: 4.9,
-      category: "Hindu Temple",
-    },
-    {
-      id: 2,
-      title: "Meenakshi Temple",
-      location: "Tamil Nadu",
-      image:
-        "https://images.unsplash.com/photo-1580128660010-f7ae1b1853f1?w=500&h=300&fit=crop",
-      rating: 4.8,
-      category: "Hindu Temple",
-    },
-    {
-      id: 3,
-      title: "Kashi Vishwanath",
-      location: "Uttar Pradesh",
-      image:
-        "https://images.unsplash.com/photo-1580128660010-f7ae1b1853f1?w=500&h=300&fit=crop",
-      rating: 4.9,
-      category: "Hindu Temple",
-    },
-    {
-      id: 4,
-      title: "Golden Temple",
-      location: "Punjab",
-      image:
-        "https://images.unsplash.com/photo-1580128660010-f7ae1b1853f1?w=500&h=300&fit=crop",
-      rating: 4.9,
-      category: "Sikh Temple",
-    },
-    {
-      id: 5,
-      title: "Lotus Temple",
-      location: "Delhi",
-      image:
-        "https://images.unsplash.com/photo-1580128660010-f7ae1b1853f1?w=500&h=300&fit=crop",
-      rating: 4.7,
-      category: "Bahai Temple",
-    },
-  ];
-
-  // API fetch functions
-  const fetchFeaturedTemples = async () => {
-    try {
-      const response = await publicApiClient.get("/temple?limit=4");
-      if (response.data && Array.isArray(response.data)) {
-        // Take first 4 temples
-        const temples = response.data.slice(0, 4).map((temple) => ({
-          ...temple,
-          title: temple.templeName || temple.name || "Temple",
-          image: temple.images && temple.images.length > 0 
-            ? (temple.images[0].startsWith('http') ? temple.images[0] : `${BASEIMGURL}${temple.images[0]}`)
-            : null,
-        }));
-        setFeaturedTemples(temples);
-      }
-    } catch (error) {
-      console.error("Error fetching featured temples:", error);
-      setFeaturedTemples([]);
-    }
-  };
 
   const fetchLatestJewellery = async () => {
     try {
@@ -551,50 +434,11 @@ export default function DashboardScreen({ navigation }) {
     }
   };
 
-  const fetchMatrimonyProfiles = async () => {
-    try {
-      const response = await apiClient.get("/matrimony/matrimonyUsers?limit=5");
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        const profiles = response.data.data.slice(0, 5).map((profile) => {
-          const owner = profile.owner || {};
-          const name = profile.name || `${owner.firstName || ""} ${owner.lastName || ""}`.trim() || "User";
-          const age = profile.age ? `, ${profile.age}` : "";
-          const workLocation = profile.workLocation || profile.homeTown || "";
-          const profession = profile.profession || owner.profession || "";
-          const details = profession && workLocation 
-            ? `${profession}, ${workLocation}`
-            : workLocation || profession || "Profile";
-          
-          return {
-            ...profile,
-            name: `${name}${age}`,
-            details: details,
-            image: profile.image || owner.image 
-              ? (profile.image || owner.image).startsWith('http') 
-                ? (profile.image || owner.image)
-                : `${BASEIMGURL}${profile.image || owner.image}`
-              : null,
-            userId: owner._id || profile._id,
-          };
-        });
-        setMatrimonyProfiles(profiles);
-      }
-    } catch (error) {
-      console.error("Error fetching matrimony profiles:", error);
-      setMatrimonyProfiles([]);
-    }
-  };
-
-  // Fetch all featured content on mount
   useEffect(() => {
     const fetchAllFeaturedContent = async () => {
       setLoadingFeatured(true);
       try {
-        const tasks = [fetchFeaturedTemples(), fetchLatestJewellery()];
-        if (token) {
-          tasks.push(fetchMatrimonyProfiles());
-        }
-        await Promise.all(tasks);
+        await fetchLatestJewellery();
       } catch (error) {
         console.error("Error fetching featured content:", error);
       } finally {
@@ -607,12 +451,37 @@ export default function DashboardScreen({ navigation }) {
     }
   }, [token, isGuest]);
 
-  const menuItems = [
-    { label: "Social", icon: "people", path: "SocialMedia" },
-    { label: "Jewellery", icon: "diamond", path: "Jewellery" },
-    { label: "Matrimony", icon: "heart", path: "Matrimony" },
-    { label: "Temple", icon: "home", path: "Temple" },
+  const bottomBarItems = [
+    { label: "Social", icon: "people", action: "module", path: "SocialMedia" },
+    { label: "Jewellery", icon: "diamond", action: "module", path: "Jewellery" },
+    { label: "Matrimony", icon: "heart", action: "comingSoon" },
+    { label: "Messages", icon: "chatbubble-ellipses", action: "messages" },
+    { label: "Alerts", icon: "notifications", action: "notifications" },
   ];
+
+  const handleBottomBarPress = (item) => {
+    if (item.action === "module") {
+      handleModuleNavigation(item.path);
+    } else if (item.action === "comingSoon") {
+      showMatrimonyComingSoon();
+    } else if (item.action === "messages") {
+      handleAccountAction(
+        () => navigation.navigate("ChatHome"),
+        "Sign in to view your messages."
+      );
+    } else if (item.action === "notifications") {
+      handleAccountAction(
+        () =>
+          navigation.navigate("DashboardNotification", {
+            notifications: [
+              ...(notification?.homescreen ?? []),
+              ...notifications,
+            ],
+          }),
+        "Sign in to view notifications."
+      );
+    }
+  };
 
   const banners = [
     {
@@ -632,6 +501,10 @@ export default function DashboardScreen({ navigation }) {
   const scrollRef = useRef();
   const [currentIndex, setCurrentIndex] = useState(0);
   const insets = useSafeAreaInsets();
+  const [headerHeight, setHeaderHeight] = useState(insets.top + 49);
+  const [bottomBarHeight, setBottomBarHeight] = useState(
+    FLOATING_BAR_HEIGHT + Math.max(insets.bottom, 8)
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -669,34 +542,18 @@ export default function DashboardScreen({ navigation }) {
     return (
       <View style={{ flex: 1 }}>
         {/* Fixed Header */}
-        <View style={[styles.topHeader, { paddingTop: insets.top }]}>
-          {/* Top Row: Avatar, Name, Icons */}
+        <View
+          style={[styles.topHeader, { paddingTop: insets.top }]}
+          onLayout={(event) => {
+            const { height } = event.nativeEvent.layout;
+            if (height > 0) {
+              setHeaderHeight(height);
+            }
+          }}
+        >
           <View style={styles.headerTopRow}>
-            <TouchableOpacity
-              onPress={() =>
-                handleAccountAction(
-                  () => navigation.navigate("SettingsScreen"),
-                  "Sign in to view your profile and settings."
-                )
-              }
-            >
-              <Image
-                source={
-                  user && user.image
-                    ? { uri: user.image }
-                    : UserImg
-                }
-                style={styles.avatar}
-              />
-            </TouchableOpacity>
-            <Text style={styles.username}>
-              {isGuest
-                ? "Guest"
-                : user && user.firstName &&
-                  user.firstName.charAt(0).toUpperCase() +
-                    user.firstName.slice(1).toLowerCase()}
-            </Text>
-            <View style={styles.headerIcons}>
+            <Text style={styles.brandName}>In Bharat</Text>
+            <View style={styles.headerRight}>
               {isGuest ? (
                 <TouchableOpacity
                   onPress={() => signInFromGuest(dispatch)}
@@ -707,61 +564,39 @@ export default function DashboardScreen({ navigation }) {
               ) : null}
               <TouchableOpacity
                 onPress={() =>
-                  navigation.navigate("Jewellery", { screen: "BrowseScreen" })
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Search jewellery"
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.headerIconHit}
-              >
-                <Icon name="search" size={24} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
                   handleAccountAction(
-                    () => navigation.navigate("ChatHome"),
-                    "Sign in to view your messages."
+                    () => navigation.navigate("SettingsScreen"),
+                    "Sign in to view your profile and settings."
                   )
                 }
-                accessibilityRole="button"
-                accessibilityLabel="Messages"
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.headerIconHit}
+                style={styles.headerProfile}
               >
-                <Icon
-                  name="chatbubble-ellipses"
-                  size={24}
-                  color="#fff"
+                <Image
+                  source={
+                    user && user.image ? { uri: user.image } : UserImg
+                  }
+                  style={styles.avatar}
                 />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() =>
-                  handleAccountAction(
-                    () =>
-                      navigation.navigate("DashboardNotification", {
-                        notifications: [
-                          ...(notification?.homescreen ?? []),
-                          ...notifications,
-                        ],
-                      }),
-                    "Sign in to view notifications."
-                  )
-                }
-                accessibilityRole="button"
-                accessibilityLabel="Notifications"
-                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-                style={styles.headerIconHit}
-              >
-                <Icon name="notifications" size={24} color="#fff" />
+                <Text style={styles.username}>
+                  {isGuest
+                    ? "Guest"
+                    : user &&
+                      user.firstName &&
+                      user.firstName.charAt(0).toUpperCase() +
+                        user.firstName.slice(1).toLowerCase()}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
 
-        <View style={styles.scrollWrapper}>
+        <View style={[styles.scrollWrapper, { marginTop: headerHeight }]}>
           <ScrollView
             style={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingBottom: bottomBarHeight + 24,
+            }}
           >
             {/* Carousel */}
             <View style={styles.safeContent}>
@@ -776,11 +611,12 @@ export default function DashboardScreen({ navigation }) {
                   style={{ width }}
                 >
                   {banners.map((banner) => (
-                    <Image
-                      key={banner.id}
-                      source={{ uri: banner.uri }}
-                      style={styles.bannerImage}
-                    />
+                    <View key={banner.id} style={styles.bannerSlide}>
+                      <Image
+                        source={{ uri: banner.uri }}
+                        style={styles.bannerImage}
+                      />
+                    </View>
                   ))}
                 </ScrollView>
 
@@ -798,73 +634,7 @@ export default function DashboardScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Menu */}
-              <View style={styles.menuRow}>
-                {menuItems.map((item, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.menuItem}
-                    onPress={() => handleModuleNavigation(item.path)}
-                  >
-                    <Icon name={item.icon} size={24} color="#000" />
-                    <Text style={styles.menuText}>{item.label}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
               <View style={styles.quickActionsWrapper}>
-                {/* Featured Temples */}
-                {featuredTemples.length > 0 && (
-                  <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>Featured Temples</Text>
-                      <TouchableOpacity onPress={() => navigation.navigate("Temple")}>
-                        <Text style={styles.seeAll}>see all &gt;</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {loadingFeatured ? (
-                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
-                    ) : (
-                      <FlatList
-                        horizontal
-                        nestedScrollEnabled={true}
-                        data={featuredTemples}
-                        keyExtractor={(item, index) => item._id || index.toString()}
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            onPress={() => {
-                              navigation.navigate("Temple", {
-                                screen: "TempleDetails",
-                                params: {
-                                  templeinfo: item,
-                                },
-                              });
-                            }}
-                            style={{ marginRight: 10 }}
-                          >
-                            <View style={styles.card} pointerEvents="box-none">
-                              {item.image ? (
-                                <Image
-                                  source={{ uri: item.image }}
-                                  style={styles.cardImage}
-                                />
-                              ) : (
-                                <View style={[styles.cardImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
-                                  <Icon name="image-outline" size={30} color="#999" />
-                                </View>
-                              )}
-                              <Text style={styles.cardTitle}>{item.title}</Text>
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                        showsHorizontalScrollIndicator={false}
-                      />
-                    )}
-                  </View>
-                )}
-
                 {/* Latest Jewellery */}
                 {latestJewellery.length > 0 && (
                   <View style={styles.section}>
@@ -897,7 +667,6 @@ export default function DashboardScreen({ navigation }) {
                                 },
                               });
                             }}
-                            style={{ marginRight: 10 }}
                           >
                             <View style={styles.card} pointerEvents="box-none">
                               {item.image ? (
@@ -910,67 +679,8 @@ export default function DashboardScreen({ navigation }) {
                                   <Icon name="image-outline" size={30} color="#999" />
                                 </View>
                               )}
-                              <Text style={styles.cardTitle}>{item.title}</Text>
-                            </View>
-                          </TouchableOpacity>
-                        )}
-                        showsHorizontalScrollIndicator={false}
-                      />
-                    )}
-                  </View>
-                )}
-
-                {/* 💌 Slider: Featured Profiles */}
-                {matrimonyProfiles.length > 0 && (
-                  <View style={styles.section}>
-                    <View style={styles.sectionHeader}>
-                      <Text style={styles.sectionTitle}>
-                        Featured Matrimony Profiles
-                      </Text>
-                      <TouchableOpacity onPress={() => handleModuleNavigation("Matrimony")}>
-                        <Text style={styles.seeAll}>Explore &gt;</Text>
-                      </TouchableOpacity>
-                    </View>
-                    {loadingFeatured ? (
-                      <ActivityIndicator size="small" color={YELLOW_COLOR} style={{ padding: 20 }} />
-                    ) : (
-                      <FlatList
-                        horizontal
-                        nestedScrollEnabled={true}
-                        data={matrimonyProfiles}
-                        keyExtractor={(item, index) => item._id || index.toString()}
-                        renderItem={({ item }) => (
-                          <TouchableOpacity
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                            onPress={() => {
-                              handleAccountAction(
-                                () =>
-                                  navigation.navigate("Matrimony", {
-                                    screen: "MatrimonyViewUser",
-                                    params: {
-                                      userId: item.userId || item._id,
-                                    },
-                                  }),
-                                "Sign in to view matrimony profiles."
-                              );
-                            }}
-                            style={{ marginHorizontal: 6 }}
-                          >
-                            <View style={styles.profileCard} pointerEvents="box-none">
-                              {item.image ? (
-                                <Image
-                                  source={{ uri: item.image }}
-                                  style={styles.profileImage}
-                                />
-                              ) : (
-                                <View style={[styles.profileImage, { backgroundColor: "#e0e0e0", justifyContent: "center", alignItems: "center" }]}>
-                                  <Icon name="person-outline" size={40} color="#999" />
-                                </View>
-                              )}
-                              <Text style={styles.profileName}>{item.name}</Text>
-                              <Text style={styles.profileDetails}>
-                                {item.details}
+                              <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
+                                {item.title}
                               </Text>
                             </View>
                           </TouchableOpacity>
@@ -983,8 +693,34 @@ export default function DashboardScreen({ navigation }) {
               </View>
             </View>
 
-            <View style={{ height: 30 }} />
+            <View style={{ height: 16 }} />
           </ScrollView>
+        </View>
+
+        <View
+          style={[
+            styles.floatingBar,
+            { paddingBottom: Math.max(insets.bottom, 8) },
+          ]}
+          onLayout={(event) => {
+            const { height } = event.nativeEvent.layout;
+            if (height > 0) {
+              setBottomBarHeight(height);
+            }
+          }}
+        >
+          {bottomBarItems.map((item, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.floatingBarItem}
+              onPress={() => handleBottomBarPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={item.label}
+            >
+              <Icon name={item.icon} size={22} color="#333" />
+              <Text style={styles.floatingBarText}>{item.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
     );
@@ -993,25 +729,35 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   topHeader: {
     backgroundColor: YELLOW_COLOR,
-    height: 120,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
     position: "absolute",
-    // paddingTop: 20,
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
     elevation: 8,
-    paddingBottom: 18,
-    // marginBottom: 20,
+    paddingBottom: 14,
   },
   headerTopRow: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "space-between",
     width: "100%",
-    marginBottom: 18,
+  },
+  brandName: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 22,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  headerProfile: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   avatar: {
@@ -1024,8 +770,8 @@ const styles = StyleSheet.create({
   username: {
     color: "#fff",
     fontWeight: "bold",
-    marginLeft: 12,
-    flex: 1,
+    marginLeft: 8,
+    fontSize: 14,
   },
   loginButton: {
     backgroundColor: "#fff",
@@ -1043,45 +789,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 18,
   },
-  headerIcons: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: "auto",
-  },
-  headerIconHit: {
-    minWidth: 44,
-    minHeight: 44,
-    justifyContent: "center",
-    alignItems: "center",
-    marginHorizontal: 4,
-  },
   scrollWrapper: {
     flex: 1,
     backgroundColor: "#eff0f3",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    overflow: "hidden", // 🔒 THIS is the actual clipper
-    marginTop: 95,
+    overflow: "hidden",
   },
   scrollContainer: {
     flex: 1,
     backgroundColor: "#eff0f3",
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingTop: 10,
+    paddingTop: 12,
   },
   safeContent: {
     backgroundColor: "transparent",
     overflow: "hidden", // ✅ Prevents internal elements from bleeding out
   },
 
+  bannerSlide: {
+    width,
+    paddingHorizontal: HORIZONTAL_PADDING,
+  },
   bannerImage: {
-    width: width - 20,
-    height: 125,
-    marginHorizontal: 10,
-    borderRadius: 10,
+    width: BANNER_WIDTH,
+    height: BANNER_HEIGHT,
+    borderRadius: 12,
     resizeMode: "cover",
-    marginTop: 8,
   },
   dotsContainer: {
     position: "absolute",
@@ -1104,35 +839,47 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
   },
-  menuRow: {
+  floatingBar: {
+    position: "absolute",
+    bottom: 0,
+    left: 12,
+    right: 12,
     flexDirection: "row",
-    justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 6,
-    marginTop: 25,
-    paddingVertical: 20,
     backgroundColor: "#fff",
+    borderRadius: 16,
+    paddingTop: 10,
+    paddingHorizontal: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 8,
+    zIndex: 20,
   },
-  menuItem: {
+  floatingBarItem: {
     flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 6,
   },
-  menuText: {
-    fontSize: 12,
-    marginTop: 5,
+  floatingBarText: {
+    fontSize: 10,
+    marginTop: 4,
     textAlign: "center",
+    color: "#333",
   },
 
   quickActionsWrapper: {
-    paddingHorizontal: 12,
-    marginTop: 5,
+    paddingHorizontal: HORIZONTAL_PADDING,
+    marginTop: 12,
   },
 
   section: {
-    padding: 10,
+    padding: 12,
     backgroundColor: "#fff",
-    marginVertical: 5,
-    borderRadius: 10,
+    marginBottom: 12,
+    borderRadius: 12,
   },
   sectionHeader: {
     flexDirection: "row",
@@ -1148,53 +895,18 @@ const styles = StyleSheet.create({
     color: "#007bff",
   },
   card: {
-    width: 130,
-    marginRight: 10,
+    width: JEWELLERY_CARD_WIDTH,
+    marginRight: CARD_GAP,
   },
   cardImage: {
-    width: 130,
-    height: 100,
+    width: JEWELLERY_CARD_WIDTH,
+    height: Math.round(JEWELLERY_CARD_WIDTH * 0.77),
     borderRadius: 10,
   },
   cardTitle: {
     textAlign: "center",
-    marginTop: 5,
-  },
-  profileCard: {
-    width: 150,
-    backgroundColor: "#fff",
-    borderRadius: 18,
-    marginHorizontal: 6,
-    marginVertical: 6,
-    paddingBottom: 10,
-    overflow: "hidden",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 3,
-  },
-  profileImage: {
-    width: "100%",
-    height: 110,
-    resizeMode: "cover",
-  },
-  profileName: {
-    fontSize: 16,
-    fontWeight: "700",
-    paddingTop: 8,
-    paddingHorizontal: 10,
-    color: "#212529",
-  },
-  profileDetails: {
+    marginTop: 6,
     fontSize: 13,
-    color: "#495057",
-    paddingHorizontal: 10,
-  },
-  cardSubtitle: {
-    fontSize: 13,
-    color: "#6c757d",
-    paddingHorizontal: 8,
-    paddingBottom: 8,
+    lineHeight: 18,
   },
 });

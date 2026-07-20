@@ -197,11 +197,27 @@ const FeedVideoPreview = ({
   onPress,
   paused,
   isActive = false,
+  dimension,
 }) => {
   const shouldPlay = isActive && !paused;
+  const dimensionStyle = dimension
+    ? {
+        width: dimension,
+        height: dimension,
+        alignSelf: "center",
+        overflow: "hidden",
+        borderRadius: 0,
+        backgroundColor: "#000",
+      }
+    : null;
 
   return (
-    <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+    <View
+      style={[
+        styles.squareMediaWrapper,
+        dimension ? dimensionStyle : styles.mediaBleed,
+      ]}
+    >
       <TouchableOpacity
         onPress={onPress}
         activeOpacity={0.9}
@@ -315,9 +331,19 @@ const NewSocialCard = ({
   onFollowStatusChange,
   /** Only the most-visible feed card should be true — avoids N ExoPlayers / OOM */
   isActiveVideo = false,
+  mediaSize,
 }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const insets = useSafeAreaInsets();
+  const mediaDimension = mediaSize ?? windowWidth;
+  const mediaWrapperOverride = {
+    width: mediaDimension,
+    height: mediaDimension,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    borderRadius: 0,
+    backgroundColor: '#000',
+  };
   const { t } = useTranslation();
   const tr = (key, fallback) => {
     try {
@@ -348,7 +374,7 @@ const NewSocialCard = ({
   // Handle scrolling to update current index
   const handleScroll = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const slide = Math.floor(contentOffsetX / windowWidth);
+    const slide = Math.floor(contentOffsetX / mediaDimension);
     setCurrentIndex(slide);
   };
 
@@ -1562,6 +1588,7 @@ const NewSocialCard = ({
               onPress={openReelModal}
               paused={reelModalVisible}
               isActive={isActiveVideo}
+              dimension={mediaSize ? mediaDimension : undefined}
             />
             <Modal
               animationType="slide"
@@ -1866,6 +1893,7 @@ const NewSocialCard = ({
                 onScroll={handleScroll}
                 scrollEventThrottle={16}
                 decelerationRate="fast"
+                snapToInterval={mediaDimension}
                 style={styles.mediaBleed}
                 contentContainerStyle={{ paddingHorizontal: 0 }}
               >
@@ -1876,7 +1904,7 @@ const NewSocialCard = ({
                       key={index}
                       onPress={handleDoubleTap}
                     >
-                      <View style={styles.squareMediaWrapper}>
+                      <View style={[styles.squareMediaWrapper, mediaWrapperOverride]}>
                         <Image
                           style={styles.squareMedia}
                           source={{ uri: imageUri }}
@@ -1889,7 +1917,12 @@ const NewSocialCard = ({
               </ScrollView>
             ) : (
               <TouchableWithoutFeedback onPress={handleDoubleTap}>
-                <View style={[styles.squareMediaWrapper, styles.mediaBleed]}>
+                <View
+                  style={[
+                    styles.squareMediaWrapper,
+                    mediaSize ? mediaWrapperOverride : styles.mediaBleed,
+                  ]}
+                >
                   <Image
                     style={styles.squareMedia}
                     source={{ uri: `${images[0]}` }}

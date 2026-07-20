@@ -22,6 +22,7 @@ import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MessageCard from "./MessageCard";
+import BottomNavigation from "./BottomNavigation";
 import { getImageUrl, getSocialMediaProfile } from "../../services/socialMedia.services";
 import { listUsers } from "../../Backup/queries";
 import { useDispatch, useSelector } from "react-redux";
@@ -182,7 +183,7 @@ export default function MessageScreen({ navigation }) {
 
   return (
     <Container
-      style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}
+      style={{ paddingRight: 0, paddingLeft: 0, paddingBottom: 0, backgroundColor: "white" }}
     >
       {/* Header - replicate mock: avatar, name, status and actions */}
       <RowBetween style={{ paddingTop: 24, paddingHorizontal: 12, paddingBottom: 12 }}>
@@ -237,6 +238,7 @@ export default function MessageScreen({ navigation }) {
             return <MessageCard {...item} key={item._id} index={index} onRefresh={refreshChats} />;
           }}
           keyExtractor={(item) => item._id}
+          contentContainerStyle={{ paddingBottom: 80 }}
           refreshControl={
             <RefreshControl
               refreshing={false}
@@ -267,6 +269,7 @@ export default function MessageScreen({ navigation }) {
           </Text>
         </View>
       )}
+      <BottomNavigation navigation={navigation} currentScreen="messages" />
     </Container>
   );
 }

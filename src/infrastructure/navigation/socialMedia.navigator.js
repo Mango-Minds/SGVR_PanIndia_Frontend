@@ -29,7 +29,6 @@ import { useNavigation } from "@react-navigation/native";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Badge } from "react-native-paper";
-import { TempleStackNavigator } from "./Temple.navigator";
 import DashboardScreen from "../../features/dashboard.screen.js";
 import ProfileNewScreen from "../../features/SocialMediaNew/ProfileScreen.js";
 
@@ -95,7 +94,6 @@ export const SocialMediaStackNavigator = () => {
     <Stack.Screen name="ChatScreen" component={ChatScreen} />
     <Stack.Screen name="EditJob" component={EditJobPost} />
     <Stack.Screen name="PhotoPreviewScreen" component={PhotosScreen} />
-    <Stack.Screen name="Temple" component={TempleStackNavigator} />
     <Stack.Screen name="LikesScreen" component={LikeScreen} />
     <Stack.Screen name="ReportScreen" component={Reportscreen} />
     <Stack.Screen

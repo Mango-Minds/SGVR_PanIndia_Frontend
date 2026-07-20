@@ -16,8 +16,8 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         return "people-outline";
       case "search":
         return "search-outline";
-      case "jobs":
-        return "briefcase-outline";
+      case "messages":
+        return "chatbubble-ellipses-outline";
       default:
         return "home-outline";
     }
@@ -31,8 +31,8 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         return "people";
       case "search":
         return "search";
-      case "jobs":
-        return "briefcase";
+      case "messages":
+        return "chatbubble-ellipses";
       default:
         return "home";
     }
@@ -45,7 +45,18 @@ export default function BottomNavigation({ navigation, currentScreen }) {
       <View style={styles.bottomBar}>
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("SocialHomeScreen")}
+          onPress={() => {
+            if (currentScreen === "home") {
+              const parent = navigation.getParent();
+              if (parent) {
+                parent.navigate("Main");
+              } else {
+                navigation.navigate("MainHome");
+              }
+            } else {
+              navigation.navigate("SocialHomeScreen");
+            }
+          }}
         >
           <Ionicons 
             name={isActive("home") ? getFilledIconName("home") : getIconName("home")}
@@ -96,18 +107,18 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("SocialJobs")}
+          onPress={() => navigation.navigate("MessageScreen")}
         >
           <Ionicons 
-            name={isActive("jobs") ? getFilledIconName("jobs") : getIconName("jobs")}
+            name={isActive("messages") ? getFilledIconName("messages") : getIconName("messages")}
             size={24} 
-            color={isActive("jobs") ? Theme.themeColor : "#666"} 
+            color={isActive("messages") ? Theme.themeColor : "#666"} 
           />
           <Text style={[
             styles.iconText, 
-            { color: isActive("jobs") ? Theme.themeColor : "#666" }
+            { color: isActive("messages") ? Theme.themeColor : "#666" }
           ]}>
-            {t("jobs")}
+            {t("messages")}
           </Text>
         </TouchableOpacity>
       </View>
