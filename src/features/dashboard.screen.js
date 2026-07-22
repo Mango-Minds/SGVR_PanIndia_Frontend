@@ -81,6 +81,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
 import publicApiClient from "../store/publicApiClient";
 import { requireAuth, isAccountModule, signInFromGuest, navigateToJewellery } from "../utils/requireAuth";
+import useMessageUnreadBadge from "../hooks/useMessageUnreadBadge";
 
 const YELLOW_COLOR = "#D4AF37";
 const FLOATING_BAR_HEIGHT = 72;
@@ -224,6 +225,9 @@ export default function DashboardScreen({ navigation }) {
   const [notifications, setNotifications] = useState([]);
   const [belliconbadge, setBelliconbadge] = useState(1);
   const [index, setIndex] = useState(0);
+  const messageUnreadCount = useMessageUnreadBadge();
+  const messageBadgeLabel =
+    messageUnreadCount > 99 ? "99+" : String(messageUnreadCount);
 
   const [latestJewellery, setLatestJewellery] = useState([]);
   const [loadingFeatured, setLoadingFeatured] = useState(true);
@@ -466,7 +470,7 @@ export default function DashboardScreen({ navigation }) {
       showMatrimonyComingSoon();
     } else if (item.action === "messages") {
       handleAccountAction(
-        () => navigation.navigate("ChatHome"),
+        () => navigation.navigate("MessageScreen"),
         "Sign in to view your messages."
       );
     } else if (item.action === "notifications") {
@@ -717,7 +721,15 @@ export default function DashboardScreen({ navigation }) {
               accessibilityRole="button"
               accessibilityLabel={item.label}
             >
-              <Icon name={item.icon} size={22} color="#333" />
+              <View style={styles.floatingBarIconWrap}>
+                <Icon name={item.icon} size={22} color="#333" />
+                {((item.action === "messages" || item.path === "Jewellery") &&
+                  messageUnreadCount > 0) && (
+                  <View style={styles.messageBadge}>
+                    <Text style={styles.messageBadgeText}>{messageBadgeLabel}</Text>
+                  </View>
+                )}
+              </View>
               <Text style={styles.floatingBarText}>{item.label}</Text>
             </TouchableOpacity>
           ))}
@@ -862,6 +874,29 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 6,
+  },
+  floatingBarIconWrap: {
+    position: "relative",
+  },
+  messageBadge: {
+    position: "absolute",
+    top: -6,
+    right: -12,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#E53935",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: "#ffffff",
+  },
+  messageBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: 12,
   },
   floatingBarText: {
     fontSize: 10,

@@ -1,8 +1,13 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import useMessageUnreadBadge from "../../hooks/useMessageUnreadBadge";
 
 export default function BottomNavigation({ navigation }) {
+  const messageUnreadCount = useMessageUnreadBadge();
+  const messageBadgeLabel =
+    messageUnreadCount > 99 ? "99+" : String(messageUnreadCount);
+
   return (
     <View style={styles.bottomBarContainer}>
       <View style={styles.bottomBar}>
@@ -35,9 +40,16 @@ export default function BottomNavigation({ navigation }) {
         
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("ChatScreen")}
+          onPress={() => navigation.navigate("MessageScreen")}
         >
-          <Ionicons name="chatbubble-outline" size={24} color="gray" />
+          <View style={styles.messageIconWrap}>
+            <Ionicons name="chatbubble-outline" size={24} color="gray" />
+            {messageUnreadCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{messageBadgeLabel}</Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.iconText, { color: "gray" }]}>Message</Text>
         </TouchableOpacity>
         
@@ -180,6 +192,29 @@ const styles = StyleSheet.create({
   },
   centerIconContainer: {
     flex: 1.2,
+  },
+  messageIconWrap: {
+    position: "relative",
+  },
+  badge: {
+    position: "absolute",
+    top: -6,
+    right: -12,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: "#E53935",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 4,
+    borderWidth: 1.5,
+    borderColor: "#ffffff",
+  },
+  badgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "700",
+    lineHeight: 12,
   },
   iconText: {
     marginTop: 4,

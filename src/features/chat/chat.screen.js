@@ -45,6 +45,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { uploadChatMedia, saveSingleChat as saveSingleChatApi, editMessage as editMessageApi, deleteMessage as deleteMessageApi, getRoomMessages, getRoomMembers, addRoomMembers, removeRoomMember } from '../../services/chat.services';
 import { GetAllFriends } from "../../services/socialMedia.services";
 import DeleteModal from "../../components/modals/DeleteChat";
+import { clearConversationUnread } from "../../hooks/useMessageUnreadBadge";
 
 const ChatScreen = ({ navigation, route }) => {
   const [chattings, setChattings] = React.useState([]);
@@ -320,8 +321,11 @@ const ChatScreen = ({ navigation, route }) => {
     if (!socket.current) {
       socket.current = io(SOCKETURL);
     }
+    const roomId = isGroup && routeRoomId ? routeRoomId : [user._id, toid].sort().join("_");
     if (socket.current) {
-      socket.current.emit("join", { userId: user._id });
+      socket.current.emit("joinUserRoom", user._id);
+      socket.current.emit("join", { userId: user._id, roomId });
+      socket.current.emit("joinRoom", { roomId, userId: user._id });
     }
     const chatFun = async () => {
       if (localChats && localChats.length > 0) {
@@ -337,6 +341,16 @@ const ChatScreen = ({ navigation, route }) => {
       }
 
       const allChats = isGroup && routeRoomId ? await getRoomMessages(routeRoomId) : await getAllChats(toid, page);
+
+      // Opening the chat marks messages as seen on the server — clear local badge count
+      dispatch(
+        clearConversationUnread({
+          roomId,
+          otherUserId: isGroup ? null : toid,
+          conversationId: route.params?.conversationId,
+        })
+      );
+
       if (allChats && allChats.length > 0) {
         setChattings(allChats);
         let updatechatflag = false;
@@ -373,6 +387,20 @@ const ChatScreen = ({ navigation, route }) => {
       }
     };
     chatFun();
+
+    return () => {
+      // Re-clear on leave so Back doesn't restore a stale badge before server sync
+      dispatch(
+        clearConversationUnread({
+          roomId,
+          otherUserId: isGroup ? null : toid,
+          conversationId: route.params?.conversationId,
+        })
+      );
+      if (socket.current && roomId) {
+        socket.current.emit("leaveRoom", { roomId, userId: user._id });
+      }
+    };
   }, []);
 
   // Scroll to bottom when chat data is initially loaded
@@ -386,85 +414,111 @@ const ChatScreen = ({ navigation, route }) => {
     }
   }, [chattings.length > 0 ? chattings[0] : null]); // Trigger when first message is loaded
 
-  if (socket.current) {
-    socket.current.on("connectedUsers", ({ active }) => {
-      if (active && active.length > 0) {
-        for (let i = 0; i < active.length; i++) {
-          const item = active[i];
-          if (item.userId === toid) {
-            setActive(true);
-            return;
-          }
-        }
+  // Live incoming messages — backend emits "message" / "newChatMessage" to the room
+  React.useEffect(() => {
+    if (!user?._id) return undefined;
+
+    if (!socket.current) {
+      socket.current = io(SOCKETURL, { transports: ["websocket"] });
+    }
+
+    const roomId = isGroup && routeRoomId ? routeRoomId : [user._id, toid].sort().join("_");
+
+    const joinRooms = () => {
+      socket.current.emit("joinUserRoom", user._id);
+      socket.current.emit("join", { userId: user._id, roomId });
+      socket.current.emit("joinRoom", { roomId, userId: user._id });
+    };
+
+    joinRooms();
+    socket.current.on("connect", joinRooms);
+
+    const normalizeIncoming = (raw) => {
+      if (!raw) return null;
+      // Legacy shape used by older clients
+      if (raw.obj) {
+        return {
+          _id: raw.obj._id,
+          msg: raw.obj.msg || raw.obj.message || "",
+          sender: raw.obj.sender || raw.obj.userId,
+          receiver: isGroup ? null : toid,
+          time: raw.obj.time || raw.obj.timestamp || new Date().toISOString(),
+          media: raw.obj.media || null,
+        };
       }
-    });
-    socket.current.on("newMsgReceived", ({ obj }) => {
-      setChattings([...chattings, obj]);
-      // Scroll to bottom when new message is received
+      return {
+        _id: raw._id || raw.messageId,
+        msg: raw.msg || raw.message || raw.messageBody || "",
+        sender: raw.sender || raw.userId || raw.senderId,
+        receiver: isGroup ? null : toid,
+        time: raw.time || raw.timestamp || new Date().toISOString(),
+        media: raw.media || null,
+      };
+    };
+
+    const appendIncoming = (raw) => {
+      const obj = normalizeIncoming(raw);
+      if (!obj) return;
+
+      // Ignore own echoes (already added optimistically on send)
+      if (obj.sender && String(obj.sender) === String(user._id)) {
+        // Still merge server _id if we only have a local copy
+        setChattings((prev) => {
+          const withoutId = prev.findIndex(
+            (m) =>
+              !m._id &&
+              String(m.sender) === String(obj.sender) &&
+              String(m.msg || "") === String(obj.msg || "")
+          );
+          if (withoutId >= 0 && obj._id) {
+            const next = [...prev];
+            next[withoutId] = { ...next[withoutId], _id: obj._id };
+            return next;
+          }
+          return prev;
+        });
+        return;
+      }
+
+      setChattings((prev) => {
+        if (obj._id && prev.some((m) => String(m._id) === String(obj._id))) {
+          return prev;
+        }
+        return [...prev, obj];
+      });
+
       setTimeout(() => {
         if (flatListRef.current && !suppressAutoScrollRef.current) {
           flatListRef.current.scrollToEnd({ animated: true });
         }
       }, 100);
-      let flag = false;
-      let updatedData;
+    };
 
-      for (let i = 0; i < localChats.length; i++) {
-        let item = localChats[i];
-        if (item.userid.includes(user._id) && item.userid.includes(toid)) {
-          flag = true;
-
-          const newdata = { ...item, chats: [...item.chats, obj] };
-          const ddata = [...localChats.slice(0, i), ...localChats.slice(i + 1)];
-          updatedData = [newdata, ...ddata];
-
-          if (item.chats.length > 100) {
-            item.chats.splice(0, 1);
-            const newdata = { ...item, chats: [...item.chats.slice(1)] };
-            updatedData = [newdata, ...updatedData.slice(1)];
+    const onMessage = (payload) => appendIncoming(payload);
+    const onLegacyNewMsg = (payload) => appendIncoming(payload);
+    const onConnectedUsers = ({ active }) => {
+      if (active && active.length > 0) {
+        for (let i = 0; i < active.length; i++) {
+          if (active[i].userId === toid) {
+            setActive(true);
+            return;
           }
         }
       }
-      let updatedconversation;
-      for (let i = 0; i < conversations.length; i++) {
-        const item = conversations[i];
-        let ucount = 0;
-        for (let j = 0; j < item.user.length; j++) {
-          const val = item.user[j];
-          if (val._id === toid || val._id === user._id) {
-            ucount++;
-          }
-        }
+    };
 
-        if (ucount === 2) {
-          const newdata = { ...item, lastmsg: obj };
-          const removeData = [...conversations.slice(0, i), ...conversations.slice(i + 1)];
-          updatedconversation = [newdata, ...removeData];
-        }
-      }
+    // Backend emitNewChatMessage sends "message" to the room (primary live path)
+    socket.current.on("message", onMessage);
+    socket.current.on("newMsgReceived", onLegacyNewMsg);
+    socket.current.on("connectedUsers", onConnectedUsers);
 
-      if (flag == false) {
-        dispatch(
-          updateLocalChats([
-            ...localChats,
-            {
-              userid: [user._id, toid],
-              chats: [obj],
-            },
-          ])
-        );
-        dispatch(
-          updateConversation([
-            ...conversations,
-            { user: [user._id, toid], lastmsg: obj },
-          ])
-        );
-      } else {
-        dispatch(updateLocalChats(updatedData));
-        dispatch(updateConversation(updatedconversation));
-      }
-    });
-  }
+    return () => {
+      socket.current?.off("connect", joinRooms);
+      socket.current?.off("message", onMessage);
+      socket.current?.off("newMsgReceived", onLegacyNewMsg);
+      socket.current?.off("connectedUsers", onConnectedUsers);
+    };
+  }, [user?._id, toid, isGroup, routeRoomId]);
 
   const sendMessage = async (e) => {
     console.log("sendMessage function called with message:", message);

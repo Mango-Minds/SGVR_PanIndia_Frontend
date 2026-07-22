@@ -23,6 +23,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import MessageCard from "./MessageCard";
 import BottomNavigation from "./BottomNavigation";
+import JewelleryBottomTabBar from "../Jewellery/BottomTabBar";
 import { getImageUrl, getSocialMediaProfile } from "../../services/socialMedia.services";
 import { listUsers } from "../../Backup/queries";
 import { useDispatch, useSelector } from "react-redux";
@@ -36,9 +37,10 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { SOCKETURL } from "../../infrastructure/constants";
+import { navigateJewelleryAuthTab, JEWELLERY_HOME_SCREEN } from "../../utils/requireAuth";
 
-export default function MessageScreen({ navigation }) {
-  const { conversations, localChats, user } = useSelector(
+export default function MessageScreen({ navigation, route, hideBottomNav = false, module }) {
+  const { conversations, localChats, user, token, isGuest } = useSelector(
     (state) => state.user
   );
   const [chatsUser, setChatsUser] = useState([]);
@@ -47,6 +49,14 @@ export default function MessageScreen({ navigation }) {
   const dispatch = useDispatch();
   const socket = useRef();
   const [userDp, setUserDp] = useState(null);
+  const isJewellery =
+    module === "jewellery" || route?.params?.module === "jewellery";
+  const hideSocialNav =
+    hideBottomNav ||
+    route?.params?.hideBottomNav ||
+    isJewellery ||
+    module === "dashboard" ||
+    route?.params?.module === "dashboard";
 
   const updateStorageConvo = async () => {
     const convodata = await AsyncStorage.getItem("conversation");
@@ -104,10 +114,11 @@ export default function MessageScreen({ navigation }) {
 
   useEffect(() => {
     const initializeScreen = async () => {
-      // setChatsUser(conversations);
       if (!socket.current) {
         socket.current = io(SOCKETURL);
-      } else {
+      }
+      if (user?._id) {
+        socket.current.emit("joinUserRoom", user._id);
         socket.current.emit("join", { userId: user._id });
       }
       // load header avatar (supports direct URLs and storage keys)
@@ -142,15 +153,15 @@ export default function MessageScreen({ navigation }) {
     
     initializeScreen();
   }, []);
-  // useEffect(() => {
-  // }, [chatsUser]);
 
   useFocusEffect(
     React.useCallback(() => {
       const initializeScreen = async () => {
         if (!socket.current) {
           socket.current = io(SOCKETURL);
-        } else {
+        }
+        if (user?._id) {
+          socket.current.emit("joinUserRoom", user._id);
           socket.current.emit("join", { userId: user._id });
         }
         await updateStorageConvo();
@@ -158,28 +169,58 @@ export default function MessageScreen({ navigation }) {
       };
       
       initializeScreen();
-    }, [socket, showArchived])
+    }, [showArchived, user?._id])
   );
 
   useEffect(() => {
-    if (socket.current) {
-      socket.current.on("newMsg", (data) => {
-        for (let i = 0; i < conversations.length; i++) {
-          const item = conversations[i];
-          if (data.userid[0].id in item.user && data.userid[1].id in item.user) {
-            conversations.splice(i, 1);
-            conversations.splice(0, 0, {
-              user: item.user,
-              unreadCount:
-                data.isRead === false ? item.unreadCount + 1 : item.unreadCount,
-              lastmsg: data,
-            });
-          }
-        }
-        // dispatch(updateChatUsers(conversations));
-      });
+    if (!user?._id) return undefined;
+
+    if (!socket.current) {
+      socket.current = io(SOCKETURL, { transports: ["websocket"] });
     }
-  }, [socket.current, conversations]);
+
+    const join = () => {
+      socket.current.emit("joinUserRoom", user._id);
+      socket.current.emit("join", { userId: user._id });
+    };
+    join();
+    socket.current.on("connect", join);
+
+    const refreshList = (data) => {
+      // Only refresh for live events; ignore reconnect replays
+      if (!data?.roomId || data.isReplay || data.live !== true) return;
+      getChatUsers(showArchived);
+    };
+
+    socket.current.on("chatUnread", refreshList);
+    socket.current.on("notification", refreshList);
+    socket.current.on("newChatMessage", refreshList);
+
+    return () => {
+      socket.current?.off("connect", join);
+      socket.current?.off("chatUnread", refreshList);
+      socket.current?.off("notification", refreshList);
+      socket.current?.off("newChatMessage", refreshList);
+    };
+  }, [user?._id, showArchived]);
+
+  const handleJewelleryTabChange = (tab) => {
+    switch (tab) {
+      case "home":
+        navigation.navigate(JEWELLERY_HOME_SCREEN);
+        break;
+      case "search":
+        navigation.navigate("BrowseScreen");
+        break;
+      case "profile":
+      case "notifications":
+        navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, navigation });
+        break;
+      case "message":
+      default:
+        break;
+    }
+  };
 
   return (
     <Container
@@ -269,7 +310,14 @@ export default function MessageScreen({ navigation }) {
           </Text>
         </View>
       )}
-      <BottomNavigation navigation={navigation} currentScreen="messages" />
+      {isJewellery ? (
+        <JewelleryBottomTabBar
+          activeTab="message"
+          onTabChange={handleJewelleryTabChange}
+        />
+      ) : !hideSocialNav ? (
+        <BottomNavigation navigation={navigation} currentScreen="messages" />
+      ) : null}
     </Container>
   );
 }

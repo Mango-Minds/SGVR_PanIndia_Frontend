@@ -54,8 +54,10 @@ import WorkerHome from "../../features/jewellery/WorkerHome";
 import VendorsAllProductsScreen from "../../features/jewellery/VendorsAllProduct";
 import EachShopProfile from "../../features/jewellery/EachShopProfile";
 import EachVendor from "../../features/jewellery/EachVendor";
-import JewelleryChatScreen from "../../features/jewellery/ChatScreen";
 import ChatScreen from "../../features/chat/chat.screen";
+import MessageScreen from "../../components/social/MessageScreen";
+import MessageScreenNew from "../../features/SocialMediaNew/MessageScreenNew.jsx";
+import NewMessageScreen from "../../components/social/NewMessageScreen";
 import FilterMenu from "../../components/Jewellery/FilterMenu";
 import SuperAdminHome from "../../features/jewellery/SuperAdminHome";
 import JewelleryNotifications from "../../features/jewellery/Notifications";
@@ -142,8 +144,12 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="MyJewelleryProfile" component={MyJewelleryProfile} />
       <Stack.Screen name="FilterMenu" component={FilterMenu} />
       <Stack.Screen name="Bottomnavigation" component={BottomNavigation} />
-      <Stack.Screen name="ChatScreen" component={JewelleryChatScreen} />
-      <Stack.Screen name="Chat" component={ChatScreen} />
+      <Stack.Screen name="MessageScreen">
+        {(props) => <MessageScreen {...props} hideBottomNav module="jewellery" />}
+      </Stack.Screen>
+      <Stack.Screen name="MessageScreenNew" component={MessageScreenNew} />
+      <Stack.Screen name="NewMessageScreen" component={NewMessageScreen} />
+      <Stack.Screen name="ChatScreen" component={ChatScreen} />
       <Stack.Screen name="EventPage" component={EventPage} />
 
       <Stack.Screen name="EachShopProfile" component={EachShopProfile} />

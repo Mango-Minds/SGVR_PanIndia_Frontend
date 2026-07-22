@@ -15,6 +15,7 @@ import {
   Animated,
   Easing,
   Platform,
+  AppState,
 } from "react-native";
 import { setAudioModeAsync } from "expo-audio";
 import { Container } from "../../styles/common.styles";
@@ -35,7 +36,7 @@ import { fetchAllPosts, getMyMoments, uploadMoment, deleteMoment, getVisibleMome
 // import { FlatList } from "react-native-gesture-handler";
 import { useTranslation } from "react-i18next";
 import { useFollowStatus } from "./FollowStatusContext";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useIsFocused } from "@react-navigation/native";
 const SocialHomeScreen = ({ navigation, route }) => {
   const token = useSelector((state) => state.user.token);
 const { t } = useTranslation();
@@ -54,6 +55,11 @@ const { t } = useTranslation();
   const [showCategoryTabs, setShowCategoryTabs] = useState(false);
   /** Only one feed video mounts ExoPlayer — prevents Android OOM */
   const [activeVideoPostId, setActiveVideoPostId] = useState(null);
+  /** Stack keeps home mounted under Message/Search/Network — stop video on blur */
+  const isScreenFocused = useIsFocused();
+  const [isAppActive, setIsAppActive] = useState(
+    () => AppState.currentState === "active"
+  );
   const flatListRef = useRef(null);
   const selectedCategoryRef = useRef("trending");
   const categoryTabsAnim = useRef(new Animated.Value(0)).current;
@@ -235,6 +241,13 @@ const { t } = useTranslation();
       flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
     }, [categoryTabsAnim])
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (nextState) => {
+      setIsAppActive(nextState === "active");
+    });
+    return () => sub.remove();
+  }, []);
 
   // iOS audio session only — Android expo-audio conflicts with expo-video sound
   useEffect(() => {
@@ -663,8 +676,8 @@ const { t } = useTranslation();
                 <FlatList
                   ref={flatListRef}
                   data={filteredPosts}
-                  // Must include activeVideoPostId or cells keep stale isActiveVideo=false
-                  extraData={`${selectedCategory}:${activeVideoPostId || ""}`}
+                  // Must include activeVideoPostId/focus or cells keep stale isActiveVideo
+                  extraData={`${selectedCategory}:${activeVideoPostId || ""}:${isScreenFocused && isAppActive ? 1 : 0}`}
                   onScroll={handleScroll}
                   scrollEventThrottle={16}
                   renderItem={({ item, index }) => {
@@ -698,6 +711,8 @@ const { t } = useTranslation();
                         currentFollowStatus={item.followStatus || getFollowStatus(createdBy?._id)}
                         onFollowStatusChange={handleFollowStatusChange}
                         isActiveVideo={
+                          isScreenFocused &&
+                          isAppActive &&
                           itemHasVideo &&
                           String(item._id) === String(activeVideoPostId)
                         }

@@ -29,8 +29,10 @@ import SinglePostScreen from "../../features/Singlepostscreen";
 import CommentScreen from "../../components/social/CommentScreen";
 import LikeScreen from "../../components/social/LikeScreen";
 import MatrimonyViewUser from "../../features/matrimony/matrimonyViewUser.screen";
-import ChatHome from "../../features/chat/chat.home";
 import ChatScreenNew from "../../features/chat/chat.screen.new";
+import ChatScreen from "../../features/chat/chat.screen";
+import MessageScreen from "../../components/social/MessageScreen";
+import NewMessageScreen from "../../components/social/NewMessageScreen";
 import { B2CStackNavigator } from "./B2C.navigator";
 
 import OnboardModuleForm from "../../features/OnBoardModuleForm";
@@ -55,7 +57,18 @@ export const DashboardNavigator = () => (
       component={CommunityMemberProfileScreen}
     />
 
-    <Stack.Screen name="ChatHome" component={ChatHome} />
+    <Stack.Screen name="ChatHome">
+      {(props) => (
+        <MessageScreen {...props} hideBottomNav module="dashboard" />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name="MessageScreen">
+      {(props) => (
+        <MessageScreen {...props} hideBottomNav module="dashboard" />
+      )}
+    </Stack.Screen>
+    <Stack.Screen name="NewMessageScreen" component={NewMessageScreen} />
+    <Stack.Screen name="ChatScreen" component={ChatScreen} />
     <Stack.Screen name="ChatScreenNew" component={ChatScreenNew} />
 
     <Stack.Screen name="Vendor" component={MatrimonyVendorsScreen} />

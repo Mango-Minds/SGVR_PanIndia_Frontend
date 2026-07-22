@@ -84,22 +84,37 @@ export default function MessageScreenNew({ navigation }) {
   );
 
   useEffect(() => {
-    if (socket.current) {
-      socket.current.on("newMsg", (data) => {
-        const updatedConversations = conversations.map((item) => {
-          if (data.userid.some((id) => id.id === item.user._id)) {
-            return {
-              ...item,
-              unreadCount: data.isRead ? item.unreadCount : item.unreadCount + 1,
-              lastmsg: data,
-            };
-          }
-          return item;
-        });
-        dispatch(updateConversation(updatedConversations));
-      });
+    if (!user?._id) return undefined;
+
+    if (!socket.current) {
+      socket.current = io(SOCKETURL, { transports: ["websocket"] });
     }
-  }, [conversations]);
+
+    const join = () => {
+      socket.current.emit("joinUserRoom", user._id);
+      socket.current.emit("join", { userId: user._id });
+    };
+    join();
+    socket.current.on("connect", join);
+
+    const refreshList = (data) => {
+      if (!data?.roomId || data.isReplay || data.live !== true) return;
+      getChatUsers(showArchived);
+    };
+
+    socket.current.on("chatUnread", refreshList);
+    socket.current.on("notification", refreshList);
+    socket.current.on("newChatMessage", refreshList);
+    socket.current.on("newMsg", refreshList);
+
+    return () => {
+      socket.current?.off("connect", join);
+      socket.current?.off("chatUnread", refreshList);
+      socket.current?.off("notification", refreshList);
+      socket.current?.off("newChatMessage", refreshList);
+      socket.current?.off("newMsg", refreshList);
+    };
+  }, [user?._id, showArchived]);
 
   return (
     <Container style={{ paddingRight: 0, paddingLeft: 0, backgroundColor: "white" }}>

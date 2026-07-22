@@ -52,7 +52,7 @@ const JEWELLERY_AUTH_TAB_CONFIG = {
     message: "Sign in to view your jewellery profile.",
   },
   message: {
-    screen: "ChatScreen",
+    screen: "MessageScreen",
     message: "Sign in to view your messages.",
   },
   notifications: {

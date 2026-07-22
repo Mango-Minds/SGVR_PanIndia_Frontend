@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   Pressable,
   ImageBackground,
-  Modal,
 } from "react-native";
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { BASEIMGURL } from "../../infrastructure/constants";
@@ -32,10 +31,6 @@ const EachShopProfile = ({ route }) => {
   const token = useSelector((state) => state.user.token);
   const { user } = useSelector((state) => state.user);
 
-  const userId = user.roleData.owner;
-  const [chatUserId, setChatUserId] = useState();
-  const [requestModalVisible, setRequestModalVisible] = useState(false);
-
   const navigation = useNavigation();
   const isFocused = useIsFocused();
   const [shopProducts, setShopProducts] = useState([]);
@@ -46,63 +41,16 @@ const EachShopProfile = ({ route }) => {
   const [shop, setShop] = useState({});
   console.log("shopiddd", shopId);
 
-  const createChatRoom = async (userId) => {
-    console.log("userId: ", userId);
-    console.log("chatuserId: ", chatUserId);
-
-    try {
-      const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userIds: [userId, chatUserId] }),
-      });
-
-      console.log("Response: ", response);
-      console.log(response.json());
-
-      if (response.ok) {
-        try {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            // setUserRooms(data);
-            console.log("Room Data: ", roomData);
-            const room_with_user = roomData.rooms.filter((room) => room.participants[0].id === chatUserId)[0];
-            console.log("Room with user",room_with_user);
-            setRequestModalVisible(false);
-            navigation.navigate("ChatScreenNew", {
-              user_auth_token: token,
-              room: room_with_user,
-              participant_name:
-              room_with_user.participants[0].firstName +
-              " " +
-              room_with_user.participants[0].lastName,
-            });
-          } else {
-            Alert.alert("Failed to fetch Room.");
-            throw new Error("Failed to fetch rooms");
-            
-          }
-        } catch (error) {
-          console.error("Error fetching room:", error);
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Error Creating Chat Room:", errorData);
-        Alert.alert("Error Creating Chat Room");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+  const handleMessagePress = () => {
+    const conversationId = [user._id, shopUserId].sort().join("_");
+    const toName =
+      `${shop?.firstName || ""} ${shop?.lastName || ""}`.trim() || "Shop";
+    navigation.navigate("ChatScreen", {
+      toid: shopUserId,
+      toName,
+      index: 0,
+      conversationId,
+    });
   };
 
 
@@ -191,10 +139,7 @@ const EachShopProfile = ({ route }) => {
 
         <TouchableOpacity
           style={style.chatButton}
-          onPress={() => {
-            setChatUserId(shopUserId);
-            setRequestModalVisible(true);
-          }}
+          onPress={handleMessagePress}
         >
           <IconButton icon="chat" size={30}></IconButton>
 
@@ -303,35 +248,6 @@ const EachShopProfile = ({ route }) => {
                 )}
               </View>
             </View>
-
-            <Modal
-              animationType="slide"
-              transparent={true}
-              visible={requestModalVisible}
-              onRequestClose={() => setRequestModalVisible(false)}
-            >
-              <View style={style.modalContainer}>
-                <View style={style.modalContent}>
-                  <Text style={style.modalTitle}>
-                    Are you sure you want to chat with  {shop?.firstName} {shop?.lastName} ?
-                  </Text>
-                  <TouchableOpacity
-                    style={style.sendRequestButton}
-                    onPress={() => {
-                      createChatRoom(userId);
-                    }}
-                  >
-                    <Text style={style.sendRequestButtonText}>Yes</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={style.closeButton}
-                    onPress={() => setRequestModalVisible(false)}
-                  >
-                    <Text style={style.closeButtonText}>No</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
 
             <View
               style={{

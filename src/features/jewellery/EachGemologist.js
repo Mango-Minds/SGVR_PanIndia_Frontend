@@ -4,102 +4,41 @@ import {
   View,
   Image,
   ScrollView,
-  Pressable,
   Dimensions,
   TouchableOpacity,
-  Modal,
-
 } from "react-native";
-import React, { useState } from "react";
+import React from "react";
 
-import { Divider, IconButton } from "react-native-paper";
+import { IconButton } from "react-native-paper";
 
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
-import { Container, RowBetween, SearchField } from "../../styles/common.styles";
+import { Container, RowBetween } from "../../styles/common.styles";
 const WINDOW_WIDTH = Dimensions.get("window").width;
-const WINDOW_HEIGHT = Dimensions.get("window").height;
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import { useSelector } from "react-redux";
-import { BASEAPIURL } from "../../infrastructure/constants";
-
 
 const EachGemologist = ({ route }) => {
   const navigation = useNavigation();
   const { gemologist } = route.params;
 
-  const token = useSelector((state) => state.user.token);
   const { user } = useSelector((state) => state.user);
 
-  const userId = user.roleData.owner;
-  const [chatUserId, setChatUserId] = useState();
-  const [requestModalVisible, setRequestModalVisible] = useState(false);
   const GemologistUserId = gemologist.owner._id;
 
-  const createChatRoom = async (userId) => {
-    console.log("userId: ", userId);
-    console.log("chatuserId: ", chatUserId);
-
-    try {
-      const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ userIds: [userId, chatUserId] }),
-      });
-
-      console.log("Response: ", response);
-      console.log(response.json());
-
-      if (response.ok) {
-        try {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            // setUserRooms(data);
-            console.log("Room Data: ", roomData);
-            const room_with_user = roomData.rooms.filter((room) => room.participants[0].id === chatUserId)[0];
-            console.log("Room with user",room_with_user);
-            setRequestModalVisible(false);
-            navigation.navigate("ChatScreenNew", {
-              user_auth_token: token,
-              room: room_with_user,
-              participant_name:
-              room_with_user.participants[0].firstName +
-              " " +
-              room_with_user.participants[0].lastName,
-            });
-          } else {
-            Alert.alert("Failed to fetch Room.");
-            throw new Error("Failed to fetch rooms");
-            
-          }
-        } catch (error) {
-          console.error("Error fetching room:", error);
-        }
-      } else {
-        const errorData = await response.json();
-        console.error("Error Creating Chat Room:", errorData);
-        Alert.alert("Error Creating Chat Room");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
+  const handleMessagePress = () => {
+    const conversationId = [user._id, GemologistUserId].sort().join("_");
+    const toName =
+      `${gemologist.owner.firstName || ""} ${gemologist.owner.lastName || ""}`.trim() ||
+      "Gemologist";
+    navigation.navigate("ChatScreen", {
+      toid: GemologistUserId,
+      toName,
+      index: 0,
+      conversationId,
+    });
   };
-
-
-
-
-
 
   return (
     <Container
@@ -116,14 +55,9 @@ const EachGemologist = ({ route }) => {
         </View>
         <TouchableOpacity
           style={style.chatButton}
-          onPress={() => {
-            setChatUserId(GemologistUserId);
-            setRequestModalVisible(true);
-          }}
+          onPress={handleMessagePress}
         >
           <IconButton icon="chat" size={30}></IconButton>
-
-          {/* <Text style={style.chatButtonText}>Chat</Text> */}
         </TouchableOpacity>
       </RowBetween>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -183,35 +117,6 @@ const EachGemologist = ({ route }) => {
               <Text style={{ opacity: 1 }}>{gemologist.owner.phone}</Text>
             </View>
           </View>
-
-          <Modal
-              animationType="slide"
-              transparent={true}
-              visible={requestModalVisible}
-              onRequestClose={() => setRequestModalVisible(false)}
-            >
-              <View style={style.modalContainer}>
-                <View style={style.modalContent}>
-                  <Text style={style.modalTitle}>
-                    Are you sure you want to chat with {gemologist.owner.firstName} {gemologist.owner.lastName} ?
-                  </Text>
-                  <TouchableOpacity
-                    style={style.sendRequestButton}
-                    onPress={() => {
-                      createChatRoom(userId);
-                    }}
-                  >
-                    <Text style={style.sendRequestButtonText}>Yes</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={style.closeButton}
-                    onPress={() => setRequestModalVisible(false)}
-                  >
-                    <Text style={style.closeButtonText}>No</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </Modal>
         </View>
       </ScrollView>
     </Container>
@@ -260,44 +165,5 @@ const style = StyleSheet.create({
   chatButton: {
     marginLeft: "auto",
     marginRight: 10,
-  },
-
-  modalContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-  },
-  modalContent: {
-    width: "80%",
-    backgroundColor: "white",
-    borderRadius: 10,
-    padding: 20,
-    alignItems: "center",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    marginBottom: 10,
-    textAlign: "center",
-  },
-
-  sendRequestButton: {
-    marginTop: 20,
-    backgroundColor: "#D4AF37",
-    padding: 10,
-    borderRadius: 5,
-  },
-  sendRequestButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  closeButton: {
-    marginTop: 10,
-    padding: 10,
-  },
-  closeButtonText: {
-    color: "#D4AF37",
-    fontWeight: "bold",
   },
 });

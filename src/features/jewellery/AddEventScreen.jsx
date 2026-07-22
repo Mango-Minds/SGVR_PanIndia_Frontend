@@ -12,12 +12,15 @@ import {
   Platform,
   Image,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
+import { Calendar } from 'react-native-calendars';
+import moment from 'moment';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { createJewelleryEvent } from '../../services/jewellery.services';
 import { setLoadingInBtn } from '../../store/user';
@@ -25,6 +28,7 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
 
 const EVENT_CATEGORIES = ['Showcase', 'Exhibition', 'Workshop', 'Seminar', 'Festival'];
 const MAX_EVENT_IMAGES = 6;
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AddEventScreen = () => {
   const navigation = useNavigation();
@@ -32,6 +36,7 @@ const AddEventScreen = () => {
   const { loadingInBtn } = useSelector((state) => state.user);
   const [bannerImage, setBannerImage] = useState(null);
   const [eventImages, setEventImages] = useState([]);
+  const [calendarField, setCalendarField] = useState(null);
   const [form, setForm] = useState({
     name: '',
     description: '',
@@ -57,6 +62,24 @@ const AddEventScreen = () => {
 
   const handleBackPress = () => {
     navigation.goBack();
+  };
+
+  const formatDisplayDate = (ymd) =>
+    ymd ? moment(ymd, 'YYYY-MM-DD').format('DD/MM/YYYY') : '';
+
+  const onDayPress = (day) => {
+    setForm((prev) => {
+      const next = { ...prev, [calendarField]: day.dateString };
+      if (
+        calendarField === 'startDate' &&
+        prev.endDate &&
+        day.dateString > prev.endDate
+      ) {
+        next.endDate = day.dateString;
+      }
+      return next;
+    });
+    setCalendarField(null);
   };
 
   const pickBannerImage = async () => {
@@ -115,7 +138,11 @@ const AddEventScreen = () => {
       return;
     }
     if (!form.startDate.trim()) {
-      Alert.alert('Required', 'Please enter start date.');
+      Alert.alert('Required', 'Please select start date.');
+      return;
+    }
+    if (form.endDate.trim() && form.endDate < form.startDate) {
+      Alert.alert('Invalid', 'End date cannot be before start date.');
       return;
     }
     if (!form.venue.trim()) {
@@ -124,6 +151,29 @@ const AddEventScreen = () => {
     }
     if (!form.organizer.trim()) {
       Alert.alert('Required', 'Please enter organizer name.');
+      return;
+    }
+    if (!form.organizerPhone.trim()) {
+      Alert.alert('Required', 'Please enter organizer phone number.');
+      return;
+    }
+    if (!/^\d{10}$/.test(form.organizerPhone.trim())) {
+      Alert.alert('Invalid', 'Please enter a valid 10-digit phone number.');
+      return;
+    }
+    if (!form.organizerEmail.trim()) {
+      Alert.alert('Required', 'Please enter organizer email.');
+      return;
+    }
+    if (!EMAIL_REGEX.test(form.organizerEmail.trim())) {
+      Alert.alert('Invalid', 'Please enter a valid email address.');
+      return;
+    }
+    if (
+      form.capacity.trim() &&
+      (!/^\d+$/.test(form.capacity.trim()) || parseInt(form.capacity, 10) < 0)
+    ) {
+      Alert.alert('Invalid', 'Please enter a valid capacity.');
       return;
     }
     if (!bannerImage && eventImages.length === 0) {
@@ -187,16 +237,44 @@ const AddEventScreen = () => {
       <TextInput
         style={[styles.input, options.multiline && styles.textArea]}
         value={form[field]}
-        onChangeText={(value) => updateField(field, value)}
+        onChangeText={(value) => {
+          if (options.digitsOnly) {
+            updateField(field, value.replace(/\D/g, '').slice(0, options.maxLength || 10));
+            return;
+          }
+          updateField(field, value);
+        }}
         placeholder={options.placeholder || ''}
         placeholderTextColor={jewelleryColors.textSecondary}
         multiline={options.multiline}
         numberOfLines={options.multiline ? 4 : 1}
         keyboardType={options.keyboardType || 'default'}
         autoCapitalize={options.autoCapitalize || 'sentences'}
+        maxLength={options.maxLength}
       />
     </View>
   );
+
+  const renderDateField = (label, field) => (
+    <View style={styles.field}>
+      <Text style={styles.label}>{label}</Text>
+      <TouchableOpacity style={styles.dateButton} onPress={() => setCalendarField(field)}>
+        <Icon name="calendar-today" size={20} color={jewelleryColors.primary} />
+        <Text
+          style={[
+            styles.dateButtonText,
+            !form[field] && styles.placeholderText,
+          ]}
+        >
+          {form[field] ? formatDisplayDate(form[field]) : 'Select date'}
+        </Text>
+        <Icon name="chevron-right" size={20} color={jewelleryColors.textSecondary} />
+      </TouchableOpacity>
+    </View>
+  );
+
+  const selectedCalendarDate =
+    (calendarField && form[calendarField]) || moment().format('YYYY-MM-DD');
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
@@ -286,8 +364,8 @@ const AddEventScreen = () => {
             </View>
           </View>
 
-          {renderInput('Start Date *', 'startDate', { placeholder: 'YYYY-MM-DD' })}
-          {renderInput('End Date', 'endDate', { placeholder: 'YYYY-MM-DD' })}
+          {renderDateField('Start Date *', 'startDate')}
+          {renderDateField('End Date', 'endDate')}
           {renderInput('Start Time', 'startTime', { placeholder: 'e.g. 10:00 AM' })}
           {renderInput('End Time', 'endTime', { placeholder: 'e.g. 06:00 PM' })}
           {renderInput('Venue *', 'venue', { placeholder: 'Event venue name' })}
@@ -296,11 +374,13 @@ const AddEventScreen = () => {
             multiline: true,
           })}
           {renderInput('Organizer *', 'organizer', { placeholder: 'Organizer name' })}
-          {renderInput('Organizer Phone', 'organizerPhone', {
-            placeholder: '+91 XXXXXXXXXX',
+          {renderInput('Organizer Phone *', 'organizerPhone', {
+            placeholder: '10-digit mobile number',
             keyboardType: 'phone-pad',
+            maxLength: 10,
+            digitsOnly: true,
           })}
-          {renderInput('Organizer Email', 'organizerEmail', {
+          {renderInput('Organizer Email *', 'organizerEmail', {
             placeholder: 'email@example.com',
             keyboardType: 'email-address',
             autoCapitalize: 'none',
@@ -309,6 +389,8 @@ const AddEventScreen = () => {
           {renderInput('Capacity', 'capacity', {
             placeholder: 'Maximum attendees',
             keyboardType: 'numeric',
+            maxLength: 6,
+            digitsOnly: true,
           })}
 
           <View style={styles.switchRow}>
@@ -342,6 +424,51 @@ const AddEventScreen = () => {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Modal
+        visible={!!calendarField}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setCalendarField(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {calendarField === 'endDate' ? 'Select End Date' : 'Select Start Date'}
+              </Text>
+              <TouchableOpacity onPress={() => setCalendarField(null)}>
+                <Icon name="close" size={24} color={jewelleryColors.text} />
+              </TouchableOpacity>
+            </View>
+            <Calendar
+              onDayPress={onDayPress}
+              markedDates={{
+                [selectedCalendarDate]: {
+                  selected: true,
+                  selectedColor: jewelleryColors.primary,
+                  selectedTextColor: 'white',
+                },
+              }}
+              minDate={
+                calendarField === 'endDate' && form.startDate
+                  ? form.startDate
+                  : moment().format('YYYY-MM-DD')
+              }
+              theme={{
+                selectedDayBackgroundColor: jewelleryColors.primary,
+                selectedDayTextColor: 'white',
+                todayTextColor: jewelleryColors.primary,
+                dayTextColor: '#333',
+                textDisabledColor: '#ccc',
+                arrowColor: jewelleryColors.primary,
+                monthTextColor: '#333',
+              }}
+            />
+          </View>
+        </View>
+      </Modal>
+
     </SafeAreaView>
   );
 };
@@ -461,6 +588,25 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     paddingTop: spacing.sm,
   },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: jewelleryColors.bgSecondary,
+    borderRadius: 10,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: jewelleryColors.border,
+    gap: spacing.sm,
+  },
+  dateButtonText: {
+    ...typography.body,
+    flex: 1,
+    color: jewelleryColors.text,
+  },
+  placeholderText: {
+    color: jewelleryColors.textSecondary,
+  },
   categoryRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -509,6 +655,30 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#FFFFFF',
     fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: spacing.lg,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    ...typography.heading3,
+    fontWeight: '600',
+    color: jewelleryColors.text,
   },
 });
 

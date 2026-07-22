@@ -33,6 +33,7 @@ import {
   getEventImages,
 } from '../../models/events';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
+import { ErrorToggle } from '../../store/user';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -164,13 +165,26 @@ const EventDetailScreen = () => {
           setMarkingInterest(true);
           const data = await expressInterestInJewelleryEvent(eventData.id);
           setEventData(normalizeEvent(data));
+          dispatch(
+            ErrorToggle({
+              type: 'Success',
+              msg: 'Interest recorded. Organizer has been notified.',
+              toggle: true,
+            })
+          );
         } catch (error) {
           const message =
             error.response?.data?.msg ||
             error.response?.data?.message ||
             error.message ||
             'Failed to mark interest.';
-          Alert.alert('Error', message);
+          dispatch(
+            ErrorToggle({
+              type: 'error',
+              msg: message,
+              toggle: true,
+            })
+          );
         } finally {
           setMarkingInterest(false);
         }

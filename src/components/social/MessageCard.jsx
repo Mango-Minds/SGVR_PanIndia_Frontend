@@ -8,6 +8,7 @@ import { deleteChat } from "../../services/socialMedia.services";
 import { archiveChat, unarchiveChat } from "../../services/chat.services";
 import { updateConversation } from "../../store/user";
 import Icons from "react-native-vector-icons/Ionicons";
+import { clearConversationUnread } from "../../hooks/useMessageUnreadBadge";
 
 export default function MessageCard(props) {
   console.log("MessageCard - props:", props);
@@ -248,6 +249,12 @@ export default function MessageCard(props) {
         }}
         onPress={() => {
           // Navigate to the new socket-based chat screen
+          dispatch(
+            clearConversationUnread({
+              roomId: props.roomId,
+              conversationId: props._id,
+            })
+          );
           const room = { roomId: props.roomId, groupName: props.groupName };
           navigation.navigate("ChatScreen", {
             toid: room.roomId, // pass roomId in toid for uniform param
@@ -299,6 +306,13 @@ export default function MessageCard(props) {
           backgroundColor: "white",
         }}
         onPress={() => {
+          dispatch(
+            clearConversationUnread({
+              roomId: props.roomId,
+              otherUserId: profile.current._id,
+              conversationId: props._id,
+            })
+          );
           navigation.navigate("ChatScreen", {
             toid: profile.current._id,
             toName: (profile.current.firstName || profile.current.fname) + " " + (profile.current.lastName || profile.current.lname),

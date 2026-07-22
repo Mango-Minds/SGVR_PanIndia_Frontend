@@ -13,6 +13,7 @@ import {
   ScrollView,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "@react-navigation/native";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
@@ -24,6 +25,12 @@ import { navigateJewelleryAuthTab } from "../../utils/requireAuth";
 import { jewelleryColors, typography, spacing, commonStyles } from "../../styles/jewellery.styles";
 import apiClient from "../../store/apiClient";
 import moment from "moment";
+import {
+  JEWELLERY_NOTIFICATION_TYPES,
+  useJewelleryNotificationLive,
+  setJewelleryUnreadCount,
+  fetchJewelleryUnreadCount,
+} from "../../hooks/useJewelleryNotificationBadge";
 
 function JewelleryNotifications({ navigation, route }) {
   const insets = useSafeAreaInsets();
@@ -46,12 +53,9 @@ function JewelleryNotifications({ navigation, route }) {
   const designerId = user?.roleData?._id;
   const gemologistId = user?.roleData?._id;
 
-  const userType = useSelector((state) => state.user.user.userType);
-  useEffect(() => {
-    if (userType === "vendor") {
-      fetchShopToVendorRequest();
-    }
-  }, [userType, vendorId, token]);
+  // Legacy jewellery connection-request APIs (/buy, vendorjewelrydesigneroperations,
+  // vendorToVendor, shop, worker, gemologist) are unmounted on the backend.
+  // Notifications load via /api/notifications/ only.
   const [vendors, setVendors] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [shopsData, setShopsData] = useState([]);
@@ -76,45 +80,144 @@ function JewelleryNotifications({ navigation, route }) {
     );
   };
 
-  useEffect(() => {
-    fetchVendorToVendorRequest();
-    fetchVendorToShopRequest();
-    fetchShopToShopRequest();
-    fetchWorkerVendorRequest();
-    fetchVendorWorkerRequest();
-    fetchVendorDesignerRequest();
-    fetchVendorGemologistRequest();
-    fetchDesignerVendorRequest();
-    fetchGemologistVendorRequest();
-    fetchBuyRequest();
-    fetchStockNotifications();
-  }, []);
-
-  // Fetch stock item notifications
-  const fetchStockNotifications = async () => {
+  const fetchStockNotifications = useCallback(async () => {
     try {
       setLoadingStockNotifications(true);
       const response = await apiClient.get("/notifications/");
       
       if (response.status === 200) {
         const allNotifications = response.data.notifications || [];
-        // Filter for stock item notifications
+        // Only show unread jewellery notifications in the list
         const stockItemNotifications = allNotifications.filter(
-          (notif) => notif.type === "stockItemCreated" || notif.type === "stockItemUpdated"
+          (notif) =>
+            JEWELLERY_NOTIFICATION_TYPES.includes(notif.type) && !notif.read
         );
         setStockNotifications(stockItemNotifications);
+        setJewelleryUnreadCount(stockItemNotifications.length);
       }
     } catch (error) {
       console.error("Error fetching stock notifications:", error);
     } finally {
       setLoadingStockNotifications(false);
+      setLoadingAnimation(false);
     }
-  };
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchStockNotifications();
+    }, [fetchStockNotifications])
+  );
+
+  const handleLiveNotification = useCallback((data) => {
+    if (!data || !JEWELLERY_NOTIFICATION_TYPES.includes(data.type)) return;
+    if (data.read) return;
+
+    setStockNotifications((prev) => {
+      const incomingId = data._id ? String(data._id) : null;
+      if (incomingId && prev.some((item) => String(item._id) === incomingId)) {
+        return prev;
+      }
+      return [
+        {
+          ...data,
+          read: false,
+          createdAt: data.createdAt || new Date().toISOString(),
+        },
+        ...prev,
+      ];
+    });
+  }, []);
+
+  useJewelleryNotificationLive(handleLiveNotification);
 
   const handleRefreshStockNotifications = async () => {
     setRefreshingStockNotifications(true);
     await fetchStockNotifications();
     setRefreshingStockNotifications(false);
+  };
+
+  const unreadNotificationCount = stockNotifications.length;
+
+  useEffect(() => {
+    setJewelleryUnreadCount(unreadNotificationCount);
+  }, [unreadNotificationCount]);
+
+  const markNotificationAsRead = async (notificationId) => {
+    // Remove from list immediately so it disappears after read
+    setStockNotifications((prev) =>
+      prev.filter((notif) => String(notif._id) !== String(notificationId))
+    );
+
+    try {
+      await apiClient.patch(`/notifications/${notificationId}/markAsRead`);
+      fetchJewelleryUnreadCount(token);
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+      // Refresh list if server mark-read failed
+      fetchStockNotifications();
+    }
+  };
+
+  const resolveEventId = (item) => {
+    const raw = item?.eventId;
+    if (!raw) return null;
+    if (typeof raw === "string") return raw;
+    if (typeof raw === "object") {
+      return String(raw._id || raw.id || "");
+    }
+    return String(raw);
+  };
+
+  const handleNotificationPress = (item) => {
+    if (!item) return;
+
+    // Mark read + remove from list; navigate for event interest
+    markNotificationAsRead(item._id);
+
+    if (item.type !== "eventInterest") return;
+
+    const eventId = resolveEventId(item);
+    if (eventId && eventId !== "undefined" && eventId !== "null") {
+      navigation.navigate("EventDetailScreen", { eventId });
+      return;
+    }
+
+    // Fallback for older notifications without eventId: match by event name in message
+    const match = item.message?.match(/interested in your event:\s*(.+)$/i);
+    const eventName = match?.[1]?.trim();
+    if (eventName) {
+      (async () => {
+        try {
+          const response = await apiClient.get("/events/mine");
+          const events = response.data?.data || response.data?.events || [];
+          const found = events.find(
+            (event) =>
+              String(event.name || "").trim().toLowerCase() ===
+              eventName.toLowerCase()
+          );
+          const foundId = found?._id || found?.id;
+          if (foundId) {
+            navigation.navigate("EventDetailScreen", {
+              eventId: String(foundId),
+            });
+            return;
+          }
+        } catch (error) {
+          console.error("Error resolving event from notification:", error);
+        }
+        Alert.alert(
+          "Event",
+          "Could not open this event. Please open it from Events."
+        );
+      })();
+      return;
+    }
+
+    Alert.alert(
+      "Event",
+      "Could not open this event. Please open it from Events."
+    );
   };
 
   const handleTabChange = (tab) => {
@@ -1013,75 +1116,20 @@ function JewelleryNotifications({ navigation, route }) {
     console.log("Business id: ", business_id);
     if (owner_id === business_id) {
       console.log("Chat room Cannot be created: same id");
-    } else {
-      try {
-        const response = await fetch(`${BASEAPIURL}/chat/room/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ userIds: [owner_id, business_id] }),
-        });
-        console.log("Response: ", response);
-        console.log("Authorization: ", `Bearer ${token}`);
-        if (response.ok) {
-          const roomResponse = await fetch(`${BASEAPIURL}/chat/rooms/`, {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          if (roomResponse.ok) {
-            const roomData = await roomResponse.json();
-            console.log("Room Details: ", roomData);
-            if (roomData && roomData.rooms && roomData.rooms.length > 0) {
-              const room = roomData.rooms[0];
-              console.log("Room: ", room);
+      return;
+    }
 
-              const room_with_user = roomData?.rooms.filter((room) => {
-                console.log(
-                  "room?.participants[0].id:",
-                  room?.participants[0]?.id
-                );
-                console.log("vendorId:", business_id);
-                return room?.participants[0]?.id === business_id;
-              })[0];
-
-              console.log("Room with user: ", room_with_user);
-Alert.alert("OK", "Chat Room Created", [
-                {
-                  text: "OK",
-                  onPress: () => {
-                    navigation.navigate("ChatScreenNew", {
-                      user_auth_token: token,
-                      room: room_with_user,
-                      participant_name:
-                        room_with_user.participants[0].firstName +
-                        " " +
-                        room_with_user.participants[0].lastName,
-                    });
-                  },
-                },
-              ]);
-              
-            } else {
-              Alert.alert("No rooms found");
-            }
-          } else {
-            const errorData = await roomResponse.json();
-            console.error("Error Fetching Room Details:", errorData);
-            Alert.alert("Error Fetching Room Details");
-          }
-        } else {
-          const errorData = await response.json();
-          console.error("Error Creating Chat Room:", errorData);
-          Alert.alert("Error Creating Chat Room");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
+    try {
+      const conversationId = [owner_id, business_id].sort().join("_");
+      navigation.navigate("ChatScreen", {
+        toid: business_id,
+        toName: "Chat",
+        index: 0,
+        conversationId,
+      });
+    } catch (error) {
+      console.error("Error:", error);
+      Alert.alert("Error", "Something went wrong while connecting to chat.");
     }
   };
 
@@ -1102,9 +1150,14 @@ Alert.alert("OK", "Chat Room Created", [
     vendorData.length > 0 ||
     stockNotifications.length > 0;
 
+  const notificationsTitle =
+    unreadNotificationCount > 0
+      ? `Notifications (${unreadNotificationCount})`
+      : "Notifications";
+
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Jewellery" onBackPress={() => navigation.goBack()} />
+      <HeaderBar showBack title={notificationsTitle} onBackPress={() => navigation.goBack()} />
 
       <View style={styles.contentWrapper}>
         {loadingAnimation || loadingStockNotifications ? (
@@ -2132,13 +2185,29 @@ Alert.alert("OK", "Chat Room Created", [
               </View>
             ))}
 
-            {/* Render stock notifications */}
+            {/* Render stock / event interest notifications */}
             {stockNotifications.map((item) => (
-              <TouchableOpacity key={item._id} style={styles.notificationCard}>
+              <TouchableOpacity
+                key={item._id}
+                style={[
+                  styles.notificationCard,
+                  !item.read && styles.notificationCardUnread,
+                ]}
+                onPress={() => handleNotificationPress(item)}
+                activeOpacity={0.8}
+              >
                 <View style={styles.notificationContent}>
                   <View style={styles.notificationIcon}>
                     <Text style={styles.notificationIconText}>
-                      {item.type === "stockItemCreated" ? "📦" : "✏️"}
+                      {item.type === "stockItemCreated"
+                        ? "📦"
+                        : item.type === "stockItemUpdated"
+                        ? "✏️"
+                        : item.type === "eventInterest"
+                        ? "❤️"
+                        : item.type === "shopEventCreated"
+                        ? "📅"
+                        : "🔔"}
                     </Text>
                   </View>
                   <View style={styles.notificationTextContainer}>
@@ -2155,7 +2224,11 @@ Alert.alert("OK", "Chat Room Created", [
         )}
       </View>
 
-      <BottomTabBar activeTab={activeBottomTab} onTabChange={handleTabChange} />
+      <BottomTabBar
+        activeTab={activeBottomTab}
+        onTabChange={handleTabChange}
+        notificationCount={unreadNotificationCount}
+      />
 
     </SafeAreaView>
   );
@@ -2192,6 +2265,10 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
     ...commonStyles.shadow,
+  },
+  notificationCardUnread: {
+    borderWidth: 1,
+    borderColor: jewelleryColors.primary + "40",
   },
   notificationContent: {
     flexDirection: "row",
