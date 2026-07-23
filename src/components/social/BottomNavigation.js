@@ -93,7 +93,10 @@ export default function BottomNavigation({ navigation, currentScreen }) {
         
         <TouchableOpacity
           style={styles.iconContainer}
-          onPress={() => navigation.navigate("SearchResults")}
+          onPress={() => {
+            if (currentScreen === "search") return;
+            navigation.navigate("SearchResults");
+          }}
         >
           <Ionicons 
             name={isActive("search") ? getFilledIconName("search") : getIconName("search")}

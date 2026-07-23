@@ -1042,13 +1042,14 @@ export default function ProfileNewScreen() {
             onPress={() => navigation.goBack()}
           />
         </TouchableOpacity>
-        <View style={styles.searchContainer}>
-          <SearchField
-            placeholder={t("search")}
-            style={styles.searchField}
-            onFocus={() => navigation.navigate("SearchResults")}
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.searchContainer}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("SearchResults")}
+        >
+          <Icon name="search" size={18} color="#888" style={{ marginRight: 8 }} />
+          <Text style={{ fontSize: 16, color: "#888" }}>{t("search")}</Text>
+        </TouchableOpacity>
       </View>
 
       <FlatList
@@ -1240,8 +1241,10 @@ const styles = StyleSheet.create({
     width: "80%",
     marginHorizontal: 5,
     backgroundColor: "#eeeeee",
-    justifyContent: "center",
-    borderRadius: 0,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
   },
   searchField: {
     height: 40,

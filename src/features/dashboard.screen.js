@@ -250,6 +250,12 @@ export default function DashboardScreen({ navigation }) {
     return socketConnection;
   }, [SOCKETURL, token]);
 
+  // Request iOS/Android notification permission and register Expo push token after login.
+  useEffect(() => {
+    if (!token) return;
+    registerForPushNotificationsAsync({ promptIfDenied: true });
+  }, [token]);
+
   useEffect(() => {
     if (!socket || !userId) {
       return;

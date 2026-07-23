@@ -19,9 +19,10 @@ const SearchResults = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
+    const timer = setTimeout(() => {
+      searchInputRef.current?.focus?.();
+    }, 350);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSearch = (text) => {

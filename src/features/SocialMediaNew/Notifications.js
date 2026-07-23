@@ -1,26 +1,33 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
-  Image,
   FlatList,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import Theme from "../../styles/theme";
-import { SearchField } from "../../styles/common.styles";
-import { useSelector } from "react-redux";
 import { BASEAPIURL } from "../../infrastructure/constants";
 import moment from "moment";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import apiClient from "../../store/apiClient";
 import { useTranslation } from "react-i18next";
-import { getGeneralNotifications } from "./SocialMediaAPIs";
+import { getGeneralNotifications, getPostCommentNotifications } from "./SocialMediaAPIs";
 import BottomNavigation from "../../components/social/BottomNavigation";
+import { useFocusEffect } from "@react-navigation/native";
+import { setSocialUnreadCount } from "../../hooks/useSocialNotificationBadge";
+
+const POST_NOTIFICATION_TYPES = [
+  "postCreated",
+  "postLiked",
+  "postUnliked",
+  "postCommented",
+  "postDeleted",
+];
 
 const NotificationsScreen = ({ navigation }) => {
   const { t } = useTranslation();
@@ -30,40 +37,61 @@ const NotificationsScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
+  const syncBellCount = (list) => {
+    const unread = (list || []).filter((n) => !n.read).length;
+    setSocialUnreadCount(unread);
+  };
+
+  const normalizeList = (list, source) =>
+    (list || []).map((item) => ({
+      ...item,
+      source,
+      // Keep a stable id string for keys
+      _id: item._id,
+    }));
+
   const fetchNotifications = async () => {
     try {
       setLoading(true);
       setError(null);
       const selectedLanguage = (await AsyncStorage.getItem("user-language")) || "en";
 
-      const response = await getGeneralNotifications();
-      
-      if (response.status === 200) {
-        const notificationsData = response.data.notifications || [];
+      const [generalRes, postRes] = await Promise.allSettled([
+        getGeneralNotifications(),
+        getPostCommentNotifications(),
+      ]);
 
-        // If language is not English, translate the notifications
-        if (selectedLanguage !== "en" && Array.isArray(notificationsData)) {
-          try {
-            const translationResponse = await apiClient.post("/translate", {
-              data: notificationsData,
-              targetLang: selectedLanguage,
-            });
+      const general =
+        generalRes.status === "fulfilled" && generalRes.value?.status === 200
+          ? normalizeList(generalRes.value.data?.notifications, "social")
+          : [];
+      const posts =
+        postRes.status === "fulfilled" && postRes.value?.status === 200
+          ? normalizeList(postRes.value.data?.notifications, "post")
+          : [];
 
-            if (translationResponse?.data?.translatedData?.length) {
-              setNotifications(translationResponse.data.translatedData);
-            } else {
-              setNotifications(notificationsData);
-            }
-          } catch (translationError) {
-            console.log("Translation failed, using original data:", translationError);
-            setNotifications(notificationsData);
+      let notificationsData = [...general, ...posts].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      );
+
+      // If language is not English, translate the notifications
+      if (selectedLanguage !== "en" && Array.isArray(notificationsData) && notificationsData.length) {
+        try {
+          const translationResponse = await apiClient.post("/translate", {
+            data: notificationsData,
+            targetLang: selectedLanguage,
+          });
+
+          if (translationResponse?.data?.translatedData?.length) {
+            notificationsData = translationResponse.data.translatedData;
           }
-        } else {
-          setNotifications(notificationsData);
+        } catch (translationError) {
+          console.log("Translation failed, using original data:", translationError);
         }
-      } else {
-        throw new Error("Network response was not ok");
       }
+
+      setNotifications(notificationsData);
+      syncBellCount(notificationsData);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
       setError("Unable to fetch notifications. Please try again later.");
@@ -78,11 +106,22 @@ const NotificationsScreen = ({ navigation }) => {
     setRefreshing(false);
   };
 
-  const markNotificationAsRead = async (notificationId) => {
+  const isPostNotification = (notification) =>
+    notification?.source === "post" ||
+    POST_NOTIFICATION_TYPES.includes(notification?.type);
+
+  const markNotificationAsRead = async (notification) => {
+    const notificationId = notification?._id;
+    if (!notificationId) return;
+
     try {
       const token = await AsyncStorage.getItem("token");
+      const path = isPostNotification(notification)
+        ? `/postCommentNotification/${notificationId}/markAsRead`
+        : `/notifications/${notificationId}/markAsRead`;
+
       await apiClient.patch(
-        `${BASEAPIURL}/notifications/${notificationId}/markAsRead`,
+        `${BASEAPIURL}${path}`,
         {},
         {
           headers: {
@@ -90,79 +129,159 @@ const NotificationsScreen = ({ navigation }) => {
           },
         }
       );
-      
-      // Update local state to mark as read
-      setNotifications(prev => 
-        prev.map(notification => 
-          notification._id === notificationId 
-            ? { ...notification, read: true }
-            : notification
-        )
-      );
+
+      setNotifications((prev) => {
+        const next = prev.map((item) =>
+          item._id === notificationId ? { ...item, read: true } : item
+        );
+        syncBellCount(next);
+        return next;
+      });
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   };
 
-  const deleteNotification = async (notificationId) => {
+  const deleteNotification = async (notification) => {
+    const notificationId = notification?._id;
+    if (!notificationId) return;
+
     try {
       const token = await AsyncStorage.getItem("token");
-      await apiClient.delete(`${BASEAPIURL}/notifications/${notificationId}`, {
+      const path = isPostNotification(notification)
+        ? `/postCommentNotification/${notificationId}`
+        : `/notifications/${notificationId}`;
+
+      await apiClient.delete(`${BASEAPIURL}${path}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
-      
-      // Remove from local state
-      setNotifications(prev => 
-        prev.filter(notification => notification._id !== notificationId)
-      );
+
+      setNotifications((prev) => {
+        const next = prev.filter((item) => item._id !== notificationId);
+        syncBellCount(next);
+        return next;
+      });
     } catch (error) {
       console.error("Error deleting notification:", error);
     }
   };
 
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchNotifications();
+    }, [])
+  );
+
+  const trLabel = (key, fallback) => {
+    try {
+      const val = t(key);
+      return !val || val === key ? fallback : val;
+    } catch {
+      return fallback;
+    }
+  };
 
   const getNotificationType = (type) => {
     switch (type) {
       case "followRequest":
-        return t("follow_request");
+        return trLabel("follow_request", "Follow Request");
       case "followRequestApproved":
-        return t("follow_request_approved");
+        return trLabel("follow_request_approved", "Follow Accepted");
       case "followRequestRejected":
-        return t("follow_request_rejected");
+        return trLabel("follow_request_rejected", "Follow Declined");
       case "followRequestCancelled":
-        return t("follow_request_cancelled");
+        return trLabel("follow_request_cancelled", "Follow Cancelled");
+      case "followRequestDeleted":
+        return trLabel("follow_request_deleted", "Follow Request Removed");
+      case "userFollowed":
+        return trLabel("user_followed", "New Follower");
       case "userUnfollowed":
-        return t("user_unfollowed");
+        return trLabel("user_unfollowed", "Unfollowed");
+      case "closeFriendRequest":
+        return trLabel("close_friend_request", "Close Friend Request");
+      case "closeFriendRequestApproved":
+        return trLabel("close_friend_request_approved", "Close Friend Accepted");
+      case "closeFriendRequestRejected":
+        return trLabel("close_friend_request_rejected", "Close Friend Declined");
+      case "closeFriendRequestDeleted":
+        return trLabel("close_friend_request_deleted", "Close Friend Request Removed");
+      case "closeFriendRemoved":
+        return trLabel("close_friend_removed", "Close Friend Removed");
+      case "friendRequest":
+        return trLabel("friend_request", "Friend Request");
+      case "friendRequestApproved":
+        return trLabel("friend_request_approved", "Friend Request Accepted");
+      case "friendRequestRejected":
+        return trLabel("friend_request_rejected", "Friend Request Declined");
+      case "friendRequestCancelled":
+        return trLabel("friend_request_cancelled", "Friend Request Cancelled");
+      case "friendRemoved":
+        return trLabel("friend_removed", "Friend Removed");
       case "postLiked":
-        return t("post_liked");
+        return trLabel("post_liked", "Post Liked");
       case "postCommented":
-        return t("post_commented");
+        return trLabel("post_commented", "New Comment");
+      case "postCreated":
+        return trLabel("post_created", "New Post");
+      case "postDeleted":
+        return trLabel("post_deleted", "Post Deleted");
       case "jobApplied":
-        return t("job_applied");
+        return trLabel("job_applied", "Job Application");
+      case "stockItemCreated":
+        return trLabel("stock_item_created", "New Stock Item");
+      case "stockItemUpdated":
+        return trLabel("stock_item_updated", "Stock Updated");
+      case "shopEventCreated":
+        return trLabel("shop_event_created", "Shop Event");
+      case "eventInterest":
+        return trLabel("event_interest", "Event Interest");
       default:
-        return t("unknown_notification");
+        return trLabel("notification", "Notification");
     }
   };
 
   const getNotificationIcon = (type) => {
     switch (type) {
       case "followRequest":
+      case "userFollowed":
         return "person-add";
       case "followRequestApproved":
+      case "friendRequestApproved":
+      case "closeFriendRequestApproved":
         return "checkmark-circle";
       case "followRequestRejected":
+      case "friendRequestRejected":
+      case "closeFriendRequestRejected":
         return "close-circle";
+      case "followRequestCancelled":
+      case "followRequestDeleted":
+      case "friendRequestCancelled":
+      case "friendRemoved":
+      case "userUnfollowed":
+      case "closeFriendRemoved":
+      case "closeFriendRequestDeleted":
+        return "person-remove";
+      case "friendRequest":
+      case "closeFriendRequest":
+        return "people";
       case "postLiked":
         return "heart";
       case "postCommented":
         return "chatbubble";
+      case "postCreated":
+        return "create";
+      case "postDeleted":
+        return "trash";
       case "jobApplied":
         return "briefcase";
+      case "stockItemCreated":
+      case "stockItemUpdated":
+        return "cube";
+      case "shopEventCreated":
+      case "eventInterest":
+        return "calendar";
       default:
         return "notifications";
     }
@@ -176,8 +295,12 @@ const NotificationsScreen = ({ navigation }) => {
     if (activeTab === "All") {
       return notifications;
     } else if (activeTab === "Connects") {
-      return notifications.filter(notification => 
-        notification.type.includes("follow") || notification.type.includes("connect")
+      return notifications.filter(
+        (notification) =>
+          notification.type?.includes("follow") ||
+          notification.type?.includes("Friend") ||
+          notification.type?.includes("friend") ||
+          notification.type?.includes("connect")
       );
     }
     return notifications;
@@ -191,9 +314,8 @@ const NotificationsScreen = ({ navigation }) => {
         style={[styles.notificationItem, isUnread && styles.unreadNotification]}
         onPress={() => {
           if (!item.read) {
-            markNotificationAsRead(item._id);
+            markNotificationAsRead(item);
           }
-          // Handle navigation based on notification type
           handleNotificationPress(item);
         }}
       >
@@ -223,7 +345,7 @@ const NotificationsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.deleteButton}
-          onPress={() => deleteNotification(item._id)}
+          onPress={() => deleteNotification(item)}
         >
           <Icon name="close" size={16} color="#999" />
         </TouchableOpacity>
@@ -231,28 +353,111 @@ const NotificationsScreen = ({ navigation }) => {
     );
   };
 
+  const resolveId = (value) => {
+    if (!value) return null;
+    if (typeof value === "string") return value;
+    return value._id || value.id || null;
+  };
+
+  const openSenderProfile = (notification) => {
+    const userId = resolveId(notification.sender);
+    if (!userId) {
+      Alert.alert("Profile", "User profile is not available.");
+      return;
+    }
+    navigation.navigate("EachProfile", { userId: String(userId) });
+  };
+
+  const openPost = (notification) => {
+    const postId = resolveId(notification.postId);
+    if (!postId) {
+      Alert.alert("Post", "This post is no longer available.");
+      return;
+    }
+    navigation.navigate("CommentScreen", { postId: String(postId) });
+  };
+
+  const openEvent = (notification) => {
+    const eventId = resolveId(notification.eventId);
+    if (!eventId) {
+      Alert.alert("Event", "This event is no longer available.");
+      return;
+    }
+    const rootNav = navigation.getParent?.() || navigation;
+    rootNav.navigate("Jewellery", {
+      screen: "EventDetailScreen",
+      params: { eventId: String(eventId) },
+    });
+  };
+
   const handleNotificationPress = (notification) => {
+    if (!notification?.type) return;
+
     switch (notification.type) {
       case "followRequest":
-        // Navigate to user profile
-        if (notification.sender) {
-          navigation.navigate("EachProfile", { userId: notification.sender._id });
-        }
+      case "friendRequest":
+      case "closeFriendRequest":
+        // Requests are managed in My Network
+        navigation.navigate("MyNetwork");
         break;
+
+      case "followRequestApproved":
+      case "followRequestRejected":
+      case "followRequestCancelled":
+      case "followRequestDeleted":
+      case "userFollowed":
+      case "userUnfollowed":
+      case "friendRequestApproved":
+      case "friendRequestRejected":
+      case "friendRequestCancelled":
+      case "friendRemoved":
+      case "closeFriendRequestApproved":
+      case "closeFriendRequestRejected":
+      case "closeFriendRequestDeleted":
+      case "closeFriendRemoved":
+        openSenderProfile(notification);
+        break;
+
       case "postLiked":
       case "postCommented":
-        // Navigate to post
-        if (notification.postId) {
-          navigation.navigate("PostDetail", { postId: notification.postId });
+      case "postCreated":
+      case "postUnliked":
+        openPost(notification);
+        break;
+
+      case "postDeleted":
+        Alert.alert("Post", "This post was deleted.");
+        break;
+
+      case "jobApplied": {
+        const jobId = resolveId(notification.jobId);
+        if (jobId) {
+          navigation.navigate("ViewJobPost", { jobId: String(jobId) });
+        } else {
+          navigation.navigate("SocialJobs");
         }
         break;
-      case "jobApplied":
-        // Navigate to job details
-        if (notification.jobId) {
-          navigation.navigate("JobDetail", { jobId: notification.jobId });
-        }
+      }
+
+      case "eventInterest":
+      case "shopEventCreated":
+        openEvent(notification);
         break;
+
+      case "stockItemCreated":
+      case "stockItemUpdated": {
+        const rootNav = navigation.getParent?.() || navigation;
+        rootNav.navigate("Jewellery", {
+          screen: "JewelleryNotifications",
+        });
+        break;
+      }
+
       default:
+        // Fallback: open sender profile when available
+        if (notification.sender) {
+          openSenderProfile(notification);
+        }
         break;
     }
   };
@@ -297,7 +502,7 @@ const NotificationsScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* Header with Back Arrow and Search Bar */}
+      {/* Header with Back Arrow and Search */}
       <View style={styles.headerContainer}>
         <TouchableOpacity 
           style={styles.iconButton}
@@ -305,13 +510,14 @@ const NotificationsScreen = ({ navigation }) => {
         >
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View style={styles.searchContainer}>
-          <SearchField
-            placeholder={t("search")}
-            style={styles.searchField}
-            onFocus={() => navigation.navigate("SearchResults")}
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.searchContainer}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("SearchResults")}
+        >
+          <Icon name="search" size={18} color="#888" style={styles.searchIcon} />
+          <Text style={styles.searchPlaceholder}>{t("search")}</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.notificationContainer}>
@@ -411,20 +617,20 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     height: 40,
-    width: "80%",
+    flex: 1,
     marginHorizontal: 5,
     backgroundColor: "#eeeeee",
-    justifyContent: "center",
-    borderRadius: 0,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
   },
-  searchField: {
-    height: 40,
-    width: "100%",
-    backgroundColor: "#eeeeee",
-    paddingHorizontal: 15,
-    marginHorizontal: 10,
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchPlaceholder: {
     fontSize: 16,
-    borderRadius: 0,
+    color: "#888",
   },
   notificationContainer: {
     flex: 1,

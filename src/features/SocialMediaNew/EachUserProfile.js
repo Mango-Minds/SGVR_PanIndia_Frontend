@@ -375,13 +375,14 @@ export default function EachProfile() {
         >
           <Icon name="arrow-back" size={24} color="#000" />
         </TouchableOpacity>
-        <View style={styles.searchContainer}>
-          <SearchField 
-            placeholder={t("search")} 
-            style={styles.searchField}
-            onFocus={() => navigation.navigate("SearchResults")}
-          />
-        </View>
+        <TouchableOpacity
+          style={styles.searchContainer}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate("SearchResults")}
+        >
+          <Icon name="search" size={18} color="#888" style={{ marginRight: 8 }} />
+          <Text style={{ fontSize: 16, color: "#888" }}>{t("search")}</Text>
+        </TouchableOpacity>
         {/* Settings Button - Only show if not viewing own profile */}
         {fromUserId !== userId && (
           <TouchableOpacity
@@ -695,6 +696,12 @@ const styles = StyleSheet.create({
   searchContainer: {
     flex: 1,
     marginHorizontal: 16,
+    height: 40,
+    backgroundColor: "#f5f5f5",
+    borderRadius: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
   },
   settingsButton: {
     padding: 8,
