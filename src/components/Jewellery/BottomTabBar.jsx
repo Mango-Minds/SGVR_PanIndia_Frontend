@@ -1,10 +1,16 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { jewelleryColors, spacing } from '../../styles/jewellery.styles';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import useMessageUnreadBadge from '../../hooks/useMessageUnreadBadge';
 import useJewelleryNotificationBadge from '../../hooks/useJewelleryNotificationBadge';
+import {
+  floatingBottomBarStyles as styles,
+  FLOATING_BAR_ICONS,
+  FLOATING_BAR_ICON_SIZE,
+  FLOATING_BAR_ACTIVE_COLOR,
+  FLOATING_BAR_INACTIVE_COLOR,
+} from '../../styles/floatingBottomBar.styles';
 
 const BottomTabBar = ({ activeTab, onTabChange, notificationCount: notificationCountProp }) => {
   const insets = useSafeAreaInsets();
@@ -15,17 +21,23 @@ const BottomTabBar = ({ activeTab, onTabChange, notificationCount: notificationC
     typeof notificationCountProp === 'number' ? notificationCountProp : liveNotificationCount;
 
   const tabs = [
-    { key: 'home', icon: 'home' },
-    { key: 'profile', icon: 'person-outline' },
-    { key: 'search', icon: 'search' },
-    { key: 'message', icon: 'message' },
-    { key: 'notifications', icon: 'notifications-none' },
+    { key: 'home', icon: FLOATING_BAR_ICONS.home, label: 'Home' },
+    { key: 'profile', icon: FLOATING_BAR_ICONS.person, label: 'Profile' },
+    { key: 'search', icon: FLOATING_BAR_ICONS.search, label: 'Search' },
+    { key: 'message', icon: FLOATING_BAR_ICONS.messages, label: 'Messages' },
+    { key: 'notifications', icon: FLOATING_BAR_ICONS.alerts, label: 'Alerts' },
   ];
 
   return (
-    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
-      {tabs.map((tab, index) => {
-        const isCenter = index === 2; // Search is in the center (index 2)
+    <View
+      style={[
+        styles.floatingBar,
+        { paddingBottom: Math.max(insets.bottom, 8) },
+      ]}
+    >
+      {tabs.map((tab) => {
+        const active = activeTab === tab.key;
+        const color = active ? FLOATING_BAR_ACTIVE_COLOR : FLOATING_BAR_INACTIVE_COLOR;
         const showNotificationBadge = tab.key === 'notifications' && notificationCount > 0;
         const showMessageBadge = tab.key === 'message' && messageUnreadCount > 0;
         const showBadge = showNotificationBadge || showMessageBadge;
@@ -35,98 +47,33 @@ const BottomTabBar = ({ activeTab, onTabChange, notificationCount: notificationC
         return (
           <TouchableOpacity
             key={tab.key}
-            style={[styles.tab, isCenter && styles.centerTab]}
+            style={styles.floatingBarItem}
             onPress={() => onTabChange(tab.key)}
             activeOpacity={0.7}
+            accessibilityRole="button"
+            accessibilityLabel={tab.label}
           >
-            <View
-              style={[
-                styles.iconContainer,
-                activeTab === tab.key && styles.activeIconContainer,
-                isCenter && styles.centerIconContainer,
-              ]}
-            >
-              <Icon
-                name={tab.icon}
-                size={isCenter ? 28 : 24}
-                color={
-                  activeTab === tab.key
-                    ? jewelleryColors.primary
-                    : jewelleryColors.textSecondary
-                }
-              />
+            <View style={styles.floatingBarIconWrap}>
+              <Ionicons name={tab.icon} size={FLOATING_BAR_ICON_SIZE} color={color} />
               {showBadge && (
-                <View style={styles.badge}>
-                  <Text style={styles.badgeText}>{badgeLabel}</Text>
+                <View style={styles.messageBadge}>
+                  <Text style={styles.messageBadgeText}>{badgeLabel}</Text>
                 </View>
               )}
             </View>
+            <Text
+              style={[
+                styles.floatingBarText,
+                active && styles.floatingBarTextActive,
+              ]}
+            >
+              {tab.label}
+            </Text>
           </TouchableOpacity>
         );
       })}
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    backgroundColor: jewelleryColors.bg,
-    borderTopWidth: 1,
-    borderTopColor: jewelleryColors.border,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: -2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  tab: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  centerTab: {
-    flex: 1.2,
-  },
-  iconContainer: {
-    padding: spacing.xs,
-    position: 'relative',
-  },
-  centerIconContainer: {
-    padding: spacing.sm,
-  },
-  activeIconContainer: {
-    backgroundColor: jewelleryColors.primary + '20',
-    borderRadius: 8,
-  },
-  badge: {
-    position: 'absolute',
-    top: -2,
-    right: -6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: jewelleryColors.error,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 4,
-    borderWidth: 1.5,
-    borderColor: jewelleryColors.bg,
-  },
-  badgeText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '700',
-    lineHeight: 12,
-  },
-});
 
 export default BottomTabBar;

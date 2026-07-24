@@ -82,6 +82,12 @@ import Icon from "react-native-vector-icons/Ionicons";
 import publicApiClient from "../store/publicApiClient";
 import { requireAuth, isAccountModule, signInFromGuest, navigateToJewellery } from "../utils/requireAuth";
 import useMessageUnreadBadge from "../hooks/useMessageUnreadBadge";
+import {
+  floatingBottomBarStyles,
+  FLOATING_BAR_ICONS,
+  FLOATING_BAR_ICON_SIZE,
+  FLOATING_BAR_INACTIVE_COLOR,
+} from "../styles/floatingBottomBar.styles";
 
 const YELLOW_COLOR = "#D4AF37";
 const FLOATING_BAR_HEIGHT = 72;
@@ -344,6 +350,19 @@ export default function DashboardScreen({ navigation }) {
           organizerPhone: not.event.organizerPhone,
           createdAt: not.event.createdAt,
         });
+      } else if (
+        not.statusCode === "EVENT_CREATED" ||
+        not.type === "eventCreated"
+      ) {
+        const eventId = not.eventId;
+        if (eventId) {
+          navigation.navigate("Jewellery", {
+            screen: "EventDetailScreen",
+            params: { eventId: String(eventId) },
+          });
+        } else {
+          navigateToJewellery(navigation);
+        }
       }
     }
   };
@@ -462,11 +481,11 @@ export default function DashboardScreen({ navigation }) {
   }, [token, isGuest]);
 
   const bottomBarItems = [
-    { label: "Social", icon: "people", action: "module", path: "SocialMedia" },
-    { label: "Jewellery", icon: "diamond", action: "module", path: "Jewellery" },
-    { label: "Matrimony", icon: "heart", action: "comingSoon" },
-    { label: "Messages", icon: "chatbubble-ellipses", action: "messages" },
-    { label: "Alerts", icon: "notifications", action: "notifications" },
+    { label: "Social", icon: FLOATING_BAR_ICONS.people, action: "module", path: "SocialMedia" },
+    { label: "Jewellery", icon: FLOATING_BAR_ICONS.diamond, action: "module", path: "Jewellery" },
+    { label: "Matrimony", icon: FLOATING_BAR_ICONS.heart, action: "comingSoon" },
+    { label: "Messages", icon: FLOATING_BAR_ICONS.messages, action: "messages" },
+    { label: "Alerts", icon: FLOATING_BAR_ICONS.alerts, action: "notifications" },
   ];
 
   const handleBottomBarPress = (item) => {
@@ -652,7 +671,13 @@ export default function DashboardScreen({ navigation }) {
                       <Text style={styles.sectionTitle}>
                         Latest Jewellery Designs
                       </Text>
-                      <TouchableOpacity onPress={() => navigateToJewellery(navigation)}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          navigation.navigate("Jewellery", {
+                            screen: "BrowseScreen",
+                          });
+                        }}
+                      >
                         <Text style={styles.seeAll}>see all &gt;</Text>
                       </TouchableOpacity>
                     </View>
@@ -663,17 +688,16 @@ export default function DashboardScreen({ navigation }) {
                         horizontal
                         nestedScrollEnabled={true}
                         data={latestJewellery}
-                        keyExtractor={(item, index) => item._id || index.toString()}
+                        keyExtractor={(item, index) => item._id || item.id || index.toString()}
                         renderItem={({ item }) => (
                           <TouchableOpacity
                             activeOpacity={0.7}
                             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                             onPress={() => {
                               navigation.navigate("Jewellery", {
-                                screen: "EachProduct",
+                                screen: "ProductDetailScreen",
                                 params: {
-                                  productId: item._id,
-                                  product: item,
+                                  productId: item._id || item.id,
                                 },
                               });
                             }}
@@ -710,7 +734,15 @@ export default function DashboardScreen({ navigation }) {
         <View
           style={[
             styles.floatingBar,
-            { paddingBottom: Math.max(insets.bottom, 8) },
+            floatingBottomBarStyles.floatingBar,
+            {
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              marginBottom: 0,
+              paddingBottom: Math.max(insets.bottom, 8),
+            },
           ]}
           onLayout={(event) => {
             const { height } = event.nativeEvent.layout;
@@ -722,21 +754,29 @@ export default function DashboardScreen({ navigation }) {
           {bottomBarItems.map((item, index) => (
             <TouchableOpacity
               key={index}
-              style={styles.floatingBarItem}
+              style={floatingBottomBarStyles.floatingBarItem}
               onPress={() => handleBottomBarPress(item)}
               accessibilityRole="button"
               accessibilityLabel={item.label}
             >
-              <View style={styles.floatingBarIconWrap}>
-                <Icon name={item.icon} size={22} color="#333" />
+              <View style={floatingBottomBarStyles.floatingBarIconWrap}>
+                <Icon
+                  name={item.icon}
+                  size={FLOATING_BAR_ICON_SIZE}
+                  color={FLOATING_BAR_INACTIVE_COLOR}
+                />
                 {((item.action === "messages" || item.path === "Jewellery") &&
                   messageUnreadCount > 0) && (
-                  <View style={styles.messageBadge}>
-                    <Text style={styles.messageBadgeText}>{messageBadgeLabel}</Text>
+                  <View style={floatingBottomBarStyles.messageBadge}>
+                    <Text style={floatingBottomBarStyles.messageBadgeText}>
+                      {messageBadgeLabel}
+                    </Text>
                   </View>
                 )}
               </View>
-              <Text style={styles.floatingBarText}>{item.label}</Text>
+              <Text style={floatingBottomBarStyles.floatingBarText}>
+                {item.label}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -858,21 +898,6 @@ const styles = StyleSheet.create({
     height: 8,
   },
   floatingBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 12,
-    right: 12,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 16,
-    paddingTop: 10,
-    paddingHorizontal: 4,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 8,
     zIndex: 20,
   },
   floatingBarItem: {

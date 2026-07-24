@@ -10,6 +10,7 @@ let sharedSocketUserId = null;
 let listenersBound = false;
 let cachedUnreadCount = 0;
 const countSubscribers = new Set();
+const feedSubscribers = new Set();
 
 function publishCount(count) {
   cachedUnreadCount = Math.max(0, count);
@@ -18,6 +19,16 @@ function publishCount(count) {
       cb(cachedUnreadCount);
     } catch (error) {
       console.error("social notification count subscriber error:", error);
+    }
+  });
+}
+
+function publishFeedItem(item) {
+  feedSubscribers.forEach((cb) => {
+    try {
+      cb(item);
+    } catch (error) {
+      console.error("social notification feed subscriber error:", error);
     }
   });
 }
@@ -87,6 +98,7 @@ function ensureSharedSocket(userId) {
       if (!data) return;
       if (data.read) return;
       publishCount(cachedUnreadCount + 1);
+      publishFeedItem(data);
     });
   }
 
@@ -126,4 +138,26 @@ export default function useSocialNotificationBadge() {
   );
 
   return count;
+}
+
+/**
+ * Subscribe to live social notifications (follow, event create, etc.).
+ * Callback receives the notification payload from the socket.
+ */
+export function useSocialNotificationLive(onLiveNotification) {
+  const { token, user } = useSelector((state) => state.user);
+
+  useEffect(() => {
+    if (!token || !user?._id) return undefined;
+    ensureSharedSocket(String(user._id));
+    return undefined;
+  }, [token, user?._id]);
+
+  useEffect(() => {
+    if (typeof onLiveNotification !== "function") return undefined;
+    feedSubscribers.add(onLiveNotification);
+    return () => {
+      feedSubscribers.delete(onLiveNotification);
+    };
+  }, [onLiveNotification]);
 }

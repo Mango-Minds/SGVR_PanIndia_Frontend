@@ -1,60 +1,43 @@
 import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import Theme from "../../styles/theme";
+import { View, Text, TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import Ionicons from "react-native-vector-icons/Ionicons";
 import { useTranslation } from "react-i18next";
+import {
+  floatingBottomBarStyles as styles,
+  FLOATING_BAR_ICONS,
+  FLOATING_BAR_ICON_SIZE,
+  FLOATING_BAR_ACTIVE_COLOR,
+} from "../../styles/floatingBottomBar.styles";
+
 export default function BottomNavigation({ navigation }) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
+
   return (
-    <View style={styles.bottomBarContainer}>
-      <View style={styles.bottomBar}>
-        <TouchableOpacity
-          style={styles.iconContainer}
-          onPress={() =>
-            // navigation.navigate("MainHome")
-            navigation.goBack()
-          }
-        >
-          <Ionicons name="home-outline" size={24} color={Theme.themeColor} />
-          <Text style={[styles.iconText, { color: Theme.themeColor }]}>
-            {t("home")}
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <View
+      style={[
+        styles.floatingBar,
+        { paddingBottom: Math.max(insets.bottom, 8) },
+      ]}
+    >
+      <TouchableOpacity
+        style={styles.floatingBarItem}
+        onPress={() => navigation.goBack()}
+        accessibilityRole="button"
+        accessibilityLabel={t("home")}
+      >
+        <View style={styles.floatingBarIconWrap}>
+          <Ionicons
+            name={FLOATING_BAR_ICONS.home}
+            size={FLOATING_BAR_ICON_SIZE}
+            color={FLOATING_BAR_ACTIVE_COLOR}
+          />
+        </View>
+        <Text style={[styles.floatingBarText, styles.floatingBarTextActive]}>
+          {t("home")}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  bottomBarContainer: {
-    backgroundColor: "#ffffff",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-    width: "100%",
-  },
-  bottomBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    alignItems: "center",
-    paddingVertical: 10,
-  },
-  iconContainer: {
-    flex: 1,
-    alignItems: "center",
-  },
-
-  iconText: {
-    marginTop: 4,
-  },
-  icon: {
-    marginRight: 10,
-    marginTop: 3,
-    marginLeft: 20,
-  },
-});

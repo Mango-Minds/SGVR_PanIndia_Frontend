@@ -72,75 +72,75 @@ const HomeScreen = () => {
     });
   };
 
-  // Category icons configuration
+  // Category icons configuration (MaterialCommunityIcons)
   const categories = [
     {
       key: 'jewellery',
       name: 'Jewellery',
-      icon: 'diamond',
+      icon: 'necklace',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('JewellerysHomeScreen'),
     },
     {
       key: 'gems',
       name: 'Gems',
-      icon: 'diamond',
+      icon: 'diamond-stone',
       color: jewelleryColors.categoryBlue,
       onPress: () => navigation.navigate('GemsHomeScreen'),
     },
     {
       key: 'tools',
       name: 'Tools',
-      icon: 'build',
+      icon: 'hammer-wrench',
       color: jewelleryColors.categoryOrange,
       onPress: () => navigation.navigate('ToolsScreen'),
     },
     {
       key: 'events',
       name: 'Events',
-      icon: 'event',
+      icon: 'calendar-star',
       color: jewelleryColors.categoryPurple,
       onPress: () => navigation.navigate('EventsHomeScreen'),
     },
     {
       key: 'bullion',
       name: 'Bullion',
-      icon: 'attach-money',
+      icon: 'gold',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('BullionScreen'),
     },
     {
       key: 'goldTesting',
       name: 'Gold Testing',
-      icon: 'biotech',
+      icon: 'flask-outline',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('GoldTestingCentresScreen'),
     },
     {
       key: 'goldRefinery',
       name: 'Gold Refinery',
-      icon: 'business',
+      icon: 'factory',
       color: jewelleryColors.categoryBlue,
       onPress: () => navigation.navigate('GoldRefineryScreen'),
     },
     {
       key: 'logistics',
       name: 'Logistics',
-      icon: 'local-shipping',
+      icon: 'truck-delivery-outline',
       color: jewelleryColors.categoryOrange,
       onPress: () => navigation.navigate('LogisticsScreen'),
     },
     {
       key: 'jobs',
       name: 'Jobs',
-      icon: 'work',
+      icon: 'briefcase-outline',
       color: jewelleryColors.categoryPurple,
       onPress: () => navigation.navigate('JobsScreen'),
     },
     {
       key: 'goldAssociations',
-      name: 'Gold Associations',
-      icon: 'groups',
+      name: 'Gold Association',
+      icon: 'handshake-outline',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('GoldAssociationsScreen'),
     },
@@ -360,7 +360,8 @@ const styles = StyleSheet.create({
   categoryItem: {
     width: '25%', // 4 icons per row
     alignItems: 'center',
-    marginBottom: 20,
+    paddingHorizontal: 2,
+    marginBottom: 12,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.lg,

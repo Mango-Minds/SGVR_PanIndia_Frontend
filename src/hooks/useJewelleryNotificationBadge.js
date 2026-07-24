@@ -9,6 +9,7 @@ export const JEWELLERY_NOTIFICATION_TYPES = [
   "stockItemCreated",
   "stockItemUpdated",
   "shopEventCreated",
+  "eventCreated",
   "eventInterest",
 ];
 

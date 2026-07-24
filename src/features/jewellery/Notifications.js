@@ -175,7 +175,7 @@ function JewelleryNotifications({ navigation, route }) {
     // Mark read + remove from list; navigate for event interest
     markNotificationAsRead(item._id);
 
-    if (item.type !== "eventInterest") return;
+    if (item.type !== "eventInterest" && item.type !== "eventCreated") return;
 
     const eventId = resolveEventId(item);
     if (eventId && eventId !== "undefined" && eventId !== "null") {
@@ -184,12 +184,15 @@ function JewelleryNotifications({ navigation, route }) {
     }
 
     // Fallback for older notifications without eventId: match by event name in message
-    const match = item.message?.match(/interested in your event:\s*(.+)$/i);
-    const eventName = match?.[1]?.trim();
+    const interestMatch = item.message?.match(/interested in your event:\s*(.+)$/i);
+    const createdMatch = item.message?.match(/created a new event:\s*(.+)$/i);
+    const eventName = (interestMatch?.[1] || createdMatch?.[1])?.trim();
     if (eventName) {
       (async () => {
         try {
-          const response = await apiClient.get("/events/mine");
+          const endpoint =
+            item.type === "eventInterest" ? "/events/mine" : "/events";
+          const response = await apiClient.get(endpoint);
           const events = response.data?.data || response.data?.events || [];
           const found = events.find(
             (event) =>
@@ -2205,7 +2208,8 @@ function JewelleryNotifications({ navigation, route }) {
                         ? "✏️"
                         : item.type === "eventInterest"
                         ? "❤️"
-                        : item.type === "shopEventCreated"
+                        : item.type === "shopEventCreated" ||
+                          item.type === "eventCreated"
                         ? "📅"
                         : "🔔"}
                     </Text>

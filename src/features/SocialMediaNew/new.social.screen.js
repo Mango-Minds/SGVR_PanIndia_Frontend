@@ -37,7 +37,6 @@ import { fetchAllPosts, getMyMoments, uploadMoment, deleteMoment, getVisibleMome
 import { useTranslation } from "react-i18next";
 import { useFollowStatus } from "./FollowStatusContext";
 import { useFocusEffect, useIsFocused } from "@react-navigation/native";
-import useSocialNotificationBadge from "../../hooks/useSocialNotificationBadge";
 const SocialHomeScreen = ({ navigation, route }) => {
   const token = useSelector((state) => state.user.token);
 const { t } = useTranslation();
@@ -58,9 +57,6 @@ const { t } = useTranslation();
   const [activeVideoPostId, setActiveVideoPostId] = useState(null);
   /** Stack keeps home mounted under Message/Search/Network — stop video on blur */
   const isScreenFocused = useIsFocused();
-  const socialNotificationCount = useSocialNotificationBadge();
-  const socialNotificationBadgeLabel =
-    socialNotificationCount > 99 ? "99+" : String(socialNotificationCount);
   const [isAppActive, setIsAppActive] = useState(
     () => AppState.currentState === "active"
   );
@@ -541,21 +537,6 @@ const { t } = useTranslation();
           </View>
           <View style={styles.rightCluster}>
             <TouchableOpacity
-              style={styles.bellButton}
-              onPress={() => navigation.navigate("NotificationsScreen")}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              accessibilityLabel={tr("notifications", "Notifications")}
-            >
-              <Ionicons name="notifications-outline" size={24} color="#2B2B2B" />
-              {socialNotificationCount > 0 && (
-                <View style={styles.bellBadge}>
-                  <Text style={styles.bellBadgeText}>
-                    {socialNotificationBadgeLabel}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <TouchableOpacity
               style={styles.profileCluster}
               onPress={() => navigation.navigate("ProfileNewScreen")}
             >
@@ -836,30 +817,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     flexShrink: 0,
     gap: 8,
-  },
-  bellButton: {
-    padding: 4,
-    position: "relative",
-  },
-  bellBadge: {
-    position: "absolute",
-    top: -2,
-    right: -4,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: "#E53935",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 3,
-    borderWidth: 1.5,
-    borderColor: "#fff",
-  },
-  bellBadgeText: {
-    color: "#fff",
-    fontSize: 9,
-    fontWeight: "700",
-    lineHeight: 11,
   },
   headerUserName: {
     fontSize: 14,

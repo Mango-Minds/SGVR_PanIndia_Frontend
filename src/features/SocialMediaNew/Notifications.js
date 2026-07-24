@@ -19,7 +19,10 @@ import { useTranslation } from "react-i18next";
 import { getGeneralNotifications, getPostCommentNotifications } from "./SocialMediaAPIs";
 import BottomNavigation from "../../components/social/BottomNavigation";
 import { useFocusEffect } from "@react-navigation/native";
-import { setSocialUnreadCount } from "../../hooks/useSocialNotificationBadge";
+import {
+  setSocialUnreadCount,
+  useSocialNotificationLive,
+} from "../../hooks/useSocialNotificationBadge";
 
 const POST_NOTIFICATION_TYPES = [
   "postCreated",
@@ -174,6 +177,31 @@ const NotificationsScreen = ({ navigation }) => {
     }, [])
   );
 
+  // Live prepend when follow / event / other social notifications arrive
+  const handleLiveNotification = useCallback((data) => {
+    if (!data || !data._id) return;
+    if (POST_NOTIFICATION_TYPES.includes(data.type)) return;
+
+    setNotifications((prev) => {
+      if (prev.some((n) => String(n._id) === String(data._id))) {
+        return prev;
+      }
+      const next = [
+        {
+          ...data,
+          source: "social",
+          read: data.read ?? false,
+          createdAt: data.createdAt || new Date().toISOString(),
+        },
+        ...prev,
+      ];
+      syncBellCount(next);
+      return next;
+    });
+  }, []);
+
+  useSocialNotificationLive(handleLiveNotification);
+
   const trLabel = (key, fallback) => {
     try {
       const val = t(key);
@@ -235,6 +263,8 @@ const NotificationsScreen = ({ navigation }) => {
         return trLabel("stock_item_updated", "Stock Updated");
       case "shopEventCreated":
         return trLabel("shop_event_created", "Shop Event");
+      case "eventCreated":
+        return trLabel("event_created", "New Event");
       case "eventInterest":
         return trLabel("event_interest", "Event Interest");
       default:
@@ -280,6 +310,7 @@ const NotificationsScreen = ({ navigation }) => {
       case "stockItemUpdated":
         return "cube";
       case "shopEventCreated":
+      case "eventCreated":
       case "eventInterest":
         return "calendar";
       default:
@@ -440,6 +471,7 @@ const NotificationsScreen = ({ navigation }) => {
       }
 
       case "eventInterest":
+      case "eventCreated":
       case "shopEventCreated":
         openEvent(notification);
         break;

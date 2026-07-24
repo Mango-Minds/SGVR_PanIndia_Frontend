@@ -72,39 +72,39 @@ const JewellerysHomeScreen = () => {
     });
   };
 
-  // Category icons configuration
+  // Category icons configuration (MaterialCommunityIcons)
   const categories = [
     {
       key: 'shops',
       name: 'Shops',
-      icon: 'store',
+      icon: 'storefront-outline',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('JewellerysScreen'),
     },
     {
       key: 'vendors',
       name: 'Vendors',
-      icon: 'person',
+      icon: 'account-tie-outline',
       color: jewelleryColors.categoryBlue,
       onPress: () => handleCategoryPress('VendorsScreen', 'Sign in to view vendors.'),
     },
     {
-      key: 'manufacturers',
-      name: 'Manufacturers',
-      icon: 'star',
+      key: 'manufacture',
+      name: 'Manufacture',
+      icon: 'palette-swatch-outline',
       color: jewelleryColors.categoryPurple,
-      onPress: () => handleCategoryPress('DesignersScreen', 'Sign in to view designers.'),
+      onPress: () => handleCategoryPress('DesignersScreen', 'Sign in to view manufacture.'),
     },
     {
       key: 'karegars',
       name: 'Karegars',
-      icon: 'people',
+      icon: 'account-hard-hat',
       color: jewelleryColors.categoryOrange,
       onPress: () => handleCategoryPress('WorkersScreen', 'Sign in to view workers.'),
     },{
       key: 'product requirement',
       name: 'Product requirement',
-      icon: 'store',
+      icon: 'clipboard-list-outline',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('ProductRequirementsScreen'),
     }
@@ -141,7 +141,7 @@ const JewellerysHomeScreen = () => {
     setActiveTab(tab);
     switch (tab) {
       case 'home':
-        navigation.navigate('HomeScreen');
+        navigation.navigate('Dashboard');
         break;
       case 'search':
         navigation.navigate('BrowseScreen');
