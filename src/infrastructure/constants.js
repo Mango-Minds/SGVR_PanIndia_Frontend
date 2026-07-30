@@ -46,7 +46,7 @@ const PROD_SOCKETURL = "https://in-bharat.com";
 
 // Toggle this to force production URLs even in development mode
 // Set to true to test with deployed/production URLs locally
-const FORCE_PRODUCTION_MODE = true; // Set true to test against deployed server; false uses local API in dev
+const FORCE_PRODUCTION_MODE = false; // Set true to test against deployed server; false uses local API in dev
 // const FORCE_PRODUCTION_MODE = false; 
 // Automatically use the right URLs based on __DEV__ flag
 // __DEV__ is true in development mode, false in production builds
