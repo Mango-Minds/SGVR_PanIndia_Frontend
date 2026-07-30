@@ -571,53 +571,69 @@ export default function DashboardScreen({ navigation }) {
     return (
       <View style={{ flex: 1 }}>
         {/* Fixed Header */}
-        <View
-          style={[styles.topHeader, { paddingTop: insets.top }]}
-          onLayout={(event) => {
-            const { height } = event.nativeEvent.layout;
-            if (height > 0) {
-              setHeaderHeight(height);
-            }
-          }}
-        >
-          <View style={styles.headerTopRow}>
-            <Text style={styles.brandName}>In Bharat</Text>
-            <View style={styles.headerRight}>
-              {isGuest ? (
-                <TouchableOpacity
-                  onPress={() => signInFromGuest(dispatch)}
-                  style={styles.loginButton}
-                >
-                  <Text style={styles.loginButtonText}>Sign in</Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity
-                onPress={() =>
-                  handleAccountAction(
-                    () => navigation.navigate("SettingsScreen"),
-                    "Sign in to view your profile and settings."
-                  )
-                }
-                style={styles.headerProfile}
-              >
+          <LinearGradient
+            colors={["#5C1838", "#3A0F24"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={[styles.topHeader, { paddingTop: insets.top }]}
+            onLayout={(event) => {
+              const { height } = event.nativeEvent.layout;
+              if (height > 0) {
+                setHeaderHeight(height);
+              }
+            }}
+          >
+            <View style={styles.headerTopRow}>
+              <View style={styles.brandRow}>
                 <Image
-                  source={
-                    user && user.image ? { uri: user.image } : UserImg
-                  }
-                  style={styles.avatar}
+                  style={styles.logo}
+                  source={require("../assets/images/pre-login/Indiyoura-mediumLogo.png")}
+                  resizeMode="cover"
                 />
-                <Text style={styles.username}>
-                  {isGuest
-                    ? "Guest"
-                    : user &&
-                      user.firstName &&
-                      user.firstName.charAt(0).toUpperCase() +
-                        user.firstName.slice(1).toLowerCase()}
-                </Text>
-              </TouchableOpacity>
+                <View style={styles.brandTextWrap}>
+                  <Text style={styles.brandName}>Indiyoura</Text>
+                  <Text style={styles.brandTagline}>Discover India</Text>
+                </View>
+              </View>
+
+              <View style={styles.headerRight}>
+                {isGuest ? (
+                  <TouchableOpacity
+                    onPress={() => signInFromGuest(dispatch)}
+                    style={styles.loginButton}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.loginButtonText}>Sign in</Text>
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity
+                  onPress={() =>
+                    handleAccountAction(
+                      () => navigation.navigate("SettingsScreen"),
+                      "Sign in to view your profile and settings."
+                    )
+                  }
+                  style={styles.headerProfile}
+                  activeOpacity={0.85}
+                >
+                  <Image
+                    source={
+                      user && user.image ? { uri: user.image } : UserImg
+                    }
+                    style={styles.avatar}
+                  />
+                  <Text style={styles.username} numberOfLines={1}>
+                    {isGuest
+                      ? "Guest"
+                      : user &&
+                        user.firstName &&
+                        user.firstName.charAt(0).toUpperCase() +
+                          user.firstName.slice(1).toLowerCase()}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
+          </LinearGradient>
 
         <View style={[styles.scrollWrapper, { marginTop: headerHeight }]}>
           <ScrollView
@@ -669,7 +685,7 @@ export default function DashboardScreen({ navigation }) {
                   <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                       <Text style={styles.sectionTitle}>
-                        Latest Jewellery Designs
+                        Latest Jewellery Designs 
                       </Text>
                       <TouchableOpacity
                         onPress={() => {
@@ -786,16 +802,17 @@ export default function DashboardScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   topHeader: {
-    backgroundColor: YELLOW_COLOR,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
+    paddingHorizontal: 16,
     position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
     elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.22,
+    shadowRadius: 8,
     paddingBottom: 14,
   },
   headerTopRow: {
@@ -803,11 +820,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
+    minHeight: 52,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+    marginRight: 10,
+  },
+  logo: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: YELLOW_COLOR,
+  },
+  brandTextWrap: {
+    marginLeft: 10,
+    flexShrink: 1,
   },
   brandName: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 22,
+    color: YELLOW_COLOR,
+    fontWeight: "800",
+    fontSize: 20,
+    letterSpacing: 0.4,
+  },
+  brandTagline: {
+    color: "rgba(255,255,255,0.65)",
+    fontSize: 11,
+    marginTop: 1,
+    letterSpacing: 0.6,
   },
   headerRight: {
     flexDirection: "row",
@@ -816,36 +858,43 @@ const styles = StyleSheet.create({
   headerProfile: {
     flexDirection: "row",
     alignItems: "center",
-  },
-
-  avatar: {
-    width: 35,
-    height: 35,
-    borderRadius: 20,
+    backgroundColor: "rgba(212,175,55,0.12)",
     borderWidth: 1,
-    borderColor: "#fff",
+    borderColor: "rgba(212,175,55,0.45)",
+    paddingLeft: 4,
+    paddingRight: 10,
+    paddingVertical: 4,
+    borderRadius: 24,
+    maxWidth: 130,
+  },
+  avatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: YELLOW_COLOR,
+    backgroundColor: "#F3F3F3",
   },
   username: {
-    color: "#fff",
-    fontWeight: "bold",
-    marginLeft: 8,
-    fontSize: 14,
+    color: "#FFFFFF",
+    fontWeight: "600",
+    fontSize: 13,
+    marginLeft: 7,
+    flexShrink: 1,
   },
   loginButton: {
-    backgroundColor: "#fff",
-    paddingHorizontal: 12,
+    backgroundColor: YELLOW_COLOR,
+    paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 6,
+    borderRadius: 20,
     marginRight: 8,
     justifyContent: "center",
     alignItems: "center",
-    minHeight: 32,
   },
   loginButtonText: {
-    color: YELLOW_COLOR,
-    fontWeight: "600",
-    fontSize: 14,
-    lineHeight: 18,
+    color: "#3A0F24",
+    fontWeight: "700",
+    fontSize: 13,
   },
   scrollWrapper: {
     flex: 1,

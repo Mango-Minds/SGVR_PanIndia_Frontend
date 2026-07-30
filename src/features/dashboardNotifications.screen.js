@@ -18,6 +18,7 @@ import { cloneDeep } from "lodash";
 import { UpdateNotification } from "../store/Handlers/Reducer.Handler";
 import { readNotification } from "../services/notification.services";
 import { ScrollView } from "react-native-gesture-handler";
+import DashboardBottomNavigation from "../components/dashboard/DashboardBottomNavigation";
 // import LikeCard from './LikeCard';
 
 export default function DashboardNotificationScreen({ navigation, route }) {
@@ -75,7 +76,10 @@ export default function DashboardNotificationScreen({ navigation, route }) {
       </RowBetween>
 
       {notifications.length > 0 ? (
-        <ScrollView style={styles.container}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={{ paddingBottom: 80 }}
+        >
           {notifications
             .slice()
             .reverse()
@@ -134,6 +138,10 @@ export default function DashboardNotificationScreen({ navigation, route }) {
           <Text style={styles.noNotificationsText}>No Notifications</Text>
         </View>
       )}
+      <DashboardBottomNavigation
+        navigation={navigation}
+        currentScreen="alerts"
+      />
     </Container>
   );
 }
@@ -200,6 +208,7 @@ const styles = StyleSheet.create({
   },
   noNotificationsContainer: {
     display: "flex",
+    flex: 1,
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",

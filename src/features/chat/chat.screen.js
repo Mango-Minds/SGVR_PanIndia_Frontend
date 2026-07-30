@@ -46,8 +46,10 @@ import { uploadChatMedia, saveSingleChat as saveSingleChatApi, editMessage as ed
 import { GetAllFriends } from "../../services/socialMedia.services";
 import DeleteModal from "../../components/modals/DeleteChat";
 import { clearConversationUnread } from "../../hooks/useMessageUnreadBadge";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const ChatScreen = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const [chattings, setChattings] = React.useState([]);
   const [page, setPage] = useState(1);
   const [message, setMessage] = useState("");
@@ -720,6 +722,7 @@ const ChatScreen = ({ navigation, route }) => {
         style={{
           paddingRight: 0,
           paddingLeft: 0,
+          paddingBottom: 0,
           backgroundColor: "white",
           flex: 1,
         }}
@@ -1191,7 +1194,7 @@ const ChatScreen = ({ navigation, route }) => {
              borderRadius: 26,
              height: 40,
              marginTop: 10,
-             marginBottom: 0,
+             marginBottom: Math.max(insets.bottom - 10, 0),
              marginLeft: 15,
              marginRight: 15,
              borderWidth: 1,

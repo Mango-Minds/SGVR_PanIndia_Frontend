@@ -1,7 +1,7 @@
 # Share Functionality Documentation
 
 ## Overview
-The In Bharat app now uses URL-based sharing instead of sending notifications to friends. This approach is more scalable and allows users to share content across different platforms.
+The Indiyoura app now uses URL-based sharing instead of sending notifications to friends. This approach is more scalable and allows users to share content across different platforms.
 
 ## Features
 

@@ -118,7 +118,7 @@ const Reportscreen = ({ navigation }) => {
               padding: 10,
             }}
           >
-            <Image source={Logo} alt="In Bharat" />
+            <Image source={Logo} alt="Indiyoura" />
           </View>
 
           {/* Child Safety Reporting Section */}

@@ -1,6 +1,6 @@
 # App Store Listing Content Guide
 
-This guide provides templates and guidelines for filling out your App Store Connect listing fields for "In Bharat" app.
+This guide provides templates and guidelines for filling out your App Store Connect listing fields for "Indiyoura" app.
 
 ## Character Limits
 
@@ -30,7 +30,7 @@ Discover authentic Indian culture, connect with communities, find local services
 
 **Option 2: Community-Focused**
 ```
-Your complete cultural & lifestyle platform! Connect with communities, discover local businesses, explore temples, find your match, and share moments. Join In Bharat today—where culture meets community.
+Your complete cultural & lifestyle platform! Connect with communities, discover local businesses, explore temples, find your match, and share moments. Join Indiyoura today—where culture meets community.
 ```
 *(170 characters)*
 
@@ -42,7 +42,7 @@ One app for everything Indian! Shop from verified vendors, connect with your com
 
 **Option 4: Simple & Direct**
 ```
-Your all-in-one platform for Indian culture, community, commerce, and connections. Discover shops, temples, matrimony, social networks, and local services. Join In Bharat—where tradition meets technology.
+Your all-in-one platform for Indian culture, community, commerce, and connections. Discover shops, temples, matrimony, social networks, and local services. Join Indiyoura—where tradition meets technology.
 ```
 *(170 characters)*
 
@@ -62,9 +62,9 @@ Your all-in-one platform for Indian culture, community, commerce, and connection
 ### Full Description Template:
 
 ```
-In Bharat - Your Complete Cultural & Lifestyle Platform
+Indiyoura - Your Complete Cultural & Lifestyle Platform
 
-Welcome to In Bharat, the all-in-one platform that brings together everything you need to connect with Indian culture, community, and commerce. Whether you're looking for local businesses, exploring temples, finding your life partner, or connecting with your community, In Bharat has you covered.
+Welcome to Indiyoura, the all-in-one platform that brings together everything you need to connect with Indian culture, community, and commerce. Whether you're looking for local businesses, exploring temples, finding your life partner, or connecting with your community, Indiyoura has you covered.
 
 🌟 KEY FEATURES:
 
@@ -90,7 +90,7 @@ Search for properties, view listings, and connect with real estate professionals
 Stay updated with local events, festivals, and community gatherings. Never miss an important occasion in your area.
 
 • MULTI-LANGUAGE SUPPORT
-Enjoy the app in English, Hindi, Marathi, and more regional languages. Experience In Bharat in your preferred language.
+Enjoy the app in English, Hindi, Marathi, and more regional languages. Experience Indiyoura in your preferred language.
 
 • VERIFIED BUSINESSES
 All businesses are verified for authenticity and quality. Shop with confidence knowing you're dealing with trusted vendors.
@@ -115,9 +115,9 @@ Your privacy and security are our top priorities. All data is encrypted and prot
 • Temple visitors and devotees
 • Anyone interested in Indian culture and heritage
 
-📱 WHY CHOOSE IN BHARAT?
+📱 WHY CHOOSE INDIYOURA?
 
-In Bharat is more than just an app—it's a community platform that brings together culture, commerce, and connections. We understand the unique needs of Indian communities and have built a platform that serves them comprehensively.
+Indiyoura is more than just an app—it's a community platform that brings together culture, commerce, and connections. We understand the unique needs of Indian communities and have built a platform that serves them comprehensively.
 
 • Trusted by thousands of users
 • Verified businesses and profiles
@@ -125,9 +125,9 @@ In Bharat is more than just an app—it's a community platform that brings toget
 • Regular updates and improvements
 • Dedicated customer support
 
-Download In Bharat today and experience the best of Indian culture, community, and commerce in one powerful platform. Join thousands of users who are already connecting, discovering, and thriving with In Bharat.
+Download Indiyoura today and experience the best of Indian culture, community, and commerce in one powerful platform. Join thousands of users who are already connecting, discovering, and thriving with Indiyoura.
 
-Your journey into Indian culture starts here. Welcome to In Bharat!
+Your journey into Indian culture starts here. Welcome to Indiyoura!
 ```
 
 **Character Count**: ~2,800 characters (leaves room for customization)
@@ -135,7 +135,7 @@ Your journey into Indian culture starts here. Welcome to In Bharat!
 ### Shorter Version (if needed):
 
 ```
-In Bharat - Your Complete Cultural & Lifestyle Platform
+Indiyoura - Your Complete Cultural & Lifestyle Platform
 
 Connect with Indian culture, community, and commerce all in one place. Discover local businesses, explore temples, find your life partner, connect with your community, and so much more.
 
@@ -150,7 +150,7 @@ KEY FEATURES:
 • Stay updated with local events and festivals
 • Multi-language support (English, Hindi, Marathi, and more)
 
-WHY IN BHARAT?
+WHY INDIYOURA?
 
 • Verified businesses and profiles
 • Comprehensive features in one platform
@@ -158,9 +158,9 @@ WHY IN BHARAT?
 • Easy to use interface
 • Regular updates and improvements
 
-Join thousands of users already using In Bharat. Download now and experience the best of Indian culture, community, and commerce.
+Join thousands of users already using Indiyoura. Download now and experience the best of Indian culture, community, and commerce.
 
-Your journey starts here. Welcome to In Bharat!
+Your journey starts here. Welcome to Indiyoura!
 ```
 
 **Character Count**: ~1,200 characters
@@ -230,9 +230,9 @@ Indian,culture,community,matrimony,temple,business,shop,vendor,social,network,jo
 ### Template for Version 1.0.0:
 
 ```
-🎉 Welcome to In Bharat 1.0.0!
+🎉 Welcome to Indiyoura 1.0.0!
 
-We're excited to launch In Bharat—your complete cultural & lifestyle platform!
+We're excited to launch Indiyoura—your complete cultural & lifestyle platform!
 
 ✨ NEW FEATURES:
 
@@ -254,9 +254,9 @@ We're excited to launch In Bharat—your complete cultural & lifestyle platform!
 
 📱 GET STARTED:
 
-Download In Bharat today and join thousands of users connecting with Indian culture, community, and commerce.
+Download Indiyoura today and join thousands of users connecting with Indian culture, community, and commerce.
 
-Thank you for choosing In Bharat!
+Thank you for choosing Indiyoura!
 ```
 
 ---
@@ -320,7 +320,7 @@ Demo accounts (optional, for testing logged-in features):
 
 Before submitting to App Store Connect, ensure you have:
 
-- [ ] **Name**: "In Bharat" (30 chars max)
+- [ ] **Name**: "Indiyoura" (30 chars max)
 - [ ] **Subtitle**: "Cultural & Lifestyle Platform" (30 chars max)
 - [ ] **Promotional Text**: 170 characters (can update anytime)
 - [ ] **Description**: Up to 4,000 characters

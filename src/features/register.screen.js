@@ -35,6 +35,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     marginTop: "20%",
   },
+  logoText: {
+    alignSelf: "center",
+    marginTop: "10%",
+    fontSize: 36,
+    fontWeight: "bold",
+    color: Theme.themeColor,
+    letterSpacing: 1,
+    textAlign: "center",
+  },
   input: {
     marginTop: 24,
     backgroundColor: "#F0F0F0",
@@ -132,12 +141,12 @@ export default function RegisterScreen({ navigation }) {
             keyboardShouldPersistTaps="handled"
           >
             <View style={{ flex: 1, justifyContent: "center" }}>
-            <Image
+             <Image
               style={styles.logo}
-              source={require("../assets/images/pre-login/miLogo-small.png")}
-            />
+              source={require("../assets/images/pre-login/indiayoua-smallLogo.png")}
+            />  
 
-
+           {/* <Text style={styles.logoText}>Indiyoura</Text> */}
             <FormSection>
               <FormSectionTitle>Signup</FormSectionTitle>
 

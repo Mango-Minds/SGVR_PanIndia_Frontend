@@ -1,6 +1,6 @@
 # App Store Content Rating Questionnaire Guide
 
-This guide helps you answer the App Store Connect content rating questions for "In Bharat" app based on the app's actual features.
+This guide helps you answer the App Store Connect content rating questions for "Indiyoura" app based on the app's actual features.
 
 ## In-App Controls
 

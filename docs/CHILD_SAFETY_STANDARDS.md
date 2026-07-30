@@ -1,10 +1,10 @@
-# Child Safety Standards - In Bharat
+# Child Safety Standards - Indiyoura
 
 **Last Updated:** February 2026
 
 ## Our Commitment to Child Safety
 
-In Bharat is committed to protecting children and preventing child sexual abuse and exploitation (CSAE) on our platform. We have zero tolerance for any content, behavior, or activity that harms children or exploits minors in any way.
+Indiyoura is committed to protecting children and preventing child sexual abuse and exploitation (CSAE) on our platform. We have zero tolerance for any content, behavior, or activity that harms children or exploits minors in any way.
 
 **If you encounter content or behavior that involves child sexual abuse material (CSAM) or exploitation of minors, please report it immediately through our in-app reporting system or contact us directly at sgvrtech1@gmail.com.**
 
@@ -12,7 +12,7 @@ In Bharat is committed to protecting children and preventing child sexual abuse 
 
 ### 1.1 Zero Tolerance Policy
 
-In Bharat maintains a strict zero-tolerance policy regarding:
+Indiyoura maintains a strict zero-tolerance policy regarding:
 - Child sexual abuse material (CSAM)
 - Content that sexualizes minors
 - Grooming or predatory behavior targeting minors
@@ -57,7 +57,7 @@ We prioritize child safety reports and aim to:
 
 ### 3.1 In-App Reporting
 
-Users can report child safety concerns directly within the In Bharat app:
+Users can report child safety concerns directly within the Indiyoura app:
 1. Navigate to Settings → Report
 2. Select "Report Child Safety Concern"
 3. Choose the appropriate category:
@@ -85,7 +85,7 @@ Users can report child safety concerns directly within the In Bharat app:
 
 ### 4.1 Legal Compliance
 
-In Bharat complies with all relevant child safety laws and regulations, including:
+Indiyoura complies with all relevant child safety laws and regulations, including:
 - Protection of Children from Sexual Offences (POCSO) Act, 2012 (India)
 - Information Technology Act, 2000 (India)
 - International laws and conventions on child protection
@@ -99,7 +99,7 @@ We maintain strict compliance with legal reporting obligations:
 - We preserve evidence as required by law
 - We report to both regional and national authorities as applicable
 
-**Important:** In Bharat reports all instances of child sexual abuse material to the appropriate law enforcement authorities and cooperates fully with their investigations.
+**Important:** Indiyoura reports all instances of child sexual abuse material to the appropriate law enforcement authorities and cooperates fully with their investigations.
 
 ## 5. User Education and Prevention
 
@@ -113,7 +113,7 @@ We provide users with safety guidelines including:
 
 ### 5.2 Age Restrictions
 
-In Bharat requires users to be at least 18 years of age to create an account. We take measures to verify age where possible and remove accounts found to be operated by minors.
+Indiyoura requires users to be at least 18 years of age to create an account. We take measures to verify age where possible and remove accounts found to be operated by minors.
 
 ## 6. Transparency and Accountability
 
@@ -144,6 +144,6 @@ We may update this Child Safety Standards document periodically to reflect chang
 
 ---
 
-© 2026 In Bharat. All rights reserved.
+© 2026 Indiyoura. All rights reserved.
 
 This document is publicly available and may be referenced for app store compliance requirements.

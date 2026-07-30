@@ -207,3 +207,11 @@ amplifytools.xcconfig
 .secret-*
 **.sample
 #amplify-do-not-edit-end
+
+
+APP_STORE_CONNECT_SETUP.md
+APP_STORE_CONTENT_RATING.md
+APP_STORE_LISTING_CONTENT.md
+
+SHARE_FUNCTIONALITY.md
+CHILD_SAFETY_STANDARDS.md

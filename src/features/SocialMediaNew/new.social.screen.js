@@ -529,26 +529,36 @@ const { t } = useTranslation();
                   if (navigation.canGoBack()) navigation.goBack();
                   else navigation.navigate("MainHome");
                 }}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Icon name="arrow-back" size={20} color="black" />
+                <Icon name="arrow-back" size={22} color="#2B2B2B" />
               </TouchableOpacity>
             )}
-            <Text style={styles.leftTitle}>In Bharat</Text>
-          </View>
-          <View style={styles.rightCluster}>
-            <TouchableOpacity
-              style={styles.profileCluster}
-              onPress={() => navigation.navigate("ProfileNewScreen")}
-            >
-              <Text style={styles.headerUserName} numberOfLines={1} ellipsizeMode="tail">
-                {displayName}
-              </Text>
+            <View style={styles.brandRow}>
               <Image
-                style={styles.userProfileImage}
-                source={profileImageUrl ? { uri: profileImageUrl } : UserImg}
+                style={styles.logo}
+                source={require("../../assets/images/pre-login/Indiyoura-mediumLogo.png")}
+                resizeMode="cover"
               />
-            </TouchableOpacity>
+              <View style={styles.brandTextWrap}>
+                <Text style={styles.brandName}>Indiyoura</Text>
+                <Text style={styles.brandTagline}>Social</Text>
+              </View>
+            </View>
           </View>
+          <TouchableOpacity
+            style={styles.profileCluster}
+            onPress={() => navigation.navigate("ProfileNewScreen")}
+            activeOpacity={0.85}
+          >
+            <Image
+              style={styles.userProfileImage}
+              source={profileImageUrl ? { uri: profileImageUrl } : UserImg}
+            />
+            <Text style={styles.headerUserName} numberOfLines={1} ellipsizeMode="tail">
+              {displayName}
+            </Text>
+          </TouchableOpacity>
         </View>
 
         <SafeAreaView style={styles.socialFeedContainer}>
@@ -787,18 +797,53 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 6,
-    marginBottom: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    marginTop: 2,
+    marginBottom: 0,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "rgba(0,0,0,0.08)",
+    minHeight: 52,
   },
   leftCluster: {
     flexDirection: "row",
     alignItems: "center",
     flex: 1,
+    marginRight: 10,
   },
   backButton: {
-    paddingRight: 8,
+    marginRight: 6,
+    padding: 4,
+  },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexShrink: 1,
+  },
+  logo: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: Theme.themeColor,
+    backgroundColor: "#3A0F24",
+  },
+  brandTextWrap: {
+    marginLeft: 10,
+    flexShrink: 1,
+  },
+  brandName: {
+    color: "#3A0F24",
+    fontWeight: "800",
+    fontSize: 18,
+    letterSpacing: 0.3,
+  },
+  brandTagline: {
+    color: "rgba(58,15,36,0.55)",
+    fontSize: 11,
+    marginTop: 1,
+    letterSpacing: 0.5,
+    fontWeight: "500",
   },
   leftTitle: {
     fontSize: 18,
@@ -816,18 +861,29 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     flexShrink: 0,
-    gap: 8,
+    backgroundColor: "rgba(212,175,55,0.1)",
+    borderWidth: 1,
+    borderColor: "rgba(212,175,55,0.4)",
+    paddingLeft: 4,
+    paddingRight: 10,
+    paddingVertical: 4,
+    borderRadius: 22,
+    maxWidth: 140,
   },
   headerUserName: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#2B2B2B",
-    maxWidth: 120,
+    color: "#3A0F24",
+    marginLeft: 7,
+    flexShrink: 1,
   },
   userProfileImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    borderWidth: 1.5,
+    borderColor: Theme.themeColor,
+    backgroundColor: "#F3F3F3",
     flexShrink: 0,
   },
   iconsContainer: {

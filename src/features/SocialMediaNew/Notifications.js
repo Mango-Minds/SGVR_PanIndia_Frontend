@@ -137,7 +137,9 @@ const NotificationsScreen = ({ navigation }) => {
         const next = prev.map((item) =>
           item._id === notificationId ? { ...item, read: true } : item
         );
-        syncBellCount(next);
+        // Defer: publishing the badge count updates BottomNavigation;
+        // must not run during NotificationsScreen's state updater/render.
+        queueMicrotask(() => syncBellCount(next));
         return next;
       });
     } catch (error) {
@@ -163,7 +165,7 @@ const NotificationsScreen = ({ navigation }) => {
 
       setNotifications((prev) => {
         const next = prev.filter((item) => item._id !== notificationId);
-        syncBellCount(next);
+        queueMicrotask(() => syncBellCount(next));
         return next;
       });
     } catch (error) {
@@ -195,7 +197,7 @@ const NotificationsScreen = ({ navigation }) => {
         },
         ...prev,
       ];
-      syncBellCount(next);
+      queueMicrotask(() => syncBellCount(next));
       return next;
     });
   }, []);

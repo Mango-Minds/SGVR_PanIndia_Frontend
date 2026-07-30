@@ -37,7 +37,7 @@ Fill in the following required fields in the form:
 - Select **"iOS"** (or "iOS, tvOS" if you plan to support Apple TV)
 
 #### Name
-- Enter: **"In Bharat"**
+- Enter: **"Indiyoura"**
 - This is the display name shown in the App Store
 - Maximum 30 characters
 - Can be changed later, but it's better to set it correctly now
@@ -90,7 +90,7 @@ If you need to register the bundle ID first:
    - Select **"App"** → Click **"Continue"**
 
 4. **Fill in Bundle ID Details**:
-   - **Description**: Enter "In Bharat iOS App"
+   - **Description**: Enter "Indiyoura iOS App"
    - **Bundle ID**: 
      - Select **"Explicit"**
      - Enter: `com.inbharat.app`
@@ -119,7 +119,7 @@ If you need to register the bundle ID first:
 
 1. **Review All Information**:
    - Double-check:
-     - Name: "In Bharat"
+     - Name: "Indiyoura"
      - Bundle ID: `com.inbharat.app`
      - SKU: Your chosen SKU
      - Platform: iOS
@@ -138,7 +138,7 @@ After successful creation, you'll be redirected to your app's page. Note the fol
 - **IMPORTANT**: Save this number - you'll need it for `eas.json`
 
 #### Other Information Visible:
-- **App Name**: "In Bharat"
+- **App Name**: "Indiyoura"
 - **Bundle ID**: `com.inbharat.app`
 - **Status**: "Prepare for Submission" (initially)
 
@@ -236,6 +236,6 @@ After creating the app:
 - **App Store Connect**: https://appstoreconnect.apple.com
 - **Apple Developer Portal**: https://developer.apple.com/account
 - **Bundle ID**: `com.inbharat.app`
-- **App Name**: "In Bharat"
+- **App Name**: "Indiyoura"
 - **Apple ID**: sgvrtechios@gmail.com
 - **Team ID**: 3W2M23K7G4

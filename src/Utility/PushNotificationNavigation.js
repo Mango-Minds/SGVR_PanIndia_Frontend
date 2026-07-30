@@ -121,9 +121,10 @@ export const registerForPushNotificationsAsync = async ({
 
 const sendPushNotificationHandler = async (token) => {
   try {
+    const headers = await authHeader();
     await axios(`${BASEAPIURL}/device-id`, {
       method: "POST",
-      headers: await authHeader(),
+      headers,
       data: { token },
     });
   } catch (err) {

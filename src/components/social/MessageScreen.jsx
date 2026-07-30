@@ -24,6 +24,7 @@ import Ionicons from "react-native-vector-icons/Ionicons";
 import MessageCard from "./MessageCard";
 import BottomNavigation from "./BottomNavigation";
 import JewelleryBottomTabBar from "../Jewellery/BottomTabBar";
+import DashboardBottomNavigation from "../dashboard/DashboardBottomNavigation";
 import { getImageUrl, getSocialMediaProfile } from "../../services/socialMedia.services";
 import { listUsers } from "../../Backup/queries";
 import { useDispatch, useSelector } from "react-redux";
@@ -51,12 +52,13 @@ export default function MessageScreen({ navigation, route, hideBottomNav = false
   const [userDp, setUserDp] = useState(null);
   const isJewellery =
     module === "jewellery" || route?.params?.module === "jewellery";
+  const isDashboard =
+    module === "dashboard" || route?.params?.module === "dashboard";
   const hideSocialNav =
     hideBottomNav ||
     route?.params?.hideBottomNav ||
     isJewellery ||
-    module === "dashboard" ||
-    route?.params?.module === "dashboard";
+    isDashboard;
 
   const updateStorageConvo = async () => {
     const convodata = await AsyncStorage.getItem("conversation");
@@ -314,6 +316,11 @@ export default function MessageScreen({ navigation, route, hideBottomNav = false
         <JewelleryBottomTabBar
           activeTab="message"
           onTabChange={handleJewelleryTabChange}
+        />
+      ) : isDashboard ? (
+        <DashboardBottomNavigation
+          navigation={navigation}
+          currentScreen="messages"
         />
       ) : !hideSocialNav ? (
         <BottomNavigation navigation={navigation} currentScreen="messages" />

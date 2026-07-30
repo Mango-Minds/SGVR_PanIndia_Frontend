@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import {
+  Image,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -127,8 +128,11 @@ export default function LoginScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flex: 1, justifyContent: "center" }}>
-        <Text style={styles.logoText}>In Bharat</Text>
-
+        {/* <Text style={styles.logoText}>Indiyoura</Text> */}
+        <Image
+              style={styles.logo}
+              source={require("../assets/images/pre-login/indiayoua-smallLogo.png")}
+            />  
         <FormSection>
           <FormSectionTitle>Login</FormSectionTitle>
 
