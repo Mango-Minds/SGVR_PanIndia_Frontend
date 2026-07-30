@@ -95,10 +95,10 @@ const BANNER_WIDTH = width - HORIZONTAL_PADDING * 2;
 const BANNER_HEIGHT = Math.round(BANNER_WIDTH * 0.62);
 const JEWELLERY_CARD_WIDTH = Math.round((width - HORIZONTAL_PADDING * 2 - CARD_GAP * 2) / 2.6);
 
-const showMatrimonyComingSoon = () => {
+const showComingSoon = (moduleName) => {
   Alert.alert(
     "Coming Soon",
-    "Matrimony module is coming soon. Stay tuned!"
+    `${moduleName} module is coming soon. Stay tuned!`
   );
 };
 
@@ -331,7 +331,7 @@ export default function DashboardScreen({ navigation }) {
       } else if (not.statusCode === "NOT003") {
         //chat screen navigation
       } else if (not.statusCode === "NOT004") {
-        showMatrimonyComingSoon();
+        showComingSoon("Matrimony");
       } else if (not.statusCode === "NOT007") {
         navigation.navigate("CommunityProfile", {
           communityId: not.community._id,
@@ -375,7 +375,7 @@ export default function DashboardScreen({ navigation }) {
 
   const handleModuleNavigation = (path, params) => {
     if (path === "Matrimony") {
-      showMatrimonyComingSoon();
+      showComingSoon("Matrimony");
       return;
     }
     if (!token && isAccountModule(path)) {
@@ -483,7 +483,8 @@ export default function DashboardScreen({ navigation }) {
   const bottomBarItems = [
     { label: "Social", icon: FLOATING_BAR_ICONS.people, action: "module", path: "SocialMedia" },
     { label: "Jewellery", icon: FLOATING_BAR_ICONS.diamond, action: "module", path: "Jewellery" },
-    { label: "Matrimony", icon: FLOATING_BAR_ICONS.heart, action: "comingSoon" },
+    { label: "Jobs", icon: FLOATING_BAR_ICONS.jobs, action: "comingSoon", moduleName: "Jobs" },
+    { label: "Matrimony", icon: FLOATING_BAR_ICONS.heart, action: "comingSoon", moduleName: "Matrimony" },
     { label: "Messages", icon: FLOATING_BAR_ICONS.messages, action: "messages" },
     { label: "Alerts", icon: FLOATING_BAR_ICONS.alerts, action: "notifications" },
   ];
@@ -492,7 +493,7 @@ export default function DashboardScreen({ navigation }) {
     if (item.action === "module") {
       handleModuleNavigation(item.path);
     } else if (item.action === "comingSoon") {
-      showMatrimonyComingSoon();
+      showComingSoon(item.moduleName || item.label);
     } else if (item.action === "messages") {
       handleAccountAction(
         () => navigation.navigate("MessageScreen"),
@@ -591,7 +592,7 @@ export default function DashboardScreen({ navigation }) {
                   resizeMode="cover"
                 />
                 <View style={styles.brandTextWrap}>
-                  <Text style={styles.brandName}>Indiyoura</Text>
+                  <Text style={styles.brandName}>In Bharat</Text>
                   <Text style={styles.brandTagline}>Discover India</Text>
                 </View>
               </View>

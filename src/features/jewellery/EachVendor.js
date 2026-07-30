@@ -26,9 +26,12 @@ import BottomNavigation from "../../components/Jewellery/BottomNavigation";
 import { useIsFocused } from "@react-navigation/native";
 
 const EachVendor = ({ route }) => {
-  const { vendorId, handleVendorConnect } = route.params;
-  const fromVendor = route.params.vendor;
-  const vendorUserId = fromVendor.owner._id;
+  const { vendorId, handleVendorConnect } = route.params || {};
+  const fromVendor = route.params?.vendor || {};
+  const vendorUserId =
+    fromVendor?.owner?._id ||
+    (typeof fromVendor?.owner === "string" ? fromVendor.owner : null) ||
+    fromVendor?._id;
 
   const token = useSelector((state) => state.user.token);
   const { user } = useSelector((state) => state.user);

@@ -29,9 +29,12 @@ const WINDOW_HEIGHT = Dimensions.get("window").height;
 
 const EachWorker = ({ route }) => {
   const navigation = useNavigation();
-  const {workerId} = route.params;
-  const fromWorker = route.params.worker;
-  const workerUserId = fromWorker.owner._id;
+  const {workerId} = route.params || {};
+  const fromWorker = route.params?.worker || {};
+  const workerUserId =
+    fromWorker?.owner?._id ||
+    (typeof fromWorker?.owner === "string" ? fromWorker.owner : null) ||
+    fromWorker?._id;
   console.log(workerId)
 
   const token = useSelector((state) => state.user.token);

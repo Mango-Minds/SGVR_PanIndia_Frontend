@@ -10,7 +10,6 @@ import Worker from "../../features/jewellery/Worker";
 import GemsStone from "../../features/jewellery/Gemstone";
 import Bullion from "../../features/jewellery/Bullions";
 import Tools from "../../features/jewellery/Tools";
-import JewelleryMainScreen from "../../features/jewellery/JewelleryMainScreen";
 import EachShopScreen from "../../features/jewellery/EachShopScreen";
 import EachShopAllProductsScreen from "../../features/jewellery/EachShopAllProductsScreen";
 import EachProduct from "../../features/jewellery/EachProduct";
@@ -48,9 +47,6 @@ import WorkerRegisterScreen from "../../features/WorkerRegistration";
 import EditWorkerRegisterScreen from "../../features/EditWorkerRegistration";
 import JewelleryEditUserRegisterScreen from "../../features/jewellery/EditUserRegistration";
 import MyAllStoreStockProduct from "../../features/jewellery/Store/MyAllStoreStock";
-import VendorHome from "../../features/jewellery/VendorHome";
-import WorkerHome from "../../features/jewellery/WorkerHome";
-
 import VendorsAllProductsScreen from "../../features/jewellery/VendorsAllProduct";
 import EachShopProfile from "../../features/jewellery/EachShopProfile";
 import EachVendor from "../../features/jewellery/EachVendor";
@@ -69,8 +65,6 @@ import BottomNavigation from "../../components/Jewellery/BottomNavigation";
 
 import EachGemologist from "../../features/jewellery/EachGemologist";
 import EachDesigner from "../../features/jewellery/EachDesigner";
-import DesignerHome from "../../features/jewellery/DesignerHome";
-import GemologistHome from "../../features/jewellery/GemologistHome";
 import MyAllToolProduct from "../../features/jewellery/Tools/AllmyTool";
 
 // New UI Screens
@@ -103,6 +97,8 @@ import StockItemDetailScreen from "../../features/jewellery/StockItemDetailScree
 import ShopEventCreate from "../../features/jewellery/ShopEventCreate";
 import ShopEvents from "../../features/jewellery/ShopEvents";
 import DirectoryScreen from "../../features/jewellery/DirectoryScreen";
+import ComingSoonScreen from "../../features/jewellery/ComingSoonScreen";
+import RedirectToJewelleryHome from "../../features/jewellery/RedirectToJewelleryHome";
 
 const Stack = createStackNavigator();
 
@@ -126,10 +122,11 @@ export const JewelleryStackNavigator = () => {
       initialRouteName={initialRouteName}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="VendorHome" component={VendorHome} />
-      <Stack.Screen name="WorkerHome" component={WorkerHome} />
-      <Stack.Screen name="DesignerHome" component={DesignerHome} />
-      <Stack.Screen name="GemologistHome" component={GemologistHome} />
+      {/* Legacy role homes → always land on new jewellery HomeScreen */}
+      <Stack.Screen name="VendorHome" component={RedirectToJewelleryHome} />
+      <Stack.Screen name="WorkerHome" component={RedirectToJewelleryHome} />
+      <Stack.Screen name="DesignerHome" component={RedirectToJewelleryHome} />
+      <Stack.Screen name="GemologistHome" component={RedirectToJewelleryHome} />
       <Stack.Screen
         name="JewelleryNotifications"
         component={JewelleryNotifications}
@@ -169,7 +166,7 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="Tools" component={Tools} />
       <Stack.Screen
         name="JewelleryMainScreen"
-        component={JewelleryMainScreen}
+        component={RedirectToJewelleryHome}
       />
       <Stack.Screen
         name="MyAllStoreStockProduct"
@@ -276,6 +273,15 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="WorkersScreen" component={DirectoryScreen} />
       <Stack.Screen name="DesignersScreen" component={DirectoryScreen} />
       <Stack.Screen name="GemologistScreen" component={DirectoryScreen} />
+
+      {/* Dashboard tiles not yet built — Coming Soon (prevents crash on missing routes) */}
+      <Stack.Screen name="ToolsScreen" component={ComingSoonScreen} initialParams={{ title: 'Tools' }} />
+      <Stack.Screen name="BullionScreen" component={ComingSoonScreen} initialParams={{ title: 'Bullion' }} />
+      <Stack.Screen name="GoldTestingCentresScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Testing Centres' }} />
+      <Stack.Screen name="GoldRefineryScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Refinery' }} />
+      <Stack.Screen name="LogisticsScreen" component={ComingSoonScreen} initialParams={{ title: 'Logistics' }} />
+      <Stack.Screen name="JobsScreen" component={ComingSoonScreen} initialParams={{ title: 'Jobs' }} />
+      <Stack.Screen name="GoldAssociationsScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Associations' }} />
 
       {/* Onboarding Screen */}
       <Stack.Screen name="OnboardModuleForm">

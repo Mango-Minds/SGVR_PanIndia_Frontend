@@ -48,7 +48,7 @@ export const floatingBottomBarStyles = StyleSheet.create({
     lineHeight: 12,
   },
   floatingBarText: {
-    fontSize: 10,
+    fontSize: 9,
     marginTop: 4,
     textAlign: "center",
     color: "#333",
@@ -67,6 +67,7 @@ export const FLOATING_BAR_ICONS = {
   search: "search",
   diamond: "diamond",
   heart: "heart",
+  jobs: "briefcase",
   messages: "chatbubble-ellipses",
   alerts: "notifications",
 };

@@ -8,33 +8,61 @@ import {
   TouchableOpacity,
 } from "react-native";
 import React from "react";
-
 import { IconButton } from "react-native-paper";
-
 import { TopText } from "../../styles/social.styles";
 import { useNavigation } from "@react-navigation/native";
 import { Container, RowBetween } from "../../styles/common.styles";
-const WINDOW_WIDTH = Dimensions.get("window").width;
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import { useSelector } from "react-redux";
 
+const WINDOW_WIDTH = Dimensions.get("window").width;
+
+const resolveOwner = (gemologist = {}) => {
+  if (gemologist.owner && typeof gemologist.owner === "object") {
+    return gemologist.owner;
+  }
+  return {
+    _id: gemologist.owner || gemologist._id || gemologist.id,
+    firstName:
+      gemologist.firstName ||
+      gemologist.name?.split?.(" ")?.[0] ||
+      gemologist.username?.split?.(" ")?.[0] ||
+      "",
+    lastName:
+      gemologist.lastName ||
+      gemologist.name?.split?.(" ")?.slice(1).join(" ") ||
+      gemologist.username?.split?.(" ")?.slice(1).join(" ") ||
+      "",
+    email: gemologist.email || "",
+    phone: gemologist.phone || "",
+    image: gemologist.image || gemologist.profileImage || "",
+    address: gemologist.address || "",
+  };
+};
+
 const EachGemologist = ({ route }) => {
   const navigation = useNavigation();
-  const { gemologist } = route.params;
-
+  const gemologist = route?.params?.gemologist ?? {};
+  const owner = resolveOwner(gemologist);
   const { user } = useSelector((state) => state.user);
 
-  const GemologistUserId = gemologist.owner._id;
+  const gemologistUserId = owner?._id;
+  const displayName =
+    `${owner.firstName || ""} ${owner.lastName || ""}`.trim() ||
+    gemologist.username ||
+    gemologist.name ||
+    "Gemologist";
+
+  const profileImage =
+    gemologist.profileImage || owner.image || gemologist.image || null;
 
   const handleMessagePress = () => {
-    const conversationId = [user._id, GemologistUserId].sort().join("_");
-    const toName =
-      `${gemologist.owner.firstName || ""} ${gemologist.owner.lastName || ""}`.trim() ||
-      "Gemologist";
+    if (!user?._id || !gemologistUserId) return;
+    const conversationId = [user._id, gemologistUserId].sort().join("_");
     navigation.navigate("ChatScreen", {
-      toid: GemologistUserId,
-      toName,
+      toid: gemologistUserId,
+      toName: displayName,
       index: 0,
       conversationId,
     });
@@ -53,17 +81,16 @@ const EachGemologist = ({ route }) => {
             Gemologist Details
           </TopText>
         </View>
-        <TouchableOpacity
-          style={style.chatButton}
-          onPress={handleMessagePress}
-        >
-          <IconButton icon="chat" size={30}></IconButton>
-        </TouchableOpacity>
+        {gemologistUserId ? (
+          <TouchableOpacity style={style.chatButton} onPress={handleMessagePress}>
+            <IconButton icon="chat" size={30} />
+          </TouchableOpacity>
+        ) : null}
       </RowBetween>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ padding: "4%" }}>
           <Text style={{ fontWeight: "700", fontSize: 22, opacity: 0.8 }}>
-            {gemologist.owner.firstName} {gemologist.owner.lastName}
+            {displayName}
           </Text>
           <Image
             style={{
@@ -74,13 +101,15 @@ const EachGemologist = ({ route }) => {
             }}
             resizeMode="contain"
             source={
-              gemologist.owner && gemologist.profileImage
+              profileImage
                 ? {
-                    uri: `${BASEIMGURL}${gemologist.profileImage}`,
+                    uri: profileImage.startsWith("http")
+                      ? profileImage
+                      : `${BASEIMGURL}${profileImage}`,
                   }
                 : UserImg
             }
-          ></Image>
+          />
 
           <View style={{ marginTop: "2%" }}>
             <Text
@@ -101,21 +130,21 @@ const EachGemologist = ({ route }) => {
                 fontWeight: "500",
               }}
             >
-              {gemologist.certifications}
+              {gemologist.certifications ||
+                gemologist.location ||
+                owner.address ||
+                "No details available"}
             </Text>
           </View>
 
           <View style={{ flexDirection: "column", marginTop: "8%" }}>
             <Text style={{ fontWeight: "bold", opacity: 0.8 }}>Email</Text>
-            <Text style={{ opacity: 0.7 }}>{gemologist.owner.email}</Text>
+            <Text style={{ opacity: 0.7 }}>{owner.email || "Not available"}</Text>
           </View>
 
           <View style={{ flexDirection: "column", marginTop: "8%" }}>
-            <View style={{ flexDirection: "column" }}>
-              <Text style={{ fontWeight: "bold", opacity: 0.7 }}>Phone No</Text>
-
-              <Text style={{ opacity: 1 }}>{gemologist.owner.phone}</Text>
-            </View>
+            <Text style={{ fontWeight: "bold", opacity: 0.7 }}>Phone No</Text>
+            <Text style={{ opacity: 1 }}>{owner.phone || "Not available"}</Text>
           </View>
         </View>
       </ScrollView>
@@ -133,35 +162,6 @@ const style = StyleSheet.create({
     bottom: -2,
     width: WINDOW_WIDTH,
   },
-  oldPrice: {
-    textDecorationLine: "line-through",
-    textDecorationStyle: "solid",
-    opacity: 0.9,
-    fontSize: 13,
-    color: "#D4AF37",
-    margin: "1%",
-  },
-  qq: {
-    marginTop: "3%",
-    backgroundColor: "#f7f1d5",
-    padding: "2%",
-    borderRadius: 9,
-    marginRight: "2%",
-  },
-  qqtxt: {
-    fontSize: 15,
-    color: "#D4AF37",
-    fontWeight: "600",
-    letterSpacing: 0.3,
-  },
-  eachJewelleryCardFooter: {
-    backgroundColor: "#D4AF37",
-    opacity: 0.8,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "3%",
-  },
-
   chatButton: {
     marginLeft: "auto",
     marginRight: 10,

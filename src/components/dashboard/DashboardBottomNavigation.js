@@ -17,10 +17,10 @@ import {
   FLOATING_BAR_INACTIVE_COLOR,
 } from "../../styles/floatingBottomBar.styles";
 
-const showMatrimonyComingSoon = () => {
+const showComingSoon = (moduleName) => {
   Alert.alert(
     "Coming Soon",
-    "Matrimony module is coming soon. Stay tuned!"
+    `${moduleName} module is coming soon. Stay tuned!`
   );
 };
 
@@ -40,10 +40,18 @@ const ITEMS = [
     path: "Jewellery",
   },
   {
+    key: "jobs",
+    label: "Jobs",
+    icon: FLOATING_BAR_ICONS.jobs,
+    action: "comingSoon",
+    moduleName: "Jobs",
+  },
+  {
     key: "matrimony",
     label: "Matrimony",
     icon: FLOATING_BAR_ICONS.heart,
     action: "comingSoon",
+    moduleName: "Matrimony",
   },
   {
     key: "messages",
@@ -72,8 +80,8 @@ export default function DashboardBottomNavigation({
     messageUnreadCount > 99 ? "99+" : String(messageUnreadCount);
 
   const handleModuleNavigation = (path) => {
-    if (path === "Matrimony") {
-      showMatrimonyComingSoon();
+    if (path === "Matrimony" || path === "Jobs") {
+      showComingSoon(path);
       return;
     }
     if (!token && isAccountModule(path)) {
@@ -97,7 +105,7 @@ export default function DashboardBottomNavigation({
     if (item.action === "module") {
       handleModuleNavigation(item.path);
     } else if (item.action === "comingSoon") {
-      showMatrimonyComingSoon();
+      showComingSoon(item.moduleName || item.label);
     } else if (item.action === "messages") {
       if (currentScreen === "messages") return;
       requireAuth({
