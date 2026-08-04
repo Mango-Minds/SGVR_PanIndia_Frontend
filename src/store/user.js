@@ -5,6 +5,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getUpdatedTokens} from "../services/auth.service";
 import authHeader from "../services/auth.header";
 import { BASEAPIURL } from "../infrastructure/constants";
+import {
+  applyAppLanguage,
+  resetToDefaultLanguage,
+  DEFAULT_LANGUAGE,
+} from "../features/i18n";
 //import { useSelector } from "react-redux";
 
 const slice = createSlice({
@@ -357,6 +362,9 @@ export const login =
         await AsyncStorage.setItem("loggedIn", "true");
         await AsyncStorage.removeItem("guestMode");
 
+        // Hybrid: apply this user's saved language (default English)
+        await applyAppLanguage(user?.preferredLanguage || DEFAULT_LANGUAGE);
+
         await dispatch(
           setInitialUser({
             user,
@@ -463,17 +471,15 @@ export const signup = (userData) => async (dispatch) => {
   try {
     const trimmedData = {
       ...userData,
-      firstName: userData.firstName.trim(),
-      lastName: userData.lastName.trim(),
-      email: userData.email.trim(),
-      password: userData.password.trim(),
-      phone: userData.phone.trim(),
-      // data.username = data.username.trim();
-      // Additional fields can be trimmed as needed
+      firstName: (userData.firstName || "").trim(),
+      lastName: (userData.lastName || "").trim(),
+      email: (userData.email || "").trim(),
+      password: (userData.password || "").trim(),
+      phone: (userData.phone || "").trim(),
     };
 
     const res = await axios.post(`${BASEAPIURL}/user/register`, trimmedData);
-    if (res.status === 201) {
+    if (res.status === 201 || res.status === 200) {
       // Handle successful response - registration completed without OTP
       await dispatch(
         setError({
@@ -642,10 +648,12 @@ export const initialUser = () => async (dispatch) => {
     if (loggedIn !== "true") {
       const guestMode = await AsyncStorage.getItem("guestMode");
       if (guestMode === "true") {
+        await resetToDefaultLanguage();
         dispatch(enterGuestModeSuccess());
         return;
       }
       console.log("User not logged in, clearing data");
+      await resetToDefaultLanguage();
       dispatch(logoutSuccess());
       dispatch(Isloading(false));
       return;
@@ -673,6 +681,9 @@ export const initialUser = () => async (dispatch) => {
         dispatch(logoutSuccess());
         return;
       }
+
+      // Hybrid: restore this user's language preference
+      await applyAppLanguage(user?.preferredLanguage || DEFAULT_LANGUAGE);
 
       dispatch(
         setInitialUser({
@@ -737,20 +748,11 @@ export const logout = () => async (dispatch) => {
       console.log("Backend logout failed, continuing with local logout:", apiError.message);
     }
 
-    // Clear all AsyncStorage data
+    // Clear all AsyncStorage data — do not keep previous user's language
     await AsyncStorage.clear();
-    
-    // Clear any additional stored data
-    await AsyncStorage.removeItem("token");
-    await AsyncStorage.removeItem("refresh_token");
-    await AsyncStorage.removeItem("user");
-    await AsyncStorage.removeItem("loggedIn");
-    await AsyncStorage.removeItem("conversation");
-    await AsyncStorage.removeItem("localChats");
-    await AsyncStorage.removeItem("notifications");
-    await AsyncStorage.removeItem("socialdata");
-    await AsyncStorage.removeItem("firsttime");
-    await AsyncStorage.removeItem("user-language");
+
+    // Hybrid: guests / logged-out → English
+    await resetToDefaultLanguage();
 
     // Clear Redux state - logoutSuccess already sets loading to false
     dispatch(logoutSuccess());
@@ -776,6 +778,7 @@ export const logout = () => async (dispatch) => {
     // Even if there's an error, clear local data
     try {
       await AsyncStorage.clear();
+      await resetToDefaultLanguage();
       dispatch(logoutSuccess());
       
       dispatch(
@@ -854,6 +857,7 @@ export const logout = () => async (dispatch) => {
 export const deleteAccountHandler = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");
   await AsyncStorage.removeItem("refresh_token");
+  await resetToDefaultLanguage();
   dispatch(logoutSuccess());
 };
 
@@ -863,6 +867,8 @@ export const enterGuestMode = () => async (dispatch) => {
   await AsyncStorage.removeItem("token");
   await AsyncStorage.removeItem("refresh_token");
   await AsyncStorage.removeItem("user");
+  // Hybrid: guest mode always uses English
+  await resetToDefaultLanguage();
   dispatch(enterGuestModeSuccess());
 };
 

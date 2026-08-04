@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import CarouselBanner from '../../components/Jewellery/CarouselBanner';
 import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -19,6 +20,7 @@ import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const JewellerysHomeScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -34,32 +36,35 @@ const JewellerysHomeScreen = () => {
   const [loadingRates, setLoadingRates] = useState(true);
 
   // Banner items for carousel
-  const bannerItems = [
-    {
-      title: 'Limited Deals',
-      subtitle: 'YOUR SPARKLE, OUR TREAT!',
-      offer: 'GET 100% OFF',
-      offerSubtext: 'making charges',
-      offerSubtext2: 'select Diamond Jewellery',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-    },
-    {
-      title: 'Premium Collection',
-      subtitle: 'EXQUISITE DESIGNS AWAIT',
-      offer: 'UP TO 50% OFF',
-      offerSubtext: 'on gold jewellery',
-      offerSubtext2: 'limited time offer',
-      image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=800&h=400&fit=crop',
-    },
-    {
-      title: 'New Arrivals',
-      subtitle: 'TRENDING NOW',
-      offer: 'FLAT 30% OFF',
-      offerSubtext: 'on diamond sets',
-      offerSubtext2: 'shop now',
-      image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=400&fit=crop',
-    },
-  ];
+  const bannerItems = useMemo(
+    () => [
+      {
+        title: t('jw_banner_limited_deals'),
+        subtitle: t('jw_banner_sparkle'),
+        offer: t('jw_banner_100_off'),
+        offerSubtext: t('jw_banner_making_charges'),
+        offerSubtext2: t('jw_banner_select_diamond'),
+        image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
+      },
+      {
+        title: t('jw_banner_premium'),
+        subtitle: t('jw_banner_exquisite'),
+        offer: t('jw_banner_50_off'),
+        offerSubtext: t('jw_banner_gold_jewellery'),
+        offerSubtext2: t('jw_banner_limited_offer'),
+        image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=800&h=400&fit=crop',
+      },
+      {
+        title: t('jw_banner_new_arrivals'),
+        subtitle: t('jw_banner_trending'),
+        offer: t('jw_banner_30_off'),
+        offerSubtext: t('jw_banner_diamond_sets'),
+        offerSubtext2: t('jw_banner_shop_now'),
+        image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=400&fit=crop',
+      },
+    ],
+    [t]
+  );
 
   const handleCategoryPress = (screen, message) => {
     requireAuth({
@@ -76,34 +81,34 @@ const JewellerysHomeScreen = () => {
   const categories = [
     {
       key: 'shops',
-      name: 'Shops',
+      name: t('jw_shops'),
       icon: 'storefront-outline',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('JewellerysScreen'),
     },
     {
       key: 'vendors',
-      name: 'Vendors',
+      name: t('jw_vendors'),
       icon: 'account-tie-outline',
       color: jewelleryColors.categoryBlue,
-      onPress: () => handleCategoryPress('VendorsScreen', 'Sign in to view vendors.'),
+      onPress: () => handleCategoryPress('VendorsScreen', t('jw_sign_in_vendors')),
     },
     {
       key: 'manufacture',
-      name: 'Manufacture',
+      name: t('jw_manufacture'),
       icon: 'palette-swatch-outline',
       color: jewelleryColors.categoryPurple,
-      onPress: () => handleCategoryPress('DesignersScreen', 'Sign in to view manufacture.'),
+      onPress: () => handleCategoryPress('DesignersScreen', t('jw_sign_in_manufacture')),
     },
     {
       key: 'karegars',
-      name: 'Karegars',
+      name: t('jw_karegars'),
       icon: 'account-hard-hat',
       color: jewelleryColors.categoryOrange,
-      onPress: () => handleCategoryPress('WorkersScreen', 'Sign in to view workers.'),
+      onPress: () => handleCategoryPress('WorkersScreen', t('jw_sign_in_workers')),
     },{
       key: 'product requirement',
-      name: 'Product requirement',
+      name: t('jw_product_requirement'),
       icon: 'clipboard-list-outline',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('ProductRequirementsScreen'),
@@ -174,7 +179,7 @@ const JewellerysHomeScreen = () => {
         <CarouselBanner items={bannerItems} />
 
         <View style={styles.screenTitleContainer}>
-          <Text style={styles.screenTitle}>JEWELLERY HOME</Text>
+          <Text style={styles.screenTitle}>{t('jw_jewellery_home')}</Text>
         </View>
 
         {/* Category Grid */}

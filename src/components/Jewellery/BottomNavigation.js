@@ -2,6 +2,7 @@ import React from "react";
 import { View, Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
+import { useTranslation } from "react-i18next";
 import useMessageUnreadBadge from "../../hooks/useMessageUnreadBadge";
 import {
   floatingBottomBarStyles as styles,
@@ -12,6 +13,7 @@ import {
 } from "../../styles/floatingBottomBar.styles";
 
 export default function BottomNavigation({ navigation, currentScreen = "home" }) {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const messageUnreadCount = useMessageUnreadBadge();
   const messageBadgeLabel =
@@ -20,25 +22,25 @@ export default function BottomNavigation({ navigation, currentScreen = "home" })
   const items = [
     {
       key: "home",
-      label: "Home",
+      labelKey: "home",
       icon: FLOATING_BAR_ICONS.home,
       onPress: () => navigation.navigate("HomeScreen"),
     },
     {
       key: "profile",
-      label: "Profile",
+      labelKey: "profile",
       icon: FLOATING_BAR_ICONS.person,
       onPress: () => navigation.navigate("MyProfile"),
     },
     {
       key: "search",
-      label: "Search",
+      labelKey: "search",
       icon: FLOATING_BAR_ICONS.search,
       onPress: () => navigation.navigate("BrowseScreen"),
     },
     {
       key: "messages",
-      label: "Messages",
+      labelKey: "messages",
       icon: FLOATING_BAR_ICONS.messages,
       badgeCount: messageUnreadCount,
       badgeLabel: messageBadgeLabel,
@@ -46,7 +48,7 @@ export default function BottomNavigation({ navigation, currentScreen = "home" })
     },
     {
       key: "notifications",
-      label: "Alerts",
+      labelKey: "alerts",
       icon: FLOATING_BAR_ICONS.alerts,
       onPress: () =>
         navigation.navigate("JewelleryNotifications", {
@@ -64,6 +66,7 @@ export default function BottomNavigation({ navigation, currentScreen = "home" })
       ]}
     >
       {items.map((item) => {
+        const label = t(item.labelKey);
         const active = currentScreen === item.key;
         const color = active
           ? FLOATING_BAR_ACTIVE_COLOR
@@ -75,7 +78,7 @@ export default function BottomNavigation({ navigation, currentScreen = "home" })
             style={styles.floatingBarItem}
             onPress={item.onPress}
             accessibilityRole="button"
-            accessibilityLabel={item.label}
+            accessibilityLabel={label}
           >
             <View style={styles.floatingBarIconWrap}>
               <Ionicons
@@ -95,7 +98,7 @@ export default function BottomNavigation({ navigation, currentScreen = "home" })
                 active && styles.floatingBarTextActive,
               ]}
             >
-              {item.label}
+              {label}
             </Text>
           </TouchableOpacity>
         );

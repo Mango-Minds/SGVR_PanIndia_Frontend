@@ -436,7 +436,7 @@ const { t } = useTranslation();
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'We need access to your gallery.');
+        Alert.alert(t('permission_required'), t('gallery_permission'));
         return;
       }
       const result = await ImagePicker.launchImageLibraryAsync({
@@ -465,7 +465,7 @@ const { t } = useTranslation();
         } catch (uploadErr) {
           console.error('pickMomentMedia error', uploadErr);
           // Handle different error types
-          let errorMessage = 'Failed to upload moment. Please try again.';
+          let errorMessage = t('moment_upload_failed');
           
           if (uploadErr.response) {
             // Server responded with error status
@@ -473,25 +473,25 @@ const { t } = useTranslation();
             const serverMessage = uploadErr.response?.data?.message;
             
             if (status === 500) {
-              errorMessage = serverMessage || 'Server error occurred. Please try again later.';
+              errorMessage = serverMessage || t('server_error_retry');
             } else if (status === 413) {
-              errorMessage = 'File is too large. Please choose a smaller file.';
+              errorMessage = t('file_too_large');
             } else if (status === 400) {
-              errorMessage = serverMessage || 'Invalid file format. Please choose an image or video.';
+              errorMessage = serverMessage || t('invalid_media_format');
             } else if (status === 401) {
-              errorMessage = 'Session expired. Please log in again.';
+              errorMessage = t('session_expired');
             } else {
-              errorMessage = serverMessage || `Upload failed (${status}). Please try again.`;
+              errorMessage = serverMessage || t('moment_upload_failed');
             }
           } else if (uploadErr.request) {
             // Request was made but no response received
-            errorMessage = 'Network error. Please check your internet connection.';
+            errorMessage = t('network_error_retry');
           } else {
             // Something else happened
-            errorMessage = uploadErr.message || 'An unexpected error occurred.';
+            errorMessage = uploadErr.message || t('something_went_wrong_short');
           }
           
-          Alert.alert('Upload Failed', errorMessage);
+          Alert.alert(t('upload_failed'), errorMessage);
         } finally {
           setIsUploadingMoment(false);
         }
@@ -500,9 +500,9 @@ const { t } = useTranslation();
       console.error('pickMomentMedia error', err);
       // Handle permission or image picker errors
       if (err.code === 'E_PERMISSION_DENIED') {
-        Alert.alert('Permission Denied', 'We need access to your gallery to upload moments.');
+        Alert.alert(t('permission_denied'), t('gallery_permission_moments'));
       } else {
-        Alert.alert('Error', 'Failed to pick media. Please try again.');
+        Alert.alert(t('error'), t('pick_media_failed'));
       }
     }
   };

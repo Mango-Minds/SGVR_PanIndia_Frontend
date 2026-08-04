@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
@@ -19,6 +20,7 @@ import { getFollowers, getFollowing, unfollowUser, getShopByOwner } from '../../
 import { BASEIMGURL } from '../../infrastructure/constants';
 
 const FollowersFollowingScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const { type, userId } = route.params; // 'Followers' or 'Following', and userId
@@ -29,6 +31,8 @@ const FollowersFollowingScreen = () => {
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
+
+  const typeLabel = type === 'Followers' ? t('followers') : t('following');
 
   const fetchData = useCallback(async (pageNum = 1, isRefresh = false) => {
     try {
@@ -65,13 +69,13 @@ const FollowersFollowingScreen = () => {
       setHasMore(pageNum < totalPages);
     } catch (error) {
       console.error(`Error fetching ${type.toLowerCase()}:`, error);
-      Alert.alert('Error', `Failed to load ${type.toLowerCase()}`);
+      Alert.alert(t('error'), t('jw_load_type_error', { type: typeLabel.toLowerCase() }));
       setHasMore(false);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [type, userId]);
+  }, [type, userId, t, typeLabel]);
 
   useFocusEffect(
     useCallback(() => {
@@ -95,22 +99,22 @@ const FollowersFollowingScreen = () => {
 
   const handleUnfollow = async (targetUserId) => {
     Alert.alert(
-      'Unfollow User',
-      'Are you sure you want to unfollow this user?',
+      t('jw_unfollow_user'),
+      t('jw_unfollow_msg'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('cancel'), style: 'cancel' },
         {
-          text: 'Unfollow',
+          text: t('jw_unfollow'),
           style: 'destructive',
           onPress: async () => {
             try {
               await unfollowUser(targetUserId);
               setData(prev => prev.filter(user => user._id !== targetUserId));
               setTotalCount(prev => Math.max(0, prev - 1));
-              Alert.alert('Success', 'Unfollowed successfully');
+              Alert.alert(t('success'), t('jw_unfollowed_success'));
             } catch (error) {
               console.error('Error unfollowing user:', error);
-              Alert.alert('Error', 'Failed to unfollow user');
+              Alert.alert(t('error'), t('jw_unfollow_error'));
             }
           },
         },
@@ -149,7 +153,7 @@ const FollowersFollowingScreen = () => {
   const renderItem = ({ item }) => {
     const userName = item.firstName && item.lastName
       ? `${item.firstName} ${item.lastName}`
-      : item.email || 'User';
+      : item.email || t('jw_user');
     
     const userImage = item.image
       ? `${BASEIMGURL}${item.image}`
@@ -181,7 +185,7 @@ const FollowersFollowingScreen = () => {
             style={styles.unfollowButton}
             onPress={() => handleUnfollow(item._id)}
           >
-            <Text style={styles.unfollowText}>Unfollow</Text>
+            <Text style={styles.unfollowText}>{t('jw_unfollow')}</Text>
           </TouchableOpacity>
         )}
       </TouchableOpacity>
@@ -193,8 +197,8 @@ const FollowersFollowingScreen = () => {
       <Icon name="people-outline" size={64} color={jewelleryColors.textSecondary} />
       <Text style={styles.emptyText}>
         {type === 'Followers'
-          ? 'No followers yet'
-          : 'Not following anyone yet'}
+          ? t('jw_no_followers_yet')
+          : t('jw_not_following_yet')}
       </Text>
     </View>
   );
@@ -211,9 +215,9 @@ const FollowersFollowingScreen = () => {
           <Icon name="arrow-back" size={24} color={jewelleryColors.text} />
         </TouchableOpacity>
         <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>{type}</Text>
+          <Text style={styles.headerTitle}>{typeLabel}</Text>
           {totalCount > 0 && (
-            <Text style={styles.headerSubtitle}>{totalCount} {type.toLowerCase()}</Text>
+            <Text style={styles.headerSubtitle}>{totalCount} {typeLabel.toLowerCase()}</Text>
           )}
         </View>
         <View style={styles.headerRight} />
@@ -222,7 +226,7 @@ const FollowersFollowingScreen = () => {
       {loading && data.length === 0 ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.loadingText}>Loading {type.toLowerCase()}...</Text>
+          <Text style={styles.loadingText}>{t('jw_loading_type', { type: typeLabel.toLowerCase() })}</Text>
         </View>
       ) : (
         <FlatList
@@ -366,4 +370,3 @@ const styles = StyleSheet.create({
 });
 
 export default FollowersFollowingScreen;
-

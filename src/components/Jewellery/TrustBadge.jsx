@@ -1,19 +1,22 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography } from '../../styles/jewellery.styles';
 
 const TrustBadge = ({ type }) => {
+  const { t } = useTranslation();
+
   const getIconAndLabel = () => {
     switch (type) {
       case 'certified':
-        return { icon: 'verified', label: 'Certified' };
+        return { icon: 'verified', label: t('jw_certified') };
       case 'shipping':
-        return { icon: 'local-shipping', label: 'Free Shipping' };
+        return { icon: 'local-shipping', label: t('jw_free_shipping') };
       case 'return':
-        return { icon: 'refresh', label: 'Easy return' };
+        return { icon: 'refresh', label: t('jw_easy_return') };
       default:
-        return { icon: 'check-circle', label: 'Trusted' };
+        return { icon: 'check-circle', label: t('jw_trusted') };
     }
   };
 
@@ -49,5 +52,3 @@ const styles = StyleSheet.create({
 });
 
 export default TrustBadge;
-
-

@@ -18,6 +18,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { useTranslation } from 'react-i18next';
 import { setLoadingInBtn } from '../../store/user';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { BASEAPIURL } from '../../infrastructure/constants';
@@ -53,6 +54,7 @@ const buildImageFormPart = (asset, fallbackName = 'image.jpg') => {
 };
 
 const EditShopScreen = () => {
+  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -131,7 +133,7 @@ const EditShopScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching shop:', error);
-      Alert.alert('Error', 'Failed to load shop details');
+      Alert.alert(t('error'), t('jw_load_shop_error'));
     } finally {
       setLoading(false);
     }
@@ -140,7 +142,7 @@ const EditShopScreen = () => {
   const ensureMediaPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Please allow photo library access to update images.');
+      Alert.alert(t('jw_permission_needed'), t('jw_photo_library_permission'));
       return false;
     }
     return true;
@@ -186,7 +188,7 @@ const EditShopScreen = () => {
 
   const handleUpdateShop = async () => {
     if (!shopDetails.name || !shopDetails.address || !shopDetails.city || !shopDetails.state) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert(t('error'), t('jw_fill_required_fields'));
       return;
     }
 
@@ -244,16 +246,16 @@ const EditShopScreen = () => {
         throw new Error(
           errorData.message ||
             errorData.msg ||
-            'Failed to update shop. Please try again.'
+            t('jw_shop_update_error')
         );
       }
 
       Alert.alert(
-        'Success',
-        'Shop updated successfully',
+        t('success'),
+        t('jw_shop_updated'),
         [
           {
-            text: 'OK',
+            text: t('ok'),
             onPress: () => {
               navigation.navigate('ShopDetailScreen', { shopId });
             },
@@ -264,17 +266,17 @@ const EditShopScreen = () => {
     } catch (error) {
       console.error('Error updating shop:', error);
       dispatch(setLoadingInBtn(false));
-      Alert.alert('Error', error.message || 'Failed to update shop. Please try again.');
+      Alert.alert(t('error'), error.message || t('jw_shop_update_error'));
     }
   };
 
   if (loading) {
     return (
       <SafeAreaView style={commonStyles.container} edges={['top']}>
-        <HeaderBar showBack onBackPress={handleBackPress} />
+        <HeaderBar showBack title={t('edit_shop_profile')} onBackPress={handleBackPress} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.loadingText}>Loading shop details...</Text>
+          <Text style={styles.loadingText}>{t('jw_loading_shop_details')}</Text>
         </View>
       </SafeAreaView>
     );
@@ -286,7 +288,7 @@ const EditShopScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack onBackPress={handleBackPress} />
+      <HeaderBar showBack title={t('edit_shop_profile')} onBackPress={handleBackPress} />
       <Provider>
         <KeyboardAvoidingView
           style={{ flex: 1 }}
@@ -299,7 +301,7 @@ const EditShopScreen = () => {
           >
             <View style={styles.container}>
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Shop Profile Image</Text>
+                <Text style={styles.sectionTitle}>{t('jw_shop_profile_image')}</Text>
                 <TouchableOpacity
                   style={styles.profileImageContainer}
                   onPress={pickProfileImage}
@@ -310,7 +312,7 @@ const EditShopScreen = () => {
                     <View style={styles.profileImagePlaceholder}>
                       <Icon name="store" size={40} color={jewelleryColors.textSecondary} />
                       <Text style={styles.profileImageText} numberOfLines={2}>
-                        Add Profile Image
+                        {t('jw_add_profile_image')}
                       </Text>
                     </View>
                   )}
@@ -321,11 +323,11 @@ const EditShopScreen = () => {
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Shop Information</Text>
+                <Text style={styles.sectionTitle}>{t('jw_shop_information')}</Text>
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Shop Name *"
+                  placeholder={`${t('jw_shop_name')} *`}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   value={shopDetails.name}
                   onChangeText={(text) =>
@@ -335,7 +337,7 @@ const EditShopScreen = () => {
 
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder="Description"
+                  placeholder={t('jw_description')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   multiline
                   numberOfLines={4}
@@ -347,7 +349,7 @@ const EditShopScreen = () => {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Address *"
+                  placeholder={`${t('jw_address')} *`}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   value={shopDetails.address}
                   onChangeText={(text) =>
@@ -360,9 +362,9 @@ const EditShopScreen = () => {
                   onSelect={(selectedItem) => {
                     setShopDetails({ ...shopDetails, state: selectedItem, city: '' });
                   }}
-                  buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select State'}
+                  buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_state')}
                   rowTextForSelection={(item) => item}
-                  defaultButtonText={shopDetails.state || 'Select State'}
+                  defaultButtonText={shopDetails.state || t('jw_select_state')}
                   buttonStyle={styles.dropdownButton}
                   buttonTextStyle={styles.dropdownButtonText}
                 />
@@ -373,9 +375,9 @@ const EditShopScreen = () => {
                     onSelect={(selectedItem) => {
                       setShopDetails({ ...shopDetails, city: selectedItem });
                     }}
-                    buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select City'}
+                    buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_city')}
                     rowTextForSelection={(item) => item}
-                    defaultButtonText={shopDetails.city || 'Select City'}
+                    defaultButtonText={shopDetails.city || t('jw_select_city')}
                     buttonStyle={styles.dropdownButton}
                     buttonTextStyle={styles.dropdownButtonText}
                   />
@@ -383,7 +385,7 @@ const EditShopScreen = () => {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Pincode"
+                  placeholder={t('jw_pincode')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   keyboardType="numeric"
                   value={shopDetails.pincode}
@@ -394,7 +396,7 @@ const EditShopScreen = () => {
               </View>
 
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Gallery Images</Text>
+                <Text style={styles.sectionTitle}>{t('jw_gallery_images')}</Text>
                 <View style={styles.imageContainer}>
                   {allGalleryImages.map((image, index) => (
                     <View key={`${image.uri}-${index}`} style={styles.imageWrapper}>
@@ -413,7 +415,7 @@ const EditShopScreen = () => {
                       onPress={pickGalleryImage}
                     >
                       <Icon name="add" size={32} color={jewelleryColors.primary} />
-                      <Text style={styles.addImageText}>Add Image</Text>
+                      <Text style={styles.addImageText}>{t('jw_add_image')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -427,7 +429,7 @@ const EditShopScreen = () => {
                 {loadingInBtn ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>Update Shop</Text>
+                  <Text style={styles.submitButtonText}>{t('jw_update_shop')}</Text>
                 )}
               </TouchableOpacity>
             </View>

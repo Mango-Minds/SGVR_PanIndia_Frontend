@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import Theme from "../styles/theme";
 import { Checkbox } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { SafeArea } from "../components/utility/safe-area.component";
 import {
   FormButton,
@@ -33,6 +34,7 @@ const styles = StyleSheet.create({
 });
 
 export default function ResetPasswordScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const { loadingInBtn } = useSelector((state) => state.user);
 
   const [hidePass, setHidePass] = useState(true);
@@ -57,7 +59,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: "Password and Confirm Password does not match",
+            msg: t("password_mismatch"),
             type: "error",
           })
         );
@@ -73,7 +75,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
           dispatch(
             ErrorToggle({
               toggle: true,
-              msg: "Password changed successfully",
+              msg: t("password_changed_success"),
               type: "success",
             })
           );
@@ -82,7 +84,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
           dispatch(
             ErrorToggle({
               toggle: true,
-              msg: res.message || "Failed to change password",
+              msg: res.message || t("password_change_failed"),
               type: "error",
             })
           );
@@ -92,7 +94,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
       dispatch(
         ErrorToggle({
           toggle: true,
-          msg: "Password and Confirm Password field cannot be empty",
+          msg: t("password_fields_empty"),
           type: "error",
         })
       );
@@ -118,14 +120,14 @@ export default function ResetPasswordScreen({ route, navigation }) {
         />
 
         <FormSection>
-          <FormSectionTitle>Reset Password</FormSectionTitle>
-          <FormSectionSubtitle>Please set the new password</FormSectionSubtitle>
+          <FormSectionTitle>{t("reset_password")}</FormSectionTitle>
+          <FormSectionSubtitle>{t("reset_password_subtitle")}</FormSectionSubtitle>
 
           <View style={{ position: "relative" }}>
             <LoginInputField
               placeholderTextColor="#9B9B9B"
               underlineColor="transparent"
-              placeholder="New Password"
+              placeholder={t("new_password")}
               selectionColor={Theme.themeColor}
               activeUnderlineColor={Theme.themeColor}
               secureTextEntry={hidePass ? true : false}
@@ -156,7 +158,7 @@ export default function ResetPasswordScreen({ route, navigation }) {
             <LoginInputField
               placeholderTextColor="#9B9B9B"
               underlineColor="transparent"
-              placeholder="Confirm Password"
+              placeholder={t("confirm_password")}
               selectionColor={Theme.themeColor}
               activeUnderlineColor={Theme.themeColor}
               secureTextEntry={hideConfirmPass ? true : false}
@@ -194,11 +196,10 @@ export default function ResetPasswordScreen({ route, navigation }) {
                     alignItems: "center",
                     flex: 1,
                   }}
-                  // size={"large"}
                   color={"white"}
                 />
               ) : (
-                "Change Password"
+                t("change_password")
               )}
             </Text>
           </FormButton>

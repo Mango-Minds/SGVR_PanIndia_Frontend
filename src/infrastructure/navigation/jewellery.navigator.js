@@ -275,13 +275,13 @@ export const JewelleryStackNavigator = () => {
       <Stack.Screen name="GemologistScreen" component={DirectoryScreen} />
 
       {/* Dashboard tiles not yet built — Coming Soon (prevents crash on missing routes) */}
-      <Stack.Screen name="ToolsScreen" component={ComingSoonScreen} initialParams={{ title: 'Tools' }} />
-      <Stack.Screen name="BullionScreen" component={ComingSoonScreen} initialParams={{ title: 'Bullion' }} />
-      <Stack.Screen name="GoldTestingCentresScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Testing Centres' }} />
-      <Stack.Screen name="GoldRefineryScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Refinery' }} />
-      <Stack.Screen name="LogisticsScreen" component={ComingSoonScreen} initialParams={{ title: 'Logistics' }} />
-      <Stack.Screen name="JobsScreen" component={ComingSoonScreen} initialParams={{ title: 'Jobs' }} />
-      <Stack.Screen name="GoldAssociationsScreen" component={ComingSoonScreen} initialParams={{ title: 'Gold Associations' }} />
+      <Stack.Screen name="ToolsScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_tools' }} />
+      <Stack.Screen name="BullionScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_bullion' }} />
+      <Stack.Screen name="GoldTestingCentresScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_gold_testing_centres' }} />
+      <Stack.Screen name="GoldRefineryScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_gold_refinery' }} />
+      <Stack.Screen name="LogisticsScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_logistics' }} />
+      <Stack.Screen name="JobsScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jobs' }} />
+      <Stack.Screen name="GoldAssociationsScreen" component={ComingSoonScreen} initialParams={{ titleKey: 'jw_gold_associations' }} />
 
       {/* Onboarding Screen */}
       <Stack.Screen name="OnboardModuleForm">

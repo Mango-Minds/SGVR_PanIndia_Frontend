@@ -7,8 +7,10 @@ import { getImageUrl } from "../../services/socialMedia.services";
 import { useNavigation } from "@react-navigation/native";
 import { deleteComment } from "../../services/socialMedia.services";
 import moment from "moment";
+import { useTranslation } from "react-i18next";
 
 export default function CommentCard(props) {
+  const { t } = useTranslation();
   const { user } = useSelector((state) => state.user);
   const { comment, postId, onCommentDeleted } = props;
   const [menuVisible, setMenuVisible] = useState(false);
@@ -62,17 +64,17 @@ export default function CommentCard(props) {
 
   const handleDeleteComment = async () => {
     if (!postId || !commentId) {
-      Alert.alert("Error", "Cannot delete comment: Missing data");
+      Alert.alert(t("error"), t("comment_missing_data"));
       return;
     }
 
     Alert.alert(
-      "Delete Comment",
-      "Are you sure you want to delete this comment?",
+      t("deleteComment"),
+      t("deleteCommentConfirmation"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -81,11 +83,11 @@ export default function CommentCard(props) {
               if (response.status === 0) {
                 onCommentDeleted && onCommentDeleted(commentId);
               } else {
-                Alert.alert("Error", response.message || "Failed to delete comment");
+                Alert.alert(t("error"), response.message || t("failed_delete_comment"));
               }
             } catch (error) {
               console.error("Error deleting comment:", error);
-              Alert.alert("Error", "Failed to delete comment");
+              Alert.alert(t("error"), t("failed_delete_comment"));
             } finally {
               setDeleting(false);
               setMenuVisible(false);

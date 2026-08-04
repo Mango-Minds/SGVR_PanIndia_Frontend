@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
 import VerifiedBadge from './VerifiedBadge';
@@ -16,6 +17,7 @@ const ShopCard = ({
   isVerified = true,
   onPress,
 }) => {
+  const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
 
   useEffect(() => {
@@ -71,7 +73,7 @@ const ShopCard = ({
           <Icon name="star" size={16} color={jewelleryColors.primary} />
           <Text style={styles.rating}>
             <Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-            <Text style={styles.reviewText}> ({reviewCount} Reviews)</Text>
+            <Text style={styles.reviewText}> {t('jw_reviews_count', { count: reviewCount })}</Text>
           </Text>
         </View>
 

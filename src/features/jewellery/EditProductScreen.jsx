@@ -15,6 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { IconButton, Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
@@ -25,6 +26,7 @@ import HeaderBar from '../../components/Jewellery/HeaderBar';
 import SelectDropdown from 'react-native-select-dropdown';
 
 const EditProductScreen = () => {
+  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -83,8 +85,8 @@ const EditProductScreen = () => {
       if (!response.ok) {
         throw new Error(
           isRequirement
-            ? 'Failed to fetch requirement details'
-            : 'Failed to fetch product details'
+            ? t('jw_fetch_requirement_error')
+            : t('jw_fetch_product_error')
         );
       }
 
@@ -117,10 +119,10 @@ const EditProductScreen = () => {
     } catch (error) {
       console.error('Error fetching product:', error);
       Alert.alert(
-        'Error',
+        t('error'),
         isRequirement
-          ? 'Failed to load requirement details'
-          : 'Failed to load product details'
+          ? t('jw_load_requirement_error')
+          : t('jw_load_product_error')
       );
     } finally {
       setLoading(false);
@@ -151,12 +153,12 @@ const EditProductScreen = () => {
   const handleUpdateProduct = async () => {
     // Validation
     if (!productDetails.name || !productDetails.price || !productDetails.description) {
-      Alert.alert('Error', 'Please fill in all required fields');
+      Alert.alert(t('error'), t('jw_fill_required_fields'));
       return;
     }
 
     if (existingImages.length === 0 && selectedImages.length === 0) {
-      Alert.alert('Error', 'Please add at least one product image');
+      Alert.alert(t('error'), t('jw_add_at_least_one_image'));
       return;
     }
 
@@ -218,7 +220,7 @@ const EditProductScreen = () => {
         throw new Error(
           errorData.msg ||
             errorData.message ||
-            (isRequirement ? 'Failed to update requirement' : 'Failed to update product')
+            (isRequirement ? t('jw_update_requirement_error') : t('jw_update_product_error'))
         );
       }
 
@@ -226,13 +228,13 @@ const EditProductScreen = () => {
       console.log('Updated successfully:', data);
 
       Alert.alert(
-        'Success',
+        t('success'),
         isRequirement
-          ? 'Product requirement updated successfully'
-          : 'Product updated successfully',
+          ? t('jw_update_requirement_success')
+          : t('jw_update_product_success'),
         [
           {
-            text: 'OK',
+            text: t('ok'),
             onPress: () => {
               navigation.goBack();
             },
@@ -244,9 +246,9 @@ const EditProductScreen = () => {
       console.error('Error updating product:', error);
       dispatch(setLoadingInBtn(false));
       Alert.alert(
-        'Error',
+        t('error'),
         error.message ||
-          (isRequirement ? 'Failed to update requirement' : 'Failed to update product')
+          (isRequirement ? t('jw_update_requirement_error') : t('jw_update_product_error'))
       );
     }
   };
@@ -256,13 +258,13 @@ const EditProductScreen = () => {
       <SafeAreaView style={commonStyles.container} edges={['top']}>
         <HeaderBar
           showBack
-          title={isRequirement ? 'Edit Requirement' : 'Edit Product'}
+          title={isRequirement ? t('jw_edit_requirement') : t('jw_edit_product')}
           onBackPress={handleBackPress}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
           <Text style={styles.loadingText}>
-            {isRequirement ? 'Loading requirement...' : 'Loading product details...'}
+            {isRequirement ? t('jw_loading_requirement') : t('jw_loading_product_details')}
           </Text>
         </View>
       </SafeAreaView>
@@ -275,7 +277,7 @@ const EditProductScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar
         showBack
-        title={isRequirement ? 'Edit Requirement' : 'Edit Product'}
+        title={isRequirement ? t('jw_edit_requirement') : t('jw_edit_product')}
         onBackPress={handleBackPress}
       />
       <Provider>
@@ -291,7 +293,7 @@ const EditProductScreen = () => {
             <View style={styles.container}>
               {/* Image Selection */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Product Images</Text>
+                <Text style={styles.sectionTitle}>{t('jw_product_images')}</Text>
                 <View style={styles.imageContainer}>
                   {allImages.map((image, index) => (
                     <View key={index} style={styles.imageWrapper}>
@@ -310,7 +312,7 @@ const EditProductScreen = () => {
                   {allImages.length < 6 && (
                     <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
                       <Icon name="add" size={32} color={jewelleryColors.primary} />
-                      <Text style={styles.addImageText}>Add Image</Text>
+                      <Text style={styles.addImageText}>{t('jw_add_image')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -318,11 +320,11 @@ const EditProductScreen = () => {
 
               {/* Product Details Form */}
               <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Product Details</Text>
+                <Text style={styles.sectionTitle}>{t('jw_product_details')}</Text>
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Product Name *"
+                  placeholder={t('jw_product_name_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   value={productDetails.name}
                   onChangeText={(text) =>
@@ -332,7 +334,7 @@ const EditProductScreen = () => {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Price (₹) *"
+                  placeholder={t('jw_price_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   keyboardType="numeric"
                   value={productDetails.price}
@@ -346,9 +348,9 @@ const EditProductScreen = () => {
                   onSelect={(selectedItem) => {
                     setProductDetails({ ...productDetails, category: selectedItem });
                   }}
-                  buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Category'}
+                  buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_category')}
                   rowTextForSelection={(item) => item}
-                  defaultButtonText={productDetails.category || 'Select Category'}
+                  defaultButtonText={productDetails.category || t('jw_select_category')}
                   buttonStyle={styles.dropdownButton}
                   buttonTextStyle={styles.dropdownButtonText}
                 />
@@ -358,16 +360,16 @@ const EditProductScreen = () => {
                   onSelect={(selectedItem) => {
                     setProductDetails({ ...productDetails, condition: selectedItem });
                   }}
-                  buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Condition'}
+                  buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_condition')}
                   rowTextForSelection={(item) => item}
-                  defaultButtonText={productDetails.condition || 'Select Condition'}
+                  defaultButtonText={productDetails.condition || t('jw_select_condition')}
                   buttonStyle={styles.dropdownButton}
                   buttonTextStyle={styles.dropdownButtonText}
                 />
 
                 <TextInput
                   style={[styles.input, styles.textArea]}
-                  placeholder="Description *"
+                  placeholder={t('jw_description_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   multiline
                   numberOfLines={4}
@@ -379,7 +381,7 @@ const EditProductScreen = () => {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Quantity"
+                  placeholder={t('jw_quantity_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   keyboardType="numeric"
                   value={productDetails.quantity}
@@ -393,16 +395,16 @@ const EditProductScreen = () => {
                   onSelect={(selectedItem) => {
                     setProductDetails({ ...productDetails, quality: selectedItem });
                   }}
-                  buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Quality'}
+                  buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_quality')}
                   rowTextForSelection={(item) => item}
-                  defaultButtonText={productDetails.quality || 'Select Quality'}
+                  defaultButtonText={productDetails.quality || t('jw_select_quality')}
                   buttonStyle={styles.dropdownButton}
                   buttonTextStyle={styles.dropdownButtonText}
                 />
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Weight per Product (grams)"
+                  placeholder={t('jw_weight_per_product_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   keyboardType="numeric"
                   value={productDetails.weightPerProduct}
@@ -413,7 +415,7 @@ const EditProductScreen = () => {
 
                 <TextInput
                   style={styles.input}
-                  placeholder="Gold Available (e.g., 14K, 18K, 22K)"
+                  placeholder={t('jw_gold_available_ph')}
                   placeholderTextColor={jewelleryColors.textSecondary}
                   value={productDetails.goldAvailable}
                   onChangeText={(text) =>
@@ -425,7 +427,7 @@ const EditProductScreen = () => {
                   <>
                     <TextInput
                       style={styles.input}
-                      placeholder="Phone Number"
+                      placeholder={t('jw_phone_number_ph')}
                       placeholderTextColor={jewelleryColors.textSecondary}
                       keyboardType="phone-pad"
                       value={productDetails.phone}
@@ -435,7 +437,7 @@ const EditProductScreen = () => {
                     />
                     <TextInput
                       style={styles.input}
-                      placeholder="Open Hours (e.g., 10:00 AM - 8:00 PM)"
+                      placeholder={t('jw_open_hours_ph')}
                       placeholderTextColor={jewelleryColors.textSecondary}
                       value={productDetails.hours}
                       onChangeText={(text) =>
@@ -454,7 +456,7 @@ const EditProductScreen = () => {
                     <ActivityIndicator color="#FFFFFF" />
                   ) : (
                     <Text style={styles.submitButtonText}>
-                      {isRequirement ? 'Update Requirement' : 'Update Product'}
+                      {isRequirement ? t('jw_update_requirement') : t('jw_update_product')}
                     </Text>
                   )}
                 </TouchableOpacity>
