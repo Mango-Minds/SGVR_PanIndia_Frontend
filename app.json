@@ -2,7 +2,7 @@
   "expo": {
     "name": "Indiyoura",
     "slug": "mimaratha",
-    "version": "1.0.6",
+    "version": "1.0.8",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -14,7 +14,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.inbharat.app",
-      "buildNumber": "7",
+      "buildNumber": "9",
       "config": {
         "googleMapsApiKey": "AIzaSyAfbXQMkD4uSWNcCYovgXAxhnj-VS_rYhQ"
       },

@@ -110,6 +110,10 @@ export const registerForPushNotificationsAsync = async ({
       hasRegisteredThisSession = true;
       return token;
     } catch (error) {
+      console.warn(
+        "Push registration failed:",
+        error?.message || error
+      );
       return null;
     } finally {
       registrationInFlight = null;
@@ -128,6 +132,9 @@ const sendPushNotificationHandler = async (token) => {
       data: { token },
     });
   } catch (err) {
-    // Token save failed; will retry on next login/session.
+    console.warn(
+      "Push token save failed:",
+      err?.response?.data || err?.message || err
+    );
   }
 };
