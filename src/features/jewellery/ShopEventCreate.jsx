@@ -23,7 +23,6 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import moment from 'moment';
-import { useTranslation } from 'react-i18next';
 import { setLoadingInBtn } from '../../store/user';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { BASEAPIURL, BASEIMGURL } from '../../infrastructure/constants';
@@ -33,7 +32,6 @@ import FormData from 'form-data';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ShopEventCreate = () => {
-  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -224,7 +222,7 @@ const ShopEventCreate = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_create_event')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Create Event" onBackPress={handleBackPress} />
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -320,10 +318,10 @@ const ShopEventCreate = () => {
 
             {/* Event Times */}
             <View style={styles.inputContainer}>
-              <Text style={styles.label}>{t('jw_event_times')} *</Text>
+              <Text style={styles.label}>Event Times *</Text>
               <TouchableOpacity style={styles.timeButton} onPress={openTimePicker}>
                 <Icon name="access-time" size={20} color={jewelleryColors.primary} />
-                <Text style={styles.timeButtonText}>{t('jw_add_event_time')}</Text>
+                <Text style={styles.timeButtonText}>Add Event Time</Text>
                 <Icon name="add" size={20} color={jewelleryColors.primary} />
               </TouchableOpacity>
 

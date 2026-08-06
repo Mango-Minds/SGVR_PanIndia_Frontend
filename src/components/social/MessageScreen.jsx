@@ -38,11 +38,9 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { SOCKETURL } from "../../infrastructure/constants";
-import { useTranslation } from "react-i18next";
 import { navigateJewelleryAuthTab, JEWELLERY_HOME_SCREEN } from "../../utils/requireAuth";
 
 export default function MessageScreen({ navigation, route, hideBottomNav = false, module }) {
-  const { t } = useTranslation();
   const { conversations, localChats, user, token, isGuest } = useSelector(
     (state) => state.user
   );
@@ -310,7 +308,7 @@ export default function MessageScreen({ navigation, route, hideBottomNav = false
               color: "#0000001A",
             }}
           >
-            {showArchived ? t("no_archived_chats") : t("no_messages")}
+            {showArchived ? "No Archived Chats" : "No Messages"}
           </Text>
         </View>
       )}

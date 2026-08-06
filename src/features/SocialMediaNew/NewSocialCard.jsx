@@ -291,7 +291,6 @@ const FeedVideoPreview = ({
   isActive = false,
   dimension,
 }) => {
-  const { t } = useTranslation();
   const shouldPlay = Boolean(isActive && !paused && uri);
 
   const dimensionStyle = dimension
@@ -340,7 +339,7 @@ const FeedVideoPreview = ({
           onPress={onPress}
           style={styles.feedVideoTapLayer}
           accessibilityRole="button"
-          accessibilityLabel={t("open_video_reel")}
+          accessibilityLabel="Open video reel"
         />
       </View>
       {shouldPlay ? (
@@ -583,7 +582,7 @@ const NewSocialCard = ({
 
       if (response.status === 200) {
         setEffectiveFollowStatus("none");
-        Alert.alert(t("success"), t("user_unfollowed_success"));
+        Alert.alert("Success", "User unfollowed successfully.");
         
         // Notify parent component to refresh all posts for this user
         if (onFollowStatusChange) {
@@ -605,8 +604,8 @@ const NewSocialCard = ({
     } catch (error) {
       console.error("Error unfollowing user:", error);
       Alert.alert(
-        t("error"),
-        t("unfollow_error")
+        "Error",
+        "An error occurred while trying to send the unfollow request."
       );
     }
   };
@@ -646,7 +645,7 @@ const NewSocialCard = ({
     // Show confirmation dialog first
     Alert.alert(
       t("confirm_deletion_title") || "Confirm Deletion",
-      t("confirm_delete_post"),
+      "Are you sure you want to delete this post? This action cannot be undone.",
       [
         {
           text: t("cancel") || "Cancel",
@@ -660,11 +659,11 @@ const NewSocialCard = ({
               const response = await deletePost(post._id);
               if (response.status === 200) {
                 Alert.alert(
-                  t("success"),
+                  "Success",
                   t("post_deleted_successfully") || "Post deleted successfully",
                   [
                     {
-                                              text: t("ok"),
+                                              text: "OK",
                         onPress: async () => {
                           // Ensure fetchPosts completes before navigation
                           if (fetchPosts) {
@@ -683,7 +682,7 @@ const NewSocialCard = ({
             } catch (error) {
               console.error("Error deleting post:", error);
               Alert.alert(
-                t("error"), 
+                "Error", 
                 t("failed_to_delete_post") || "Failed to delete post."
               );
             }
@@ -865,7 +864,7 @@ const NewSocialCard = ({
   }, [post]);
   const handleAddComment = async () => {
     if (!newCommentText.trim()) {
-      Alert.alert(t("error"), t("comment_empty"));
+      alert("Comment cannot be empty.");
       return;
     }
 
@@ -896,20 +895,20 @@ const NewSocialCard = ({
         setNewCommentText("");
       } else {
         console.error("Invalid response from addComment API");
-        Alert.alert(t("error"), t("failed_add_comment"));
+        Alert.alert(t("error"), "Failed to add comment. Please try again.");
       }
     } catch (error) {
       console.error(
         "Error adding comment:",
         error?.response?.data?.message || error.message
       );
-      Alert.alert(t("error"), t("failed_add_comment"));
+      Alert.alert(t("error"), "Failed to add comment. Please try again.");
     }
   };
   const handleDeleteComment = async (commentId) => {
     if (!commentId) {
       console.error('Cannot delete comment: Comment ID is undefined');
-      Alert.alert(t("error"), t("comment_id_missing"));
+      Alert.alert("Error", "Cannot delete comment: Comment ID not found. Please refresh the page and try again.");
       return;
     }
 
@@ -926,11 +925,11 @@ const NewSocialCard = ({
         setCommentCount(response.data.comments.length);
         setMenuVisibleId(null); // Close the menu
       } else {
-        Alert.alert(t("error"), t("failed_delete_comment"));
+        Alert.alert("Error", "Failed to delete comment. Please try again.");
       }
     } catch (error) {
       console.error("Error deleting comment:", error?.response?.data?.message || error.message);
-      Alert.alert(t("error"), error?.response?.data?.message || t("failed_delete_comment"));
+      Alert.alert("Error", error?.response?.data?.message || "Failed to delete comment. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -956,17 +955,17 @@ const NewSocialCard = ({
       if (response.ok) {
         const data = await response.json();
         Alert.alert(
-          t("success"),
-          t("report_post_success")
+          "Success",
+          "If this post violates our policies, it will be removed within 24 hours."
         );
       } else {
-        Alert.alert(t("error"), t("failed_report_post"));
+        Alert.alert("Error", "Failed to report post.");
       }
     } catch (error) {
       console.error("Error reporting post:", error);
       Alert.alert(
-        t("error"),
-        t("report_post_error")
+        "Error",
+        "An error occurred while trying to report the post."
       );
     }
   };
@@ -1203,10 +1202,10 @@ const NewSocialCard = ({
           {replyTarget === item._id && (
             <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
               <View style={{ flex: 1, backgroundColor: '#F2F2F7', borderRadius: 12, paddingHorizontal: 10, paddingVertical: 6 }}>
-                <TextInput value={replyText} onChangeText={setReplyText} placeholder={tr('reply_placeholder', 'Reply...')} />
+                <TextInput value={replyText} onChangeText={setReplyText} placeholder={t('reply') || 'Reply...'} />
               </View>
               <TouchableOpacity onPress={submitReply} style={{ paddingHorizontal: 8, marginLeft: 6 }}>
-                <Text style={{ color: Theme?.themeColor || '#B98C13', fontWeight: '600' }}>{tr('post', 'Post')}</Text>
+                <Text style={{ color: Theme?.themeColor || '#B98C13', fontWeight: '600' }}>{t('post') || 'Post'}</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1280,8 +1279,8 @@ const NewSocialCard = ({
                       t("deleteComment"),
                       t("deleteCommentConfirmation"),
                       [
-                        { text: t("cancel"), style: "cancel" },
-                        { text: t("delete"), style: "destructive", onPress: () => handleDeleteComment(item._id) }
+                        { text: "Cancel", style: "cancel" },
+                        { text: "Delete", style: "destructive", onPress: () => handleDeleteComment(item._id) }
                       ]
                     );
                   }}
@@ -1803,8 +1802,8 @@ const NewSocialCard = ({
                               numberOfLines={1}
                             >
                               {effectiveFollowStatus === "none"
-                                ? t("Follow")
-                                : t("Following")}
+                                ? "Follow"
+                                : "Following"}
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -2205,7 +2204,7 @@ const NewSocialCard = ({
                     style={{ minHeight: 32 }}
                     value={newCommentText}
                     onChangeText={setNewCommentText}
-                    placeholder={t("say_something_nice")}
+                    placeholder={(t("say_something_nice") && t("say_something_nice") !== 'say_something_nice') ? t("say_something_nice") : "Say something nice..."}
                   />
                 </View>
                 <TouchableOpacity onPress={handleAddComment} style={{ paddingHorizontal: 8 }}>
@@ -2231,7 +2230,7 @@ const NewSocialCard = ({
             <View style={styles.shareModalOverlay}>
               <View style={styles.shareModalContainer}>
                 <Text style={[styles.modalTitle, { marginBottom: 15, textAlign: "center" }]}>
-                  {tr("shareWithFriends", "Share with Friends")}
+                  Share with Friends
                 </Text>
                 <View
                   style={{
@@ -2267,11 +2266,11 @@ const NewSocialCard = ({
                       <ActivityIndicator size="large" color="#007AFF" />
                     ) : shareUsers.length === 0 ? (
                       <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
-                        {t("no_friends_to_share")}
+                        No friends to share with
                       </Text>
                     ) : (
                       <Text style={{ textAlign: "center", marginTop: 20, color: "#666" }}>
-                        {shareSearchTerm ? t("noFriendsFound") : t("no_friends_to_share")}
+                        {shareSearchTerm ? "No friends found" : "No friends to share"}
                       </Text>
                     )
                   }
@@ -2285,17 +2284,13 @@ const NewSocialCard = ({
                       // For now, just show a success message
                       closeShareModal();
                       Alert.alert(
-                        t("success"),
-                        selectedUsers.length === 1
-                          ? t("post_shared_success_one")
-                          : t("post_shared_success", { count: selectedUsers.length })
+                        "Success", 
+                        `Post shared with ${selectedUsers.length} friend${selectedUsers.length > 1 ? 's' : ''} successfully.`
                       );
                     }}
                   >
                     <Text style={styles.sendButtonText}>
-                      {selectedUsers.length === 1
-                        ? t("send_to_one_friend")
-                        : t("send_to_n_friends", { count: selectedUsers.length })}
+                      {t("send")} to {selectedUsers.length} friend{selectedUsers.length > 1 ? 's' : ''}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -2365,19 +2360,19 @@ const NewSocialCard = ({
 
                       console.log("Normal repost response:", response.data);
                       if (response.data.success) {
-                        Alert.alert(t("success"), t("post_reposted"));
+                        Alert.alert("Success", "Post reposted successfully!");
                         closeRepostModal();
                         // Refresh posts if needed
                         if (fetchPosts) {
                           fetchPosts(true); // Refresh
                         }
                       } else {
-                        Alert.alert(t("error"), response.data.message || t("failed_repost"));
+                        Alert.alert("Error", response.data.message || "Failed to repost");
                       }
                     } catch (error) {
                       console.error("Repost error:", error);
                       console.error("Error response:", error.response?.data);
-                      Alert.alert(t("error"), error.response?.data?.message || t("failed_repost"));
+                      Alert.alert("Error", error.response?.data?.message || "Failed to repost. Please try again.");
                     }
                   }}
                 >

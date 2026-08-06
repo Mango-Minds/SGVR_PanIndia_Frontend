@@ -198,11 +198,11 @@ export default function EachProfile() {
         setIsFollowing("none");
         // Update global follow status context
         updateFollowStatus(userId, "none");
-        Alert.alert(t("success"), t("user_unfollowed_success"));
+        Alert.alert("Success", "User unfollowed successfully.");
       }
     } catch (error) {
       console.error("Error unfollowing user:", error);
-      Alert.alert(t("error"), t("failed_unfollow"));
+      Alert.alert("Error", "Failed to unfollow user.");
     }
   };
 
@@ -213,12 +213,12 @@ export default function EachProfile() {
     } else if (isFollowing === "approved") {
       // Unfollow user
       Alert.alert(
-        t("unfollow_user"),
-        t("unfollow_confirm", { name: `${profile?.user?.firstName || ""} ${profile?.user?.lastName || ""}`.trim() }),
+        "Unfollow User",
+        `Do you want to unfollow ${profile?.user?.firstName} ${profile?.user?.lastName}?`,
         [
-          { text: t("cancel"), style: "cancel" },
+          { text: "Cancel", style: "cancel" },
           { 
-            text: t("unfollow"), 
+            text: "Unfollow", 
             style: "destructive",
             onPress: async () => {
               await unFollowUser();
@@ -239,14 +239,14 @@ export default function EachProfile() {
       const response = await sendFriendRequest(userId);
       if (response.status === 200) {
         setFriendStatus("request_sent");
-        Alert.alert(t("success"), t("friend_request_sent_success"));
+        Alert.alert("Success", "Friend request sent successfully.");
       }
     } catch (error) {
       console.error("Error sending friend request:", error);
       if (error.response?.data?.message) {
-        Alert.alert(t("error"), error.response.data.message);
+        Alert.alert("Error", error.response.data.message);
       } else {
-        Alert.alert(t("error"), t("failed_friend_request"));
+        Alert.alert("Error", "Failed to send friend request.");
       }
     }
   };
@@ -256,33 +256,33 @@ export default function EachProfile() {
       const response = await cancelFriendRequest(userId);
       if (response.status === 200) {
         setFriendStatus("none");
-        Alert.alert(t("success"), t("friend_request_cancelled_success"));
+        Alert.alert("Success", "Friend request cancelled successfully.");
       }
     } catch (error) {
       console.error("Error cancelling friend request:", error);
-      Alert.alert(t("error"), t("failed_cancel_friend"));
+      Alert.alert("Error", "Failed to cancel friend request.");
     }
   };
 
   const handleRemoveFriend = async () => {
     Alert.alert(
-      t("removeFriend"),
-      t("remove_friend_confirm", { name: `${profile?.user?.firstName || ""} ${profile?.user?.lastName || ""}`.trim() }),
+      "Remove Friend",
+      `Do you want to remove ${profile?.user?.firstName} ${profile?.user?.lastName} from your friends?`,
       [
-        { text: t("cancel"), style: "cancel" },
+        { text: "Cancel", style: "cancel" },
         { 
-          text: t("remove"), 
+          text: "Remove", 
           style: "destructive",
           onPress: async () => {
             try {
               const response = await removeFriend(userId);
               if (response.status === 200) {
                 setFriendStatus("none");
-                Alert.alert(t("success"), t("friend_removed_success"));
+                Alert.alert("Success", "Friend removed successfully.");
               }
             } catch (error) {
               console.error("Error removing friend:", error);
-              Alert.alert(t("error"), t("failed_remove_friend"));
+              Alert.alert("Error", "Failed to remove friend.");
             }
           }
         }
@@ -315,10 +315,10 @@ export default function EachProfile() {
   const blockUser = (blockedUserId) => {
     // Static frontend-only block functionality
     Alert.alert(
-      t("block_user"),
-      t("block_user_success"),
+      "Block User",
+      `User ${profile?.user?.firstName} ${profile?.user?.lastName} has been blocked successfully.`,
       [
-        { text: t("ok"), onPress: () => setModalVisible(false) }
+        { text: "OK", onPress: () => setModalVisible(false) }
       ]
     );
   };
@@ -620,7 +620,7 @@ export default function EachProfile() {
           onPress={() => setModalVisible(false)}
         />
         <View style={styles.modalContainer}>
-          <Text style={styles.modalTitle}>{t("user_options")}</Text>
+          <Text style={styles.modalTitle}>User Options</Text>
           <TouchableOpacity
             style={[styles.optionButton, styles.blockButton]}
             onPress={() => {
@@ -628,23 +628,23 @@ export default function EachProfile() {
             }}
           >
             <Icon name="ban" size={20} color="#DC3545" style={{ marginRight: 8 }} />
-            <Text style={[styles.optionButtonText, { color: "#DC3545" }]}>{t("block_user")}</Text>
+            <Text style={[styles.optionButtonText, { color: "#DC3545" }]}>Block User</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.optionButton, styles.reportButton]}
             onPress={() => {
-              Alert.alert(t("report_user"), t("user_reported"));
+              Alert.alert("Report User", "User reported successfully.");
               setModalVisible(false);
             }}
           >
             <Icon name="flag" size={20} color="#FFC107" style={{ marginRight: 8 }} />
-            <Text style={[styles.optionButtonText, { color: "#FFC107" }]}>{t("report_user")}</Text>
+            <Text style={[styles.optionButtonText, { color: "#FFC107" }]}>Report User</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.optionButton, styles.cancelButton]}
             onPress={() => setModalVisible(false)}
           >
-            <Text style={styles.optionButtonText}>{t("cancel")}</Text>
+            <Text style={styles.optionButtonText}>Cancel</Text>
           </TouchableOpacity>
         </View>
       </Modal>

@@ -13,10 +13,8 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import NewMessageCard from "./NewMessageCard";
 import { useSelector } from "react-redux";
 import { GetAllFriends } from "../../services/socialMedia.services";
-import { useTranslation } from "react-i18next";
 
 export default function NewMessageScreen({ navigation }) {
-  const { t } = useTranslation();
   const { user, socialData } = useSelector((state) => state.user);
   const [friends, setFriends] = React.useState([]);
   const [search, setSearch] = React.useState("");
@@ -94,11 +92,11 @@ export default function NewMessageScreen({ navigation }) {
           <TopText
             style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
           >
-            {t("new_message")}
+            New Message
           </TopText>
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12 }}>
-          <Text style={{ marginRight: 8, color: '#666' }}>{t("n_selected", { count: selected.length })}</Text>
+          <Text style={{ marginRight: 8, color: '#666' }}>{selected.length} selected</Text>
           <Button
             mode="contained"
             loading={creating}
@@ -110,7 +108,7 @@ export default function NewMessageScreen({ navigation }) {
             buttonColor="#D4AF37"
             textColor="#000"
           >
-            {t("create_group")}
+            Create Group
           </Button>
         </View>
       </RowBetween>
@@ -122,10 +120,10 @@ export default function NewMessageScreen({ navigation }) {
       >
         <RNView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', padding: 16 }}>
           <RNView style={{ width: '100%', backgroundColor: 'white', padding: 16, borderRadius: 12 }}>
-            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>{t("create_group_title")}</Text>
+            <Text style={{ fontSize: 18, fontWeight: '600', marginBottom: 12 }}>Create group</Text>
             <PaperInput
               mode="outlined"
-              placeholder={t("enter_group_name")}
+              placeholder="Enter group name"
               value={groupName}
               onChangeText={setGroupName}
               style={{ marginBottom: 12 }}
@@ -136,7 +134,7 @@ export default function NewMessageScreen({ navigation }) {
               }}
             />
             <RowBetween>
-              <Button onPress={() => setShowNameModal(false)}>{t("cancel")}</Button>
+              <Button onPress={() => setShowNameModal(false)}>Cancel</Button>
               <Button
                 mode="contained"
                 disabled={!groupName.trim() || creating}
@@ -145,14 +143,14 @@ export default function NewMessageScreen({ navigation }) {
                 buttonColor="#D4AF37"
                 textColor="#000"
               >
-                {t("create")}
+                Create
               </Button>
             </RowBetween>
           </RNView>
         </RNView>
       </RNModal>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder={t("search")} value={search} onChangeText={setSearch} />
+        <SearchField placeholder="Search" value={search} onChangeText={setSearch} />
       </Row>
       {selected.length > 0 && (
         <RNView

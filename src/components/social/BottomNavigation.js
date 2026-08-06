@@ -81,7 +81,7 @@ export default function BottomNavigation({ navigation, currentScreen }) {
     },
     {
       key: "notifications",
-      label: t("alerts"),
+      label: "Alerts",
       badgeCount: alertsUnreadCount,
       badgeLabel: alertsBadgeLabel,
       onPress: () => {

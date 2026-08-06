@@ -16,7 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
@@ -38,7 +37,6 @@ import { resolveImageUrl } from '../../utils/mapJewelryProduct';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const ShopDetailScreen = () => {
-  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const { shopId } = route.params || {};
@@ -110,7 +108,7 @@ const ShopDetailScreen = () => {
           ...response,
           id: response._id || shopId,
           name: response.name || response.shopName || '',
-          owner: response.owner?.name || `${response.owner?.firstName || ''} ${response.owner?.lastName || ''}`.trim() || t('jw_owner'),
+          owner: response.owner?.name || `${response.owner?.firstName || ''} ${response.owner?.lastName || ''}`.trim() || 'Owner',
           ownerId,
           rating: response.rating || 0,
           reviewCount: response.reviewCount || 0,
@@ -164,17 +162,17 @@ const ShopDetailScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching shop details:', error);
-      Alert.alert(t('error'), t('jw_load_shop_details_error'));
+      Alert.alert('Error', 'Failed to load shop details');
     } finally {
       setLoading(false);
     }
-  }, [shopId, user, t]);
+  }, [shopId, user]);
 
   const tabs = [
-    { key: 'All', label: t('all') },
-    { key: 'Videos', label: t('jw_videos') },
-    { key: 'Images', label: t('jw_images') },
-    { key: 'Portfolio', label: t('jw_portfolio') },
+    { key: 'All', label: 'All' },
+    { key: 'Videos', label: 'Videos' },
+    { key: 'Images', label: 'Images' },
+    { key: 'Portfolio', label: 'Portfolio' },
   ];
 
   // Get gallery items from shop data or use empty array
@@ -291,12 +289,12 @@ const ShopDetailScreen = () => {
   // Handle delete product
   const handleDeleteProduct = async (productId) => {
     Alert.alert(
-      t('jw_delete_product'),
-      t('jw_delete_product_msg'),
+      'Delete Product',
+      'Are you sure you want to delete this product?',
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: t('delete'),
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -309,14 +307,14 @@ const ShopDetailScreen = () => {
               });
 
               if (response.ok) {
-                Alert.alert(t('success'), t('jw_product_deleted'));
+                Alert.alert('Success', 'Product deleted successfully');
                 fetchShopDetails(); // Refresh shop data
               } else {
-                throw new Error(t('jw_delete_product_error'));
+                throw new Error('Failed to delete product');
               }
             } catch (error) {
               console.error('Error deleting product:', error);
-              Alert.alert(t('error'), t('jw_delete_product_error'));
+              Alert.alert('Error', 'Failed to delete product');
             }
           },
         },
@@ -456,7 +454,7 @@ const ShopDetailScreen = () => {
       const phoneNumber = phone.replace(/[^0-9+]/g, '');
       Linking.openURL(`tel:${phoneNumber}`).catch(err => {
         console.error('Error opening phone:', err);
-        Alert.alert(t('error'), t('jw_phone_call_error'));
+        Alert.alert('Error', 'Unable to make phone call');
       });
     }
   };
@@ -469,7 +467,7 @@ const ShopDetailScreen = () => {
         isGuest,
         dispatch,
         navigation,
-        message: t('jw_sign_in_follow'),
+        message: 'Sign in to follow shops.',
       });
       return;
     }
@@ -478,7 +476,7 @@ const ShopDetailScreen = () => {
     
     // Don't allow following yourself
     if (shopData.ownerId === user._id) {
-      Alert.alert(t('jw_info'), t('jw_cannot_follow_self'));
+      Alert.alert('Info', 'You cannot follow yourself');
       return;
     }
 
@@ -488,17 +486,17 @@ const ShopDetailScreen = () => {
         // Unfollow
         await unfollowUser(shopData.ownerId);
         setFollowStatus('none');
-        Alert.alert(t('success'), t('jw_unfollowed_success'));
+        Alert.alert('Success', 'Unfollowed successfully');
       } else {
         // Follow
         await followUser(shopData.ownerId);
         setFollowStatus('approved');
-        Alert.alert(t('success'), t('jw_followed_success'));
+        Alert.alert('Success', 'Followed successfully');
       }
     } catch (error) {
       console.error('Error performing follow action:', error);
-      const errorMessage = error.response?.data?.message || error.message || t('jw_action_failed');
-      Alert.alert(t('error'), errorMessage);
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to perform action';
+      Alert.alert('Error', errorMessage);
     } finally {
       setIsLoadingFollow(false);
     }
@@ -551,7 +549,7 @@ const ShopDetailScreen = () => {
                 {shopData.isVerified && <VerifiedBadge size="small" />}
               </View>
               {shopData.owner && (
-                <Text style={styles.portfolioOwner}>{t('jw_owned_by', { name: shopData.owner })}</Text>
+                <Text style={styles.portfolioOwner}>Owned by {shopData.owner}</Text>
               )}
             </View>
             {!shopData.isOwner &&
@@ -572,16 +570,16 @@ const ShopDetailScreen = () => {
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_description')}</Text>
+          <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>
-            {shopData.description || t('jw_no_description')}
+            {shopData.description || 'No description available'}
           </Text>
         </View>
 
         {/* Reviews Section */}
         <View style={styles.section}>
           <View style={styles.reviewsHeader}>
-            <Text style={styles.sectionTitle}>{t('jw_reviews')}</Text>
+            <Text style={styles.sectionTitle}>Reviews</Text>
             {shopData.ownerId && (!user || shopData.ownerId !== user._id) && !userHasReviewed && (
               <TouchableOpacity
                 style={styles.writeReviewButton}
@@ -591,13 +589,13 @@ const ShopDetailScreen = () => {
                     isGuest,
                     dispatch,
                     navigation,
-                    message: t('jw_sign_in_review'),
+                    message: 'Sign in to submit a review.',
                     onAuthed: () => setReviewFormVisible(true),
                   })
                 }
               >
                 <Icon name="edit" size={16} color={jewelleryColors.primary} />
-                <Text style={styles.writeReviewButtonText}>{t('jw_write_review')}</Text>
+                <Text style={styles.writeReviewButtonText}>Write Review</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -610,25 +608,25 @@ const ShopDetailScreen = () => {
         {/* Specifications - Show if available */}
         {(shopData.specifications || shopData.metal || shopData.stones) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('jw_specifications')}</Text>
+            <Text style={styles.sectionTitle}>Specifications</Text>
             <View style={styles.specificationsList}>
               {shopData.specifications?.metal && (
-                <SpecificationRow label={t('jw_metal')} value={shopData.specifications.metal} />
+                <SpecificationRow label="Metal" value={shopData.specifications.metal} />
               )}
               {shopData.metal && !shopData.specifications?.metal && (
-                <SpecificationRow label={t('jw_metal')} value={shopData.metal} />
+                <SpecificationRow label="Metal" value={shopData.metal} />
               )}
               {shopData.specifications?.stones && (
-                <SpecificationRow label={t('jw_stones')} value={shopData.specifications.stones} />
+                <SpecificationRow label="Stones" value={shopData.specifications.stones} />
               )}
               {shopData.stones && !shopData.specifications?.stones && (
-                <SpecificationRow label={t('jw_stones')} value={shopData.stones} />
+                <SpecificationRow label="Stones" value={shopData.stones} />
               )}
               {shopData.specifications?.making && (
-                <SpecificationRow label={t('jw_making')} value={shopData.specifications.making} />
+                <SpecificationRow label="Making" value={shopData.specifications.making} />
               )}
               {shopData.specifications?.dimensions && (
-                <SpecificationRow label={t('jw_dimensions')} value={shopData.specifications.dimensions} />
+                <SpecificationRow label="Dimensions" value={shopData.specifications.dimensions} />
               )}
             </View>
           </View>
@@ -649,7 +647,7 @@ const ShopDetailScreen = () => {
 
         {/* Contact Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_contact_info')}</Text>
+          <Text style={styles.sectionTitle}>Contact Information</Text>
           
           {(shopData.address || shopData.location) && (
             <View style={styles.contactItem}>
@@ -657,9 +655,9 @@ const ShopDetailScreen = () => {
                 <Icon name="location-on" size={24} color={jewelleryColors.primary} />
               </View>
               <View style={styles.contactTextContainer}>
-                <Text style={styles.contactLabel}>{t('jw_location')}</Text>
+                <Text style={styles.contactLabel}>Location</Text>
                 <Text style={styles.contactValue}>
-                  {shopData.address || shopData.location || t('jw_location_unavailable')}
+                  {shopData.address || shopData.location || 'Location not available'}
                 </Text>
               </View>
             </View>
@@ -671,7 +669,7 @@ const ShopDetailScreen = () => {
                 <Icon name="phone" size={24} color={jewelleryColors.primary} />
               </View>
               <View style={styles.contactTextContainer}>
-                <Text style={styles.contactLabel}>{t('jw_phone')}</Text>
+                <Text style={styles.contactLabel}>Phone</Text>
                 <Text style={styles.contactValue}>{phoneNumber}</Text>
               </View>
             </View>
@@ -683,7 +681,7 @@ const ShopDetailScreen = () => {
                 <Icon name="access-time" size={24} color={jewelleryColors.primary} />
               </View>
               <View style={styles.contactTextContainer}>
-                <Text style={styles.contactLabel}>{t('jw_open_hours')}</Text>
+                <Text style={styles.contactLabel}>Open Hours</Text>
                 <Text style={styles.contactValue}>{shopData.hours}</Text>
               </View>
             </View>
@@ -698,14 +696,14 @@ const ShopDetailScreen = () => {
             disabled={!phoneNumber}
           >
             <Icon name="phone" size={20} color="#FFFFFF" />
-            <Text style={styles.callButtonText}>{t('jw_call_now')}</Text>
+            <Text style={styles.callButtonText}>Call Now</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.shareButton}
             onPress={() => setQrModalVisible(true)}
           >
             <Icon name="share" size={20} color={jewelleryColors.text} />
-            <Text style={styles.shareButtonText}>{t('jw_share_qr')}</Text>
+            <Text style={styles.shareButtonText}>Share QR Code</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -728,7 +726,7 @@ const ShopDetailScreen = () => {
         isGuest,
         dispatch,
         navigation,
-        message: t('jw_sign_in_review'),
+        message: 'Sign in to submit a review.',
       });
       return;
     }
@@ -738,7 +736,7 @@ const ShopDetailScreen = () => {
       const response = await createShopReview(shopId, rating, comment);
       
       if (response && response.status === 0) {
-        Alert.alert(t('success'), t('jw_review_submitted'));
+        Alert.alert('Success', 'Review submitted successfully');
         setReviewFormVisible(false);
         setUserHasReviewed(true);
         
@@ -748,13 +746,13 @@ const ShopDetailScreen = () => {
         // Trigger review list refresh
         setReviewRefreshTrigger(prev => prev + 1);
       } else {
-        throw new Error(response?.msg || t('jw_review_submit_error'));
+        throw new Error(response?.msg || 'Failed to submit review');
       }
     } catch (error) {
       console.error('Error submitting review:', error);
       
       // Check if error is due to duplicate review
-      const errorMessage = error.response?.data?.msg || error.message || t('jw_review_submit_error');
+      const errorMessage = error.response?.data?.msg || error.message || 'Failed to submit review';
       const isDuplicateReview = errorMessage.toLowerCase().includes('already reviewed') || 
                                  errorMessage.toLowerCase().includes('already reviewed this shop');
       
@@ -763,13 +761,13 @@ const ShopDetailScreen = () => {
         setUserHasReviewed(true);
         setReviewFormVisible(false);
         Alert.alert(
-          t('jw_review_already_title'),
-          t('jw_review_already_msg'),
-          [{ text: t('ok') }]
+          'Review Already Submitted',
+          'You have already submitted a review for this shop. Thank you for your feedback!',
+          [{ text: 'OK' }]
         );
       } else {
         // Other errors
-        Alert.alert(t('error'), errorMessage);
+        Alert.alert('Error', errorMessage);
       }
     } finally {
       setIsSubmittingReview(false);
@@ -801,7 +799,7 @@ const ShopDetailScreen = () => {
         <HeaderBar showBack onBackPress={handleBackPress} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.loadingText}>{t('jw_loading_shop_details')}</Text>
+          <Text style={styles.loadingText}>Loading shop details...</Text>
         </View>
       </SafeAreaView>
     );
@@ -813,12 +811,12 @@ const ShopDetailScreen = () => {
         <HeaderBar showBack onBackPress={handleBackPress} />
         <View style={styles.errorContainer}>
           <Icon name="error-outline" size={48} color={jewelleryColors.textSecondary} />
-          <Text style={styles.errorText}>{t('jw_shop_not_found')}</Text>
+          <Text style={styles.errorText}>Shop not found</Text>
           <TouchableOpacity 
             style={styles.retryButton}
             onPress={handleBackPress}
           >
-            <Text style={styles.retryButtonText}>{t('jw_go_back')}</Text>
+            <Text style={styles.retryButtonText}>Go Back</Text>
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -882,7 +880,7 @@ const ShopDetailScreen = () => {
               </View>
               <View style={styles.locationContainer}>
                 <Icon name="location-on" size={16} color={jewelleryColors.textSecondary} />
-                <Text style={styles.location}>{shopData.location || shopData.city || t('jw_location_unavailable')}</Text>
+                <Text style={styles.location}>{shopData.location || shopData.city || 'Location not available'}</Text>
               </View>
               <View style={styles.ratingContainer}>
                 <RatingDisplay rating={shopData.rating} reviewCount={shopData.reviewCount} />
@@ -896,7 +894,7 @@ const ShopDetailScreen = () => {
           <View style={styles.ownerActionsContainer}>
             <TouchableOpacity style={styles.addProductButton} onPress={handleAddProduct}>
               <Icon name="add" size={20} color="#FFFFFF" />
-              <Text style={styles.addProductButtonText}>{t('jw_add_product_album')}</Text>
+              <Text style={styles.addProductButtonText}>Add Product to Album</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -908,7 +906,7 @@ const ShopDetailScreen = () => {
             onPress={handleViewStockDetails}
           >
             <Icon name="visibility" size={20} color="#FFFFFF" />
-            <Text style={styles.stockButtonText}>{t('jw_stock_for_sale')}</Text>
+            <Text style={styles.stockButtonText}>Stock for Sale</Text>
           </TouchableOpacity>
         )}
 

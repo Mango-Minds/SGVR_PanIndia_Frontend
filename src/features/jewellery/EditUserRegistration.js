@@ -28,7 +28,6 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import {setLoadingInBtn} from "../../store/user";
 import { useDispatch } from "react-redux";
-import { useTranslation } from "react-i18next";
 
 const styles = StyleSheet.create({
   logo: {
@@ -67,7 +66,6 @@ const styles = StyleSheet.create({
 
 export default function JewelleryEditUserRegisterScreen({ navigation, route }) {
   registerTranslation("en", en);
-  const { t } = useTranslation();
   const dispatch = useDispatch();
 
   const token = useSelector((state) => state.user.token);
@@ -132,10 +130,10 @@ export default function JewelleryEditUserRegisterScreen({ navigation, route }) {
   const userType = useSelector((state) => state.user.user.userType);
   const heading =
     userType === "vendor"
-      ? t("edit_vendor_profile")
+      ? "Edit Vendor Profile"
       : userType === "worker"
-      ? t("edit_worker_profile")
-      : t("edit_shop_profile");
+      ? "Edit Worker Profile"
+      : "Edit Shop Profile";
 
   
 

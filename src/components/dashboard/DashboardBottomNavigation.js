@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Ionicons from "react-native-vector-icons/Ionicons";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import useMessageUnreadBadge from "../../hooks/useMessageUnreadBadge";
 import {
   requireAuth,
@@ -18,12 +17,61 @@ import {
   FLOATING_BAR_INACTIVE_COLOR,
 } from "../../styles/floatingBottomBar.styles";
 
+const showComingSoon = (moduleName) => {
+  Alert.alert(
+    "Coming Soon",
+    `${moduleName} module is coming soon. Stay tuned!`
+  );
+};
+
+const ITEMS = [
+  {
+    key: "social",
+    label: "Social",
+    icon: FLOATING_BAR_ICONS.people,
+    action: "module",
+    path: "SocialMedia",
+  },
+  {
+    key: "jewellery",
+    label: "Jewellery",
+    icon: FLOATING_BAR_ICONS.diamond,
+    action: "module",
+    path: "Jewellery",
+  },
+  {
+    key: "jobs",
+    label: "Jobs",
+    icon: FLOATING_BAR_ICONS.jobs,
+    action: "comingSoon",
+    moduleName: "Jobs",
+  },
+  {
+    key: "matrimony",
+    label: "Matrimony",
+    icon: FLOATING_BAR_ICONS.heart,
+    action: "comingSoon",
+    moduleName: "Matrimony",
+  },
+  {
+    key: "messages",
+    label: "Messages",
+    icon: FLOATING_BAR_ICONS.messages,
+    action: "messages",
+  },
+  {
+    key: "alerts",
+    label: "Alerts",
+    icon: FLOATING_BAR_ICONS.alerts,
+    action: "notifications",
+  },
+];
+
 export default function DashboardBottomNavigation({
   navigation,
   currentScreen,
   onLayout,
 }) {
-  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const { token, isGuest, notification } = useSelector((state) => state.user);
@@ -31,61 +79,9 @@ export default function DashboardBottomNavigation({
   const messageBadgeLabel =
     messageUnreadCount > 99 ? "99+" : String(messageUnreadCount);
 
-  const showComingSoon = (moduleName) => {
-    Alert.alert(
-      t("comingSoon"),
-      t("module_coming_soon", { module: moduleName })
-    );
-  };
-
-  const ITEMS = [
-    {
-      key: "social",
-      labelKey: "social",
-      icon: FLOATING_BAR_ICONS.people,
-      action: "module",
-      path: "SocialMedia",
-    },
-    {
-      key: "jewellery",
-      labelKey: "jewellery",
-      icon: FLOATING_BAR_ICONS.diamond,
-      action: "module",
-      path: "Jewellery",
-    },
-    {
-      key: "jobs",
-      labelKey: "jobs",
-      icon: FLOATING_BAR_ICONS.jobs,
-      action: "comingSoon",
-      moduleNameKey: "jobs",
-    },
-    {
-      key: "matrimony",
-      labelKey: "matrimonyHeading",
-      icon: FLOATING_BAR_ICONS.heart,
-      action: "comingSoon",
-      moduleNameKey: "matrimonyHeading",
-    },
-    {
-      key: "messages",
-      labelKey: "messages",
-      icon: FLOATING_BAR_ICONS.messages,
-      action: "messages",
-    },
-    {
-      key: "alerts",
-      labelKey: "alerts",
-      icon: FLOATING_BAR_ICONS.alerts,
-      action: "notifications",
-    },
-  ];
-
   const handleModuleNavigation = (path) => {
     if (path === "Matrimony" || path === "Jobs") {
-      showComingSoon(
-        path === "Jobs" ? t("jobs") : t("matrimonyHeading")
-      );
+      showComingSoon(path);
       return;
     }
     if (!token && isAccountModule(path)) {
@@ -94,7 +90,7 @@ export default function DashboardBottomNavigation({
         isGuest,
         dispatch,
         navigation,
-        message: t("sign_in_access_section"),
+        message: "Sign in to access this section.",
       });
       return;
     }
@@ -109,7 +105,7 @@ export default function DashboardBottomNavigation({
     if (item.action === "module") {
       handleModuleNavigation(item.path);
     } else if (item.action === "comingSoon") {
-      showComingSoon(t(item.moduleNameKey || item.labelKey));
+      showComingSoon(item.moduleName || item.label);
     } else if (item.action === "messages") {
       if (currentScreen === "messages") return;
       requireAuth({
@@ -118,7 +114,7 @@ export default function DashboardBottomNavigation({
         dispatch,
         navigation,
         onAuthed: () => navigation.navigate("MessageScreen"),
-        message: t("sign_in_messages"),
+        message: "Sign in to view your messages.",
       });
     } else if (item.action === "notifications") {
       if (currentScreen === "alerts") return;
@@ -131,7 +127,7 @@ export default function DashboardBottomNavigation({
           navigation.navigate("DashboardNotification", {
             notifications: notification?.homescreen ?? [],
           }),
-        message: t("sign_in_notifications"),
+        message: "Sign in to view notifications.",
       });
     }
   };
@@ -145,7 +141,6 @@ export default function DashboardBottomNavigation({
       onLayout={onLayout}
     >
       {ITEMS.map((item) => {
-        const label = t(item.labelKey);
         const active = currentScreen === item.key;
         const color = active
           ? FLOATING_BAR_ACTIVE_COLOR
@@ -160,7 +155,7 @@ export default function DashboardBottomNavigation({
             style={styles.floatingBarItem}
             onPress={() => handlePress(item)}
             accessibilityRole="button"
-            accessibilityLabel={label}
+            accessibilityLabel={item.label}
           >
             <View style={styles.floatingBarIconWrap}>
               <Ionicons
@@ -180,7 +175,7 @@ export default function DashboardBottomNavigation({
                 active && styles.floatingBarTextActive,
               ]}
             >
-              {label}
+              {item.label}
             </Text>
           </TouchableOpacity>
         );

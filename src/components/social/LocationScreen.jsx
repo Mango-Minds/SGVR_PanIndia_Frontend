@@ -13,18 +13,16 @@ import { TopText } from "../../styles/social.styles";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Locationimage from "../../assets/images/social/location.png";
 import * as Location from "expo-location";
-import { useTranslation } from "react-i18next";
 
 export default function LocationScreen({ route, navigation }) {
   // const { setLocation, location } = route.params;
-  const { t } = useTranslation();
   const [location, setLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   const SelectLocation = async () => {
     let { status } = await Location.requestForegroundPermissionsAsync();
     if (status !== "granted") {
-      setErrorMsg(t("permission_denied"));
+      setErrorMsg("Permission to access location was denied");
       return;
     }
 
@@ -72,14 +70,14 @@ export default function LocationScreen({ route, navigation }) {
           <TopText
             style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
           >
-            {t("add_location")}
+            Add Location
           </TopText>
         </View>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
         {/* <SearchField placeholder="Add Location" onChangeText={setLocation} /> */}
         <GooglePlacesAutocomplete
-          placeholder={t("search")}
+          placeholder="Search"
           query={{
             key: "",
             language: "en", // language of the results

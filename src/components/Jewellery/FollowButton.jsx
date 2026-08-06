@@ -1,6 +1,5 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
 
@@ -10,8 +9,6 @@ const FollowButton = ({
   isLoading = false,
   disabled = false 
 }) => {
-  const { t } = useTranslation();
-
   // Determine button state based on followStatus
   const getButtonState = () => {
     if (isLoading) return 'loading';
@@ -27,7 +24,7 @@ const FollowButton = ({
       case 'following':
         return {
           backgroundColor: jewelleryColors.success,
-          text: t('Following'),
+          text: 'Following',
           icon: 'check',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
@@ -35,7 +32,7 @@ const FollowButton = ({
       case 'pending':
         return {
           backgroundColor: jewelleryColors.categoryOrange,
-          text: t('jw_pending'),
+          text: 'Pending',
           icon: 'schedule',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
@@ -43,7 +40,7 @@ const FollowButton = ({
       case 'loading':
         return {
           backgroundColor: jewelleryColors.primary,
-          text: t('loading'),
+          text: 'Loading...',
           icon: null,
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
@@ -51,7 +48,7 @@ const FollowButton = ({
       default:
         return {
           backgroundColor: jewelleryColors.primary,
-          text: t('jw_follow'),
+          text: 'Follow',
           icon: 'add',
           iconColor: '#FFFFFF',
           textColor: '#FFFFFF',
@@ -117,3 +114,4 @@ const styles = StyleSheet.create({
 });
 
 export default FollowButton;
+

@@ -12,7 +12,6 @@ import {
   Pressable,
 } from "react-native";
 import { Divider, Menu, Provider, RadioButton } from "react-native-paper";
-import { useTranslation } from "react-i18next";
 import { SafeArea } from "../components/utility/safe-area.component";
 import { useSelector, useDispatch } from "react-redux";
 import SelectDropdown from "react-native-select-dropdown";
@@ -62,7 +61,6 @@ const styles = StyleSheet.create({
   },
 });
 export default function RegisterScreen({ navigation }) {
-  const { t } = useTranslation();
   const { loadingInBtn } = useSelector((state) => state.user);
   const dispatch = useDispatch();
 
@@ -79,7 +77,7 @@ export default function RegisterScreen({ navigation }) {
 
     gender: "",    
   state: "",
-    city: "",       
+  city: "",       
   pincode: "",    
   address: "", 
   });
@@ -93,7 +91,7 @@ export default function RegisterScreen({ navigation }) {
       await dispatch(
         ErrorToggle({
           toggle: true,
-          msg: t("enter_all_fields"),
+          msg: "Enter all fields",
           type: "error",
         })
       );
@@ -150,13 +148,13 @@ export default function RegisterScreen({ navigation }) {
 
            {/* <Text style={styles.logoText}>Indiyoura</Text> */}
             <FormSection>
-              <FormSectionTitle>{t("signup")}</FormSectionTitle>
+              <FormSectionTitle>Signup</FormSectionTitle>
 
               <LoginInputField
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("username_required")}
+                placeholder="Username*"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.username}
@@ -171,7 +169,7 @@ export default function RegisterScreen({ navigation }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("first_name_required")}
+                placeholder="First Name*"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.firstName}
@@ -186,7 +184,7 @@ export default function RegisterScreen({ navigation }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("middle_name")}
+                placeholder="Middle Name"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.midname}
@@ -201,7 +199,7 @@ export default function RegisterScreen({ navigation }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("last_name_required")}
+                placeholder="Last Name*"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.lastName}
@@ -216,7 +214,7 @@ export default function RegisterScreen({ navigation }) {
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 style={styles.input}
-                placeholder={t("email_required")}
+                placeholder="Email*"
                 underlineColor="transparent"
                 placeholderTextColor="#9B9B9B"
                 value={registerDetails.email}
@@ -232,7 +230,7 @@ export default function RegisterScreen({ navigation }) {
                 <LoginInputField
                   placeholderTextColor="#9B9B9B"
                   underlineColor="transparent"
-                  placeholder={t("password_required")}
+                  placeholder="Password*"
                   selectionColor="#d4af37"
                   activeUnderlineColor="#d4af37"
                   value={registerDetails.password}
@@ -274,31 +272,32 @@ export default function RegisterScreen({ navigation }) {
                         alignItems: "center",
                         flex: 1,
                       }}
+                      // size={"large"}
                       color={"white"}
                     />
                   ) : (
-                    t("sign_up")
+                    "Sign up"
                   )}
                 </Text>
               </FormButton>
             </FormSection>
 
             <BottomText>
-              {t("already_have_account")}{" "}
+              Already have an account?{" "}
               <ForgotText
                 style={{ color: "#4191DF", fontSize: 13 }}
                 onPress={() => navigation.navigate("Login")}
               >
-                {t("sign_in")}
+                Signin
               </ForgotText>
             </BottomText>
             <BottomText>
-              {t("having_trouble_signup")}{" "}
+              Having trouble while Signup ?{" "}
               <ForgotText
                 style={{ color: "#4191DF", fontSize: 13 }}
                 onPress={() => navigation.navigate("Contactus")}
               >
-                {t("contact_us")}
+                Contact Us
               </ForgotText>
             </BottomText>
             </View>

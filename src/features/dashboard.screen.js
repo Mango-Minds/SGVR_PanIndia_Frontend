@@ -82,7 +82,6 @@ import Icon from "react-native-vector-icons/Ionicons";
 import publicApiClient from "../store/publicApiClient";
 import { requireAuth, isAccountModule, signInFromGuest, navigateToJewellery } from "../utils/requireAuth";
 import useMessageUnreadBadge from "../hooks/useMessageUnreadBadge";
-import { useTranslation } from "react-i18next";
 import {
   floatingBottomBarStyles,
   FLOATING_BAR_ICONS,
@@ -95,6 +94,13 @@ const FLOATING_BAR_HEIGHT = 72;
 const BANNER_WIDTH = width - HORIZONTAL_PADDING * 2;
 const BANNER_HEIGHT = Math.round(BANNER_WIDTH * 0.62);
 const JEWELLERY_CARD_WIDTH = Math.round((width - HORIZONTAL_PADDING * 2 - CARD_GAP * 2) / 2.6);
+
+const showComingSoon = (moduleName) => {
+  Alert.alert(
+    "Coming Soon",
+    `${moduleName} module is coming soon. Stay tuned!`
+  );
+};
 
 const renderHallItem = (item, index) => {
   return <HallCard key={index} {...item.item} />;
@@ -213,18 +219,10 @@ const offers = [
 ];
 
 export default function DashboardScreen({ navigation }) {
-  const { t } = useTranslation();
   const { user, token, isGuest, loading, notification } = useSelector(
     (state) => state.user
   );
   const dispatch = useDispatch();
-
-  const showComingSoon = (moduleName) => {
-    Alert.alert(
-      t("comingSoon"),
-      t("module_coming_soon", { module: moduleName })
-    );
-  };
 
   const userId = token
     ? JSON.parse(decode(token.split(".")[1])).id
@@ -333,7 +331,7 @@ export default function DashboardScreen({ navigation }) {
       } else if (not.statusCode === "NOT003") {
         //chat screen navigation
       } else if (not.statusCode === "NOT004") {
-        showComingSoon(t("matrimonyHeading"));
+        showComingSoon("Matrimony");
       } else if (not.statusCode === "NOT007") {
         navigation.navigate("CommunityProfile", {
           communityId: not.community._id,
@@ -377,7 +375,7 @@ export default function DashboardScreen({ navigation }) {
 
   const handleModuleNavigation = (path, params) => {
     if (path === "Matrimony") {
-      showComingSoon(t("matrimonyHeading"));
+      showComingSoon("Matrimony");
       return;
     }
     if (!token && isAccountModule(path)) {
@@ -386,7 +384,7 @@ export default function DashboardScreen({ navigation }) {
         isGuest,
         dispatch,
         navigation,
-        message: t("sign_in_access_section"),
+        message: "Sign in to access this section.",
       });
       return;
     }
@@ -452,7 +450,7 @@ export default function DashboardScreen({ navigation }) {
       if (response.data && response.data.data && Array.isArray(response.data.data)) {
         const jewellery = response.data.data.map((item) => ({
           ...item,
-          title: item.name || t("jewellery"),
+          title: item.name || "Jewellery",
           image: item.images && item.images.length > 0
             ? (item.images[0].startsWith('http') ? item.images[0] : `${BASEIMGURL}${item.images[0]}`)
             : null,
@@ -483,23 +481,23 @@ export default function DashboardScreen({ navigation }) {
   }, [token, isGuest]);
 
   const bottomBarItems = [
-    { labelKey: "social", icon: FLOATING_BAR_ICONS.people, action: "module", path: "SocialMedia" },
-    { labelKey: "jewellery", icon: FLOATING_BAR_ICONS.diamond, action: "module", path: "Jewellery" },
-    { labelKey: "jobs", icon: FLOATING_BAR_ICONS.jobs, action: "comingSoon", moduleNameKey: "jobs" },
-    { labelKey: "matrimonyHeading", icon: FLOATING_BAR_ICONS.heart, action: "comingSoon", moduleNameKey: "matrimonyHeading" },
-    { labelKey: "messages", icon: FLOATING_BAR_ICONS.messages, action: "messages" },
-    { labelKey: "alerts", icon: FLOATING_BAR_ICONS.alerts, action: "notifications" },
+    { label: "Social", icon: FLOATING_BAR_ICONS.people, action: "module", path: "SocialMedia" },
+    { label: "Jewellery", icon: FLOATING_BAR_ICONS.diamond, action: "module", path: "Jewellery" },
+    { label: "Jobs", icon: FLOATING_BAR_ICONS.jobs, action: "comingSoon", moduleName: "Jobs" },
+    { label: "Matrimony", icon: FLOATING_BAR_ICONS.heart, action: "comingSoon", moduleName: "Matrimony" },
+    { label: "Messages", icon: FLOATING_BAR_ICONS.messages, action: "messages" },
+    { label: "Alerts", icon: FLOATING_BAR_ICONS.alerts, action: "notifications" },
   ];
 
   const handleBottomBarPress = (item) => {
     if (item.action === "module") {
       handleModuleNavigation(item.path);
     } else if (item.action === "comingSoon") {
-      showComingSoon(t(item.moduleNameKey || item.labelKey));
+      showComingSoon(item.moduleName || item.label);
     } else if (item.action === "messages") {
       handleAccountAction(
         () => navigation.navigate("MessageScreen"),
-        t("sign_in_messages")
+        "Sign in to view your messages."
       );
     } else if (item.action === "notifications") {
       handleAccountAction(
@@ -510,7 +508,7 @@ export default function DashboardScreen({ navigation }) {
               ...notifications,
             ],
           }),
-        t("sign_in_notifications")
+        "Sign in to view notifications."
       );
     }
   };
@@ -594,8 +592,8 @@ export default function DashboardScreen({ navigation }) {
                   resizeMode="cover"
                 />
                 <View style={styles.brandTextWrap}>
-                  <Text style={styles.brandName}>{t("brand_name")}</Text>
-                  <Text style={styles.brandTagline}>{t("brand_tagline")}</Text>
+                  <Text style={styles.brandName}>In Bharat</Text>
+                  <Text style={styles.brandTagline}>Discover India</Text>
                 </View>
               </View>
 
@@ -606,14 +604,14 @@ export default function DashboardScreen({ navigation }) {
                     style={styles.loginButton}
                     activeOpacity={0.85}
                   >
-                    <Text style={styles.loginButtonText}>{t("sign_in")}</Text>
+                    <Text style={styles.loginButtonText}>Sign in</Text>
                   </TouchableOpacity>
                 ) : null}
                 <TouchableOpacity
                   onPress={() =>
                     handleAccountAction(
                       () => navigation.navigate("SettingsScreen"),
-                      t("sign_in_profile")
+                      "Sign in to view your profile and settings."
                     )
                   }
                   style={styles.headerProfile}
@@ -627,7 +625,7 @@ export default function DashboardScreen({ navigation }) {
                   />
                   <Text style={styles.username} numberOfLines={1}>
                     {isGuest
-                      ? t("guest")
+                      ? "Guest"
                       : user &&
                         user.firstName &&
                         user.firstName.charAt(0).toUpperCase() +
@@ -688,7 +686,7 @@ export default function DashboardScreen({ navigation }) {
                   <View style={styles.section}>
                     <View style={styles.sectionHeader}>
                       <Text style={styles.sectionTitle}>
-                        {t("latest_jewellery_designs")}
+                        Latest Jewellery Designs 
                       </Text>
                       <TouchableOpacity
                         onPress={() => {
@@ -697,7 +695,7 @@ export default function DashboardScreen({ navigation }) {
                           });
                         }}
                       >
-                        <Text style={styles.seeAll}>{t("see_all")}</Text>
+                        <Text style={styles.seeAll}>see all &gt;</Text>
                       </TouchableOpacity>
                     </View>
                     {loadingFeatured ? (
@@ -770,15 +768,13 @@ export default function DashboardScreen({ navigation }) {
             }
           }}
         >
-          {bottomBarItems.map((item, index) => {
-            const label = t(item.labelKey);
-            return (
+          {bottomBarItems.map((item, index) => (
             <TouchableOpacity
               key={index}
               style={floatingBottomBarStyles.floatingBarItem}
               onPress={() => handleBottomBarPress(item)}
               accessibilityRole="button"
-              accessibilityLabel={label}
+              accessibilityLabel={item.label}
             >
               <View style={floatingBottomBarStyles.floatingBarIconWrap}>
                 <Icon
@@ -796,11 +792,10 @@ export default function DashboardScreen({ navigation }) {
                 )}
               </View>
               <Text style={floatingBottomBarStyles.floatingBarText}>
-                {label}
+                {item.label}
               </Text>
             </TouchableOpacity>
-            );
-          })}
+          ))}
         </View>
       </View>
     );

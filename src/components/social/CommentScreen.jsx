@@ -22,10 +22,8 @@ import { ChatTextInput, TopText } from "../../styles/social.styles";
 import CommentCard from "./CommentCard";
 import { ErrorToggle } from "../../store/user";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { useTranslation } from "react-i18next";
 
 export default function CommentScreen({ navigation, route }) {
-  const { t } = useTranslation();
   const { loadingInBtn } = useSelector((state) => state.user);
   const dispatch = useDispatch();
   const { postId } = route.params;
@@ -49,7 +47,7 @@ export default function CommentScreen({ navigation, route }) {
       setComments([]);
       dispatch(
         ErrorToggle({
-          msg: t("failed_add_comment"),
+          msg: "Failed to load comments",
           type: "error",
           toggle: true,
         })
@@ -65,7 +63,7 @@ export default function CommentScreen({ navigation, route }) {
 
   const handleComment = async () => {
     if (!commentText.trim()) {
-      Alert.alert(t("error"), t("please_enter_comment"));
+      Alert.alert("Error", "Please enter a comment");
       return;
     }
 
@@ -80,7 +78,7 @@ export default function CommentScreen({ navigation, route }) {
       setCommentText("");
       dispatch(
         ErrorToggle({
-          msg: t("comment_added_success"),
+          msg: "Comment added successfully",
           type: "success",
           toggle: true,
         })
@@ -89,7 +87,7 @@ export default function CommentScreen({ navigation, route }) {
       console.error('Error adding comment:', error);
       dispatch(
         ErrorToggle({
-          msg: error.response?.data?.message || t("failed_add_comment"),
+          msg: error.response?.data?.message || "Failed to add comment",
           type: "error",
           toggle: true,
         })
@@ -105,7 +103,7 @@ export default function CommentScreen({ navigation, route }) {
     );
     dispatch(
       ErrorToggle({
-        msg: t("commentDeletedSuccessfully"),
+        msg: "Comment deleted successfully",
         type: "success",
         toggle: true,
       })
@@ -116,7 +114,7 @@ export default function CommentScreen({ navigation, route }) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#FFFFFF" }}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={{ marginTop: 16, color: "#8E8E93", fontSize: 16 }}>{t("loading_comments")}</Text>
+        <Text style={{ marginTop: 16, color: "#8E8E93", fontSize: 16 }}>Loading comments...</Text>
       </View>
     );
   }
@@ -161,7 +159,7 @@ export default function CommentScreen({ navigation, route }) {
                 marginLeft: 8
               }}
             >
-              {t("comments")} ({comments.length})
+              Comments ({comments.length})
             </TopText>
           </View>
         </RowBetween>
@@ -203,7 +201,7 @@ export default function CommentScreen({ navigation, route }) {
                 textAlign: "center"
               }}
             >
-              {t("no_comments_yet")}
+              No comments yet
             </TopText>
             <Text
               style={{ 
@@ -214,7 +212,7 @@ export default function CommentScreen({ navigation, route }) {
                 lineHeight: 20
               }}
             >
-              {t("be_first_share_thoughts")}
+              Be the first to share your thoughts!
             </Text>
           </View>
         )}
@@ -257,7 +255,7 @@ export default function CommentScreen({ navigation, route }) {
                 paddingHorizontal: 0,
                 textAlignVertical: 'bottom',
               }}
-              placeholder={t("add_a_comment")}
+              placeholder="Add a comment..."
               placeholderTextColor="#8E8E93"
               value={commentText}
               onChangeText={setCommentText}

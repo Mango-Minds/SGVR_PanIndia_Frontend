@@ -12,12 +12,10 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
 
 const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
-  const { t } = useTranslation();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
 
@@ -27,7 +25,7 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
 
   const handleSubmit = () => {
     if (rating === 0) {
-      Alert.alert(t('jw_rating_required'), t('jw_select_rating'));
+      Alert.alert('Rating Required', 'Please select a rating before submitting.');
       return;
     }
 
@@ -79,7 +77,7 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
         >
           <View style={styles.modalContent} onStartShouldSetResponder={() => true}>
             <View style={styles.header}>
-              <Text style={styles.title}>{t('jw_write_a_review')}</Text>
+              <Text style={styles.title}>Write a Review</Text>
               <TouchableOpacity onPress={handleClose} disabled={isLoading}>
                 <Icon name="close" size={24} color={jewelleryColors.text} />
               </TouchableOpacity>
@@ -87,19 +85,19 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
 
             <ScrollView showsVerticalScrollIndicator={false}>
               <View style={styles.content}>
-                <Text style={styles.label}>{t('jw_rating_label')}</Text>
+                <Text style={styles.label}>Rating *</Text>
                 {renderStars()}
                 {rating > 0 && (
                   <Text style={styles.ratingText}>
-                    {rating} {rating === 1 ? t('jw_star') : t('jw_stars')}
+                    {rating} {rating === 1 ? 'star' : 'stars'}
                   </Text>
                 )}
 
                 <View style={styles.commentSection}>
-                  <Text style={styles.label}>{t('jw_comment_optional')}</Text>
+                  <Text style={styles.label}>Comment (Optional)</Text>
                   <TextInput
                     style={styles.commentInput}
-                    placeholder={t('jw_share_experience')}
+                    placeholder="Share your experience..."
                     placeholderTextColor={jewelleryColors.textSecondary}
                     value={comment}
                     onChangeText={setComment}
@@ -109,7 +107,7 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
                     editable={!isLoading}
                   />
                   <Text style={styles.charCount}>
-                    {comment.length}{t('jw_char_count', { count: 1000 })}
+                    {comment.length}/1000 characters
                   </Text>
                 </View>
               </View>
@@ -121,7 +119,7 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
                 onPress={handleClose}
                 disabled={isLoading}
               >
-                <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[
@@ -134,7 +132,7 @@ const ReviewForm = ({ visible, onClose, onSubmit, isLoading = false }) => {
                 {isLoading ? (
                   <ActivityIndicator size="small" color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.submitButtonText}>{t('jw_submit_review')}</Text>
+                  <Text style={styles.submitButtonText}>Submit Review</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -248,3 +246,4 @@ const styles = StyleSheet.create({
 });
 
 export default ReviewForm;
+

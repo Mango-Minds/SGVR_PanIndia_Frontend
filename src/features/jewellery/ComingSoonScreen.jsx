@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
@@ -12,12 +11,9 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
  * Prevents crashes from navigating to unregistered route names.
  */
 const ComingSoonScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
-  const title = route.params?.titleKey
-    ? t(route.params.titleKey)
-    : route.params?.title || t('jw_this_section');
+  const title = route.params?.title || route.name?.replace(/Screen$/, '') || 'This section';
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
@@ -30,16 +26,14 @@ const ComingSoonScreen = () => {
       />
       <View style={styles.body}>
         <Icon name="clock-outline" size={56} color={jewelleryColors.primary} />
-        <Text style={styles.heading}>{t('comingSoon')}</Text>
-        <Text style={styles.subtext}>
-          {t('jw_coming_soon_body', { title })}
-        </Text>
+        <Text style={styles.heading}>Coming Soon</Text>
+        <Text style={styles.subtext}>{title} is coming soon. Stay tuned!</Text>
         <TouchableOpacity
           style={styles.button}
           onPress={() => navigation.navigate('HomeScreen')}
           activeOpacity={0.85}
         >
-          <Text style={styles.buttonText}>{t('jw_back_to_home')}</Text>
+          <Text style={styles.buttonText}>Back to Jewellery Home</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

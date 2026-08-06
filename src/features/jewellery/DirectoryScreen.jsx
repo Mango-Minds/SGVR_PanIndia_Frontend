@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -27,33 +26,33 @@ import {
 
 const DIRECTORY_CONFIG = {
   VendorsScreen: {
-    titleKey: 'jw_vendors',
+    title: 'Vendors',
     emptyIcon: 'person',
-    emptyKey: 'jw_no_vendors',
+    emptyText: 'No vendors found',
     fetch: getVendorsList,
     detailScreen: 'EachVendor',
     getDetailParams: (item) => ({ vendor: item, vendorId: item._id }),
   },
   WorkersScreen: {
-    titleKey: 'jw_karegars',
+    title: 'Karegars',
     emptyIcon: 'people',
-    emptyKey: 'jw_no_karegars',
+    emptyText: 'No karegars found',
     fetch: getWorkersList,
     detailScreen: 'EachWorker',
     getDetailParams: (item) => ({ worker: item, workerId: item._id }),
   },
   DesignersScreen: {
-    titleKey: 'jw_manufacturers',
+    title: 'Manufacturers',
     emptyIcon: 'star',
-    emptyKey: 'jw_no_manufacturers',
+    emptyText: 'No manufacturers found',
     fetch: getDesignersList,
     detailScreen: 'EachDesigner',
     getDetailParams: (item) => ({ designer: item }),
   },
   GemologistScreen: {
-    titleKey: 'jw_gemologists',
+    title: 'Gemologists',
     emptyIcon: 'diamond',
-    emptyKey: 'jw_no_gemologists',
+    emptyText: 'No gemologists found',
     fetch: getGemologistsList,
     detailScreen: 'EachGemologist',
     getDetailParams: (item) => ({ gemologist: item }),
@@ -71,31 +70,29 @@ const getImageUri = (item) => {
   return imagePath.startsWith('http') ? imagePath : `${BASEIMGURL}${imagePath}`;
 };
 
+const getSubtitle = (item) => {
+  if (item?.owner?.address) return item.owner.address;
+  if (item?.address) return item.address;
+  if (item?.location) return item.location;
+  if (item?.certification) return item.certification;
+  if (item?.city && item?.state) return `${item.city}, ${item.state}`;
+  if (item?.city || item?.state) return item.city || item.state;
+  return 'Address not available';
+};
+
+const getDisplayName = (item) =>
+  item.username ||
+  item.name ||
+  (item.owner?.firstName
+    ? `${item.owner.firstName} ${item.owner.lastName || ''}`.trim()
+    : 'Unknown');
+
 const DirectoryScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
   const config = DIRECTORY_CONFIG[route.name];
-  const title = config ? t(config.titleKey) : t('jw_not_found');
-
-  const getSubtitle = (item) => {
-    if (item?.owner?.address) return item.owner.address;
-    if (item?.address) return item.address;
-    if (item?.location) return item.location;
-    if (item?.certification) return item.certification;
-    if (item?.city && item?.state) return `${item.city}, ${item.state}`;
-    if (item?.city || item?.state) return item.city || item.state;
-    return t('jw_address_unavailable');
-  };
-
-  const getDisplayName = (item) =>
-    item.username ||
-    item.name ||
-    (item.owner?.firstName
-      ? `${item.owner.firstName} ${item.owner.lastName || ''}`.trim()
-      : t('jw_unknown'));
 
   const [activeTab, setActiveTab] = useState('home');
   const [items, setItems] = useState([]);
@@ -122,13 +119,13 @@ const DirectoryScreen = () => {
           : [];
       setItems(list);
     } catch (err) {
-      console.error(`Error fetching ${title}:`, err);
-      setError(t('jw_load_type_error', { type: title.toLowerCase() }));
+      console.error(`Error fetching ${config.title}:`, err);
+      setError(`Failed to load ${config.title.toLowerCase()}. Please try again.`);
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [config, t, title]);
+  }, [config]);
 
   useEffect(() => {
     fetchItems();
@@ -156,9 +153,9 @@ const DirectoryScreen = () => {
   if (!config) {
     return (
       <SafeAreaView style={commonStyles.container} edges={['top']}>
-        <HeaderBar showBack title={t('jw_not_found')} onBackPress={() => navigation.goBack()} />
+        <HeaderBar showBack title="Not Found" onBackPress={() => navigation.goBack()} />
         <View style={styles.centerContainer}>
-          <Text style={styles.errorText}>{t('jw_not_found')}</Text>
+          <Text style={styles.errorText}>Screen not configured.</Text>
         </View>
       </SafeAreaView>
     );
@@ -168,7 +165,7 @@ const DirectoryScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar
         showBack
-        title={title}
+        title={config.title}
         onBackPress={() => {
           if (navigation.canGoBack()) {
             navigation.goBack();
@@ -186,22 +183,20 @@ const DirectoryScreen = () => {
         {loading ? (
           <View style={styles.centerContainer}>
             <ActivityIndicator size="large" color={jewelleryColors.primary} />
-            <Text style={styles.loadingText}>
-              {t('jw_loading_type', { type: title.toLowerCase() })}
-            </Text>
+            <Text style={styles.loadingText}>Loading {config.title.toLowerCase()}...</Text>
           </View>
         ) : error ? (
           <View style={styles.centerContainer}>
             <Icon name="error-outline" size={48} color={jewelleryColors.textSecondary} />
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity style={styles.retryButton} onPress={fetchItems}>
-              <Text style={styles.retryButtonText}>{t('retry')}</Text>
+              <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
         ) : items.length === 0 ? (
           <View style={styles.centerContainer}>
             <Icon name={config.emptyIcon} size={48} color={jewelleryColors.textSecondary} />
-            <Text style={styles.emptyText}>{t(config.emptyKey)}</Text>
+            <Text style={styles.emptyText}>{config.emptyText}</Text>
           </View>
         ) : (
           items.map((item) => {

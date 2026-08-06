@@ -14,7 +14,6 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useFocusEffect } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import { decode } from "base-64";
 import { BASEAPIURL } from "../../infrastructure/constants";
@@ -34,7 +33,6 @@ import {
 } from "../../hooks/useJewelleryNotificationBadge";
 
 function JewelleryNotifications({ navigation, route }) {
-  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
   const { token, isGuest, user } = useSelector((state) => state.user);
@@ -211,12 +209,18 @@ function JewelleryNotifications({ navigation, route }) {
         } catch (error) {
           console.error("Error resolving event from notification:", error);
         }
-        Alert.alert(t("jw_event"), t("jw_event_open_error"));
+        Alert.alert(
+          "Event",
+          "Could not open this event. Please open it from Events."
+        );
       })();
       return;
     }
 
-    Alert.alert(t("jw_event"), t("jw_event_open_error"));
+    Alert.alert(
+      "Event",
+      "Could not open this event. Please open it from Events."
+    );
   };
 
   const handleTabChange = (tab) => {
@@ -281,7 +285,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accept Successfully.");
         // fetchVendorToVendorRequest();
         setNotification(
           "The vendor has accepted your connection request! You can now buy any product from them."
@@ -320,7 +324,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchVendorToVendorRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -371,7 +375,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accept Successfully.");
         // fetchShopToShopRequest();
         removeAcceptedRequest(requestId, setShops);
       } else {
@@ -397,7 +401,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request deleted successfully.");
         fetchShopToShopRequest();
       } else {
         const responseText = await response.text();
@@ -463,7 +467,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accept Successfully.");
         // fetchVendorToShopRequest();
         removeAcceptedRequest(requestId, setVendorsListData);
       } else {
@@ -487,7 +491,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchVendorToShopRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -537,7 +541,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
         // fetchWorkerVendorRequest();
         removeAcceptedRequest(requestId, setVendorsData);
       } else {
@@ -561,7 +565,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchWorkerVendorRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -615,7 +619,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
         // fetchVendorWorkerRequest();
         removeAcceptedRequest(requestId, setWorkersData);
       } else {
@@ -645,11 +649,11 @@ function JewelleryNotifications({ navigation, route }) {
         throw new Error(errorResponse.message || "Failed to delete request");
       }
 
-      Alert.alert(t("jw_request_deleted"));
+      Alert.alert("Request Deleted Successfully.");
       fetchVendorWorkerRequest();
     } catch (error) {
       console.error("Error deleting request:", error);
-      Alert.alert(t("error"), error.message);
+      Alert.alert("Error", error.message);
     }
   };
 
@@ -695,7 +699,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accept Successfully.");
         // fetchShopToVendorRequest();
         removeAcceptedRequest(requestId, setShopsData);
       } else {
@@ -719,7 +723,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchShopToVendorRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -773,7 +777,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
         removeAcceptedRequest(requestId, setDesignersData);
       } else {
         throw new Error("Failed to accept request");
@@ -805,11 +809,11 @@ function JewelleryNotifications({ navigation, route }) {
         throw new Error(errorResponse.message || "Failed to delete request");
       }
 
-      Alert.alert(t("jw_request_deleted"));
+      Alert.alert("Request Deleted Successfully.");
       fetchVendorDesignerRequest();
     } catch (error) {
       console.error("Error deleting request:", error);
-      Alert.alert(t("error"), error.message);
+      Alert.alert("Error", error.message);
     }
   };
 
@@ -856,7 +860,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
 
         removeAcceptedRequest(requestId, setVendorDesignerData);
       } else {
@@ -880,7 +884,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchDesignerVendorRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -934,7 +938,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
         removeAcceptedRequest(requestId, setGemologistList);
       } else {
         throw new Error("Failed to accept request");
@@ -966,11 +970,11 @@ function JewelleryNotifications({ navigation, route }) {
         throw new Error(errorResponse.message || "Failed to delete request");
       }
 
-      Alert.alert(t("jw_request_deleted"));
+      Alert.alert("Request Deleted Successfully.");
       fetchVendorGemologistRequest();
     } catch (error) {
       console.error("Error deleting request:", error);
-      Alert.alert(t("error"), error.message);
+      Alert.alert("Error", error.message);
     }
   };
 
@@ -1014,7 +1018,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_accepted"));
+        Alert.alert("Request Accepted Successfully.");
 
         removeAcceptedRequest(requestId, setVendorGemologistData);
       } else {
@@ -1038,7 +1042,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_deleted"));
+        Alert.alert("Request Deleted Successfully.");
         fetchGemologistVendorRequest();
       } else {
         throw new Error("Failed to delete request");
@@ -1094,7 +1098,7 @@ function JewelleryNotifications({ navigation, route }) {
       );
 
       if (response.ok) {
-        Alert.alert(t("jw_request_action_success", { action }));
+        Alert.alert(`Request ${action}ed Successfully.`);
         if (action === "accept") {
           const owner_id = vendor?.toVendorId?.owner?._id;
           const business_id = vendor?.fromId?.owner?._id;
@@ -1128,7 +1132,7 @@ function JewelleryNotifications({ navigation, route }) {
       });
     } catch (error) {
       console.error("Error:", error);
-      Alert.alert(t("error"), t("jw_chat_connect_error"));
+      Alert.alert("Error", "Something went wrong while connecting to chat.");
     }
   };
 
@@ -1151,8 +1155,8 @@ function JewelleryNotifications({ navigation, route }) {
 
   const notificationsTitle =
     unreadNotificationCount > 0
-      ? t("jw_notifications_count", { count: unreadNotificationCount })
-      : t("jw_notifications");
+      ? `Notifications (${unreadNotificationCount})`
+      : "Notifications";
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
@@ -1165,7 +1169,7 @@ function JewelleryNotifications({ navigation, route }) {
           </View>
         ) : !hasNotifications ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>{t("jw_no_notifications")}</Text>
+            <Text style={styles.emptyText}>No notifications</Text>
           </View>
         ) : (
           <ScrollView
@@ -1247,7 +1251,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1265,7 +1269,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1341,7 +1345,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleWToVAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1358,7 +1362,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleWToVDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1434,7 +1438,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVtoDAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1451,7 +1455,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVtoDDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1527,7 +1531,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVtoGAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1544,7 +1548,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVtoGDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1621,7 +1625,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVToWAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1638,7 +1642,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVToWDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1712,7 +1716,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleDesignerAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1728,7 +1732,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleDesignerDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1804,7 +1808,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleGemologistAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1820,7 +1824,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleGemologistDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1893,7 +1897,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVTOSAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -1910,7 +1914,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleVToSDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -1983,7 +1987,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleSToVAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -2000,7 +2004,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleSToVDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -2073,7 +2077,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleSTOSAcceptRequest(requestId, uId);
                           }}
                         >
-                          <Text style={{ color: "white" }}>{t("accept")}</Text>
+                          <Text style={{ color: "white" }}>Accept</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                           style={{
@@ -2090,7 +2094,7 @@ function JewelleryNotifications({ navigation, route }) {
                             handleSTOSDeleteRequest(requestId);
                           }}
                         >
-                          <Text style={{ color: "black" }}>{t("delete")}</Text>
+                          <Text style={{ color: "black" }}>Delete</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -2148,7 +2152,7 @@ function JewelleryNotifications({ navigation, route }) {
                           );
                         }}
                       >
-                        <Text style={{ color: "white" }}>{t("accept")}</Text>
+                        <Text style={{ color: "white" }}>Accept</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={{
@@ -2167,7 +2171,7 @@ function JewelleryNotifications({ navigation, route }) {
                           );
                         }}
                       >
-                        <Text style={{ color: "black" }}>{t("delete")}</Text>
+                        <Text style={{ color: "black" }}>Delete</Text>
                       </TouchableOpacity>
                     </View>
                   </View>

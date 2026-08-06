@@ -9,7 +9,6 @@ import {
   Alert,
   Platform,
 } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import QRCode from 'react-native-qrcode-svg';
 import * as Clipboard from 'expo-clipboard';
 import Icon from 'react-native-vector-icons/MaterialIcons';
@@ -28,15 +27,14 @@ function buildQrPayload(qrValue) {
 }
 
 const QRModal = ({ visible, onClose, qrValue, shopName }) => {
-  const { t } = useTranslation();
   const payload = useMemo(() => buildQrPayload(qrValue), [qrValue]);
 
   const handleCopyLink = async () => {
     try {
       await Clipboard.setStringAsync(payload);
-      Alert.alert(t('jw_copied'), t('jw_link_copied'));
+      Alert.alert('Copied', 'Link copied to clipboard.');
     } catch {
-      Alert.alert(t('error'), t('jw_copy_failed'));
+      Alert.alert('Error', 'Could not copy link.');
     }
   };
 
@@ -51,7 +49,7 @@ const QRModal = ({ visible, onClose, qrValue, shopName }) => {
           : { message }
       );
     } catch {
-      Alert.alert(t('share'), t('jw_share_failed'));
+      Alert.alert('Share', 'Unable to open share sheet.');
     }
   };
 
@@ -65,7 +63,7 @@ const QRModal = ({ visible, onClose, qrValue, shopName }) => {
       <View style={styles.overlay}>
         <View style={styles.modalContent}>
           <View style={styles.header}>
-            <Text style={styles.title}>{t('jw_share_qr')}</Text>
+            <Text style={styles.title}>Share QR Code</Text>
             <TouchableOpacity onPress={onClose}>
               <Icon name="close" size={24} color={jewelleryColors.text} />
             </TouchableOpacity>
@@ -82,17 +80,17 @@ const QRModal = ({ visible, onClose, qrValue, shopName }) => {
             </View>
             {shopName ? <Text style={styles.shopName}>{shopName}</Text> : null}
             <Text style={styles.subtitle}>
-              {t('jw_qr_hint')}
+              Scan this code or share the link to open this page in the app or on the web.
             </Text>
           </View>
 
           <View style={styles.actions}>
             <TouchableOpacity style={styles.downloadButton} onPress={handleCopyLink}>
-              <Text style={styles.downloadButtonText}>{t('jw_copy_link')}</Text>
+              <Text style={styles.downloadButtonText}>Copy link</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.shareButton} onPress={handleShare}>
               <Icon name="share" size={20} color="#FFFFFF" />
-              <Text style={styles.shareButtonText}>{t('share')}</Text>
+              <Text style={styles.shareButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
         </View>

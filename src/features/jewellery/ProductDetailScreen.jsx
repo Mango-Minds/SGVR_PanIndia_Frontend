@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import SpecificationRow from '../../components/Jewellery/SpecificationRow';
@@ -35,7 +34,6 @@ import { jewelleryColors, typography, spacing, commonStyles } from '../../styles
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const ProductDetailScreen = () => {
-  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -93,7 +91,7 @@ const ProductDetailScreen = () => {
 
   const loadProduct = useCallback(async () => {
     if (!productId) {
-      setError(isRequirement ? t('jw_requirement_not_found') : t('jw_product_not_found'));
+      setError(isRequirement ? 'Requirement not found' : 'Product not found');
       setLoading(false);
       return;
     }
@@ -117,7 +115,7 @@ const ProductDetailScreen = () => {
         : mapJewelryProduct(rawProduct);
 
       if (!mapped) {
-        setError(isRequirement ? t('jw_requirement_not_found') : t('jw_product_not_found'));
+        setError(isRequirement ? 'Requirement not found' : 'Product not found');
         setProductData(null);
         return;
       }
@@ -127,14 +125,14 @@ const ProductDetailScreen = () => {
       console.error('Error loading product details:', err);
       setError(
         isRequirement
-          ? t('jw_load_requirement_error')
-          : t('jw_load_product_error')
+          ? 'Failed to load product requirement'
+          : 'Failed to load product details'
       );
       setProductData(null);
     } finally {
       setLoading(false);
     }
-  }, [productId, isRequirement, t]);
+  }, [productId, isRequirement]);
 
   useFocusEffect(
     useCallback(() => {
@@ -158,14 +156,14 @@ const ProductDetailScreen = () => {
 
   const handleDelete = () => {
     Alert.alert(
-      isRequirement ? t('jw_delete_requirement') : t('jw_delete_product'),
+      isRequirement ? 'Delete Requirement' : 'Delete Product',
       isRequirement
-        ? t('jw_delete_requirement_msg')
-        : t('jw_delete_product_msg'),
+        ? 'Are you sure you want to delete this product requirement?'
+        : 'Are you sure you want to delete this product?',
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: t('delete'),
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -176,21 +174,21 @@ const ProductDetailScreen = () => {
                 await deleteJewelryProduct(productId);
               }
               Alert.alert(
-                t('jw_deleted'),
+                'Deleted',
                 isRequirement
-                  ? t('jw_requirement_deleted')
-                  : t('jw_product_deleted'),
-                [{ text: t('ok'), onPress: () => navigation.goBack() }]
+                  ? 'Product requirement deleted successfully'
+                  : 'Product deleted successfully',
+                [{ text: 'OK', onPress: () => navigation.goBack() }]
               );
             } catch (err) {
               console.error('Error deleting:', err);
               Alert.alert(
-                t('error'),
+                'Error',
                 err?.response?.data?.msg ||
                   err?.message ||
                   (isRequirement
-                    ? t('jw_delete_requirement_error')
-                    : t('jw_delete_product_error'))
+                    ? 'Failed to delete product requirement'
+                    : 'Failed to delete product')
               );
             } finally {
               setDeleting(false);
@@ -266,9 +264,9 @@ const ProductDetailScreen = () => {
       ) : error || !productData ? (
         <View style={styles.centered}>
           <Icon name="error-outline" size={48} color={jewelleryColors.textSecondary} />
-          <Text style={styles.errorTitle}>{error || t('jw_product_not_found')}</Text>
+          <Text style={styles.errorTitle}>{error || 'Product not found'}</Text>
           <TouchableOpacity style={styles.retryButton} onPress={loadProduct}>
-            <Text style={styles.retryButtonText}>{t('jw_try_again')}</Text>
+            <Text style={styles.retryButtonText}>Try Again</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -346,27 +344,27 @@ const ProductDetailScreen = () => {
 
         {/* Description */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_description')}</Text>
+          <Text style={styles.sectionTitle}>Description</Text>
           <Text style={styles.description}>
-            {productData.description || t('jw_no_description_product')}
+            {productData.description || 'No description available for this product.'}
           </Text>
         </View>
 
         {/* Specifications */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_specifications')}</Text>
+          <Text style={styles.sectionTitle}>Specifications</Text>
           <View style={styles.specificationsList}>
-            <SpecificationRow label={t('jw_metal')} value={productData.specifications.metal} />
-            <SpecificationRow label={t('jw_category')} value={productData.productCategory ? productData.productCategory.replace(/\b\w/g, (c) => c.toUpperCase()) : t('jw_na')} />
-            <SpecificationRow label={t('jw_quality')} value={productData.specifications.stones} />
-            <SpecificationRow label={t('jw_condition')} value={productData.specifications.making} />
-            <SpecificationRow label={t('jw_weight')} value={productData.specifications.dimensions} />
+            <SpecificationRow label="Metal" value={productData.specifications.metal} />
+            <SpecificationRow label="Category" value={productData.productCategory ? productData.productCategory.replace(/\b\w/g, (c) => c.toUpperCase()) : 'N/A'} />
+            <SpecificationRow label="Quality" value={productData.specifications.stones} />
+            <SpecificationRow label="Condition" value={productData.specifications.making} />
+            <SpecificationRow label="Weight" value={productData.specifications.dimensions} />
           </View>
         </View>
 
         {/* Contact Information */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_contact_info')}</Text>
+          <Text style={styles.sectionTitle}>Contact Information</Text>
 
           {checkingSubscription && !isOwner ? (
             <View style={styles.subscribePrompt}>
@@ -380,7 +378,7 @@ const ProductDetailScreen = () => {
                     <Icon name="store" size={24} color={jewelleryColors.primary} />
                   </View>
                   <View style={styles.contactTextContainer}>
-                    <Text style={styles.contactLabel}>{t('jw_shop_name')}</Text>
+                    <Text style={styles.contactLabel}>Shop Name</Text>
                     <Text style={styles.contactValue}>{productData.shop}</Text>
                   </View>
                 </View>
@@ -391,9 +389,9 @@ const ProductDetailScreen = () => {
                   <Icon name="location-on" size={24} color={jewelleryColors.primary} />
                 </View>
                 <View style={styles.contactTextContainer}>
-                  <Text style={styles.contactLabel}>{t('jw_location')}</Text>
+                  <Text style={styles.contactLabel}>Location</Text>
                   <Text style={styles.contactValue}>
-                    {productData.contact?.location || t('jw_location_unavailable')}
+                    {productData.contact?.location || 'Location not available'}
                   </Text>
                 </View>
               </View>
@@ -403,9 +401,9 @@ const ProductDetailScreen = () => {
                   <Icon name="phone" size={24} color={jewelleryColors.primary} />
                 </View>
                 <View style={styles.contactTextContainer}>
-                  <Text style={styles.contactLabel}>{t('jw_phone')}</Text>
+                  <Text style={styles.contactLabel}>Phone</Text>
                   <Text style={styles.contactValue}>
-                    {productData.contact?.phone || t('jw_phone_unavailable')}
+                    {productData.contact?.phone || 'Phone not available'}
                   </Text>
                 </View>
               </View>
@@ -415,9 +413,9 @@ const ProductDetailScreen = () => {
                   <Icon name="access-time" size={24} color={jewelleryColors.primary} />
                 </View>
                 <View style={styles.contactTextContainer}>
-                  <Text style={styles.contactLabel}>{t('jw_open_hours')}</Text>
+                  <Text style={styles.contactLabel}>Open Hours</Text>
                   <Text style={styles.contactValue}>
-                    {productData.contact?.hours || t('jw_contact_for_timings')}
+                    {productData.contact?.hours || 'Contact shop for timings'}
                   </Text>
                 </View>
               </View>
@@ -431,19 +429,19 @@ const ProductDetailScreen = () => {
                     if (digits.length >= 10) {
                       Linking.openURL(`tel:${digits}`);
                     } else {
-                      Alert.alert(t('jw_call'), t('jw_phone_number_unavailable'));
+                      Alert.alert('Call', 'Phone number is not available.');
                     }
                   }}
                 >
                   <Icon name="phone" size={20} color="#FFFFFF" />
-                  <Text style={styles.callButtonText}>{t('jw_call_now')}</Text>
+                  <Text style={styles.callButtonText}>Call Now</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.shareButton}
                   onPress={() => setQrModalVisible(true)}
                 >
                   <Icon name="share" size={20} color={jewelleryColors.text} />
-                  <Text style={styles.shareButtonText}>{t('jw_share_qr')}</Text>
+                  <Text style={styles.shareButtonText}>Share QR Code</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -457,15 +455,15 @@ const ProductDetailScreen = () => {
                   isGuest,
                   dispatch,
                   navigation,
-                  message: t('jw_sign_in_subscribe_contact'),
+                  message: 'Sign in to subscribe and view contact details.',
                   onAuthed: () => navigation.navigate('PremiumAccessScreen'),
                 })
               }
             >
               <Icon name="lock" size={22} color={jewelleryColors.primary} />
-              <Text style={styles.subscribeTitle}>{t('jw_subscribe_view_contact')}</Text>
+              <Text style={styles.subscribeTitle}>Subscribe to view contact</Text>
               <Text style={styles.subscribeSubtitle}>
-                {t('jw_unlock_contact_hint')}
+                Unlock shop name, phone, location and call options
               </Text>
             </TouchableOpacity>
           )}

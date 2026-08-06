@@ -8,10 +8,9 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
-  View,
+  View
 } from "react-native";
 import { useDispatch, useSelector } from "react-redux";
-import { useTranslation } from "react-i18next";
 import { SafeArea } from "../components/utility/safe-area.component";
 import { BASEAPIURL } from "../infrastructure/constants";
 import { ErrorToggle, setLoadingInBtn } from "../store/user";
@@ -33,7 +32,6 @@ const styles = StyleSheet.create({
 });
 
 export default function ForgotPasswordScreen({ navigation }) {
-  const { t } = useTranslation();
   const { loadingInBtn } = useSelector((state) => state.user);
 
   const dispatch = useDispatch();
@@ -45,7 +43,7 @@ export default function ForgotPasswordScreen({ navigation }) {
       dispatch(
         ErrorToggle({
           toggle: true,
-          msg: t("enter_phone_or_email"),
+          msg: "Please enter your phone number or email",
           type: "error",
         })
       );
@@ -54,18 +52,16 @@ export default function ForgotPasswordScreen({ navigation }) {
 
     dispatch(setLoadingInBtn(true));
     try {
-      const res = await axios.post(
-        BASEAPIURL + "/user/forgot-password/verify-user",
-        {
-          phone: phone,
-        }
-      );
+      // Skip OTP verification and go directly to reset password
+      const res = await axios.post(BASEAPIURL + "/user/forgot-password/verify-user", {
+        phone: phone,
+      });
 
       if (res.data.status === 0) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: t("user_verified_set_password"),
+            msg: "User verified successfully. Please set your new password.",
             type: "success",
           })
         );
@@ -79,7 +75,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: res.data.message || t("user_not_found"),
+            msg: res.data.message || "User not found",
             type: "error",
           })
         );
@@ -92,7 +88,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: msg || t("user_not_found"),
+            msg: msg || "User not found",
             type: "error",
           })
         );
@@ -100,7 +96,7 @@ export default function ForgotPasswordScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: t("try_again_error"),
+            msg: "There was some error. Please try again!",
             type: "error",
           })
         );
@@ -120,63 +116,62 @@ export default function ForgotPasswordScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flex: 1, justifyContent: "center" }}>
-            <Image
-              style={styles.logo}
-              source={require("../assets/images/pre-login/miLogo-small.png")}
-            />
+        <Image
+          style={styles.logo}
+          source={require("../assets/images/pre-login/miLogo-small.png")}
+        />
 
-            <FormSection>
-              <FormSectionTitle>{t("forgot_password_title")}</FormSectionTitle>
-              <FormSectionSubtitle>
-                {t("forgot_password_subtitle")}
-              </FormSectionSubtitle>
-              <LoginInputField
-                placeholderTextColor="#9B9B9B"
-                underlineColor="transparent"
-                borderBottomWidth={0}
-                autoCapitalize="none"
-                placeholder={t("email_phone_username")}
-                selectionColor={Theme.themeColor}
-                activeUnderlineColor={Theme.themeColor}
-                value={phone}
-                keyboardType="default"
-                onChangeText={(e) => setPhone(e)}
-                returnKeyType="done"
-                blurOnSubmit={true}
-              />
+        <FormSection>
+          <FormSectionTitle>Forgot Password</FormSectionTitle>
+          <FormSectionSubtitle>
+            Please Enter Your Phone Number or Email
+          </FormSectionSubtitle>
+          <LoginInputField
+            placeholderTextColor="#9B9B9B"
+            underlineColor="transparent"
+            borderBottomWidth={0}
+            autoCapitalize="none"
+            placeholder="Email/ Phone/ username"
+            selectionColor={Theme.themeColor}
+            activeUnderlineColor={Theme.themeColor}
+            value={phone}
+            keyboardType="default"
+            onChangeText={(e) => setPhone(e)}
+            returnKeyType="done"
+            blurOnSubmit={true}
+          />
 
-              <FormButton onPress={forgotPassword}>
-                <Text
-                  style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
-                >
-                  {loadingInBtn ? (
-                    <ActivityIndicator
-                      style={{
-                        display: "flex",
-                        alignSelf: "center",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        flex: 1,
-                      }}
-                      color={"white"}
-                    />
-                  ) : (
-                    t("continue")
-                  )}
-                </Text>
-              </FormButton>
-            </FormSection>
-            <BottomText style={{ marginTop: 30, marginBottom: 30 }}>
-              {t("go_back_to")}{" "}
-              <ForgotText
-                onPress={() => {
-                  navigation.navigate("Login");
-                }}
-                style={{ color: "#4191DF", fontSize: 13 }}
-              >
-                {t("login")}
-              </ForgotText>
-            </BottomText>
+          <FormButton onPress={forgotPassword}>
+            <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
+              {loadingInBtn ? (
+                <ActivityIndicator
+                  style={{
+                    display: "flex",
+                    alignSelf: "center",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flex: 1,
+                  }}
+                  // size={"large"}
+                  color={"white"}
+                />
+              ) : (
+                "Continue"
+              )}
+            </Text>
+          </FormButton>
+        </FormSection>
+        <BottomText style={{ marginTop: 30, marginBottom: 30 }}>
+          Go back to{" "}
+          <ForgotText
+            onPress={() => {
+              navigation.navigate("Login");
+            }}
+            style={{ color: "#4191DF", fontSize: 13 }}
+          >
+            Login
+          </ForgotText>
+        </BottomText>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

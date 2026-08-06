@@ -9,11 +9,9 @@ import { archiveChat, unarchiveChat } from "../../services/chat.services";
 import { updateConversation } from "../../store/user";
 import Icons from "react-native-vector-icons/Ionicons";
 import { clearConversationUnread } from "../../hooks/useMessageUnreadBadge";
-import { useTranslation } from "react-i18next";
 
 export default function MessageCard(props) {
   console.log("MessageCard - props:", props);
-  const { t } = useTranslation();
   const { user } = useSelector((state) => state.user);
   const { conversations } = useSelector((state) => state.user);
   const dispatch = useDispatch();
@@ -26,32 +24,25 @@ export default function MessageCard(props) {
     const date = new Date(iso);
     const diffMs = Date.now() - date.getTime();
     const minutes = Math.floor(diffMs / 60000);
-    if (minutes < 1) return t("time_now");
-    if (minutes < 60) return t("min_ago", { count: minutes });
+    if (minutes < 1) return "now";
+    if (minutes < 60) return `${minutes} min ago`;
     const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      return hours > 1
-        ? t("hrs_ago_plural", { count: hours })
-        : t("hrs_ago", { count: hours });
-    }
+    if (hours < 24) return `${hours} hr${hours > 1 ? "s" : ""} ago`;
     const days = Math.floor(hours / 24);
-    return days > 1
-      ? t("days_ago_plural", { count: days })
-      : t("days_ago", { count: days });
+    return `${days} day${days > 1 ? "s" : ""} ago`;
   };
 
   const handleDelete = () => {
-    const name = `${profile.current?.firstName || profile.current?.fname || ""} ${profile.current?.lastName || profile.current?.lname || ""}`.trim();
     Alert.alert(
-      t("delete_chat"),
-      t("delete_chat_confirm", { name }),
+      "Delete Chat",
+      `Are you sure you want to delete chat with ${(profile.current?.firstName || profile.current?.fname) + " " + (profile.current?.lastName || profile.current?.lname)}?`,
       [
         {
-          text: t("cancel"),
+          text: "Cancel",
           style: "cancel"
         },
         {
-          text: t("delete"),
+          text: "Delete",
           style: "destructive",
           onPress: async () => {
             try {
@@ -65,7 +56,7 @@ export default function MessageCard(props) {
               
               if (!conversationId) {
                 console.error("No conversation ID available for deletion");
-                Alert.alert(t("error"), t("unable_delete_conversation"));
+                Alert.alert("Error", "Unable to delete conversation");
                 return;
               }
               
@@ -93,11 +84,11 @@ export default function MessageCard(props) {
                 navigation.goBack();
               } else {
                 console.error("Failed to delete conversation:", res.message);
-                Alert.alert(t("error"), t("failed_delete_conversation"));
+                Alert.alert("Error", "Failed to delete conversation");
               }
             } catch (error) {
               console.error("Error deleting conversation:", error);
-              Alert.alert(t("error"), t("failed_delete_conversation"));
+              Alert.alert("Error", "Failed to delete conversation");
             }
           }
         }
@@ -106,22 +97,21 @@ export default function MessageCard(props) {
   };
 
   const handleArchiveToggle = async () => {
-    const actionLabel = props.archived ? t("unarchive") : t("archive");
-    const title = props.archived ? t("unarchive_chat") : t("archive_chat");
+    const action = props.archived ? "Unarchive" : "Archive";
     const message = props.archived
-      ? t("unarchive_confirm")
-      : t("archive_confirm");
+      ? "Are you sure you want to unarchive this conversation?"
+      : "Are you sure you want to archive this conversation?";
 
     Alert.alert(
-      title,
+      `${action} Chat`,
       message,
       [
         {
-          text: t("cancel"),
+          text: "Cancel",
           style: "cancel"
         },
         {
-          text: actionLabel,
+          text: action,
           onPress: async () => {
             try {
               let conversationId = props._id;
@@ -129,7 +119,7 @@ export default function MessageCard(props) {
                 conversationId = props.lastmsg.conversation.sort().join('_');
               }
               if (!conversationId) {
-                Alert.alert(t("error"), t("conversation_id_not_found"));
+                Alert.alert("Error", "Conversation ID not found.");
                 return;
               }
 
@@ -159,14 +149,11 @@ export default function MessageCard(props) {
                   }
                 }
               } else {
-                Alert.alert(
-                  t("error"),
-                  res.message || (props.archived ? t("failed_unarchive_chat") : t("failed_archive_chat"))
-                );
+                Alert.alert("Error", res.message || `Failed to ${action.toLowerCase()} chat.`);
               }
             } catch (e) {
-              console.error(`archive toggle failed:`, e);
-              Alert.alert(t("error"), t("unexpected_error"));
+              console.error(`${action} failed:`, e);
+              Alert.alert("Error", "An unexpected error occurred.");
             }
           }
         }
@@ -175,11 +162,11 @@ export default function MessageCard(props) {
   };
 
   const handleLongPress = () => {
-    const archiveLabel = props.archived ? t("unarchive") : t("archive");
+    const archiveLabel = props.archived ? "Unarchive" : "Archive";
     if (Platform.OS === "ios") {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [t("cancel"), archiveLabel, t("delete")],
+          options: ["Cancel", archiveLabel, "Delete"],
           cancelButtonIndex: 0,
           destructiveButtonIndex: 2,
         },
@@ -189,10 +176,10 @@ export default function MessageCard(props) {
         }
       );
     } else {
-      Alert.alert(t("chat_options"), "", [
+      Alert.alert("Chat options", "", [
         { text: archiveLabel, onPress: handleArchiveToggle },
-        { text: t("delete"), style: "destructive", onPress: handleDelete },
-        { text: t("cancel"), style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: handleDelete },
+        { text: "Cancel", style: "cancel" },
       ]);
     }
   };

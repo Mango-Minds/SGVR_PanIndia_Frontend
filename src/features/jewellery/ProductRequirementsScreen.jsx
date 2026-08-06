@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ProductCard from '../../components/Jewellery/ProductCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -34,19 +33,15 @@ const CARD_WIDTH = Math.floor(
 );
 const PAGE_LIMIT = 30;
 
+const CONTENT_TABS = [
+  { key: 'all', label: 'All' },
+  { key: 'mine', label: 'My Requirements' },
+];
+
 const ProductRequirementsScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
-
-  const CONTENT_TABS = useMemo(
-    () => [
-      { key: 'all', label: t('all') },
-      { key: 'mine', label: t('jw_my_requirements') },
-    ],
-    [t]
-  );
   const [bottomTab, setBottomTab] = useState('home');
   const [contentTab, setContentTab] = useState('all');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -149,7 +144,7 @@ const ProductRequirementsScreen = () => {
         isGuest,
         dispatch,
         navigation,
-        message: t('jw_sign_in_requirements'),
+        message: 'Sign in to view your product requirements.',
         onAuthed: () => {
           setShowAddForm(false);
           setContentTab('mine');
@@ -214,7 +209,7 @@ const ProductRequirementsScreen = () => {
       isGuest,
       dispatch,
       navigation,
-      message: t('jw_sign_in_add_requirement'),
+      message: 'Sign in to add your product requirement.',
       onAuthed: () => setShowAddForm(true),
     });
   };
@@ -245,7 +240,7 @@ const ProductRequirementsScreen = () => {
       return (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.centeredText}>{t('jw_loading_album')}</Text>
+          <Text style={styles.centeredText}>Loading album photos...</Text>
         </View>
       );
     }
@@ -259,7 +254,7 @@ const ProductRequirementsScreen = () => {
           {showAddInEmpty && (
             <TouchableOpacity style={styles.addCta} onPress={openAddForm}>
               <Icon name="add" size={18} color="#FFFFFF" />
-              <Text style={styles.addCtaText}>{t('jw_add_requirement')}</Text>
+              <Text style={styles.addCtaText}>Add Requirement</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -318,7 +313,7 @@ const ProductRequirementsScreen = () => {
             >
               <Icon name="arrow-back" size={20} color={jewelleryColors.text} />
             </TouchableOpacity>
-            <Text style={styles.formHeaderTitle}>{t('jw_add_requirement')}</Text>
+            <Text style={styles.formHeaderTitle}>Add Requirement</Text>
           </View>
           <AddProductScreen
             embedded
@@ -330,15 +325,15 @@ const ProductRequirementsScreen = () => {
     }
 
     return renderGallery({
-      emptyTitle: t('jw_no_requirements'),
-      emptySubtitle: t('jw_add_first_requirement'),
+      emptyTitle: 'No requirements yet',
+      emptySubtitle: 'Add your first product requirement',
       showAddInEmpty: true,
     });
   };
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_product_requirements')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Product Requirements" onBackPress={handleBackPress} />
 
       <View style={styles.tabBar}>
         {CONTENT_TABS.map((tab) => {
@@ -362,8 +357,8 @@ const ProductRequirementsScreen = () => {
       <View style={styles.content}>
         {contentTab === 'all'
           ? renderGallery({
-              emptyTitle: t('jw_no_product_requirements'),
-              emptySubtitle: t('jw_album_photos_hint'),
+              emptyTitle: 'No product requirements yet',
+              emptySubtitle: 'Album photos will appear here',
               showAddInEmpty: false,
             })
           : renderMineTab()}

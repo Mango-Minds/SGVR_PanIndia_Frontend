@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import ProductCard from '../../components/Jewellery/ProductCard';
@@ -38,22 +37,22 @@ const CARD_WIDTH = Math.floor(
 );
 const PAGE_LIMIT = 30;
 
+const CATEGORIES = [
+  { label: 'All', value: null },
+  { label: 'Rings', value: 'ring' },
+  { label: 'Bracelets', value: 'bracelet' },
+  { label: 'Chains', value: 'chain' },
+  { label: 'Earrings', value: 'earrings' },
+  { label: 'Necklaces', value: 'necklace' },
+];
+
 const BrowseScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
-  const CATEGORIES = [
-    { label: t('all'), value: null },
-    { label: t('jw_rings'), value: 'ring' },
-    { label: t('jw_bracelets'), value: 'bracelet' },
-    { label: t('jw_chains'), value: 'chain' },
-    { label: t('jw_earrings'), value: 'earrings' },
-    { label: t('jw_necklaces'), value: 'necklace' },
-  ];
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState('All');
   const [activeTab, setActiveTab] = useState('search');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -64,9 +63,10 @@ const BrowseScreen = () => {
   const [wishlistedItems, setWishlistedItems] = useState([]);
   const requestIdRef = useRef(0);
 
-  const activeProductCategory = activeCategory;
-  const activeCategoryLabel =
-    CATEGORIES.find((item) => item.value === activeCategory)?.label || t('all');
+  const activeProductCategory = useMemo(
+    () => CATEGORIES.find((item) => item.label === activeCategory)?.value || null,
+    [activeCategory]
+  );
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -131,7 +131,7 @@ const BrowseScreen = () => {
           setProducts([]);
           setHasMore(false);
         }
-        Alert.alert(t('error'), t('jw_load_products_error'));
+        Alert.alert('Error', 'Failed to load jewellery products');
       } finally {
         if (requestId === requestIdRef.current) {
           setLoading(false);
@@ -179,19 +179,19 @@ const BrowseScreen = () => {
       isGuest,
       dispatch,
       navigation,
-      message: t('jw_sign_in_wishlist'),
+      message: 'Sign in to save items to your wishlist.',
       onAuthed: async () => {
         const productId = String(product.id);
         const isWishlisted = wishlistedItems.includes(productId);
 
         if (isWishlisted) {
           Alert.alert(
-            t('jw_remove_wishlist_title'),
-            t('jw_remove_wishlist_msg'),
+            'Remove from Wishlist',
+            'Are you sure you want to remove this item from your wishlist?',
             [
-              { text: t('cancel'), style: 'cancel' },
+              { text: 'Cancel', style: 'cancel' },
               {
-                text: t('remove'),
+                text: 'Remove',
                 style: 'destructive',
                 onPress: async () => {
                   try {
@@ -199,7 +199,7 @@ const BrowseScreen = () => {
                     setWishlistedItems(nextItems.map((item) => item.id));
                   } catch (error) {
                     console.error('Error removing wishlist item:', error);
-                    Alert.alert(t('error'), t('jw_wishlist_remove_error'));
+                    Alert.alert('Error', 'Failed to remove item from wishlist');
                   }
                 },
               },
@@ -213,7 +213,7 @@ const BrowseScreen = () => {
           setWishlistedItems(nextItems.map((item) => item.id));
         } catch (error) {
           console.error('Error adding wishlist item:', error);
-          Alert.alert(t('error'), t('jw_wishlist_save_error'));
+          Alert.alert('Error', 'Failed to save item to wishlist');
         }
       },
     });
@@ -269,13 +269,13 @@ const BrowseScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('gallery')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Gallery" onBackPress={handleBackPress} />
 
       <View style={styles.searchContainer}>
         <Icon name="search" size={24} color={jewelleryColors.textSecondary} style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
-          placeholder={t('jw_search_jewellery')}
+          placeholder="search Jewelery"
           placeholderTextColor={jewelleryColors.textSecondary}
           value={searchQuery}
           onChangeText={setSearchQuery}
@@ -290,17 +290,17 @@ const BrowseScreen = () => {
         >
           {CATEGORIES.map((category) => (
             <TouchableOpacity
-              key={String(category.value)}
+              key={category.label}
               style={[
                 styles.categoryButton,
-                activeCategory === category.value && styles.activeCategoryButton,
+                activeCategory === category.label && styles.activeCategoryButton,
               ]}
-              onPress={() => setActiveCategory(category.value)}
+              onPress={() => setActiveCategory(category.label)}
             >
               <Text
                 style={[
                   styles.categoryText,
-                  activeCategory === category.value && styles.activeCategoryText,
+                  activeCategory === category.label && styles.activeCategoryText,
                 ]}
                 allowFontScaling={false}
               >
@@ -348,11 +348,11 @@ const BrowseScreen = () => {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Icon name="search-off" size={48} color={jewelleryColors.textSecondary} />
-              <Text style={styles.emptyStateTitle}>{t('jw_no_products')}</Text>
+              <Text style={styles.emptyStateTitle}>No products found</Text>
               <Text style={styles.emptyStateText}>
                 {debouncedSearch
-                  ? t('jw_no_results_for', { query: debouncedSearch })
-                  : t('jw_no_products_in', { category: activeCategoryLabel })}
+                  ? `No results for "${debouncedSearch}"`
+                  : `No products in ${activeCategory}`}
               </Text>
             </View>
           }

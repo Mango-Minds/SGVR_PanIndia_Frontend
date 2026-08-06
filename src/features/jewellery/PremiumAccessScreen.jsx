@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import PremiumPlanCard from '../../components/Jewellery/PremiumPlanCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -21,7 +20,6 @@ import { subscribeToPlan } from '../../services/jewellery.services';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const PremiumAccessScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -44,72 +42,66 @@ const PremiumAccessScreen = () => {
     }, [])
   );
 
-  const plans = useMemo(
-    () => [
-      {
-        key: 'monthly',
-        title: t('jw_plan_monthly'),
-        price: '400',
-        period: t('jw_per_month'),
-        features: [
-          t('jw_feat_verified_shops'),
-          t('jw_feat_contact_details'),
-          t('jw_feat_ratings'),
-          t('jw_feat_basic_support'),
-        ],
-        isExpanded: true,
-      },
-      {
-        key: 'quarterly',
-        title: t('jw_plan_quarterly'),
-        price: '1200',
-        period: t('jw_per_quarter'),
-        features: [
-          t('jw_feat_verified_shops'),
-          t('jw_feat_contact_details'),
-          t('jw_feat_ratings'),
-          t('jw_feat_priority_support'),
-          t('jw_feat_exclusive_deals'),
-        ],
-        isExpanded: false,
-      },
-      {
-        key: 'yearly',
-        title: t('jw_plan_yearly'),
-        price: '2400',
-        period: t('jw_per_year'),
-        features: [
-          t('jw_feat_verified_shops'),
-          t('jw_feat_contact_details'),
-          t('jw_feat_ratings'),
-          t('jw_feat_priority_support'),
-          t('jw_feat_exclusive_deals'),
-          t('jw_feat_early_access'),
-          t('jw_feat_premium_service'),
-        ],
-        isExpanded: false,
-      },
-    ],
-    [t]
-  );
+  const plans = [
+    {
+      key: 'monthly',
+      title: 'Monthly',
+      price: '400',
+      period: 'month',
+      features: [
+        'Access to 100+ Verified Shops',
+        'Shop Contact Details',
+        'Shop Ratings & Reviews',
+        'Basic Support',
+      ],
+      isExpanded: true,
+    },
+    {
+      key: 'quarterly',
+      title: 'Quarterly',
+      price: '1200',
+      period: 'quarter',
+      features: [
+        'Access to 100+ Verified Shops',
+        'Shop Contact Details',
+        'Shop Ratings & Reviews',
+        'Priority Support',
+        'Exclusive Deals',
+      ],
+      isExpanded: false,
+    },
+    {
+      key: 'yearly',
+      title: 'Yearly',
+      price: '2400',
+      period: 'year',
+      features: [
+        'Access to 100+ Verified Shops',
+        'Shop Contact Details',
+        'Shop Ratings & Reviews',
+        'Priority Support',
+        'Exclusive Deals',
+        'Early Access to New Shops',
+        'Premium Customer Service',
+      ],
+      isExpanded: false,
+    },
+  ];
 
-  const whySubscriptionItems = useMemo(
-    () => [
-      {
-        title: t('jw_why_access_shops'),
-        subtitle: t('jw_why_share_qr'),
-      },
-      {
-        title: t('jw_why_deals'),
-        subtitle: t('jw_why_deals_body'),
-      },
-      {
-        title: t('jw_feat_priority_support'),
-        subtitle: t('jw_why_support_body'),
-      },
-    ],
-    [t]
-  );
+  const whySubscriptionItems = [
+    {
+      title: 'Access 100 + Verified Shops',
+      subtitle: 'Share this QR Code to View Shop Details',
+    },
+    {
+      title: 'Exclusive Deals & Offers',
+      subtitle: 'Get special discounts from partner shops',
+    },
+    {
+      title: 'Priority Support',
+      subtitle: 'Get help whenever you need it.',
+    },
+  ];
 
   const handlePlanToggle = (planKey) => {
     setSelectedPlan(planKey);
@@ -120,14 +112,14 @@ const PremiumAccessScreen = () => {
       setSubscribing(true);
       await subscribeToPlan(selectedPlan);
       Alert.alert(
-        t('jw_subscribed'),
-        t('jw_subscription_success'),
-        [{ text: t('ok'), onPress: () => navigation.goBack() }]
+        'Subscribed',
+        'Premium access activated. You can now view shop contact details.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     } catch (err) {
       Alert.alert(
-        t('jw_subscription_failed'),
-        err?.response?.data?.msg || err?.message || t('jw_subscription_failed_msg')
+        'Subscription failed',
+        err?.response?.data?.msg || err?.message || 'Unable to subscribe right now.'
       );
     } finally {
       setSubscribing(false);
@@ -141,17 +133,14 @@ const PremiumAccessScreen = () => {
       isGuest,
       dispatch,
       navigation,
-      message: t('jw_sign_in_subscribe'),
+      message: 'Sign in to subscribe to premium access.',
       onAuthed: () => {
         Alert.alert(
-          t('jw_confirm_subscription'),
-          t('jw_confirm_subscription_msg', {
-            plan: plan?.title || selectedPlan,
-            price: plan?.price || '',
-          }),
+          'Confirm Subscription',
+          `Do you want to subscribe to the ${plan?.title || selectedPlan} plan for ₹${plan?.price || ''}?`,
           [
-            { text: t('jw_no'), style: 'cancel' },
-            { text: t('jw_yes'), onPress: confirmAndSubscribe },
+            { text: 'No', style: 'cancel' },
+            { text: 'Yes', onPress: confirmAndSubscribe },
           ]
         );
       },
@@ -179,7 +168,7 @@ const PremiumAccessScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_premium_access')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Premium Access" onBackPress={handleBackPress} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Icon */}
@@ -191,8 +180,11 @@ const PremiumAccessScreen = () => {
 
         {/* Title and Subtitle */}
         <View style={styles.headerTextContainer}>
-          <Text style={styles.title}>{t('jw_unlock_premium')}</Text>
-          <Text style={styles.subtitle}>{t('jw_unlock_premium_body')}</Text>
+          <Text style={styles.title}>Unlock Premium Access</Text>
+          <Text style={styles.subtitle}>
+            Get unlimited access to verified jewellery shops across your city with detailed
+            information and exclusive benefits
+          </Text>
         </View>
 
         {/* Plan Cards */}
@@ -220,19 +212,17 @@ const PremiumAccessScreen = () => {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={styles.subscribeButtonText}>
-              {t('jw_subscribe_to_plan', {
-                plan: plans.find((p) => p.key === selectedPlan)?.title,
-              })}
+              Subscribe to {plans.find((p) => p.key === selectedPlan)?.title} Plan
             </Text>
           )}
         </TouchableOpacity>
 
         {/* Trust Text */}
-        <Text style={styles.trustText}>{t('jw_cancel_anytime')}</Text>
+        <Text style={styles.trustText}>Cancel anytime. Secure payment. Money Back</Text>
 
         {/* Why Subscription Section */}
         <View style={styles.whySection}>
-          <Text style={styles.whyTitle}>{t('jw_why_subscription')}</Text>
+          <Text style={styles.whyTitle}>Why Subscription?</Text>
           {whySubscriptionItems.map((item, index) => (
             <View key={index} style={styles.whyItem}>
               <Icon name="check-circle" size={24} color={jewelleryColors.primary} />
@@ -340,3 +330,4 @@ const styles = StyleSheet.create({
 });
 
 export default PremiumAccessScreen;
+

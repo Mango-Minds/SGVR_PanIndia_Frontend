@@ -15,10 +15,8 @@ import { updateConversation, updateLocalChats } from "../../store/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { SOCKETURL } from "../../infrastructure/constants";
-import { useTranslation } from "react-i18next";
 
 export default function MessageScreenNew({ navigation }) {
-  const { t } = useTranslation();
   const { conversations, user } = useSelector((state) => state.user);
   const insets = useSafeAreaInsets();
   const [chatsUser, setChatsUser] = useState([]);
@@ -124,7 +122,7 @@ export default function MessageScreenNew({ navigation }) {
         <View style={{ alignItems: "center" }}>
           <IconButton icon="arrow-left" onPress={() => navigation.goBack()} />
           <TopText style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}>
-            {showArchived ? t("archived_chats") : t("messages")}
+            {showArchived ? "Archived Chats" : "Message"}
           </TopText>
         </View>
         <TouchableOpacity
@@ -142,7 +140,7 @@ export default function MessageScreenNew({ navigation }) {
         </TouchableOpacity>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder={t("search")} />
+        <SearchField placeholder="NewSearch" />
         <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
           <TouchableOpacity>
             <Icon name="magnify" size={24} />
@@ -166,7 +164,7 @@ export default function MessageScreenNew({ navigation }) {
         <View style={styles.noMessages}>
           <Ionicons name="chatbubbles-outline" size={100} color="#0000001A" />
           <Text style={styles.noMessagesText}>
-            {showArchived ? t("no_archived_chats") : t("no_messages")}
+            {showArchived ? "No Archived Chats" : "No Messages"}
           </Text>
         </View>
       )}

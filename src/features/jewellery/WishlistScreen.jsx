@@ -12,7 +12,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import ProductCard from '../../components/Jewellery/ProductCard';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -32,7 +31,6 @@ const CARD_WIDTH = Math.floor(
 );
 
 const WishlistScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -53,12 +51,12 @@ const WishlistScreen = () => {
       setItems(wishlistItems);
     } catch (error) {
       console.error('Error loading wishlist:', error);
-      Alert.alert(t('error'), t('jw_load_wishlist_error'));
+      Alert.alert('Error', 'Failed to load saved items');
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [t]);
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -72,13 +70,13 @@ const WishlistScreen = () => {
           isGuest,
           dispatch,
           navigation,
-          message: t('jw_sign_in_saved'),
+          message: 'Sign in to view your saved items.',
         });
         return;
       }
 
       loadWishlist();
-    }, [token, isGuest, dispatch, navigation, loadWishlist, t])
+    }, [token, isGuest, dispatch, navigation, loadWishlist])
   );
 
   const gridItems = useMemo(() => {
@@ -103,12 +101,12 @@ const WishlistScreen = () => {
 
   const handleRemove = (product) => {
     Alert.alert(
-      t('jw_remove_wishlist_title'),
-      t('jw_remove_wishlist_msg'),
+      'Remove from Wishlist',
+      'Are you sure you want to remove this item from your wishlist?',
       [
-        { text: t('cancel'), style: 'cancel' },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: t('remove'),
+          text: 'Remove',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -116,7 +114,7 @@ const WishlistScreen = () => {
               setItems(nextItems);
             } catch (error) {
               console.error('Error removing wishlist item:', error);
-              Alert.alert(t('error'), t('jw_wishlist_remove_error'));
+              Alert.alert('Error', 'Failed to remove item from wishlist');
             }
           },
         },
@@ -172,7 +170,7 @@ const WishlistScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_saved_items')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Saved Items" onBackPress={handleBackPress} />
 
       {loading ? (
         <View style={styles.centered}>
@@ -200,9 +198,9 @@ const WishlistScreen = () => {
           ListEmptyComponent={
             <View style={styles.emptyState}>
               <Icon name="favorite-border" size={56} color={jewelleryColors.textSecondary} />
-              <Text style={styles.emptyTitle}>{t('jw_no_saved_yet')}</Text>
+              <Text style={styles.emptyTitle}>No saved items yet</Text>
               <Text style={styles.emptySubtitle}>
-                {t('jw_wishlist_empty_hint')}
+                Tap the heart on jewellery products to save them here.
               </Text>
             </View>
           }

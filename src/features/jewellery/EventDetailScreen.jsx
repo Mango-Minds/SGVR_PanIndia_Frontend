@@ -14,7 +14,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import VerifiedBadge from '../../components/Jewellery/VerifiedBadge';
 import SpecificationRow from '../../components/Jewellery/SpecificationRow';
@@ -39,7 +38,6 @@ import { ErrorToggle } from '../../store/user';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const EventDetailScreen = () => {
-  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -76,14 +74,14 @@ const EventDetailScreen = () => {
         setEventData(normalizeEvent(data));
       } catch (error) {
         console.error('Error loading event:', error);
-        Alert.alert(t('error'), t('jw_load_event_error'));
+        Alert.alert('Error', 'Failed to load event details.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvent();
-  }, [eventId, t]);
+  }, [eventId]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -136,7 +134,7 @@ const EventDetailScreen = () => {
     if (digits.length >= 10) {
       Linking.openURL(`tel:${digits}`);
     } else {
-      Alert.alert(t('jw_call'), t('jw_phone_number_unavailable'));
+      Alert.alert('Call', 'Phone number is not available.');
     }
   };
 
@@ -145,7 +143,7 @@ const EventDetailScreen = () => {
     if (email) {
       Linking.openURL(`mailto:${email}`);
     } else {
-      Alert.alert(t('jw_email'), t('jw_email_unavailable'));
+      Alert.alert('Email', 'Email address is not available.');
     }
   };
 
@@ -159,7 +157,7 @@ const EventDetailScreen = () => {
       isGuest,
       dispatch,
       navigation,
-      message: t('jw_sign_in_interest'),
+      message: 'Sign in to mark interest in this event.',
       onAuthed: async () => {
         if (isInterested || markingInterest || !eventData.id) return;
 
@@ -170,7 +168,7 @@ const EventDetailScreen = () => {
           dispatch(
             ErrorToggle({
               type: 'Success',
-              msg: t('jw_interest_success'),
+              msg: 'Interest recorded. Organizer has been notified.',
               toggle: true,
             })
           );
@@ -179,7 +177,7 @@ const EventDetailScreen = () => {
             error.response?.data?.msg ||
             error.response?.data?.message ||
             error.message ||
-            t('jw_interest_error');
+            'Failed to mark interest.';
           dispatch(
             ErrorToggle({
               type: 'error',
@@ -195,18 +193,18 @@ const EventDetailScreen = () => {
   };
 
   const handleDelete = () => {
-    Alert.alert(t('jw_delete_event'), t('jw_delete_event_msg'), [
-      { text: t('cancel'), style: 'cancel' },
+    Alert.alert('Delete Event', 'Are you sure you want to delete this event?', [
+      { text: 'Cancel', style: 'cancel' },
       {
-        text: t('delete'),
+        text: 'Delete',
         style: 'destructive',
         onPress: async () => {
           try {
             setDeleting(true);
             await deleteJewelleryEvent(eventData.id);
-            Alert.alert(t('jw_deleted'), t('jw_event_deleted'), [
+            Alert.alert('Deleted', 'Event deleted successfully.', [
               {
-                text: t('ok'),
+                text: 'OK',
                 onPress: () => navigation.goBack(),
               },
             ]);
@@ -215,8 +213,8 @@ const EventDetailScreen = () => {
               error.response?.data?.msg ||
               error.response?.data?.message ||
               error.message ||
-              t('jw_delete_event_error');
-            Alert.alert(t('error'), message);
+              'Failed to delete event';
+            Alert.alert('Error', message);
           } finally {
             setDeleting(false);
           }
@@ -240,7 +238,7 @@ const EventDetailScreen = () => {
 
         <View style={styles.headerTitleContainer} pointerEvents="none">
           <Text style={styles.headerTitle} numberOfLines={1}>
-            {t('jw_event_details')}
+            Event Details
           </Text>
         </View>
 
@@ -303,7 +301,7 @@ const EventDetailScreen = () => {
             )}
             {eventData.isFeatured && (
               <View style={styles.featuredBadge}>
-                <Text style={styles.featuredText}>{t('jw_featured')}</Text>
+                <Text style={styles.featuredText}>Featured</Text>
               </View>
             )}
             {eventImages.length > 1 && (
@@ -360,47 +358,47 @@ const EventDetailScreen = () => {
               {!eventData.entryFee ||
               String(eventData.entryFee).toLowerCase() === 'free' ||
               Number(eventData.entryFee) === 0
-                ? t('jw_free')
+                ? 'Free'
                 : `₹${String(eventData.entryFee).replace(/^₹\s*/, '')}`}
             </Text>
           </View>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_about_event')}</Text>
+          <Text style={styles.sectionTitle}>About Event</Text>
           <Text style={styles.description}>{eventData.description}</Text>
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_event_details')}</Text>
+          <Text style={styles.sectionTitle}>Event Details</Text>
           <View style={styles.specificationsList}>
             <SpecificationRow
-              label={t('jw_date')}
+              label="Date"
               value={formatEventDate(eventData.startDate, eventData.endDate)}
             />
             <SpecificationRow
-              label={t('jw_time')}
+              label="Time"
               value={formatEventTime(eventData.startTime, eventData.endTime)}
             />
-            <SpecificationRow label={t('jw_venue')} value={eventData.venue} />
-            <SpecificationRow label={t('jw_address')} value={eventData.address} />
+            <SpecificationRow label="Venue" value={eventData.venue} />
+            <SpecificationRow label="Address" value={eventData.address} />
             <SpecificationRow
-              label={t('jw_entry_fee')}
+              label="Entry Fee"
               value={
                 !eventData.entryFee ||
                 String(eventData.entryFee).toLowerCase() === 'free' ||
                 Number(eventData.entryFee) === 0
-                  ? t('jw_free')
+                  ? 'Free'
                   : `₹${String(eventData.entryFee).replace(/^₹\s*/, '')}`
               }
             />
             <SpecificationRow
-              label={t('jw_capacity')}
-              value={`${eventData.capacity} ${t('jw_people')}`}
+              label="Capacity"
+              value={`${eventData.capacity} people`}
             />
             <SpecificationRow
-              label={t('jw_interested')}
-              value={`${eventData.interestedCount || 0} ${t('jw_people')}`}
+              label="Interested"
+              value={`${eventData.interestedCount || 0} people`}
             />
           </View>
         </View>
@@ -426,8 +424,8 @@ const EventDetailScreen = () => {
                 />
                 <Text style={styles.interestButtonText}>
                   {isInterested
-                    ? t('jw_you_are_interested')
-                    : t('jw_i_am_interested')}
+                    ? 'You are interested'
+                    : 'I am interested in this Event'}
                 </Text>
               </>
             )}
@@ -435,14 +433,14 @@ const EventDetailScreen = () => {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{t('jw_organizer_details')}</Text>
+          <Text style={styles.sectionTitle}>Organizer Details</Text>
 
           <View style={styles.contactItem}>
             <View style={styles.contactIconContainer}>
               <Icon name="person" size={24} color={jewelleryColors.primary} />
             </View>
             <View style={styles.contactTextContainer}>
-              <Text style={styles.contactLabel}>{t('jw_organizer')}</Text>
+              <Text style={styles.contactLabel}>Organizer</Text>
               <Text style={styles.contactValue}>{eventData.organizer}</Text>
             </View>
           </View>
@@ -452,7 +450,7 @@ const EventDetailScreen = () => {
               <Icon name="phone" size={24} color={jewelleryColors.primary} />
             </View>
             <View style={styles.contactTextContainer}>
-              <Text style={styles.contactLabel}>{t('jw_phone')}</Text>
+              <Text style={styles.contactLabel}>Phone</Text>
               <Text style={styles.contactValue}>{eventData.organizerPhone}</Text>
             </View>
           </View>
@@ -462,7 +460,7 @@ const EventDetailScreen = () => {
               <Icon name="email" size={24} color={jewelleryColors.primary} />
             </View>
             <View style={styles.contactTextContainer}>
-              <Text style={styles.contactLabel}>{t('jw_email')}</Text>
+              <Text style={styles.contactLabel}>Email</Text>
               <Text style={styles.contactValue}>{eventData.organizerEmail}</Text>
             </View>
           </View>
@@ -472,7 +470,7 @@ const EventDetailScreen = () => {
               <Icon name="location-on" size={24} color={jewelleryColors.primary} />
             </View>
             <View style={styles.contactTextContainer}>
-              <Text style={styles.contactLabel}>{t('jw_venue')}</Text>
+              <Text style={styles.contactLabel}>Venue</Text>
               <Text style={styles.contactValue}>{eventData.venue}</Text>
               <Text style={styles.contactSubValue}>{eventData.address}</Text>
             </View>
@@ -482,11 +480,11 @@ const EventDetailScreen = () => {
         <View style={styles.actionsContainer}>
           <TouchableOpacity style={styles.callButton} onPress={handleCall}>
             <Icon name="phone" size={20} color="#FFFFFF" />
-            <Text style={styles.callButtonText}>{t('jw_call_organizer')}</Text>
+            <Text style={styles.callButtonText}>Call Organizer</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.emailButton} onPress={handleEmail}>
             <Icon name="email" size={20} color={jewelleryColors.text} />
-            <Text style={styles.emailButtonText}>{t('jw_email')}</Text>
+            <Text style={styles.emailButtonText}>Email</Text>
           </TouchableOpacity>
         </View>
 
@@ -496,7 +494,7 @@ const EventDetailScreen = () => {
             onPress={() => setQrModalVisible(true)}
           >
             <Icon name="share" size={20} color={jewelleryColors.text} />
-            <Text style={styles.shareButtonText}>{t('jw_share_qr')}</Text>
+            <Text style={styles.shareButtonText}>Share QR Code</Text>
           </TouchableOpacity>
         </View>
 

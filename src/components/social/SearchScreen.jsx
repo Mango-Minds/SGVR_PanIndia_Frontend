@@ -31,10 +31,8 @@ import { ErrorToggle } from "../../store/user";
 import { useSelector } from "react-redux";
 import { UpdateSocialData } from "../../store/Handlers/Reducer.Handler";
 import SearchScreenUserThumb from "./SearchScreenUserThumb";
-import { useTranslation } from "react-i18next";
 
 export default function SearchScreen({ navigation }) {
-  const { t } = useTranslation();
   const { socialData } = useSelector((state) => state.user);
   const insets = useSafeAreaInsets();
   const dispatch = useDispatch();
@@ -110,12 +108,12 @@ export default function SearchScreen({ navigation }) {
           <TopText
             style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
           >
-            {t("search")}
+            Search
           </TopText>
         </View>
       </RowBetween>
       <Row style={{ alignItems: "center", marginLeft: 16, marginRight: 16 }}>
-        <SearchField placeholder={t("search")} onChangeText={handleSearch} />
+        <SearchField placeholder="Search" onChangeText={handleSearch} />
         <View style={{ position: "absolute", right: "5%", elevation: 3 }}>
           <TouchableOpacity>
             <Icon name="magnify" size={24} />
@@ -213,7 +211,7 @@ export default function SearchScreen({ navigation }) {
                 marginTop: 10,
               }}
             >
-              {t("search_for_users")}
+              Search For People...
             </Text>
           </View>
         </TouchableWithoutFeedback>

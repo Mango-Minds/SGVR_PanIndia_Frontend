@@ -1,7 +1,6 @@
 import apiClient from "../../store/apiClient";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Alert } from "react-native";
-import i18next from "i18next";
 // Helper to get token
 const getToken = async () => {
   const token = await AsyncStorage.getItem("token");
@@ -343,13 +342,13 @@ export const followUserAPI = async (
     // Validate inputs
     if (!toUserId) {
       console.error('followUserAPI: toUserId is required');
-      Alert.alert(i18next.t("error"), i18next.t("invalid_user_id"));
+      Alert.alert("Error", "Invalid user ID");
       return;
     }
 
     if (!fromUserId) {
       console.error('followUserAPI: fromUserId is required');
-      Alert.alert(i18next.t("error"), i18next.t("invalid_user_id"));
+      Alert.alert("Error", "Invalid user ID");
       return;
     }
 
@@ -372,7 +371,7 @@ export const followUserAPI = async (
     // Axios throws on non-2xx status, so if you're here, it's successful
     if (response.status === 200) {
       setFollowStatus("approved");
-      Alert.alert(i18next.t("success"), i18next.t("user_followed_success"));
+      Alert.alert("Success", "User followed successfully.");
     }
   } catch (error) {
     console.error("Error following user:", error);
@@ -381,14 +380,14 @@ export const followUserAPI = async (
       const message = error.response.data.message;
       if (message === "You are already following this user.") {
         setFollowStatus("approved");
-        Alert.alert(i18next.t("already_following"), message);
+        Alert.alert("Already Following", message);
       } else {
-        Alert.alert(i18next.t("error"), message || i18next.t("failed_follow_user"));
+        Alert.alert("Error", message || "Failed to follow user.");
         // Don't update follow status on error
         return;
       }
     } else {
-      Alert.alert(i18next.t("error"), i18next.t("unexpected_error"));
+      Alert.alert("Error", "An unexpected error occurred.");
       // Don't update follow status on error
       return;
     }

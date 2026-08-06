@@ -1,11 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors } from '../../styles/jewellery.styles';
 
 const VerifiedBadge = ({ size = 'medium' }) => {
-  const { t } = useTranslation();
   const badgeSize = size === 'small' ? 20 : 24;
   const iconSize = size === 'small' ? 12 : 16;
   const fontSize = size === 'small' ? 8 : 10;
@@ -13,7 +11,7 @@ const VerifiedBadge = ({ size = 'medium' }) => {
   return (
     <View style={[styles.badge, { height: badgeSize, paddingHorizontal: badgeSize * 0.4 }]}>
       <Icon name="check" size={iconSize} color="#FFFFFF" />
-      <Text style={[styles.text, { fontSize }]}>{t('jw_verified')}</Text>
+      <Text style={[styles.text, { fontSize }]}>Verified</Text>
     </View>
   );
 };

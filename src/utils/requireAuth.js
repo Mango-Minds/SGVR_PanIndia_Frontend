@@ -1,5 +1,4 @@
 import { Alert, InteractionManager } from "react-native";
-import i18next from "i18next";
 import { exitGuestMode } from "../store/user";
 
 /**
@@ -28,12 +27,12 @@ export function requireAuth({ token, isGuest, dispatch, navigation, onAuthed, me
   }
 
   Alert.alert(
-    i18next.t("sign_in_required"),
-    message || i18next.t("sign_in_default"),
+    "Sign in required",
+    message || "Please sign in or create an account to use this feature.",
     [
-      { text: i18next.t("cancel"), style: "cancel" },
+      { text: "Cancel", style: "cancel" },
       {
-        text: i18next.t("sign_in"),
+        text: "Sign in",
         onPress: () => {
           signInFromGuest(dispatch);
         },
@@ -50,15 +49,15 @@ export function isAccountModule(path) {
 const JEWELLERY_AUTH_TAB_CONFIG = {
   profile: {
     screen: "ProfileScreen",
-    messageKey: "sign_in_jewellery_profile",
+    message: "Sign in to view your jewellery profile.",
   },
   message: {
     screen: "MessageScreen",
-    messageKey: "sign_in_messages",
+    message: "Sign in to view your messages.",
   },
   notifications: {
     screen: "JewelleryNotifications",
-    messageKey: "sign_in_notifications",
+    message: "Sign in to view notifications.",
   },
 };
 
@@ -81,6 +80,6 @@ export function navigateJewelleryAuthTab(tab, { token, isGuest, dispatch, naviga
     dispatch,
     navigation,
     onAuthed: () => navigation.navigate(config.screen),
-    message: i18next.t(config.messageKey),
+    message: config.message,
   });
 }

@@ -516,7 +516,7 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
               <TextInput
                 style={styles.searchInput}
                 value={appliedJobsSearchQuery}
-                placeholder={t("search_applied_jobs")}
+                placeholder="Search your applied jobs..."
                 onChangeText={handleSearch}
                 placeholderTextColor="#999"
               />
@@ -577,8 +577,8 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
               ListEmptyComponent={() => (
                 <View style={styles.emptyState}>
                   <Ionicons name="document-text-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyStateText}>{t("no_applied_jobs")}</Text>
-                  <Text style={styles.emptyStateSubtext}>{t("browse_apply_jobs_hint")}</Text>
+                  <Text style={styles.emptyStateText}>No applied jobs yet</Text>
+                  <Text style={styles.emptyStateSubtext}>Browse and apply to jobs in the Search Jobs tab</Text>
                 </View>
               )}
             />
@@ -592,7 +592,7 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
               <TextInput
                 value={allJobsSearchQuery}
                 style={styles.searchInput}
-                placeholder={t("search_jobs_by")}
+                placeholder="Search by job title, company, or location..."
                 onChangeText={handleSearch}
                 placeholderTextColor="#999"
               />
@@ -639,8 +639,8 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
               ListEmptyComponent={() => (
                 <View style={styles.emptyState}>
                   <Ionicons name="search-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyStateText}>{t("no_jobs_found")}</Text>
-                  <Text style={styles.emptyStateSubtext}>{t("try_different_keywords_jobs")}</Text>
+                  <Text style={styles.emptyStateText}>No jobs found</Text>
+                  <Text style={styles.emptyStateSubtext}>Try different keywords or check back later</Text>
                 </View>
               )}
             />
@@ -654,7 +654,7 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
                 <TextInput
                   value={userJobsSearchQuery}
                   style={styles.searchInput}
-                  placeholder={t("search_your_job_listings")}
+                  placeholder="Search your job listings..."
                   onChangeText={handleSearch}
                   placeholderTextColor="#999"
                 />
@@ -725,8 +725,8 @@ const fetchAppliedJobs = async (query = "", isRefresh = false) => {
                 ListEmptyComponent={() => (
                   <View style={styles.emptyState}>
                     <Ionicons name="briefcase-outline" size={48} color="#ccc" />
-                    <Text style={styles.emptyStateText}>{t("no_job_listings")}</Text>
-                    <Text style={styles.emptyStateSubtext}>{t("tap_plus_create_job")}</Text>
+                    <Text style={styles.emptyStateText}>No job listings yet</Text>
+                    <Text style={styles.emptyStateSubtext}>Tap the + icon to create your first job posting</Text>
                   </View>
                 )}
               />

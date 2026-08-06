@@ -21,7 +21,6 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
-import { useTranslation } from 'react-i18next';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import {
   getJewelleryEventById,
@@ -41,7 +40,6 @@ const normalizePhone = (value) =>
     .slice(-10);
 
 const EditEventScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
@@ -105,7 +103,7 @@ const EditEventScreen = () => {
         setExistingBannerUrl(event.bannerImage || '');
         setExistingGalleryUrls(event.images || []);
       } catch (error) {
-        Alert.alert(t('error'), t('jw_load_event_error'));
+        Alert.alert('Error', 'Failed to load event details.');
         navigation.goBack();
       } finally {
         setLoading(false);
@@ -113,7 +111,7 @@ const EditEventScreen = () => {
     };
 
     loadEvent();
-  }, [eventId, navigation, t]);
+  }, [eventId, navigation]);
 
   const updateField = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -198,54 +196,54 @@ const EditEventScreen = () => {
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      Alert.alert(t('required'), t('jw_enter_event_name'));
+      Alert.alert('Required', 'Please enter event name.');
       return;
     }
     if (!form.description.trim()) {
-      Alert.alert(t('required'), t('jw_enter_event_description'));
+      Alert.alert('Required', 'Please enter event description.');
       return;
     }
     if (!form.startDate.trim()) {
-      Alert.alert(t('required'), t('jw_select_start_date_msg'));
+      Alert.alert('Required', 'Please select start date.');
       return;
     }
     if (form.endDate.trim() && form.endDate < form.startDate) {
-      Alert.alert(t('invalid'), t('jw_end_date_before_start'));
+      Alert.alert('Invalid', 'End date cannot be before start date.');
       return;
     }
     if (!form.venue.trim()) {
-      Alert.alert(t('required'), t('jw_enter_venue'));
+      Alert.alert('Required', 'Please enter venue.');
       return;
     }
     if (!form.organizer.trim()) {
-      Alert.alert(t('required'), t('jw_enter_organizer'));
+      Alert.alert('Required', 'Please enter organizer name.');
       return;
     }
     if (!form.organizerPhone.trim()) {
-      Alert.alert(t('required'), t('jw_enter_organizer_phone'));
+      Alert.alert('Required', 'Please enter organizer phone number.');
       return;
     }
     if (!/^\d{10}$/.test(form.organizerPhone.trim())) {
-      Alert.alert(t('invalid'), t('jw_valid_phone'));
+      Alert.alert('Invalid', 'Please enter a valid 10-digit phone number.');
       return;
     }
     if (!form.organizerEmail.trim()) {
-      Alert.alert(t('required'), t('jw_enter_organizer_email'));
+      Alert.alert('Required', 'Please enter organizer email.');
       return;
     }
     if (!EMAIL_REGEX.test(form.organizerEmail.trim())) {
-      Alert.alert(t('invalid'), t('jw_valid_email'));
+      Alert.alert('Invalid', 'Please enter a valid email address.');
       return;
     }
     if (
       form.capacity.trim() &&
       (!/^\d+$/.test(form.capacity.trim()) || parseInt(form.capacity, 10) < 0)
     ) {
-      Alert.alert(t('invalid'), t('jw_valid_capacity'));
+      Alert.alert('Invalid', 'Please enter a valid capacity.');
       return;
     }
     if (!bannerPreview && totalGalleryCount === 0) {
-      Alert.alert(t('required'), t('jw_keep_event_image_required'));
+      Alert.alert('Required', 'Please keep at least one event image.');
       return;
     }
 
@@ -286,8 +284,8 @@ const EditEventScreen = () => {
 
       dispatch(setLoadingInBtn(false));
 
-      Alert.alert(t('success'), t('jw_event_updated'), [
-        { text: t('ok'), onPress: () => navigation.goBack() },
+      Alert.alert('Success', 'Event updated successfully.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       dispatch(setLoadingInBtn(false));
@@ -295,8 +293,8 @@ const EditEventScreen = () => {
         error.response?.data?.msg ||
         error.response?.data?.message ||
         error.message ||
-        t('jw_update_event_error');
-      Alert.alert(t('error'), message);
+        'Failed to update event';
+      Alert.alert('Error', message);
     }
   };
 
@@ -335,7 +333,7 @@ const EditEventScreen = () => {
             !form[field] && styles.placeholderText,
           ]}
         >
-          {form[field] ? formatDisplayDate(form[field]) : t('jw_select_date')}
+          {form[field] ? formatDisplayDate(form[field]) : 'Select date'}
         </Text>
         <Icon name="chevron-right" size={20} color={jewelleryColors.textSecondary} />
       </TouchableOpacity>
@@ -350,7 +348,7 @@ const EditEventScreen = () => {
   if (loading) {
     return (
       <SafeAreaView style={commonStyles.container} edges={['top']}>
-        <HeaderBar showBack title={t('jw_edit_event')} onBackPress={handleBackPress} />
+        <HeaderBar showBack title="Edit Event" onBackPress={handleBackPress} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
         </View>
@@ -360,7 +358,7 @@ const EditEventScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_edit_event')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Edit Event" onBackPress={handleBackPress} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -372,7 +370,7 @@ const EditEventScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('jw_banner_image')}</Text>
+            <Text style={styles.sectionTitle}>Banner Image</Text>
             <View style={styles.imageRow}>
               {bannerPreview ? (
                 <View style={styles.bannerWrapper}>
@@ -384,14 +382,14 @@ const EditEventScreen = () => {
               ) : (
                 <TouchableOpacity style={styles.addBannerButton} onPress={pickBannerImage}>
                   <Icon name="add-photo-alternate" size={32} color={jewelleryColors.primary} />
-                  <Text style={styles.addImageText}>{t('jw_add_banner')}</Text>
+                  <Text style={styles.addImageText}>Add Banner</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>{t('jw_event_images')}</Text>
+            <Text style={styles.sectionTitle}>Event Images</Text>
             <View style={styles.imageRow}>
               {existingGalleryUrls.map((uri, index) => (
                 <View key={`existing-${index}`} style={styles.imageWrapper}>
@@ -418,20 +416,20 @@ const EditEventScreen = () => {
               {totalGalleryCount < MAX_EVENT_IMAGES && (
                 <TouchableOpacity style={styles.addImageButton} onPress={pickEventImage}>
                   <Icon name="add" size={28} color={jewelleryColors.primary} />
-                  <Text style={styles.addImageText}>{t('jw_add_image')}</Text>
+                  <Text style={styles.addImageText}>Add Image</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
-          {renderInput(`${t('jw_event_name')} *`, 'name', { placeholder: t('jw_enter_event_name_ph') })}
-          {renderInput(`${t('jw_description')} *`, 'description', {
-            placeholder: t('jw_describe_event_ph'),
+          {renderInput('Event Name *', 'name', { placeholder: 'Enter event name' })}
+          {renderInput('Description *', 'description', {
+            placeholder: 'Describe the event',
             multiline: true,
           })}
 
           <View style={styles.field}>
-            <Text style={styles.label}>{t('jw_category')} *</Text>
+            <Text style={styles.label}>Category *</Text>
             <View style={styles.categoryRow}>
               {EVENT_CATEGORIES.map((category) => (
                 <TouchableOpacity
@@ -455,37 +453,37 @@ const EditEventScreen = () => {
             </View>
           </View>
 
-          {renderDateField(`${t('jw_start_date')} *`, 'startDate')}
-          {renderDateField(t('jw_end_date'), 'endDate')}
-          {renderInput(t('jw_start_time'), 'startTime', { placeholder: t('jw_time_start_ph') })}
-          {renderInput(t('jw_end_time'), 'endTime', { placeholder: t('jw_time_end_ph') })}
-          {renderInput(`${t('jw_venue')} *`, 'venue', { placeholder: t('jw_venue_name_ph') })}
-          {renderInput(t('jw_address'), 'address', {
-            placeholder: t('jw_full_address_ph'),
+          {renderDateField('Start Date *', 'startDate')}
+          {renderDateField('End Date', 'endDate')}
+          {renderInput('Start Time', 'startTime', { placeholder: 'e.g. 10:00 AM' })}
+          {renderInput('End Time', 'endTime', { placeholder: 'e.g. 06:00 PM' })}
+          {renderInput('Venue *', 'venue', { placeholder: 'Event venue name' })}
+          {renderInput('Address', 'address', {
+            placeholder: 'Full address',
             multiline: true,
           })}
-          {renderInput(`${t('jw_organizer')} *`, 'organizer', { placeholder: t('jw_organizer_name_ph') })}
-          {renderInput(`${t('jw_organizer_phone')} *`, 'organizerPhone', {
-            placeholder: t('jw_phone_ph'),
+          {renderInput('Organizer *', 'organizer', { placeholder: 'Organizer name' })}
+          {renderInput('Organizer Phone *', 'organizerPhone', {
+            placeholder: '10-digit mobile number',
             keyboardType: 'phone-pad',
             maxLength: 10,
             digitsOnly: true,
           })}
-          {renderInput(`${t('jw_organizer_email')} *`, 'organizerEmail', {
-            placeholder: t('jw_email_ph'),
+          {renderInput('Organizer Email *', 'organizerEmail', {
+            placeholder: 'email@example.com',
             keyboardType: 'email-address',
             autoCapitalize: 'none',
           })}
-          {renderInput(t('jw_entry_fee'), 'entryFee', { placeholder: t('jw_entry_fee_ph') })}
-          {renderInput(t('jw_capacity'), 'capacity', {
-            placeholder: t('jw_capacity_ph'),
+          {renderInput('Entry Fee', 'entryFee', { placeholder: 'Free or amount' })}
+          {renderInput('Capacity', 'capacity', {
+            placeholder: 'Maximum attendees',
             keyboardType: 'numeric',
             maxLength: 6,
             digitsOnly: true,
           })}
 
           <View style={styles.switchRow}>
-            <Text style={styles.label}>{t('jw_verified_event')}</Text>
+            <Text style={styles.label}>Verified Event</Text>
             <Switch
               value={form.isVerified}
               onValueChange={(value) => updateField('isVerified', value)}
@@ -494,7 +492,7 @@ const EditEventScreen = () => {
           </View>
 
           <View style={styles.switchRow}>
-            <Text style={styles.label}>{t('jw_featured_event')}</Text>
+            <Text style={styles.label}>Featured Event</Text>
             <Switch
               value={form.isFeatured}
               onValueChange={(value) => updateField('isFeatured', value)}
@@ -510,7 +508,7 @@ const EditEventScreen = () => {
             {loadingInBtn ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>{t('jw_save_changes')}</Text>
+              <Text style={styles.submitButtonText}>Save Changes</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -526,7 +524,7 @@ const EditEventScreen = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {calendarField === 'endDate' ? t('jw_select_end_date') : t('jw_select_start_date')}
+                {calendarField === 'endDate' ? 'Select End Date' : 'Select Start Date'}
               </Text>
               <TouchableOpacity onPress={() => setCalendarField(null)}>
                 <Icon name="close" size={24} color={jewelleryColors.text} />

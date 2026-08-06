@@ -50,7 +50,7 @@ const CreateNewPost = ({ navigation }) => {
   const requestPermissions = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert(t('permission_required'), t('camera_roll_permission'));
+      Alert.alert('Permission Required', 'Sorry, we need camera roll permissions to make this work!');
       return false;
     }
     return true;
@@ -89,8 +89,8 @@ const CreateNewPost = ({ navigation }) => {
     try {
       // Check if the user has already uploaded 5 media items
       if (list.length >= 5) {
-        Alert.alert(t("limit_reached"), t("max_media_items"), [
-          { text: t("ok") },
+        Alert.alert("Limit Reached", "You can only upload up to 5 media items.", [
+          { text: "OK" },
         ]);
         return;
       }
@@ -98,8 +98,8 @@ const CreateNewPost = ({ navigation }) => {
       // Check if there's already a video in the list (only 1 video allowed)
       const hasVideo = list.some(item => item.type === 'video');
       if (hasVideo) {
-        Alert.alert(t("limit_reached"), t("max_one_video"), [
-          { text: t("ok") },
+        Alert.alert("Limit Reached", "You can only upload 1 video.", [
+          { text: "OK" },
         ]);
         return;
       }
@@ -314,7 +314,7 @@ const CreateNewPost = ({ navigation }) => {
   
   const handleSubmit = async () => {
     if (!description) {
-      Alert.alert(t("error"), t("please_add_description"));
+      Alert.alert("Error", "Please add a description.");
       return;
     }
   
@@ -330,19 +330,19 @@ const CreateNewPost = ({ navigation }) => {
       dispatch(setLoadingInBtn(false));
   
       if (response.status === 200 || response.status === 201) {
-        Alert.alert(t("success"), t("post_created_success"));
+        Alert.alert("Success", "Post created successfully!");
         // Navigate back and trigger refresh by setting a flag
         navigation.navigate("SocialHomeScreen", { refresh: true });
       } else {
         console.error("Post submission failed with status:", response.status);
         console.error("Response data:", response.data);
-        Alert.alert(t("error"), response.data?.message || t("something_went_wrong_short"));
+        Alert.alert("Error", response.data?.message || "Something went wrong.");
       }
     } catch (error) {
       console.error("Post submission error:", error);
       console.error("Error details:", error.response?.data);
       dispatch(setLoadingInBtn(false));
-      Alert.alert(t("error"), `${t("unable_submit_post")}: ${error.message || t("something_went_wrong_short")}`);
+      Alert.alert("Error", `Unable to submit post: ${error.message || 'Unknown error'}`);
     }
   };
 

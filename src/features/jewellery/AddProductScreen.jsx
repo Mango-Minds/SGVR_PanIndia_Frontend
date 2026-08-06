@@ -15,7 +15,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import { useSelector, useDispatch } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { Provider } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
@@ -57,11 +56,11 @@ const normalizePhoneInput = (value = '') => {
     .slice(0, 15);
 };
 
-const parseRequiredNumber = (value, fieldErrorMessage) => {
+const parseRequiredNumber = (value, fieldLabel) => {
   const normalized = normalizeNumericInput(value);
   const parsed = parseFloat(normalized);
   if (!normalized || Number.isNaN(parsed)) {
-    throw new Error(fieldErrorMessage);
+    throw new Error(`Please enter a valid ${fieldLabel} using numbers (0-9)`);
   }
   return parsed;
 };
@@ -82,7 +81,6 @@ const AddProductScreen = ({
   onSuccess,
   asRequirement = false,
 } = {}) => {
-  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const dispatch = useDispatch();
@@ -185,12 +183,12 @@ const AddProductScreen = ({
   const handleAddProduct = async () => {
     // Validation
     if (!productDetails.name || !productDetails.price || !productDetails.description) {
-      Alert.alert(t('error'), t('jw_fill_required_fields'));
+      Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
 
     if (selectedImages.length === 0) {
-      Alert.alert(t('error'), t('jw_add_at_least_one_image'));
+      Alert.alert('Error', 'Please add at least one product image');
       return;
     }
 
@@ -198,20 +196,17 @@ const AddProductScreen = ({
     let parsedQuantity;
     let parsedWeight;
     try {
-      parsedPrice = parseRequiredNumber(
-        productDetails.price,
-        t('jw_valid_number_field', { field: t('jw_field_price') })
-      );
+      parsedPrice = parseRequiredNumber(productDetails.price, 'price');
       parsedQuantity = parseOptionalNumber(productDetails.quantity, true);
       parsedWeight = parseOptionalNumber(productDetails.weightPerProduct, false);
       if (productDetails.quantity && parsedQuantity === null) {
-        throw new Error(t('jw_valid_quantity'));
+        throw new Error('Please enter a valid quantity using numbers (0-9)');
       }
       if (productDetails.weightPerProduct && parsedWeight === null) {
-        throw new Error(t('jw_valid_weight'));
+        throw new Error('Please enter a valid weight using numbers (0-9)');
       }
     } catch (validationError) {
-      Alert.alert(t('error'), validationError.message);
+      Alert.alert('Error', validationError.message);
       return;
     }
 
@@ -285,7 +280,7 @@ const AddProductScreen = ({
           errorData?.msg ||
             errorData?.message ||
             errorData?.error ||
-            (asRequirement ? t('jw_add_requirement_error') : t('jw_add_product_error'))
+            (asRequirement ? 'Failed to add product requirement' : 'Failed to add product')
         );
       }
 
@@ -293,11 +288,11 @@ const AddProductScreen = ({
       console.log(asRequirement ? 'Product requirement added:' : 'Product added successfully:', data);
 
       Alert.alert(
-        t('success'),
-        asRequirement ? t('jw_add_requirement_success') : t('jw_add_product_success'),
+        'Success',
+        asRequirement ? 'Product requirement added successfully' : 'Product added successfully',
         [
           {
-            text: t('ok'),
+            text: 'OK',
             onPress: () => {
               if (onSuccess) {
                 onSuccess(data);
@@ -329,10 +324,7 @@ const AddProductScreen = ({
     } catch (error) {
       console.error('Error adding product:', error);
       dispatch(setLoadingInBtn(false));
-      Alert.alert(
-        t('error'),
-        error.message || (asRequirement ? t('jw_add_requirement_error') : t('jw_add_product_error'))
-      );
+      Alert.alert('Error', error.message || 'Failed to add product');
     }
   };
 
@@ -352,13 +344,13 @@ const AddProductScreen = ({
             {resolvingShop ? (
               <View style={styles.resolvingContainer}>
                 <ActivityIndicator size="large" color={jewelleryColors.primary} />
-                <Text style={styles.resolvingText}>{t('jw_loading_your_shop')}</Text>
+                <Text style={styles.resolvingText}>Loading your shop...</Text>
               </View>
             ) : (
               <>
             {/* Image Selection */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('jw_product_images')}</Text>
+              <Text style={styles.sectionTitle}>Product Images</Text>
               <View style={styles.imageContainer}>
                 {selectedImages.map((image, index) => (
                   <View key={index} style={styles.imageWrapper}>
@@ -374,7 +366,7 @@ const AddProductScreen = ({
                 {selectedImages.length < 6 && (
                   <TouchableOpacity style={styles.addImageButton} onPress={pickImage}>
                     <Icon name="add" size={32} color={jewelleryColors.primary} />
-                    <Text style={styles.addImageText}>{t('jw_add_image')}</Text>
+                    <Text style={styles.addImageText}>Add Image</Text>
                   </TouchableOpacity>
                 )}
               </View>
@@ -382,11 +374,11 @@ const AddProductScreen = ({
 
             {/* Product Details Form */}
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{t('jw_product_details')}</Text>
+              <Text style={styles.sectionTitle}>Product Details</Text>
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_product_name_ph')}
+                placeholder="Product Name *"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 value={productDetails.name}
                 onChangeText={(text) =>
@@ -396,7 +388,7 @@ const AddProductScreen = ({
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_price_ph')}
+                placeholder="Price (₹) *"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 keyboardType="numeric"
                 value={productDetails.price}
@@ -413,9 +405,9 @@ const AddProductScreen = ({
                 onSelect={(selectedItem) => {
                   setProductDetails({ ...productDetails, category: selectedItem });
                 }}
-                buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_category')}
+                buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Category'}
                 rowTextForSelection={(item) => item}
-                defaultButtonText={t('jw_select_category')}
+                defaultButtonText="Select Category"
                 buttonStyle={styles.dropdownButton}
                 buttonTextStyle={styles.dropdownButtonText}
               />
@@ -425,16 +417,16 @@ const AddProductScreen = ({
                 onSelect={(selectedItem) => {
                   setProductDetails({ ...productDetails, condition: selectedItem });
                 }}
-                buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_condition')}
+                buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Condition'}
                 rowTextForSelection={(item) => item}
-                defaultButtonText={t('jw_select_condition')}
+                defaultButtonText="Select Condition"
                 buttonStyle={styles.dropdownButton}
                 buttonTextStyle={styles.dropdownButtonText}
               />
 
               <TextInput
                 style={[styles.input, styles.textArea]}
-                placeholder={t('jw_description_ph')}
+                placeholder="Description *"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 multiline
                 numberOfLines={4}
@@ -446,7 +438,7 @@ const AddProductScreen = ({
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_quantity_ph')}
+                placeholder="Quantity"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 keyboardType="numeric"
                 value={productDetails.quantity}
@@ -463,16 +455,16 @@ const AddProductScreen = ({
                 onSelect={(selectedItem) => {
                   setProductDetails({ ...productDetails, quality: selectedItem });
                 }}
-                buttonTextAfterSelection={(selectedItem) => selectedItem || t('jw_select_quality')}
+                buttonTextAfterSelection={(selectedItem) => selectedItem || 'Select Quality'}
                 rowTextForSelection={(item) => item}
-                defaultButtonText={t('jw_select_quality')}
+                defaultButtonText="Select Quality"
                 buttonStyle={styles.dropdownButton}
                 buttonTextStyle={styles.dropdownButtonText}
               />
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_weight_per_product_ph')}
+                placeholder="Weight per Product (grams)"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 keyboardType="numeric"
                 value={productDetails.weightPerProduct}
@@ -486,7 +478,7 @@ const AddProductScreen = ({
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_gold_available_ph')}
+                placeholder="Gold Available (e.g., 14K, 18K, 22K)"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 value={productDetails.goldAvailable}
                 onChangeText={(text) =>
@@ -494,11 +486,11 @@ const AddProductScreen = ({
                 }
               />
 
-              <Text style={styles.sectionSubtitle}>{t('jw_shop_contact')}</Text>
+              <Text style={styles.sectionSubtitle}>Shop Contact</Text>
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_phone_number_ph')}
+                placeholder="Phone Number"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 keyboardType="phone-pad"
                 value={productDetails.phone}
@@ -512,7 +504,7 @@ const AddProductScreen = ({
 
               <TextInput
                 style={styles.input}
-                placeholder={t('jw_open_hours_ph')}
+                placeholder="Open Hours (e.g., 10:00 AM - 8:00 PM)"
                 placeholderTextColor={jewelleryColors.textSecondary}
                 value={productDetails.hours}
                 onChangeText={(text) =>
@@ -529,7 +521,7 @@ const AddProductScreen = ({
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
                   <Text style={styles.submitButtonText}>
-                    {asRequirement ? t('jw_add_requirement') : t('jw_add_product')}
+                    {asRequirement ? 'Add Requirement' : 'Add Product'}
                   </Text>
                 )}
               </TouchableOpacity>

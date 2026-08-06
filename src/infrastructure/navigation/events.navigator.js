@@ -13,11 +13,9 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Icons from "react-native-vector-icons/Ionicons";
 import { ScrollView } from "react-native-gesture-handler";
 import { useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
 import { generateEventShareUrl, generateShareMessage } from "../../utils/shareUtils";
 
 const EventsStackNavigator = ({ route }) => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const {
     imgUrl,
@@ -97,7 +95,7 @@ const EventsStackNavigator = ({ route }) => {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Icon name="chevron-left" size={34} color="#000" />
         </TouchableOpacity>
-        <Text style={styles.headerTxt}>{t("jw_events")}</Text>
+        <Text style={styles.headerTxt}>Events</Text>
         <TouchableOpacity onPress={onSharePress}>
           <Icons name="share-outline" size={24} color="#b98c13" />
         </TouchableOpacity>
@@ -107,7 +105,7 @@ const EventsStackNavigator = ({ route }) => {
           <View style={styles.nameNdate}>
             <Text style={styles.eventName}>{eventName}</Text>
           </View>
-          <Text style={styles.date}>{t("jw_posted_on")}: {createdAt.slice(0, 10)}</Text>
+          <Text style={styles.date}>Posted On : {createdAt.slice(0, 10)}</Text>
           <View style={{ padding: 10 }}>
             {imgUrl === undefined ? (
               <Image
@@ -124,7 +122,7 @@ const EventsStackNavigator = ({ route }) => {
               <Text
                 style={{ color: "#b98c13", fontSize: 18, fontWeight: "500" }}
               >
-                {t("jw_about_event")}:
+                About Event:
               </Text>
               <Text style={{ color: "#161616", paddingTop: "1%" }}>
                 {description}
@@ -184,7 +182,7 @@ const EventsStackNavigator = ({ route }) => {
                     letterSpacing: 0.3,
                   }}
                 >
-                  {t("jw_organizer_details")}
+                  Organizer Details
                 </Text>
                 <View
                   style={{

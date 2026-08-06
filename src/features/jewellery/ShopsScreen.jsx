@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
-import { useTranslation } from 'react-i18next';
 import ShopCard from '../../components/Jewellery/ShopCard';
 import FilterDropdown from '../../components/Jewellery/FilterDropdown';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -38,7 +37,6 @@ const getShopImageUri = (shop) => {
 };
 
 const ShopsScreen = () => {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -116,12 +114,12 @@ const ShopsScreen = () => {
       // Map API response to ShopCard props
       const mappedShops = filteredShops.map((shop) => {
         // Get owner name
-        let ownerName = t('jw_owner');
+        let ownerName = 'Owner';
         if (shop.owner) {
           if (typeof shop.owner === 'object') {
             ownerName = shop.owner.firstName && shop.owner.lastName
               ? `${shop.owner.firstName} ${shop.owner.lastName}`
-              : shop.owner.name || shop.owner.firstName || t('jw_owner');
+              : shop.owner.name || shop.owner.firstName || 'Owner';
           } else {
             ownerName = shop.owner;
           }
@@ -134,13 +132,13 @@ const ShopsScreen = () => {
         const address = shop.address || 
           (shop.city && shop.state ? `${shop.city}, ${shop.state}` : '') ||
           shop.location ||
-          t('jw_address_unavailable');
+          'Address not available';
 
         // Get hours
         const hours = shop.hours || 
           shop.timing || 
           shop.openingHours ||
-          (shop.openTime && shop.closeTime ? `${shop.openTime} - ${shop.closeTime}` : t('jw_hours_unavailable'));
+          (shop.openTime && shop.closeTime ? `${shop.openTime} - ${shop.closeTime}` : 'Hours not available');
 
         // Get rating and reviews
         const rating = shop.rating || shop.averageRating || 0;
@@ -149,7 +147,7 @@ const ShopsScreen = () => {
         return {
           id: shop._id || shop.id,
           image: shopImage,
-          name: shop.shopName || shop.name || t('jw_shop'),
+          name: shop.shopName || shop.name || 'Shop',
           owner: ownerName,
           rating: typeof rating === 'number' ? rating : parseFloat(rating) || 0,
           reviewCount: typeof reviewCount === 'number' ? reviewCount : parseInt(reviewCount) || 0,
@@ -164,12 +162,12 @@ const ShopsScreen = () => {
     } catch (err) {
       console.error('Error fetching shops:', err);
       console.error('Error details:', err.response?.data || err.message);
-      setError(t('jw_load_shops_error'));
+      setError('Failed to load shops. Please try again.');
       setShops([]);
     } finally {
       setLoading(false);
     }
-  }, [locationFilter, brandFilter, shopFilter, t]);
+  }, [locationFilter, brandFilter, shopFilter]);
 
   // Fetch shops on mount and when filters change
   useEffect(() => {
@@ -181,24 +179,24 @@ const ShopsScreen = () => {
   // e.g., 'mumbai' matches "Mumbai", "Greater Mumbai", "Navi Mumbai"
   // e.g., 'delhi' matches "Delhi", "New Delhi"
   // e.g., 'bengaluru' matches "Bengaluru" (not "Bangalore" - use 'bengaluru' for consistency)
-  const locationOptions = useMemo(() => [
-    { label: t('jw_all_locations'), value: null },
+  const locationOptions = [
+    { label: 'All Locations', value: null },
     { label: 'Hyderabad', value: 'hyderabad' },
     { label: 'Greater Mumbai', value: 'mumbai' }, // Matches "Mumbai", "Greater Mumbai", "Navi Mumbai"
     { label: 'Delhi', value: 'delhi' }, // Matches "Delhi", "New Delhi"
     { label: 'Bengaluru', value: 'bengaluru' }, // Matches "Bengaluru" (standard spelling)
-  ], [t]);
+  ];
 
-  const brandOptions = useMemo(() => [
-    { label: t('jw_all_brands'), value: null },
+  const brandOptions = [
+    { label: 'All Brands', value: null },
     { label: 'Tanishq', value: 'tanishq' },
     { label: 'Kalyan', value: 'kalyan' },
-  ], [t]);
+  ];
 
-  const shopOptions = useMemo(() => [
-    { label: t('jw_all_shops'), value: 'all' },
-    { label: t('jw_verified_only'), value: 'verified' },
-  ], [t]);
+  const shopOptions = [
+    { label: 'All Shops', value: 'all' },
+    { label: 'Verified Only', value: 'verified' },
+  ];
 
   // Handle filter button press
   const handleFilterPress = () => {
@@ -226,7 +224,7 @@ const ShopsScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title={t('jw_shops')} onBackPress={handleBackPress} />
+      <HeaderBar showBack title="Shops" onBackPress={handleBackPress} />
 
       {/* Filter Bar */}
       <View style={styles.filterWrapper}>
@@ -236,19 +234,19 @@ const ShopsScreen = () => {
           contentContainerStyle={styles.filterContainer}
         >
           <FilterDropdown
-            label={t('jw_location')}
+            label="Location"
             options={locationOptions}
             selectedValue={locationFilter}
             onSelect={setLocationFilter}
           />
           <FilterDropdown
-            label={t('jw_brand')}
+            label="Brand"
             options={brandOptions}
             selectedValue={brandFilter}
             onSelect={setBrandFilter}
           />
           <FilterDropdown
-            label={t('jw_shop')}
+            label="Shop"
             options={shopOptions}
             selectedValue={shopFilter}
             onSelect={setShopFilter}
@@ -257,7 +255,7 @@ const ShopsScreen = () => {
             style={styles.filterButton}
             onPress={handleFilterPress}
           >
-            <Text style={styles.filterButtonText}>{t('jw_filter')}</Text>
+            <Text style={styles.filterButtonText}>Filter</Text>
           </TouchableOpacity>
         </ScrollView>
       </View>
@@ -271,7 +269,7 @@ const ShopsScreen = () => {
         {loading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={jewelleryColors.primary} />
-            <Text style={styles.loadingText}>{t('jw_loading_shops')}</Text>
+            <Text style={styles.loadingText}>Loading shops...</Text>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
@@ -281,14 +279,14 @@ const ShopsScreen = () => {
               style={styles.retryButton}
               onPress={fetchShops}
             >
-              <Text style={styles.retryButtonText}>{t('retry')}</Text>
+              <Text style={styles.retryButtonText}>Retry</Text>
             </TouchableOpacity>
           </View>
         ) : shops.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Icon name="store" size={48} color={jewelleryColors.textSecondary} />
-            <Text style={styles.emptyText}>{t('jw_no_shops')}</Text>
-            <Text style={styles.emptySubtext}>{t('jw_adjust_filters')}</Text>
+            <Text style={styles.emptyText}>No shops found</Text>
+            <Text style={styles.emptySubtext}>Try adjusting your filters</Text>
           </View>
         ) : (
           shops.map((shop) => (
@@ -319,18 +317,18 @@ const ShopsScreen = () => {
             dispatch,
             navigation,
             onAuthed: () => navigation.navigate('PremiumAccessScreen'),
-            message: t('jw_sign_in_premium_shops'),
+            message: 'Sign in to access premium shop features.',
           })
         }
       >
         <Icon name="visibility" size={20} color="#FFFFFF" />
-        <Text style={styles.viewMoreText}>{t('jw_view_more_shops')}</Text>
+        <Text style={styles.viewMoreText}>View More Shops</Text>
       </TouchableOpacity>
 
       {/* Subscription Prompt */}
       <View style={styles.subscriptionPrompt}>
         <Text style={styles.subscriptionText}>
-          {t('jw_subscribe_verified_shops')}
+          Subscribe to access 100 + Verified Jewellery stores
         </Text>
       </View>
 
