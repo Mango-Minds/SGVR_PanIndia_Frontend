@@ -855,7 +855,7 @@ export default function ProfileNewScreen() {
 
       // Save the file
       await save(result.uri, filename, result.headers["Content-Type"]);
-      Alert.alert("Success", t("downloadSuccess"));
+      Alert.alert(t("success"), t("downloadSuccess"));
     } catch (error) {
       console.log("Error downloading file:", error);
       

@@ -396,7 +396,7 @@ const NotificationsScreen = ({ navigation }) => {
   const openSenderProfile = (notification) => {
     const userId = resolveId(notification.sender);
     if (!userId) {
-      Alert.alert("Profile", "User profile is not available.");
+      Alert.alert(t("profile"), t("profile_unavailable"));
       return;
     }
     navigation.navigate("EachProfile", { userId: String(userId) });
@@ -405,7 +405,7 @@ const NotificationsScreen = ({ navigation }) => {
   const openPost = (notification) => {
     const postId = resolveId(notification.postId);
     if (!postId) {
-      Alert.alert("Post", "This post is no longer available.");
+      Alert.alert(t("post"), t("post_unavailable"));
       return;
     }
     navigation.navigate("CommentScreen", { postId: String(postId) });
@@ -414,7 +414,7 @@ const NotificationsScreen = ({ navigation }) => {
   const openEvent = (notification) => {
     const eventId = resolveId(notification.eventId);
     if (!eventId) {
-      Alert.alert("Event", "This event is no longer available.");
+      Alert.alert(t("event"), t("event_unavailable"));
       return;
     }
     const rootNav = navigation.getParent?.() || navigation;
@@ -460,7 +460,7 @@ const NotificationsScreen = ({ navigation }) => {
         break;
 
       case "postDeleted":
-        Alert.alert("Post", "This post was deleted.");
+        Alert.alert(t("post"), t("post_was_deleted"));
         break;
 
       case "jobApplied": {
@@ -505,8 +505,8 @@ const NotificationsScreen = ({ navigation }) => {
         <Icon name="notifications-off" size={64} color="#ccc" />
         <Text style={styles.emptyMessage}>
           {activeTab === "All" 
-            ? "No notifications yet" 
-            : `No ${activeTab.toLowerCase()} notifications`}
+            ? t("no_notifications_yet") 
+            : t("no_tab_notifications", { tab: activeTab.toLowerCase() })}
         </Text>
       </View>
     );
@@ -518,7 +518,7 @@ const NotificationsScreen = ({ navigation }) => {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Theme.themeColor} />
-        <Text style={styles.loadingText}>Loading notifications...</Text>
+        <Text style={styles.loadingText}>{t("loading_notifications")}</Text>
       </View>
     );
   }
@@ -529,7 +529,7 @@ const NotificationsScreen = ({ navigation }) => {
         <Icon name="alert-circle" size={64} color="#ff6b6b" />
         <Text style={styles.errorText}>{error}</Text>
         <TouchableOpacity style={styles.retryButton} onPress={fetchNotifications}>
-          <Text style={styles.retryButtonText}>Retry</Text>
+          <Text style={styles.retryButtonText}>{t("retry")}</Text>
         </TouchableOpacity>
       </View>
     );

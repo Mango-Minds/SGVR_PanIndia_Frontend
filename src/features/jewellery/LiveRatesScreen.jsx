@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
 import LiveRatesCard from '../../components/Jewellery/LiveRatesCard';
@@ -18,6 +19,7 @@ import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const LiveRatesScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -35,6 +37,27 @@ const LiveRatesScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
 
+  const loadRates = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await goldSilverRatesService.fetchLiveRates();
+      setRatesData(data);
+      setLastUpdated(new Date(data.lastUpdated));
+    } catch (err) {
+      setError(err.message || t('jw_load_rates_error'));
+      // Try to use cached data
+      const cachedData = goldSilverRatesService.getCachedData();
+      if (cachedData) {
+        setRatesData(cachedData);
+        setError(t('jw_rates_cached'));
+      }
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     // Initial fetch
     loadRates();
@@ -42,7 +65,7 @@ const LiveRatesScreen = () => {
     // Start polling
     goldSilverRatesService.startPolling((data, err) => {
       if (err) {
-        setError(err.message);
+        setError(err.message || t('jw_load_rates_error'));
         setLoading(false);
       } else if (data) {
         setRatesData(data);
@@ -56,28 +79,7 @@ const LiveRatesScreen = () => {
     return () => {
       goldSilverRatesService.stopPolling();
     };
-  }, []);
-
-  const loadRates = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const data = await goldSilverRatesService.fetchLiveRates();
-      setRatesData(data);
-      setLastUpdated(new Date(data.lastUpdated));
-    } catch (err) {
-      setError(err.message || 'Failed to load rates');
-      // Try to use cached data
-      const cachedData = goldSilverRatesService.getCachedData();
-      if (cachedData) {
-        setRatesData(cachedData);
-        setError('Using cached data. Please check your connection.');
-      }
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  }, [loadRates, t]);
 
   const onRefresh = () => {
     setRefreshing(true);
@@ -116,20 +118,20 @@ const LiveRatesScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar
         showBack
-        title="Live Rates"
+        title={t('jw_live_rates')}
         onBackPress={() => navigation.goBack()}
       />
 
       {loading && !ratesData ? (
         <View style={styles.centerContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.loadingText}>Loading live rates...</Text>
+          <Text style={styles.loadingText}>{t('jw_loading_rates')}</Text>
         </View>
       ) : error && !ratesData ? (
         <View style={styles.centerContainer}>
           <Text style={styles.errorText}>{error}</Text>
           <Text style={styles.retryText} onPress={loadRates}>
-            Tap to retry
+            {t('jw_tap_retry')}
           </Text>
         </View>
       ) : (
@@ -148,27 +150,27 @@ const LiveRatesScreen = () => {
           {/* Spot Rates Section */}
           {ratesData?.spot && (
             <View style={styles.spotSection}>
-              <Text style={styles.sectionTitle}>SPOT RATES</Text>
+              <Text style={styles.sectionTitle}>{t('jw_spot_rates')}</Text>
               <ScrollView 
                 horizontal 
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.spotCardsContainer}
               >
                 <View style={[styles.spotCard, styles.goldSpotCard]}>
-                  <Text style={styles.spotTitle}>GOLD</Text>
+                  <Text style={styles.spotTitle}>{t('jw_gold')}</Text>
                   <Text style={styles.spotPrice}>
                     ₹{ratesData.spot.gold.current.toLocaleString('en-IN')}
                   </Text>
                   <View style={styles.spotRangeContainer}>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>L</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_low_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         ₹{ratesData.spot.gold.low.toLocaleString('en-IN')}
                       </Text>
                     </View>
                     <Text style={styles.rangeSeparator}>|</Text>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>H</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_high_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         ₹{ratesData.spot.gold.high.toLocaleString('en-IN')}
                       </Text>
@@ -177,20 +179,20 @@ const LiveRatesScreen = () => {
                 </View>
 
                 <View style={[styles.spotCard, styles.silverSpotCard]}>
-                  <Text style={styles.spotTitle}>SILVER</Text>
+                  <Text style={styles.spotTitle}>{t('jw_silver')}</Text>
                   <Text style={styles.spotPrice}>
                     ₹{ratesData.spot.silver.current.toFixed(2)}
                   </Text>
                   <View style={styles.spotRangeContainer}>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>L</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_low_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         ₹{ratesData.spot.silver.low.toFixed(2)}
                       </Text>
                     </View>
                     <Text style={styles.rangeSeparator}>|</Text>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>H</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_high_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         ₹{ratesData.spot.silver.high.toFixed(2)}
                       </Text>
@@ -199,20 +201,20 @@ const LiveRatesScreen = () => {
                 </View>
 
                 <View style={[styles.spotCard, styles.inrSpotCard]}>
-                  <Text style={styles.spotTitle}>INR</Text>
+                  <Text style={styles.spotTitle}>{t('jw_inr')}</Text>
                   <Text style={styles.spotPrice}>
                     {ratesData.spot.inr.current.toFixed(3)}
                   </Text>
                   <View style={styles.spotRangeContainer}>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>L</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_low_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         {ratesData.spot.inr.low.toFixed(3)}
                       </Text>
                     </View>
                     <Text style={styles.rangeSeparator}>|</Text>
                     <View style={styles.rangeItem}>
-                      <Text style={styles.rangeLabel}>H</Text>
+                      <Text style={styles.rangeLabel}>{t('jw_high_short')}</Text>
                       <Text style={styles.rangeValue} numberOfLines={1} adjustsFontSizeToFit>
                         {ratesData.spot.inr.high.toFixed(3)}
                       </Text>
@@ -227,7 +229,7 @@ const LiveRatesScreen = () => {
           {lastUpdated && (
             <View style={styles.lastUpdatedContainer}>
               <Text style={styles.lastUpdatedText}>
-                Last updated: {formatTime(lastUpdated)}
+                {t('jw_last_updated', { time: formatTime(lastUpdated) })}
               </Text>
               {error && (
                 <Text style={styles.warningText}>{error}</Text>
@@ -238,7 +240,7 @@ const LiveRatesScreen = () => {
           {/* Detailed Rates Section */}
           {ratesData?.rates && (
             <View style={styles.ratesSection}>
-              <Text style={styles.sectionTitle}>DETAILED RATES</Text>
+              <Text style={styles.sectionTitle}>{t('jw_detailed_rates')}</Text>
               <LiveRatesCard
                 label={ratesData.rates.gold999WithoutGST.label}
                 buy={ratesData.rates.gold999WithoutGST.buy}
@@ -276,7 +278,7 @@ const LiveRatesScreen = () => {
           {/* Disclaimer */}
           <View style={styles.disclaimerContainer}>
             <Text style={styles.disclaimerText}>
-              * Rates are indicative and may vary. Please contact your jeweler for actual rates.
+              {t('jw_rates_disclaimer')}
             </Text>
           </View>
         </ScrollView>

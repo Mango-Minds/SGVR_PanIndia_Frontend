@@ -57,6 +57,7 @@ import {
   VerificationSectionSubtitle,
 } from "../styles/prelogin.styles";
 import { useDispatch, useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import {
   ErrorToggle,
   login,
@@ -80,6 +81,7 @@ const styles = StyleSheet.create({
   },
 });
 export default function VerifyScreen({ route, navigation }) {
+  const { t } = useTranslation();
   const { loadingInBtn } = useSelector((state) => state.user);
 
   const [value, setValue] = useState("");
@@ -144,7 +146,7 @@ export default function VerifyScreen({ route, navigation }) {
       await dispatch(
         ErrorToggle({
           toggle: true,
-          msg: "Something went Wrong!!",
+          msg: t("something_went_wrong"),
           type: "error",
         })
       );
@@ -165,7 +167,7 @@ export default function VerifyScreen({ route, navigation }) {
             dispatch(
               ErrorToggle({
                 toggle: true,
-                msg: "OTP sent to your number",
+                msg: t("otp_sent"),
                 type: "success",
               })
             );
@@ -198,9 +200,9 @@ export default function VerifyScreen({ route, navigation }) {
         />
 
         <FormSection>
-          <FormSectionTitle>User Verification</FormSectionTitle>
+          <FormSectionTitle>{t("user_verification")}</FormSectionTitle>
           <VerificationSectionSubtitle>
-            Enter OTP sent to your mobile number
+            {t("enter_otp_sent")}
           </VerificationSectionSubtitle>
           <Row style={{ justifyContent: "space-between" }}>
             <MobileText>+91 {phone}</MobileText>
@@ -209,11 +211,11 @@ export default function VerifyScreen({ route, navigation }) {
                 navigation.navigate("ForgotPassword");
               }}
             >
-              <EditMobileText>Edit Number</EditMobileText>
+              <EditMobileText>{t("edit_number")}</EditMobileText>
             </TouchableOpacity>
           </Row>
 
-          <EnterCodeText>Enter the Code</EnterCodeText>
+          <EnterCodeText>{t("enter_the_code")}</EnterCodeText>
 
           <CodeField
             ref={ref}
@@ -241,13 +243,15 @@ export default function VerifyScreen({ route, navigation }) {
             {time <= 0 && (
               <TouchableOpacity onPress={resendOTP}>
                 <EditMobileText style={time > 0 && { color: "grey" }}>
-                  Resend OTP
+                  {t("resend_otp")}
                 </EditMobileText>
               </TouchableOpacity>
             )}
             {time > 0 && (
               <MobileText>
-                Resend OTP in 00:{time < 10 ? "0" + time : time}
+                {t("resend_otp_in", {
+                  time: time < 10 ? "0" + time : String(time),
+                })}
               </MobileText>
             )}
           </Row>
@@ -265,11 +269,10 @@ export default function VerifyScreen({ route, navigation }) {
                       alignItems: "center",
                       flex: 1,
                     }}
-                    // size={"large"}
                     color={"white"}
                   />
                 ) : (
-                  "Verify OTP"
+                  t("verify_otp")
                 )}
               </Text>
             </FormButton>

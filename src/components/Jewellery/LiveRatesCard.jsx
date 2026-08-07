@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
 
@@ -8,6 +9,8 @@ import { jewelleryColors, typography, spacing } from '../../styles/jewellery.sty
  * Displays Buy/Sell prices with Low/High values for gold/silver rates
  */
 const LiveRatesCard = ({ label, buy, sell, low, high }) => {
+  const { t } = useTranslation();
+
   const formatPrice = (price) => {
     if (price === null || price === undefined) return '-';
     return `₹${price.toLocaleString('en-IN')}`;
@@ -24,7 +27,7 @@ const LiveRatesCard = ({ label, buy, sell, low, high }) => {
         <View style={[styles.priceColumn, styles.buyColumn]}>
           <View style={styles.priceHeader}>
             <Icon name="arrow-downward" size={16} color={jewelleryColors.success} />
-            <Text style={styles.priceLabel}>BUY</Text>
+            <Text style={styles.priceLabel}>{t('jw_buy')}</Text>
           </View>
           <Text style={styles.priceValue}>
             {formatPrice(buy)}
@@ -32,7 +35,7 @@ const LiveRatesCard = ({ label, buy, sell, low, high }) => {
           {low !== null && low !== undefined && (
             <View style={styles.rangeContainer}>
               <Icon name="remove" size={14} color={jewelleryColors.error} />
-              <Text style={styles.rangeLabel}>LOW</Text>
+              <Text style={styles.rangeLabel}>{t('jw_low')}</Text>
               <Text style={styles.rangeValue}>{formatPrice(low)}</Text>
             </View>
           )}
@@ -43,7 +46,7 @@ const LiveRatesCard = ({ label, buy, sell, low, high }) => {
         <View style={[styles.priceColumn, styles.sellColumn]}>
           <View style={styles.priceHeader}>
             <Icon name="arrow-upward" size={16} color={jewelleryColors.error} />
-            <Text style={styles.priceLabel}>SELL</Text>
+            <Text style={styles.priceLabel}>{t('jw_sell')}</Text>
           </View>
           <Text style={styles.priceValue}>
             {formatPrice(sell)}
@@ -51,7 +54,7 @@ const LiveRatesCard = ({ label, buy, sell, low, high }) => {
           {high !== null && high !== undefined && (
             <View style={styles.rangeContainer}>
               <Icon name="add" size={14} color={jewelleryColors.success} />
-              <Text style={styles.rangeLabel}>HIGH</Text>
+              <Text style={styles.rangeLabel}>{t('jw_high')}</Text>
               <Text style={styles.rangeValue}>{formatPrice(high)}</Text>
             </View>
           )}

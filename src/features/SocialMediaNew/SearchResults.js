@@ -8,8 +8,10 @@ import { debounce } from "lodash";
 import { useSelector } from 'react-redux';
 import { getSearchUsers } from '../../services/socialMedia.services';
 import BottomNavigation from '../../components/social/BottomNavigation';
+import { useTranslation } from 'react-i18next';
 
 const SearchResults = () => {
+  const { t } = useTranslation();
   const searchInputRef = useRef(null);
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -47,17 +49,17 @@ const SearchResults = () => {
         setUsers(response.profiles || []);
       } else {
         console.error("Search failed:", response.message);
-        setError(response.message || "Search failed");
+        setError(response.message || t("search_failed"));
         setUsers([]);
       }
     } catch (error) {
       console.error("Search error:", error);
-      setError("Network error. Please try again.");
+      setError(t("network_error_try_again"));
       setUsers([]);
     } finally {
       setLoadingAnimation(false);
     }
-  }, []);
+  }, [t]);
 
   const debouncedFetchUsers = useCallback(
     debounce((searchText) => {
@@ -86,7 +88,7 @@ const SearchResults = () => {
       navigation.navigate('EachProfile', { userId });
     } catch (error) {
       console.error("Navigation error:", error);
-      Alert.alert("Error", "Unable to open user profile. Please try again.");
+      Alert.alert(t("error"), t("unable_open_profile"));
     }
   };
 
@@ -120,7 +122,7 @@ const SearchResults = () => {
         </TouchableOpacity>
         <View style={styles.searchContainer}>
           <TextInput
-            placeholder="Search users..."
+            placeholder={t("search_users_placeholder")}
             style={styles.searchField}
             onChangeText={handleSearch} 
             value={searchTerm}
@@ -134,7 +136,7 @@ const SearchResults = () => {
         {loadingAnimation ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#007AFF" />
-            <Text style={styles.loadingText}>Searching...</Text>
+            <Text style={styles.loadingText}>{t("searching")}</Text>
           </View>
         ) : error ? (
           <View style={styles.errorContainer}>
@@ -151,14 +153,14 @@ const SearchResults = () => {
               searchTerm.length > 0 ? (
                 <View style={styles.emptyContainer}>
                   <Icon name="search" size={50} color="#ccc" />
-                  <Text style={styles.emptyText}>No users found</Text>
-                  <Text style={styles.emptySubText}>Try searching with a different term</Text>
+                  <Text style={styles.emptyText}>{t("no_users_found")}</Text>
+                  <Text style={styles.emptySubText}>{t("try_different_search")}</Text>
                 </View>
               ) : (
                 <View style={styles.emptyContainer}>
                   <Icon name="people" size={50} color="#ccc" />
-                  <Text style={styles.emptyText}>Search for users</Text>
-                  <Text style={styles.emptySubText}>Type at least 2 characters to search</Text>
+                  <Text style={styles.emptyText}>{t("search_for_users")}</Text>
+                  <Text style={styles.emptySubText}>{t("type_min_chars_search")}</Text>
                 </View>
               )
             }

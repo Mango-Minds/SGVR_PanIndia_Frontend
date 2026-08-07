@@ -29,6 +29,7 @@ import { BASEAPIURL } from "../../infrastructure/constants";
 import { BASEIMGURL } from "../../infrastructure/constants";
 import UserImg from "../../assets/images/general/user.png";
 import { setLoadingInBtn } from "../../store/user";
+import { useTranslation } from "react-i18next";
 const styles = StyleSheet.create({
   logo: {
     alignSelf: "center",
@@ -66,6 +67,7 @@ const styles = StyleSheet.create({
 
 export default function JewelleryEditRoleRegisterScreen({ navigation, route }) {
   registerTranslation("en", en);
+  const { t } = useTranslation();
 
   const {
     userData,
@@ -166,14 +168,14 @@ export default function JewelleryEditRoleRegisterScreen({ navigation, route }) {
   const [initialAbout, setInitialAbout] = useState("");
   const heading =
     userType === "vendor"
-      ? "Edit Vendor Profile"
+      ? t("edit_vendor_profile")
       : userType === "worker"
-      ? "Edit Worker Profile"
+      ? t("edit_worker_profile")
       : userType === "gemologist"
-      ? "Edit Gemologist Profile"
+      ? t("edit_gemologist_profile")
       : userType === "jewelryDesigner"
-      ? "Edit Jewelry Designer Profile"
-      : "Edit Shop  Profile";
+      ? t("edit_jewelry_designer_profile")
+      : t("edit_shop_profile");
 
   const [selectedImage, setSelectedImage] = useState(() => {
     if (

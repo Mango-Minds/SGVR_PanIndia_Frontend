@@ -16,12 +16,14 @@ import { useSelector } from 'react-redux';
 import { Calendar } from 'react-native-calendars';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import moment from 'moment';
+import { useTranslation } from 'react-i18next';
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 import { BASEIMGURL } from '../../infrastructure/constants';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { getShopEvents, getShopEventDatesByMonth, deleteShopEvent, getShopDetails } from '../../services/jewellery.services';
 
 const ShopEvents = () => {
+  const { t } = useTranslation();
   const route = useRoute();
   const navigation = useNavigation();
   const { shopId } = route.params || {};
@@ -182,7 +184,7 @@ const ShopEvents = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Shop Events" onBackPress={() => navigation.goBack()} />
+      <HeaderBar showBack title={t('jw_shop_events')} onBackPress={() => navigation.goBack()} />
 
       <ScrollView
         style={styles.scrollView}
@@ -193,7 +195,7 @@ const ShopEvents = () => {
           <View style={styles.addButtonContainer}>
             <TouchableOpacity style={styles.addButton} onPress={handleAddEvent}>
               <Icon name="add" size={20} color="white" />
-              <Text style={styles.addButtonText}>Add Event</Text>
+              <Text style={styles.addButtonText}>{t('jw_add_event')}</Text>
             </TouchableOpacity>
           </View>
         )}

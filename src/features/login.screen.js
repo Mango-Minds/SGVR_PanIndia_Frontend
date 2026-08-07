@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { Checkbox } from "react-native-paper";
+import { useTranslation } from "react-i18next";
 import { SafeArea } from "../components/utility/safe-area.component";
 import {
   BottomText,
@@ -44,6 +45,7 @@ const styles = StyleSheet.create({
 });
 
 export default function LoginScreen({ navigation }) {
+  const { t } = useTranslation();
   const dispatch = useDispatch();
   const { loadingInBtn } = useSelector((state) => state.user);
   const [tcCheck, setTcCheck] = React.useState(true);
@@ -61,7 +63,7 @@ export default function LoginScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: "Enter your correct email",
+            msg: t("enter_correct_email"),
             type: "error",
           })
         );
@@ -71,7 +73,7 @@ export default function LoginScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: "Enter your password",
+            msg: t("enter_password"),
             type: "error",
           })
         );
@@ -81,7 +83,7 @@ export default function LoginScreen({ navigation }) {
         dispatch(
           ErrorToggle({
             toggle: true,
-            msg: "You must agree to the terms and conditions",
+            msg: t("must_agree_terms"),
             type: "error",
           })
         );
@@ -111,10 +113,6 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
- 
- 
-
-
   return (
     <SafeArea>
       <KeyboardAvoidingView
@@ -128,22 +126,21 @@ export default function LoginScreen({ navigation }) {
           keyboardShouldPersistTaps="handled"
         >
           <View style={{ flex: 1, justifyContent: "center" }}>
-        {/* <Text style={styles.logoText}>Indiyoura</Text> */}
-        <Image
+            <Image
               style={styles.logo}
               source={require("../assets/images/pre-login/indiayoua-smallLogo.png")}
-            />  
-        <FormSection>
-          <FormSectionTitle>Login</FormSectionTitle>
+            />
+            <FormSection>
+              <FormSectionTitle>{t("login")}</FormSectionTitle>
 
-          <FormSectionSubtitle>Please sign in to continue</FormSectionSubtitle>
+              <FormSectionSubtitle>{t("login_subtitle")}</FormSectionSubtitle>
 
-                        <LoginInputField
+              <LoginInputField
                 placeholderTextColor="#9B9B9B"
                 underlineColor="transparent"
                 borderBottomWidth={0}
                 autoCapitalize="none"
-                placeholder="Email or Phone No."
+                placeholder={t("email_or_phone")}
                 selectionColor={Theme.themeColor}
                 activeUnderlineColor={Theme.themeColor}
                 onChangeText={(e) => setEmail(e)}
@@ -152,11 +149,11 @@ export default function LoginScreen({ navigation }) {
                 blurOnSubmit={false}
               />
 
-          <View style={{ position: "relative" }}>
-                            <LoginInputField
+              <View style={{ position: "relative" }}>
+                <LoginInputField
                   placeholderTextColor="#9B9B9B"
                   underlineColor="transparent"
-                  placeholder="Password"
+                  placeholder={t("password")}
                   selectionColor={Theme.themeColor}
                   activeUnderlineColor={Theme.themeColor}
                   secureTextEntry={hidePass ? true : false}
@@ -165,100 +162,115 @@ export default function LoginScreen({ navigation }) {
                   returnKeyType="done"
                   blurOnSubmit={true}
                 />
-            <View
-              style={{
-                position: "absolute",
-                top: "51%",
-                right: "5%",
-                elevation: 3,
-              }}
-            >
-              <TouchableOpacity onPress={handleShowPassword}>
-                {!hidePass ? (
-                  <Icon name="eye-outline" size={20} />
-                ) : (
-                  <Icon name="eye-off-outline" size={20} />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <ForgotText
-            style={{ marginTop: 16 }}
-            onPress={() => navigation.navigate("ForgotPassword")}
-          >
-            Forgot Password?
-          </ForgotText>
-
-          <CheckboxContainer>
-            <Checkbox
-              uncheckedColor={Theme.themeColor}
-              color={Theme.themeColor}
-              status={tcCheck ? "checked" : "unchecked"}
-              onPress={() => setTcCheck(!tcCheck)}
-            />
-            <FormSectionSubtitle
-              onPress={() => {
-                navigation.navigate("TermsAndConditions");
-              }}
-            >
-              I agree to the{" "}
-              <ForgotText style={{ color: Theme.themeColor, fontSize: 16 }}>
-                terms & Conditions
-              </ForgotText>
-            </FormSectionSubtitle>
-          </CheckboxContainer>
-          <FormButton onPress={handleLogin}>
-            <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
-              {loadingInBtn === true ? (
-                <ActivityIndicator
+                <View
                   style={{
-                    display: "flex",
-                    alignSelf: "center",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    flex: 1,
+                    position: "absolute",
+                    top: "51%",
+                    right: "5%",
+                    elevation: 3,
                   }}
-                  // size={"large"}
-                  color={"white"}
-                />
-              ) : (
-                "Login"
-              )}
-            </Text>
-          </FormButton>
-          <TouchableOpacity
-            onPress={() => dispatch(enterGuestMode())}
-            style={{ marginTop: 16, alignItems: "center" }}
-          >
-            <Text style={{ color: Theme.themeColor, fontSize: 16, fontWeight: "600" }}>
-              Continue without account
-            </Text>
-          </TouchableOpacity>
-        </FormSection>
+                >
+                  <TouchableOpacity onPress={handleShowPassword}>
+                    {!hidePass ? (
+                      <Icon name="eye-outline" size={20} />
+                    ) : (
+                      <Icon name="eye-off-outline" size={20} />
+                    )}
+                  </TouchableOpacity>
+                </View>
+              </View>
 
-        <BottomText style={{ marginTop: 30, marginBottom: 20 }}>
-          Don’t have an account?{" "}
-          <ForgotText
-            onPress={() => {
-              navigation.navigate("Register");
-            }}
-            style={{ color: Theme.themeColor, fontSize: 14, fontWeight: "600" }}
-          >
-            Signup
-          </ForgotText>
-        </BottomText>
-        <BottomText style={{ marginTop: 0, marginBottom: 30 }}>
-          Having Trouble with Login ?{" "}
-          <ForgotText
-            onPress={() => {
-              navigation.navigate("Contactus");
-            }}
-            style={{ color: Theme.themeColor, fontSize: 14, fontWeight: "600" }}
-          >
-            Contact Us
-          </ForgotText>
-        </BottomText>
+              <ForgotText
+                style={{ marginTop: 16 }}
+                onPress={() => navigation.navigate("ForgotPassword")}
+              >
+                {t("forgot_password")}
+              </ForgotText>
+
+              <CheckboxContainer>
+                <Checkbox
+                  uncheckedColor={Theme.themeColor}
+                  color={Theme.themeColor}
+                  status={tcCheck ? "checked" : "unchecked"}
+                  onPress={() => setTcCheck(!tcCheck)}
+                />
+                <FormSectionSubtitle
+                  onPress={() => {
+                    navigation.navigate("TermsAndConditions");
+                  }}
+                >
+                  {t("agree_terms_prefix")}{" "}
+                  <ForgotText style={{ color: Theme.themeColor, fontSize: 16 }}>
+                    {t("terms_and_conditions_link")}
+                  </ForgotText>
+                </FormSectionSubtitle>
+              </CheckboxContainer>
+              <FormButton onPress={handleLogin}>
+                <Text
+                  style={{ color: "white", fontWeight: "bold", fontSize: 16 }}
+                >
+                  {loadingInBtn === true ? (
+                    <ActivityIndicator
+                      style={{
+                        display: "flex",
+                        alignSelf: "center",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        flex: 1,
+                      }}
+                      color={"white"}
+                    />
+                  ) : (
+                    t("login")
+                  )}
+                </Text>
+              </FormButton>
+              <TouchableOpacity
+                onPress={() => dispatch(enterGuestMode())}
+                style={{ marginTop: 16, alignItems: "center" }}
+              >
+                <Text
+                  style={{
+                    color: Theme.themeColor,
+                    fontSize: 16,
+                    fontWeight: "600",
+                  }}
+                >
+                  {t("continue_without_account")}
+                </Text>
+              </TouchableOpacity>
+            </FormSection>
+
+            <BottomText style={{ marginTop: 30, marginBottom: 20 }}>
+              {t("no_account")}{" "}
+              <ForgotText
+                onPress={() => {
+                  navigation.navigate("Register");
+                }}
+                style={{
+                  color: Theme.themeColor,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                {t("signup")}
+              </ForgotText>
+            </BottomText>
+            <BottomText style={{ marginTop: 0, marginBottom: 30 }}>
+              {t("having_trouble_login")}{" "}
+              <ForgotText
+                onPress={() => {
+                  navigation.navigate("Contactus");
+                }}
+                style={{
+                  color: Theme.themeColor,
+                  fontSize: 14,
+                  fontWeight: "600",
+                }}
+              >
+                {t("contact_us")}
+              </ForgotText>
+            </BottomText>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>

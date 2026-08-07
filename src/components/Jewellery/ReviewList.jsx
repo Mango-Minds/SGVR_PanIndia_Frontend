@@ -8,12 +8,14 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { jewelleryColors, typography, spacing } from '../../styles/jewellery.styles';
 import RatingDisplay from './RatingDisplay';
 import { getShopReviews } from '../../services/jewellery.services';
 
 const ReviewList = ({ shopId, onReviewAdded }) => {
+  const { t } = useTranslation();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -76,14 +78,14 @@ const ReviewList = ({ shopId, onReviewAdded }) => {
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) {
-      return 'Today';
+      return t('jw_today');
     } else if (diffDays === 1) {
-      return 'Yesterday';
+      return t('jw_yesterday');
     } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
+      return t('jw_days_ago_count', { count: diffDays });
     } else if (diffDays < 30) {
       const weeks = Math.floor(diffDays / 7);
-      return `${weeks} ${weeks === 1 ? 'week' : 'weeks'} ago`;
+      return weeks === 1 ? t('jw_week_ago') : t('jw_weeks_ago', { count: weeks });
     } else {
       return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     }
@@ -95,7 +97,7 @@ const ReviewList = ({ shopId, onReviewAdded }) => {
       return `${user.firstName} ${user.lastName}`;
     }
     if (user?.firstName) return user.firstName;
-    return 'Anonymous';
+    return t('jw_anonymous');
   };
 
   const renderReviewItem = ({ item }) => {
@@ -152,7 +154,7 @@ const ReviewList = ({ shopId, onReviewAdded }) => {
       return (
         <View style={styles.emptyContainer}>
           <ActivityIndicator size="large" color={jewelleryColors.primary} />
-          <Text style={styles.emptyText}>Loading reviews...</Text>
+          <Text style={styles.emptyText}>{t('jw_loading_reviews')}</Text>
         </View>
       );
     }
@@ -160,8 +162,8 @@ const ReviewList = ({ shopId, onReviewAdded }) => {
     return (
       <View style={styles.emptyContainer}>
         <Icon name="rate-review" size={48} color={jewelleryColors.textSecondary} />
-        <Text style={styles.emptyText}>No reviews yet</Text>
-        <Text style={styles.emptySubtext}>Be the first to review this shop!</Text>
+        <Text style={styles.emptyText}>{t('jw_no_reviews_yet')}</Text>
+        <Text style={styles.emptySubtext}>{t('jw_be_first_review')}</Text>
       </View>
     );
   };

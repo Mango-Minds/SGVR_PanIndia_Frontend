@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import CarouselBanner from '../../components/Jewellery/CarouselBanner';
 import CategoryIcon from '../../components/Jewellery/CategoryIcon';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -19,6 +20,7 @@ import { requireAuth, navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import { jewelleryColors, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const HomeScreen = () => {
+  const { t, i18n } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { token, isGuest } = useSelector((state) => state.user);
@@ -34,32 +36,35 @@ const HomeScreen = () => {
   const [loadingRates, setLoadingRates] = useState(true);
 
   // Banner items for carousel
-  const bannerItems = [
-    {
-      title: 'Limited Deals',
-      subtitle: 'YOUR SPARKLE, OUR TREAT!',
-      offer: 'GET 100% OFF',
-      offerSubtext: 'making charges',
-      offerSubtext2: 'select Diamond Jewellery',
-      image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
-    },
-    {
-      title: 'Premium Collection',
-      subtitle: 'EXQUISITE DESIGNS AWAIT',
-      offer: 'UP TO 50% OFF',
-      offerSubtext: 'on gold jewellery',
-      offerSubtext2: 'limited time offer',
-      image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=800&h=400&fit=crop',
-    },
-    {
-      title: 'New Arrivals',
-      subtitle: 'TRENDING NOW',
-      offer: 'FLAT 30% OFF',
-      offerSubtext: 'on diamond sets',
-      offerSubtext2: 'shop now',
-      image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=400&fit=crop',
-    },
-  ];
+  const bannerItems = useMemo(
+    () => [
+      {
+        title: t('jw_banner_limited_deals'),
+        subtitle: t('jw_banner_sparkle'),
+        offer: t('jw_banner_100_off'),
+        offerSubtext: t('jw_banner_making_charges'),
+        offerSubtext2: t('jw_banner_select_diamond'),
+        image: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?w=800&h=400&fit=crop',
+      },
+      {
+        title: t('jw_banner_premium'),
+        subtitle: t('jw_banner_exquisite'),
+        offer: t('jw_banner_50_off'),
+        offerSubtext: t('jw_banner_gold_jewellery'),
+        offerSubtext2: t('jw_banner_limited_offer'),
+        image: 'https://images.unsplash.com/photo-1603561596112-0a1323c9b1e4?w=800&h=400&fit=crop',
+      },
+      {
+        title: t('jw_banner_new_arrivals'),
+        subtitle: t('jw_banner_trending'),
+        offer: t('jw_banner_30_off'),
+        offerSubtext: t('jw_banner_diamond_sets'),
+        offerSubtext2: t('jw_banner_shop_now'),
+        image: 'https://images.unsplash.com/photo-1573408301185-9146fe634ad0?w=800&h=400&fit=crop',
+      },
+    ],
+    [t]
+  );
 
   const handleCategoryPress = (screen, message) => {
     requireAuth({
@@ -76,70 +81,70 @@ const HomeScreen = () => {
   const categories = [
     {
       key: 'jewellery',
-      name: 'Jewellery',
+      name: t('jewellery'),
       icon: 'necklace',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('JewellerysHomeScreen'),
     },
     {
       key: 'gems',
-      name: 'Gems',
+      name: t('jw_gems'),
       icon: 'diamond-stone',
       color: jewelleryColors.categoryBlue,
       onPress: () => navigation.navigate('GemsHomeScreen'),
     },
     {
       key: 'tools',
-      name: 'Tools',
+      name: t('jw_tools'),
       icon: 'hammer-wrench',
       color: jewelleryColors.categoryOrange,
       onPress: () => navigation.navigate('ToolsScreen'),
     },
     {
       key: 'events',
-      name: 'Events',
+      name: t('jw_events'),
       icon: 'calendar-star',
       color: jewelleryColors.categoryPurple,
       onPress: () => navigation.navigate('EventsHomeScreen'),
     },
     {
       key: 'bullion',
-      name: 'Bullion',
+      name: t('jw_bullion'),
       icon: 'gold',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('BullionScreen'),
     },
     {
       key: 'goldTesting',
-      name: 'Gold Testing',
+      name: t('jw_gold_testing'),
       icon: 'flask-outline',
       color: jewelleryColors.categoryGold,
       onPress: () => navigation.navigate('GoldTestingCentresScreen'),
     },
     {
       key: 'goldRefinery',
-      name: 'Gold Refinery',
+      name: t('jw_gold_refinery'),
       icon: 'factory',
       color: jewelleryColors.categoryBlue,
       onPress: () => navigation.navigate('GoldRefineryScreen'),
     },
     {
       key: 'logistics',
-      name: 'Logistics',
+      name: t('jw_logistics'),
       icon: 'truck-delivery-outline',
       color: jewelleryColors.categoryOrange,
       onPress: () => navigation.navigate('LogisticsScreen'),
     },
     {
       key: 'jobs',
-      name: 'Jobs',
+      name: t('jobs'),
       icon: 'briefcase-outline',
       color: jewelleryColors.categoryPurple,
       onPress: () => navigation.navigate('JobsScreen'),
     },
     {
       key: 'goldAssociations',
-      name: 'Gold Association',
+      name: t('jw_gold_association'),
       icon: 'handshake-outline',
       color: jewelleryColors.categoryTeal,
       onPress: () => navigation.navigate('GoldAssociationsScreen'),
@@ -220,14 +225,14 @@ const HomeScreen = () => {
             ) : (
               <>
                 <View style={styles.spotBannerMainRow}>
-                  <Text style={styles.spotBannerTitle}>GOLD</Text>
+                  <Text style={styles.spotBannerTitle}>{t('jw_gold')}</Text>
                   <Text style={styles.spotBannerPrice}>
-                    ₹{spotRates?.gold?.spot?.toLocaleString('en-IN') || '6,500'}
-                    <Text style={styles.spotBannerSubtext}>/g</Text>
+                    ₹{spotRates?.gold?.spot?.toLocaleString(i18n.language === 'en' ? 'en-IN' : i18n.language) || '6,500'}
+                    <Text style={styles.spotBannerSubtext}>{t('jw_per_gram')}</Text>
                   </Text>
                 </View>
                 <Text style={styles.spotBannerRangeText} numberOfLines={1} adjustsFontSizeToFit>
-                  L ₹{spotRates?.gold?.low?.toLocaleString('en-IN') || '6,400'} · H ₹{spotRates?.gold?.high?.toLocaleString('en-IN') || '6,600'}
+                  {t('jw_low_short')} ₹{spotRates?.gold?.low?.toLocaleString('en-IN') || '6,400'} · {t('jw_high_short')} ₹{spotRates?.gold?.high?.toLocaleString('en-IN') || '6,600'}
                 </Text>
               </>
             )}
@@ -243,14 +248,14 @@ const HomeScreen = () => {
             ) : (
               <>
                 <View style={styles.spotBannerMainRow}>
-                  <Text style={styles.spotBannerTitle}>SILVER</Text>
+                  <Text style={styles.spotBannerTitle}>{t('jw_silver')}</Text>
                   <Text style={styles.spotBannerPrice}>
                     ₹{spotRates?.silver?.spot?.toFixed(2) || '85.00'}
-                    <Text style={styles.spotBannerSubtext}>/g</Text>
+                    <Text style={styles.spotBannerSubtext}>{t('jw_per_gram')}</Text>
                   </Text>
                 </View>
                 <Text style={styles.spotBannerRangeText} numberOfLines={1} adjustsFontSizeToFit>
-                  L ₹{spotRates?.silver?.low?.toFixed(2) || '84.00'} · H ₹{spotRates?.silver?.high?.toFixed(2) || '86.00'}
+                  {t('jw_low_short')} ₹{spotRates?.silver?.low?.toFixed(2) || '84.00'} · {t('jw_high_short')} ₹{spotRates?.silver?.high?.toFixed(2) || '86.00'}
                 </Text>
               </>
             )}

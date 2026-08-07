@@ -69,7 +69,7 @@ const ViewJobPost = ({ route }) => {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
+        Alert.alert(t("error"), t("not_authorized_login"));
         return;
       }
   
@@ -81,12 +81,12 @@ const ViewJobPost = ({ route }) => {
       });
   
       if (response.status === 200 || response.status === 201) {
-        Alert.alert("Success", response?.data?.message || "Job Application sent successfully!");
+        Alert.alert(t("success"), response?.data?.message || t("job_application_sent"));
         // Update the application status after successful application
         setApplicationStatus("applied");
         navigation.goBack();
       } else {
-        Alert.alert("Error", response?.data?.message || "Something went wrong.");
+        Alert.alert(t("error"), response?.data?.message || t("something_went_wrong_short"));
       }
     } catch (error) {
       console.error("Job application error:", error.response?.data || error.message);
@@ -97,15 +97,15 @@ const ViewJobPost = ({ route }) => {
         
         if (errorMessage.includes("complete your profile")) {
           Alert.alert(
-            "Profile Incomplete",
+            t("profile_incomplete"),
             errorMessage,
             [
               {
-                text: "Cancel",
+                text: t("cancel"),
                 style: "cancel"
               },
               {
-                text: "Complete Profile",
+                text: t("complete_profile"),
                 onPress: () => {
                   // Navigate to profile screen to complete profile
                   navigation.navigate("ProfileNewScreen");
@@ -114,10 +114,10 @@ const ViewJobPost = ({ route }) => {
             ]
           );
         } else {
-          Alert.alert("Error", errorMessage);
+          Alert.alert(t("error"), errorMessage);
         }
       } else {
-        Alert.alert("Error", error.response?.data?.message || "Something went wrong.");
+        Alert.alert(t("error"), error.response?.data?.message || t("something_went_wrong_short"));
       }
     }
   };
@@ -129,7 +129,7 @@ const ViewJobPost = ({ route }) => {
       const token = await AsyncStorage.getItem("token");
       if (!token) {
         console.error("Authentication token is missing.");
-        Alert.alert("Error", "You are not authorized. Please log in again.");
+        Alert.alert(t("error"), t("not_authorized_login"));
         return;
       }
   
@@ -349,8 +349,8 @@ const ViewJobPost = ({ route }) => {
               {job && job.createdBy && userId === job.createdBy._id && (!job.applicants || job.applicants.length === 0) && (
                 <View style={styles.emptyState}>
                   <Ionicons name="people-outline" size={48} color="#ccc" />
-                  <Text style={styles.emptyStateText}>No applicants yet</Text>
-                  <Text style={styles.emptyStateSubtext}>Share this job posting to attract more candidates</Text>
+                  <Text style={styles.emptyStateText}>{t("no_applicants_yet")}</Text>
+                  <Text style={styles.emptyStateSubtext}>{t("share_job_attract_candidates")}</Text>
                 </View>
               )}
 

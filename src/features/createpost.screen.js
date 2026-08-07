@@ -30,8 +30,10 @@ import { useRef } from "react";
 import TagPeople from "../components/modals/TagPeopleModal";
 import FormData from "form-data";
 import { ErrorToggle, setLoadingInBtn } from "../store/user";
+import { useTranslation } from "react-i18next";
 
 const CreatePostScreen = ({ navigation }) => {
+  const { t } = useTranslation();
   const { user, loadingInBtn } = useSelector((state) => state.user);
   const [myDp, setMyDp] = useState();
 
@@ -268,7 +270,7 @@ const CreatePostScreen = ({ navigation }) => {
             <TopText
               style={{ color: "#000000", fontSize: 22, fontWeight: "bold" }}
             >
-              Create Post
+              {t("createPost")}
             </TopText>
           </View>
           <Button

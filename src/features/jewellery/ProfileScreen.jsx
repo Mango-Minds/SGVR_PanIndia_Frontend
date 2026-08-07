@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import BottomTabBar from '../../components/Jewellery/BottomTabBar';
@@ -23,6 +24,7 @@ import { checkFollowStatus, followUser, unfollowUser, getFollowers, getFollowing
 import authHeader from '../../services/auth.header';
 
 const ProfileScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
@@ -90,7 +92,7 @@ const ProfileScreen = () => {
   }, []);
 
   const formatPlanName = (planName) => {
-    if (!planName) return 'Premium';
+    if (!planName) return t('jw_premium');
     return String(planName)
       .replace(/^Jewellery\s+/i, '')
       .trim();
@@ -117,13 +119,13 @@ const ProfileScreen = () => {
         sub?.subscription?.planName ||
         sub?.data?.subscription?.planName ||
         sub?.planName ||
-        'Premium';
+        t('jw_premium');
       setSubscriptionLabel(formatPlanName(planName));
     } catch (error) {
       console.error('Error fetching subscription status:', error);
       setSubscriptionLabel(null);
     }
-  }, [token, isGuest, isViewingOtherProfile]);
+  }, [token, isGuest, isViewingOtherProfile, t]);
 
   // Fetch other user's profile if viewing another user
   const fetchUserProfile = useCallback(async () => {
@@ -167,7 +169,7 @@ const ProfileScreen = () => {
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
-      Alert.alert('Error', 'Failed to load user profile');
+      Alert.alert(t('error'), t('jw_load_profile_error'));
     } finally {
       setIsLoadingProfile(false);
     }
@@ -183,17 +185,17 @@ const ProfileScreen = () => {
         // Unfollow
         await unfollowUser(viewingUserId);
         setFollowStatus('none');
-        Alert.alert('Success', 'Unfollowed successfully');
+        Alert.alert(t('success'), t('jw_unfollowed_success'));
       } else {
         // Follow
         await followUser(viewingUserId);
         setFollowStatus('approved');
-        Alert.alert('Success', 'Followed successfully');
+        Alert.alert(t('success'), t('jw_followed_success'));
       }
     } catch (error) {
       console.error('Error performing follow action:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to perform action';
-      Alert.alert('Error', errorMessage);
+      const errorMessage = error.response?.data?.message || error.message || t('jw_action_failed');
+      Alert.alert(t('error'), errorMessage);
     } finally {
       setIsLoadingFollow(false);
     }
@@ -254,17 +256,17 @@ const ProfileScreen = () => {
         navigation.navigate('ShopDetailScreen', { shopId: shop._id });
         return;
       }
-      Alert.alert('My Page', 'No shop page found for your account.');
+      Alert.alert(t('jw_my_page'), t('jw_no_shop_page'));
     } catch (error) {
       console.error('Error opening my page:', error);
-      Alert.alert('Error', 'Failed to open your page.');
+      Alert.alert(t('error'), t('jw_open_page_error'));
     }
   };
 
   // Handle Stock for Sale menu item press
   const handleStockForSalePress = async () => {
     if (!canManageStock || !user?._id) {
-      Alert.alert('Error', 'Unable to find shop information');
+      Alert.alert(t('error'), t('jw_shop_info_error'));
       return;
     }
 
@@ -273,11 +275,11 @@ const ProfileScreen = () => {
       if (shop && shop._id) {
         navigation.navigate('StockDetailsScreen', { shopId: shop._id });
       } else {
-        Alert.alert('Error', 'No shop found for your account');
+        Alert.alert(t('error'), t('jw_no_shop_account'));
       }
     } catch (error) {
       console.error('Error fetching shop:', error);
-      Alert.alert('Error', 'Failed to load shop information');
+      Alert.alert(t('error'), t('jw_load_shop_error'));
     }
   };
 
@@ -292,20 +294,20 @@ const ProfileScreen = () => {
   const menuItems = [
     ...(!isViewingOtherProfile && currentUser && !currentUser.isJewelryOnboarded ? [{
       key: 'complete-profile',
-      label: 'Complete Jewellery Profile',
+      label: t('jw_complete_jewellery_profile'),
       icon: 'person-add',
       onPress: () => navigation.navigate('OnboardModuleForm'),
     }] : []),
     ...(!isViewingOtherProfile ? [
       {
         key: 'subscription',
-        label: 'Subscription Status',
+        label: t('jw_subscription_status'),
         icon: 'card-membership',
         onPress: () => navigation.navigate('PremiumAccessScreen'),
       },
       {
         key: 'wishlist',
-        label: 'Saved Items',
+        label: t('jw_saved_items'),
         icon: 'favorite-border',
         onPress: () => {
           requireAuth({
@@ -313,14 +315,14 @@ const ProfileScreen = () => {
             isGuest,
             dispatch,
             navigation,
-            message: 'Sign in to view your saved items.',
+            message: t('jw_sign_in_saved'),
             onAuthed: () => navigation.navigate('WishlistScreen'),
           });
         },
       },
       {
         key: 'my-events',
-        label: 'My Events',
+        label: t('jw_my_events'),
         icon: 'event',
         onPress: () => {
           requireAuth({
@@ -328,7 +330,7 @@ const ProfileScreen = () => {
             isGuest,
             dispatch,
             navigation,
-            message: 'Sign in to view your events.',
+            message: t('jw_sign_in_events'),
             onAuthed: () =>
               navigation.navigate('EventsHomeScreen', { mineOnly: true }),
           });
@@ -336,62 +338,62 @@ const ProfileScreen = () => {
       },
       {
         key: 'customers',
-        label: 'My Customers',
+        label: t('jw_my_customers'),
         icon: 'people',
         onPress: () => navigation.navigate('MyCustomersScreen'),
       },
       {
         key: 'karegars',
-        label: 'My Karegars',
+        label: t('jw_my_karegars'),
         icon: 'handyman',
         onPress: () => navigation.navigate('WorkersScreen'),
       },
       {
         key: 'vendors',
-        label: 'My Vendors',
+        label: t('jw_my_vendors'),
         icon: 'store',
         onPress: () => navigation.navigate('VendorsScreen'),
       },
       {
         key: 'manufacturers',
-        label: 'My Manufacturers',
+        label: t('jw_my_manufacturers'),
         icon: 'precision-manufacturing',
         onPress: () => navigation.navigate('DesignersScreen'),
       },
       {
         key: 'orders',
-        label: 'My Orders',
+        label: t('jw_my_orders'),
         icon: 'receipt-long',
         onPress: () => navigation.navigate('MyOrdersScreen'),
       },
       {
         key: 'payments',
-        label: 'My Payments from Customers',
+        label: t('jw_my_payments'),
         icon: 'payments',
         onPress: () => navigation.navigate('MyPaymentsScreen'),
       },
       {
         key: 'staff',
-        label: 'My Staff',
+        label: t('jw_my_staff'),
         icon: 'badge',
         onPress: () => navigation.navigate('MyStaffScreen'),
       },
       {
         key: 'gold-price',
-        label: 'My Gold Price',
+        label: t('jw_my_gold_price'),
         icon: 'trending-up',
         onPress: () => navigation.navigate('LiveRatesScreen'),
       },
     ] : []),
     ...(canManageStock ? [{
       key: 'stock-for-sale',
-      label: 'Stock for Sale',
+      label: t('jw_stock_for_sale'),
       icon: 'inventory',
       onPress: handleStockForSalePress,
     }] : []),
     {
       key: 'settings',
-      label: 'Settings',
+      label: t('settings'),
       icon: 'settings',
       onPress: () => navigation.navigate('SettingsScreen'),
     },
@@ -420,7 +422,7 @@ const ProfileScreen = () => {
 
   const userName = user?.firstName && user?.lastName
     ? `${user.firstName} ${user.lastName}`
-    : user?.email || 'User';
+    : user?.email || t('jw_user');
   
   // Get avatar - prioritize shop image for shop owners, then user avatar
   let userAvatar = null;
@@ -437,7 +439,7 @@ const ProfileScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar
         showBack
-        title={isViewingOtherProfile ? 'Profile' : 'My Profile'}
+        title={isViewingOtherProfile ? t('profile') : t('jw_my_profile')}
         onBackPress={handleBackPress}
       />
 
@@ -451,7 +453,7 @@ const ProfileScreen = () => {
               activeOpacity={0.8}
             >
               <Icon name="storefront" size={16} color="#FFFFFF" />
-              <Text style={styles.myPageButtonText}>My Page</Text>
+              <Text style={styles.myPageButtonText}>{t('jw_my_page')}</Text>
             </TouchableOpacity>
           )}
           <View style={styles.avatarContainer}>
@@ -469,7 +471,7 @@ const ProfileScreen = () => {
                 <View style={styles.subscriptionBadge}>
                   <Icon name="workspace-premium" size={16} color={jewelleryColors.primary} />
                   <Text style={styles.subscriptionStatusText}>
-                    Subscribed · {subscriptionLabel}
+                    {t('jw_subscribed_plan', { plan: subscriptionLabel })}
                   </Text>
                 </View>
               ) : (
@@ -479,7 +481,7 @@ const ProfileScreen = () => {
                   onPress={() => navigation.navigate('PremiumAccessScreen')}
                 >
                   <Icon name="lock" size={14} color={jewelleryColors.textSecondary} />
-                  <Text style={styles.subscriptionStatusMuted}>Not Subscribed</Text>
+                  <Text style={styles.subscriptionStatusMuted}>{t('jw_not_subscribed')}</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -539,7 +541,7 @@ const ProfileScreen = () => {
                 <Text style={styles.statNumber}>
                   {isLoadingCounts ? '...' : followersCount}
                 </Text>
-                <Text style={styles.statLabel}>Followers</Text>
+                <Text style={styles.statLabel}>{t('followers')}</Text>
               </TouchableOpacity>
               <View style={styles.statDivider} />
               <TouchableOpacity
@@ -553,7 +555,7 @@ const ProfileScreen = () => {
                 <Text style={styles.statNumber}>
                   {isLoadingCounts ? '...' : followingCount}
                 </Text>
-                <Text style={styles.statLabel}>Following</Text>
+                <Text style={styles.statLabel}>{t('following')}</Text>
               </TouchableOpacity>
             </View>
           )}

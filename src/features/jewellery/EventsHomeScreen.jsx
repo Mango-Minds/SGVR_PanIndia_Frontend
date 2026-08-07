@@ -13,6 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import { useDispatch, useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { navigateJewelleryAuthTab } from '../../utils/requireAuth';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
@@ -27,6 +28,7 @@ import {
 import { jewelleryColors, typography, spacing, commonStyles } from '../../styles/jewellery.styles';
 
 const EventsHomeScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
   const dispatch = useDispatch();
@@ -47,11 +49,11 @@ const EventsHomeScreen = () => {
       setEvents((data || []).map(normalizeEvent));
     } catch (error) {
       console.error('Error loading events:', error);
-      Alert.alert('Error', 'Failed to load events. Please try again.');
+      Alert.alert(t('error'), t('jw_load_events_error'));
     } finally {
       setLoading(false);
     }
-  }, [mineOnly]);
+  }, [mineOnly, t]);
 
   const handleBackPress = () => {
     if (navigation.canGoBack()) {
@@ -133,7 +135,7 @@ const EventsHomeScreen = () => {
           )}
           {event.isFeatured && (
             <View style={styles.featuredBadge}>
-              <Text style={styles.featuredText}>Featured</Text>
+              <Text style={styles.featuredText}>{t('jw_featured')}</Text>
             </View>
           )}
           {event.isVerified && (
@@ -189,7 +191,7 @@ const EventsHomeScreen = () => {
     <SafeAreaView style={commonStyles.container} edges={['top']}>
       <HeaderBar
         showBack
-        title={mineOnly ? 'My Events' : 'Events'}
+        title={mineOnly ? t('jw_my_events') : t('jw_events')}
         onBackPress={handleBackPress}
       />
 
@@ -198,7 +200,7 @@ const EventsHomeScreen = () => {
           <Icon name="search" size={24} color={jewelleryColors.textSecondary} style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search events"
+            placeholder={t('jw_search_events')}
             placeholderTextColor={jewelleryColors.textSecondary}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -211,7 +213,7 @@ const EventsHomeScreen = () => {
             onPress={() => navigation.navigate('AddEventScreen')}
           >
             <Icon name="add" size={20} color="#FFFFFF" />
-            <Text style={styles.addButtonText}>Add Event</Text>
+            <Text style={styles.addButtonText}>{t('jw_add_event')}</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -233,13 +235,13 @@ const EventsHomeScreen = () => {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Icon name="event-busy" size={48} color={jewelleryColors.textSecondary} />
-            <Text style={styles.emptyStateTitle}>No events found</Text>
+            <Text style={styles.emptyStateTitle}>{t('jw_no_events')}</Text>
             <Text style={styles.emptyStateText}>
               {searchQuery.trim()
-                ? `No results for "${searchQuery.trim()}"`
+                ? t('jw_no_results_for', { query: searchQuery.trim() })
                 : mineOnly
-                  ? 'You have not created any events yet'
-                  : 'No events available'}
+                  ? t('jw_no_events_mine')
+                  : t('jw_no_events_available')}
             </Text>
           </View>
         }

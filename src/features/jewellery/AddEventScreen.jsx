@@ -21,6 +21,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 import * as ImagePicker from 'expo-image-picker';
 import { Calendar } from 'react-native-calendars';
 import moment from 'moment';
+import { useTranslation } from 'react-i18next';
 import HeaderBar from '../../components/Jewellery/HeaderBar';
 import { createJewelleryEvent } from '../../services/jewellery.services';
 import { setLoadingInBtn } from '../../store/user';
@@ -31,6 +32,7 @@ const MAX_EVENT_IMAGES = 6;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const AddEventScreen = () => {
+  const { t } = useTranslation();
   const navigation = useNavigation();
   const dispatch = useDispatch();
   const { loadingInBtn } = useSelector((state) => state.user);
@@ -130,54 +132,54 @@ const AddEventScreen = () => {
 
   const handleSubmit = async () => {
     if (!form.name.trim()) {
-      Alert.alert('Required', 'Please enter event name.');
+      Alert.alert(t('required'), t('jw_enter_event_name'));
       return;
     }
     if (!form.description.trim()) {
-      Alert.alert('Required', 'Please enter event description.');
+      Alert.alert(t('required'), t('jw_enter_event_description'));
       return;
     }
     if (!form.startDate.trim()) {
-      Alert.alert('Required', 'Please select start date.');
+      Alert.alert(t('required'), t('jw_select_start_date_msg'));
       return;
     }
     if (form.endDate.trim() && form.endDate < form.startDate) {
-      Alert.alert('Invalid', 'End date cannot be before start date.');
+      Alert.alert(t('invalid'), t('jw_end_date_before_start'));
       return;
     }
     if (!form.venue.trim()) {
-      Alert.alert('Required', 'Please enter venue.');
+      Alert.alert(t('required'), t('jw_enter_venue'));
       return;
     }
     if (!form.organizer.trim()) {
-      Alert.alert('Required', 'Please enter organizer name.');
+      Alert.alert(t('required'), t('jw_enter_organizer'));
       return;
     }
     if (!form.organizerPhone.trim()) {
-      Alert.alert('Required', 'Please enter organizer phone number.');
+      Alert.alert(t('required'), t('jw_enter_organizer_phone'));
       return;
     }
     if (!/^\d{10}$/.test(form.organizerPhone.trim())) {
-      Alert.alert('Invalid', 'Please enter a valid 10-digit phone number.');
+      Alert.alert(t('invalid'), t('jw_valid_phone'));
       return;
     }
     if (!form.organizerEmail.trim()) {
-      Alert.alert('Required', 'Please enter organizer email.');
+      Alert.alert(t('required'), t('jw_enter_organizer_email'));
       return;
     }
     if (!EMAIL_REGEX.test(form.organizerEmail.trim())) {
-      Alert.alert('Invalid', 'Please enter a valid email address.');
+      Alert.alert(t('invalid'), t('jw_valid_email'));
       return;
     }
     if (
       form.capacity.trim() &&
       (!/^\d+$/.test(form.capacity.trim()) || parseInt(form.capacity, 10) < 0)
     ) {
-      Alert.alert('Invalid', 'Please enter a valid capacity.');
+      Alert.alert(t('invalid'), t('jw_valid_capacity'));
       return;
     }
     if (!bannerImage && eventImages.length === 0) {
-      Alert.alert('Required', 'Please add at least one event image.');
+      Alert.alert(t('required'), t('jw_add_event_image_required'));
       return;
     }
 
@@ -217,8 +219,8 @@ const AddEventScreen = () => {
 
       dispatch(setLoadingInBtn(false));
 
-      Alert.alert('Success', 'Event added successfully.', [
-        { text: 'OK', onPress: () => navigation.goBack() },
+      Alert.alert(t('success'), t('jw_event_added_success'), [
+        { text: t('ok'), onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       dispatch(setLoadingInBtn(false));
@@ -226,8 +228,8 @@ const AddEventScreen = () => {
         error.response?.data?.msg ||
         error.response?.data?.message ||
         error.message ||
-        'Failed to create event';
-      Alert.alert('Error', message);
+        t('jw_create_event_error');
+      Alert.alert(t('error'), message);
     }
   };
 
@@ -266,7 +268,7 @@ const AddEventScreen = () => {
             !form[field] && styles.placeholderText,
           ]}
         >
-          {form[field] ? formatDisplayDate(form[field]) : 'Select date'}
+          {form[field] ? formatDisplayDate(form[field]) : t('jw_select_date')}
         </Text>
         <Icon name="chevron-right" size={20} color={jewelleryColors.textSecondary} />
       </TouchableOpacity>
@@ -278,7 +280,7 @@ const AddEventScreen = () => {
 
   return (
     <SafeAreaView style={commonStyles.container} edges={['top']}>
-      <HeaderBar showBack title="Add Event" onBackPress={handleBackPress} />
+      <HeaderBar showBack title={t('jw_add_event')} onBackPress={handleBackPress} />
 
       <KeyboardAvoidingView
         style={styles.flex}
@@ -290,8 +292,8 @@ const AddEventScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Banner Image</Text>
-            <Text style={styles.sectionHint}>Main image shown on the event card</Text>
+            <Text style={styles.sectionTitle}>{t('jw_banner_image')}</Text>
+            <Text style={styles.sectionHint}>{t('jw_banner_image_hint')}</Text>
             <View style={styles.imageRow}>
               {bannerImage ? (
                 <View style={styles.bannerWrapper}>
@@ -303,15 +305,15 @@ const AddEventScreen = () => {
               ) : (
                 <TouchableOpacity style={styles.addBannerButton} onPress={pickBannerImage}>
                   <Icon name="add-photo-alternate" size={32} color={jewelleryColors.primary} />
-                  <Text style={styles.addImageText}>Add Banner</Text>
+                  <Text style={styles.addImageText}>{t('jw_add_banner')}</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Event Images</Text>
-            <Text style={styles.sectionHint}>Additional photos for the event gallery</Text>
+            <Text style={styles.sectionTitle}>{t('jw_event_images')}</Text>
+            <Text style={styles.sectionHint}>{t('jw_event_images_hint')}</Text>
             <View style={styles.imageRow}>
               {eventImages.map((image, index) => (
                 <View key={index} style={styles.imageWrapper}>
@@ -327,20 +329,20 @@ const AddEventScreen = () => {
               {eventImages.length < MAX_EVENT_IMAGES && (
                 <TouchableOpacity style={styles.addImageButton} onPress={pickEventImage}>
                   <Icon name="add" size={28} color={jewelleryColors.primary} />
-                  <Text style={styles.addImageText}>Add Image</Text>
+                  <Text style={styles.addImageText}>{t('jw_add_image')}</Text>
                 </TouchableOpacity>
               )}
             </View>
           </View>
 
-          {renderInput('Event Name *', 'name', { placeholder: 'Enter event name' })}
-          {renderInput('Description *', 'description', {
-            placeholder: 'Describe the event',
+          {renderInput(`${t('jw_event_name')} *`, 'name', { placeholder: t('jw_enter_event_name_ph') })}
+          {renderInput(`${t('jw_description')} *`, 'description', {
+            placeholder: t('jw_describe_event_ph'),
             multiline: true,
           })}
 
           <View style={styles.field}>
-            <Text style={styles.label}>Category *</Text>
+            <Text style={styles.label}>{t('jw_category')} *</Text>
             <View style={styles.categoryRow}>
               {EVENT_CATEGORIES.map((category) => (
                 <TouchableOpacity
@@ -364,37 +366,37 @@ const AddEventScreen = () => {
             </View>
           </View>
 
-          {renderDateField('Start Date *', 'startDate')}
-          {renderDateField('End Date', 'endDate')}
-          {renderInput('Start Time', 'startTime', { placeholder: 'e.g. 10:00 AM' })}
-          {renderInput('End Time', 'endTime', { placeholder: 'e.g. 06:00 PM' })}
-          {renderInput('Venue *', 'venue', { placeholder: 'Event venue name' })}
-          {renderInput('Address', 'address', {
-            placeholder: 'Full address',
+          {renderDateField(`${t('jw_start_date')} *`, 'startDate')}
+          {renderDateField(t('jw_end_date'), 'endDate')}
+          {renderInput(t('jw_start_time'), 'startTime', { placeholder: t('jw_time_start_ph') })}
+          {renderInput(t('jw_end_time'), 'endTime', { placeholder: t('jw_time_end_ph') })}
+          {renderInput(`${t('jw_venue')} *`, 'venue', { placeholder: t('jw_venue_name_ph') })}
+          {renderInput(t('jw_address'), 'address', {
+            placeholder: t('jw_full_address_ph'),
             multiline: true,
           })}
-          {renderInput('Organizer *', 'organizer', { placeholder: 'Organizer name' })}
-          {renderInput('Organizer Phone *', 'organizerPhone', {
-            placeholder: '10-digit mobile number',
+          {renderInput(`${t('jw_organizer')} *`, 'organizer', { placeholder: t('jw_organizer_name_ph') })}
+          {renderInput(`${t('jw_organizer_phone')} *`, 'organizerPhone', {
+            placeholder: t('jw_phone_ph'),
             keyboardType: 'phone-pad',
             maxLength: 10,
             digitsOnly: true,
           })}
-          {renderInput('Organizer Email *', 'organizerEmail', {
-            placeholder: 'email@example.com',
+          {renderInput(`${t('jw_organizer_email')} *`, 'organizerEmail', {
+            placeholder: t('jw_email_ph'),
             keyboardType: 'email-address',
             autoCapitalize: 'none',
           })}
-          {renderInput('Entry Fee', 'entryFee', { placeholder: 'Free or amount' })}
-          {renderInput('Capacity', 'capacity', {
-            placeholder: 'Maximum attendees',
+          {renderInput(t('jw_entry_fee'), 'entryFee', { placeholder: t('jw_entry_fee_ph') })}
+          {renderInput(t('jw_capacity'), 'capacity', {
+            placeholder: t('jw_capacity_ph'),
             keyboardType: 'numeric',
             maxLength: 6,
             digitsOnly: true,
           })}
 
           <View style={styles.switchRow}>
-            <Text style={styles.label}>Verified Event</Text>
+            <Text style={styles.label}>{t('jw_verified_event')}</Text>
             <Switch
               value={form.isVerified}
               onValueChange={(value) => updateField('isVerified', value)}
@@ -403,7 +405,7 @@ const AddEventScreen = () => {
           </View>
 
           <View style={styles.switchRow}>
-            <Text style={styles.label}>Featured Event</Text>
+            <Text style={styles.label}>{t('jw_featured_event')}</Text>
             <Switch
               value={form.isFeatured}
               onValueChange={(value) => updateField('isFeatured', value)}
@@ -419,7 +421,7 @@ const AddEventScreen = () => {
             {loadingInBtn ? (
               <ActivityIndicator color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>Add Event</Text>
+              <Text style={styles.submitButtonText}>{t('jw_add_event')}</Text>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -435,7 +437,7 @@ const AddEventScreen = () => {
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                {calendarField === 'endDate' ? 'Select End Date' : 'Select Start Date'}
+                {calendarField === 'endDate' ? t('jw_select_end_date') : t('jw_select_start_date')}
               </Text>
               <TouchableOpacity onPress={() => setCalendarField(null)}>
                 <Icon name="close" size={24} color={jewelleryColors.text} />
