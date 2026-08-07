@@ -49,9 +49,12 @@ export const floatingBottomBarStyles = StyleSheet.create({
   },
   floatingBarText: {
     fontSize: 9,
+    lineHeight: 14,
     marginTop: 4,
+    paddingTop: 2,
     textAlign: "center",
     color: "#333",
+    includeFontPadding: true,
   },
   floatingBarTextActive: {
     color: Theme.themeColor,

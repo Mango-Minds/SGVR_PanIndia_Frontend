@@ -99,6 +99,8 @@ const styles = StyleSheet.create({
   title: {
     ...typography.heading3,
     textAlign: 'center',
+    paddingTop: 3,
+    includeFontPadding: true,
   },
 });
 

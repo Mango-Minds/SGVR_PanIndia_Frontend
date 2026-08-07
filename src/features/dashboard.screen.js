@@ -844,13 +844,19 @@ const styles = StyleSheet.create({
     color: YELLOW_COLOR,
     fontWeight: "800",
     fontSize: 20,
+    lineHeight: 28,
     letterSpacing: 0.4,
+    paddingTop: 2,
+    includeFontPadding: true,
   },
   brandTagline: {
     color: "rgba(255,255,255,0.65)",
     fontSize: 11,
+    lineHeight: 16,
     marginTop: 1,
+    paddingTop: 2,
     letterSpacing: 0.6,
+    includeFontPadding: true,
   },
   headerRight: {
     flexDirection: "row",
@@ -981,9 +987,12 @@ const styles = StyleSheet.create({
   },
   floatingBarText: {
     fontSize: 10,
+    lineHeight: 14,
     marginTop: 4,
+    paddingTop: 2,
     textAlign: "center",
     color: "#333",
+    includeFontPadding: true,
   },
 
   quickActionsWrapper: {
@@ -1005,10 +1014,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 16,
     fontWeight: "bold",
+    lineHeight: 24,
+    paddingTop: 2,
+    includeFontPadding: true,
   },
   seeAll: {
     fontSize: 12,
+    lineHeight: 18,
+    paddingTop: 2,
     color: "#007bff",
+    includeFontPadding: true,
   },
   card: {
     width: JEWELLERY_CARD_WIDTH,
@@ -1023,6 +1038,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginTop: 6,
     fontSize: 13,
-    lineHeight: 18,
+    lineHeight: 20,
+    paddingTop: 2,
+    includeFontPadding: true,
   },
 });

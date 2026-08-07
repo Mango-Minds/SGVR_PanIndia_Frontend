@@ -21,41 +21,42 @@ export const jewelleryColors = {
 };
 
 // Typography Tokens
+// lineHeights leave room for Devanagari/Indic upper matras (ि ी े ै ो ौ ं ँ)
 export const typography = {
   heading1: {
     fontSize: 30,
     fontWeight: '600',
-    lineHeight: 36,
+    lineHeight: 40,
     color: jewelleryColors.text,
   },
   heading2: {
     fontSize: 24,
     fontWeight: '600',
-    lineHeight: 28,
+    lineHeight: 34,
     color: jewelleryColors.text,
   },
   heading3: {
     fontSize: 20,
     fontWeight: '600',
-    lineHeight: 24,
+    lineHeight: 28,
     color: jewelleryColors.text,
   },
   body: {
     fontSize: 16,
     fontWeight: '400',
-    lineHeight: 20,
+    lineHeight: 24,
     color: jewelleryColors.text,
   },
   bodySmall: {
     fontSize: 14,
     fontWeight: '400',
-    lineHeight: 18,
+    lineHeight: 22,
     color: jewelleryColors.textSecondary,
   },
   caption: {
     fontSize: 12,
     fontWeight: '400',
-    lineHeight: 16,
+    lineHeight: 18,
     color: jewelleryColors.textSecondary,
   },
 };

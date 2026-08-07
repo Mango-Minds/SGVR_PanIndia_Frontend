@@ -222,6 +222,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.2,
     color: jewelleryColors.text,
+    paddingTop: 4,
+    includeFontPadding: true,
   },
   spotBannersContainer: {
     flexDirection: 'row',
@@ -297,7 +299,8 @@ const styles = StyleSheet.create({
   categoryItem: {
     width: '25%', // 4 icons per row
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    paddingHorizontal: 2,
   },
   categoriesContainer: {
     paddingHorizontal: spacing.lg,

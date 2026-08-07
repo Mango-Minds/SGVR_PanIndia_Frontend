@@ -27,6 +27,15 @@ import {
 } from "../../store/Handlers/Reducer.Handler";
 import { logoutSuccess } from "../../store/user";
 import Theme from "../../styles/theme";
+import useAppIconBadge from "../../hooks/useAppIconBadge";
+import { clearAppIconBadge } from "../../Utility/appIconBadge";
+
+/** Syncs OS home-screen badge when the user is logged in. */
+function AppIconBadgeSync() {
+  useAppIconBadge();
+  return null;
+}
+
 export const Navigation = () => {
   // Use Redux hooks at the top level - hooks must be called consistently
   let userState, dispatch;
@@ -166,6 +175,13 @@ export const Navigation = () => {
     }
   }, [canAccessApp, loading]);
 
+  // Clear home-screen badge when logged out / on auth screens
+  useEffect(() => {
+    if (!token) {
+      clearAppIconBadge();
+    }
+  }, [token]);
+
   if (effectiveLoading && token)
     return (
       <ActivityIndicator
@@ -252,7 +268,10 @@ export const Navigation = () => {
   return (
     <NavigationContainer ref={navigationRef} key={navigationKey}>
       {canAccessApp ? (
-        <DashboardNavigator />
+        <>
+          {token ? <AppIconBadgeSync /> : null}
+          <DashboardNavigator />
+        </>
       ) : (
         <PreLoginNavigator />
       )}

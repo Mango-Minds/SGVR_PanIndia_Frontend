@@ -167,11 +167,15 @@ const styles = StyleSheet.create({
     ...typography.heading1,
     color: '#FFFFFF',
     marginBottom: spacing.xs,
+    paddingTop: 4,
+    includeFontPadding: true,
   },
   subtitle: {
     ...typography.heading3,
     color: '#FFFFFF',
     marginBottom: spacing.md,
+    paddingTop: 3,
+    includeFontPadding: true,
   },
   offerContainer: {
     marginTop: spacing.md,
@@ -180,11 +184,15 @@ const styles = StyleSheet.create({
     ...typography.heading2,
     color: '#FFFFFF',
     fontWeight: '700',
+    paddingTop: 3,
+    includeFontPadding: true,
   },
   offerSubtext: {
     ...typography.bodySmall,
     color: '#FFFFFF',
     opacity: 0.9,
+    paddingTop: 2,
+    includeFontPadding: true,
   },
   imageContainer: {
     width: 120,

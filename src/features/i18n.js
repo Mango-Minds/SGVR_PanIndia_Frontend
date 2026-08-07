@@ -33,6 +33,13 @@ i18next
     resources,
   });
 
+/** Persist choice and switch i18next language (used by ChangeLanguage screen). */
+export const applyAppLanguage = async (lng) => {
+  const normalizedLng = (lng || "en").split("-")[0];
+  await AsyncStorage.setItem("user-language", normalizedLng);
+  await i18next.changeLanguage(normalizedLng);
+};
+
 export default i18next;
 
 

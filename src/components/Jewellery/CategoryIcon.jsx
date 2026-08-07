@@ -53,7 +53,7 @@ const CategoryIcon = ({
           <MaterialCommunityIcons name={icon} size={iconSize} color={color} />
         </View>
       </View>
-      <Text style={styles.label} numberOfLines={2}>
+      <Text style={styles.label} numberOfLines={3} allowFontScaling>
         {name}
       </Text>
     </TouchableOpacity>
@@ -88,9 +88,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
     paddingHorizontal: 2,
-    minHeight: 32,
-    lineHeight: 16,
+    paddingTop: 3,
+    minHeight: 40,
+    lineHeight: 20,
     color: '#374151',
+    includeFontPadding: true,
   },
 });
 

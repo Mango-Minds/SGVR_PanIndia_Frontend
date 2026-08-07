@@ -179,10 +179,11 @@ const NotificationsScreen = ({ navigation }) => {
     }, [])
   );
 
-  // Live prepend when follow / event / other social notifications arrive
+  // Live prepend when follow / like / comment / event notifications arrive
   const handleLiveNotification = useCallback((data) => {
     if (!data || !data._id) return;
-    if (POST_NOTIFICATION_TYPES.includes(data.type)) return;
+
+    const isPost = POST_NOTIFICATION_TYPES.includes(data.type);
 
     setNotifications((prev) => {
       if (prev.some((n) => String(n._id) === String(data._id))) {
@@ -191,7 +192,7 @@ const NotificationsScreen = ({ navigation }) => {
       const next = [
         {
           ...data,
-          source: "social",
+          source: isPost ? "post" : "social",
           read: data.read ?? false,
           createdAt: data.createdAt || new Date().toISOString(),
         },
